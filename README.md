@@ -115,7 +115,7 @@ When DB is enabled, writes go to Postgres; otherwise use in-memory storage:
 │   ├── routes/            # API endpoints (consolidated in index.py)
 │   ├── services/          # Business logic (consolidated in index.py)
 │   ├── schemas/           # Pydantic models
-│   └── repositories/      # Data access layer
+│   └── repositories/      # Data access layer (consolidated in index.py)
 ├── app/                   # Next.js pages
 ├── components/            # React components
 ├── styles/                # CSS and Tailwind

@@ -3,8 +3,7 @@ from typing import List
 from schemas.listing import ListingIn, ListingOut, ListingScoreIn
 from schemas.notify import NotifyItem, NotifyResponse
 from schemas.scoring import ScoreResponse
-from repositories.listings import ingest_listings, list_listings, update_cached_score
-from repositories.scores import insert_score
+from repositories.index import ingest_listings, list_listings, update_cached_score, insert_score
 from services.index import score_listing, notify as do_notify
 
 # Create routers for each endpoint group

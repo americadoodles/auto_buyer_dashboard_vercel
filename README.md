@@ -113,7 +113,7 @@ When DB is enabled, writes go to Postgres; otherwise use in-memory storage:
 ├── api/                    # FastAPI backend
 │   ├── core/              # Configuration and database
 │   ├── routes/            # API endpoints (consolidated in index.py)
-│   ├── services/          # Business logic
+│   ├── services/          # Business logic (consolidated in index.py)
 │   ├── schemas/           # Pydantic models
 │   └── repositories/      # Data access layer
 ├── app/                   # Next.js pages

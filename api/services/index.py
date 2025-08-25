@@ -1,6 +1,18 @@
 from typing import Tuple, List
+from schemas.notify import NotifyItem
 from schemas.listing import ListingScoreIn
 
+# Notification service
+_NOTIFICATIONS: list[dict[str, str]] = []
+
+def notify(it: NotifyItem) -> dict:
+    vin = (it.vin or "").strip().upper()
+    msg = it.message or f"Notify for VIN {vin}"
+    ch = it.channel or "email"
+    _NOTIFICATIONS.append({"vin": vin, "channel": ch, "message": msg})
+    return {"vin": vin, "notified": True, "channel": ch}
+
+# Scoring service
 def score_listing(item: ListingScoreIn) -> Tuple[int, float, List[str]]:
     reasons: list[str] = []
     dom_penalty = max(0, 30 - item.dom) / 30

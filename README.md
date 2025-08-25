@@ -112,7 +112,7 @@ When DB is enabled, writes go to Postgres; otherwise use in-memory storage:
 ```
 ├── api/                    # FastAPI backend
 │   ├── core/              # Configuration and database
-│   ├── routes/            # API endpoints
+│   ├── routes/            # API endpoints (consolidated in index.py)
 │   ├── services/          # Business logic
 │   ├── schemas/           # Pydantic models
 │   └── repositories/      # Data access layer

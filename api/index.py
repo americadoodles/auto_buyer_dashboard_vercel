@@ -3,10 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from core.config import settings
 from core.lifespan import lifespan
 
-from routes.ingest import router as ingest_router
-from routes.listings import router as listings_router
-from routes.score import router as score_router
-from routes.notify import router as notify_router
+from routes.index import ingest_router, listings_router, score_router, notify_router
 
 app = FastAPI(title=settings.APP_TITLE, lifespan=lifespan)
 

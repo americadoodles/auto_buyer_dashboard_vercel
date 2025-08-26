@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 import logging
-from .db import apply_schema_if_needed
+from .db import DB_ENABLED, apply_schema_if_needed
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

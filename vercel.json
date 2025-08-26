@@ -3,5 +3,8 @@
     "api/**": {
       "excludeFiles": "{.next,.git,node_modules}/**"
     }
-  }
+  },
+  "routes": [
+    { "src": "^/api/(.*)$", "dest": "/api/index.py" }
+  ]
 }

@@ -35,7 +35,8 @@ export default function Page() {
   const [sort, setSort] = useState<{key: keyof Listing; dir:'asc'|'desc'}>({ key:'score', dir:'desc' });
   const [loading, setLoading] = useState<boolean>(false);
   const [backendOk, setBackendOk] = useState<boolean | null>(null);
-  const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8001';
+  // const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8001';
+  const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? '/api';
 
   const rows = useMemo(() => {
     const dir = sort.dir === 'asc' ? 1 : -1;

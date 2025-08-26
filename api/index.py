@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from core.config import settings
-from core.lifespan import lifespan
+from .core.config import settings
+from .core.lifespan import lifespan
 
 from routes.routes import ingest_router, listings_router, score_router, notify_router
 

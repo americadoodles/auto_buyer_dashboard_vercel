@@ -4,6 +4,7 @@
       "excludeFiles": "{.next,.git,node_modules}/**"
     }
   },
+  "outputDirectory": "api",
   "routes": [
     { "src": "^/api/(.*)$", "dest": "/api/index.py" }
   ]

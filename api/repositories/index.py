@@ -1,7 +1,7 @@
 import json
 from typing import List, Optional
-from api.core.db import get_conn, DB_ENABLED
-from api.schemas.listing import ListingIn, ListingOut
+from core.db import get_conn, DB_ENABLED
+from schemas.listing import ListingIn, ListingOut
 
 # In-memory fallback for listings
 _BY_ID: dict[str, ListingOut] = {}

@@ -1,10 +1,10 @@
 from fastapi import APIRouter, HTTPException, Depends, Query
 from typing import List
-from api.schemas.listing import ListingIn, ListingOut, ListingScoreIn
-from api.schemas.notify import NotifyItem, NotifyResponse
-from api.schemas.scoring import ScoreResponse
-from api.repositories.index import ingest_listings, list_listings, update_cached_score, insert_score
-from api.services.index import score_listing, notify as do_notify
+from schemas.listing import ListingIn, ListingOut, ListingScoreIn
+from schemas.notify import NotifyItem, NotifyResponse
+from schemas.scoring import ScoreResponse
+from repositories.index import ingest_listings, list_listings, update_cached_score, insert_score
+from services.index import score_listing, notify as do_notify
 
 # Create routers for each endpoint group
 ingest_router = APIRouter(prefix="/ingest", tags=["ingest"])

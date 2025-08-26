@@ -1,6 +1,6 @@
 import os
 from typing import Optional
-from core.config import settings
+from .config import settings
 
 try:
     import psycopg

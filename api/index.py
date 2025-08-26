@@ -5,6 +5,21 @@ from .core.lifespan import lifespan
 
 from .routes.routes import ingest_router, listings_router, score_router, notify_router
 
+# ---- run-on-cold-start: ensure schema once ----
+import logging
+from .core.db import DB_ENABLED, apply_schema_if_needed
+
+if DB_ENABLED:
+    try:
+        logging.basicConfig(level=logging.INFO)
+        logging.info("Cold start: ensuring DB schema…")
+        apply_schema_if_needed()
+        logging.info("Schema ready.")
+    except Exception:
+        logging.exception("Schema bootstrap failed at import")
+
+# -----------------------------------------------
+
 app = FastAPI(title=settings.APP_TITLE, lifespan=lifespan)
 
 app.add_middleware(
@@ -34,7 +49,7 @@ def db_check():
     with conn, conn.cursor() as cur:
         cur.execute("select 1")
         return {"ok": True, "one": cur.fetchone()[0]}
-        
+
 # temporary route to confirm the tables/view exist
 @app.get("/api/_schema_status")
 def schema_status():

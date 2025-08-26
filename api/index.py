@@ -34,3 +34,20 @@ def db_check():
     with conn, conn.cursor() as cur:
         cur.execute("select 1")
         return {"ok": True, "one": cur.fetchone()[0]}
+        
+# temporary route to confirm the tables/view exist
+@app.get("/api/_schema_status")
+def schema_status():
+    from .core.db import get_conn
+    conn = get_conn()
+    with conn.cursor() as cur:
+        cur.execute("""
+          select
+            to_regclass('public.vehicles') as vehicles,
+            to_regclass('public.listings') as listings,
+            to_regclass('public.scores') as scores,
+            to_regclass('public.v_latest_scores') as v_latest_scores
+        """)
+        v = cur.fetchone()
+    conn.close()
+    return dict(zip(["vehicles","listings","scores","v_latest_scores"], v))

@@ -28,16 +28,17 @@ def apply_schema_if_needed() -> None:
         return
     conn = get_conn()
     assert conn is not None
+    cur = conn.cursor()
     try:
-        with conn, conn.cursor() as cur:
-            # Prefer file if present
-            try:
-                import pathlib
-                schema_path = pathlib.Path(__file__).parents[2] / "db" / "schema.sql"
-                with open(schema_path, "r", encoding="utf-8") as f:
-                    cur.execute(f.read())
-            except FileNotFoundError:
-                cur.execute("""
+        # Try file first
+        import pathlib, logging
+        schema_path = pathlib.Path(__file__).parents[2] / "db" / "schema.sql"
+        if schema_path.exists():
+            logging.info("Applying schema from %s", schema_path)
+            cur.execute(schema_path.read_text(encoding="utf-8"))
+        else:
+            logging.info("Applying inline schema (fallback)")
+            cur.execute("""
                 create table if not exists vehicles (
                   vin text primary key,
                   year int, make text, model text, trim text
@@ -60,6 +61,8 @@ def apply_schema_if_needed() -> None:
                 select distinct on (vin) vin, score, buy_max, reason_codes, created_at
                 from scores
                 order by vin, created_at desc;
-                """)
+            """)
+        logging.info("Schema ensured OK")
     finally:
+        cur.close()
         conn.close()

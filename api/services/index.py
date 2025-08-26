@@ -1,6 +1,6 @@
 from typing import Tuple, List
-from schemas.notify import NotifyItem
-from schemas.listing import ListingScoreIn
+from api.schemas.notify import NotifyItem
+from api.schemas.listing import ListingScoreIn
 
 # Notification service
 _NOTIFICATIONS: list[dict[str, str]] = []

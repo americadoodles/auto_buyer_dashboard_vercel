@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from .db import apply_schema_if_needed
+from api.core.db import apply_schema_if_needed
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

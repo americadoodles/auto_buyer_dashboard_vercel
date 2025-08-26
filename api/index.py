@@ -23,3 +23,14 @@ app.include_router(notify_router,  prefix="/api")
 @app.get("/api/healthz")
 def healthz():
     return {"ok": True}
+
+# in an admin-only or temp route:
+@app.get("/api/db-check")
+def db_check():
+    from .core.db import get_conn, DB_ENABLED
+    if not DB_ENABLED:
+        return {"ok": False, "reason": "DB disabled or no URL"}
+    conn = get_conn()
+    with conn, conn.cursor() as cur:
+        cur.execute("select 1")
+        return {"ok": True, "one": cur.fetchone()[0]}

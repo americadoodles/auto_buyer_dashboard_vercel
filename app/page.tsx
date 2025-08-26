@@ -5,6 +5,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowUpDown, Car, Gauge, DollarSign, Clock, Tag } from 'lucide-react';
 
+export const preferredRegion = ['iad1'];
+
 type Listing = {
   id: string;
   vin: string;

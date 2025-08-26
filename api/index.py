@@ -15,11 +15,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(ingest_router)
-app.include_router(listings_router)
-app.include_router(score_router)
-app.include_router(notify_router)
+app.include_router(ingest_router,  prefix="/api")
+app.include_router(listings_router,  prefix="/api")
+app.include_router(score_router,  prefix="/api")
+app.include_router(notify_router,  prefix="/api")
 
-@app.get("/healthz")
+@app.get("/api/healthz")
 def healthz():
     return {"ok": True}

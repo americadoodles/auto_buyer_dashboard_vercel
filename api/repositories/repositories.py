@@ -69,14 +69,27 @@ def list_listings(limit: int = 500) -> list[ListingOut]:
         conn = get_conn(); assert conn is not None
         try:
             with conn, conn.cursor() as cur:
+                # Fixed query to prevent duplicates by using DISTINCT ON and proper JOINs
                 cur.execute("""
-                  select l.id, l.vin, coalesce(v.year,0), coalesce(v.make,''), coalesce(v.model,''), v.trim,
-                         l.miles, l.price, l.dom, l.source, s.score, s.buy_max, s.reason_codes
-                  from listings l
-                  left join vehicles v on v.vin = l.vin
-                  left join v_latest_scores s on s.vin = l.vin
-                  order by l.created_at desc
-                  limit %s
+                  SELECT DISTINCT ON (l.id) 
+                    l.id, l.vin, 
+                    COALESCE(v.year, 0) as year, 
+                    COALESCE(v.make, '') as make, 
+                    COALESCE(v.model, '') as model, 
+                    v.trim,
+                    l.miles, l.price, l.dom, l.source, 
+                    COALESCE(s.score, 0) as score, 
+                    s.buy_max, 
+                    COALESCE(s.reason_codes, ARRAY[]::text[]) as reason_codes
+                  FROM listings l
+                  LEFT JOIN vehicles v ON v.vin = l.vin
+                  LEFT JOIN (
+                    SELECT DISTINCT ON (vin) vin, score, buy_max, reason_codes
+                    FROM scores
+                    ORDER BY vin, created_at DESC
+                  ) s ON s.vin = l.vin
+                  ORDER BY l.id, l.created_at DESC
+                  LIMIT %s
                 """, (limit,))
                 out: list[ListingOut] = []
                 for rid, vin, year, make, model, trim, miles, price, dom, source, score, buy_max, reason_codes in cur.fetchall():

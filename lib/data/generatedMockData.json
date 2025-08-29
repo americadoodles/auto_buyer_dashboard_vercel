@@ -1,6 +1,4 @@
-import { Listing } from '../types/listing';
-
-export const MOCK_DATA: Listing[] = [
+[
   {
     "id": "listing-1",
     "vehicle_key": "ford-mustang-ecoboost-2019",
@@ -2401,4 +2399,4 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 16539
   }
-];
+]

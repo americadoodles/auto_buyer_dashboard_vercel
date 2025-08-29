@@ -29,9 +29,9 @@ def score(payload: List[ListingScoreIn]):
     for item in payload:
         score_val, buy_max, reasons = score_listing(item)
         vin_key = (item.vin or "").strip().upper()
-        insert_score(vin_key, score_val, buy_max, reasons)
+        insert_score(item.vehicle_key, vin_key, score_val, buy_max, reasons)
         update_cached_score(vin_key, score_val, buy_max, reasons)
-        out.append(ScoreResponse(vin=item.vin, score=score_val, buyMax=buy_max, reasonCodes=reasons))
+        out.append(ScoreResponse(vehicle_key=item.vehicle_key, vin=item.vin, score=score_val, buyMax=buy_max, reasonCodes=reasons))
     return out
 
 # Notify routes

@@ -95,7 +95,14 @@ export const useListings = () => {
   const notify = async (vin: string) => {
     try {
       setLoading(true);
-      const res = await ApiService.notifyListing(vin);
+      // Find the listing to get the vehicle_key
+      const listing = data.find(l => l.vin === vin);
+      if (!listing) {
+        alert('Listing not found');
+        return;
+      }
+      
+      const res = await ApiService.notifyListing(listing.vehicle_key, vin);
       alert(`Notified for VIN ${vin}: ${res?.[0]?.channel ?? 'ok'}`);
     } catch (e: any) {
       alert('Failed to notify: ' + e.message);

@@ -7,6 +7,7 @@ export { Badge } from './atoms/Badge';
 export { TableHeader } from './molecules/TableHeader';
 export { TableRow } from './molecules/TableRow';
 export { KpiCard } from './molecules/KpiCard';
+export { Pagination } from './molecules/Pagination';
 
 // Organisms
 export { Header } from './organisms/Header';

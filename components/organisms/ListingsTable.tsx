@@ -2,19 +2,32 @@ import React from 'react';
 import { Listing } from '../../lib/types/listing';
 import { TableHeader } from '../molecules/TableHeader';
 import { TableRow } from '../molecules/TableRow';
+import { Pagination } from '../molecules/Pagination';
 
 interface ListingsTableProps {
   listings: Listing[];
   sort: { key: keyof Listing; dir: 'asc' | 'desc' };
   onSort: (key: keyof Listing) => void;
   onNotify: (vin: string) => void;
+  currentPage: number;
+  totalPages: number;
+  rowsPerPage: number;
+  totalRows: number;
+  onPageChange: (page: number) => void;
+  onRowsPerPageChange: (rowsPerPage: number) => void;
 }
 
 export const ListingsTable: React.FC<ListingsTableProps> = ({
   listings,
   sort,
   onSort,
-  onNotify
+  onNotify,
+  currentPage,
+  totalPages,
+  rowsPerPage,
+  totalRows,
+  onPageChange,
+  onRowsPerPageChange
 }) => {
   const handleSort = (key: keyof Listing) => {
     onSort(key);
@@ -30,6 +43,14 @@ export const ListingsTable: React.FC<ListingsTableProps> = ({
           onNotify={onNotify}
         />
       ))}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        rowsPerPage={rowsPerPage}
+        totalRows={totalRows}
+        onPageChange={onPageChange}
+        onRowsPerPageChange={onRowsPerPageChange}
+      />
     </div>
   );
 };

@@ -8,6 +8,8 @@ export const useListings = () => {
   const [sort, setSort] = useState<SortConfig>({ key: 'score', dir: 'desc' });
   const [loading, setLoading] = useState<boolean>(false);
   const [backendOk, setBackendOk] = useState<boolean | null>(null);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [rowsPerPage, setRowsPerPage] = useState<number>(10);
 
   const sortedRows = useMemo(() => {
     const dir = sort.dir === 'asc' ? 1 : -1;
@@ -18,6 +20,19 @@ export const useListings = () => {
       return String(av).localeCompare(String(bv)) * dir;
     });
   }, [data, sort]);
+
+  const paginatedRows = useMemo(() => {
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    return sortedRows.slice(startIndex, endIndex);
+  }, [sortedRows, currentPage, rowsPerPage]);
+
+  const totalPages = Math.ceil(sortedRows.length / rowsPerPage);
+
+  // Reset to first page when data changes or rows per page changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [data.length, rowsPerPage]);
 
   useEffect(() => {
     let mounted = true;
@@ -119,10 +134,16 @@ export const useListings = () => {
   return {
     data,
     sortedRows,
+    paginatedRows,
     sort,
     setSort,
     loading,
     backendOk,
+    currentPage,
+    setCurrentPage,
+    rowsPerPage,
+    setRowsPerPage,
+    totalPages,
     rescoreVisible,
     seedBackend,
     loadFromBackend,

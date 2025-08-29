@@ -1,34 +1,39 @@
+"use client";
 
-'use client';
+import React from "react";
+import { useListings } from "../lib/hooks/useListings";
+import { PageTemplate } from "../components/templates/PageTemplate";
+import { Header } from "../components/organisms/Header";
+import { ListingsTable } from "../components/organisms/ListingsTable";
+import { KpiGrid } from "../components/organisms/KpiGrid";
+import { Listing } from "../lib/types/listing";
 
-import React from 'react';
-import { useListings } from '../lib/hooks/useListings';
-import { PageTemplate } from '../components/templates/PageTemplate';
-import { Header } from '../components/organisms/Header';
-import { ListingsTable } from '../components/organisms/ListingsTable';
-import { KpiGrid } from '../components/organisms/KpiGrid';
-import { Listing } from '../lib/types/listing';
-
-export const preferredRegion = ['iad1'];
+export const preferredRegion = ["iad1"];
 
 export default function Page() {
   const {
     data,
     sortedRows,
+    paginatedRows,
     sort,
     setSort,
     loading,
     backendOk,
+    currentPage,
+    setCurrentPage,
+    rowsPerPage,
+    setRowsPerPage,
+    totalPages,
     rescoreVisible,
     seedBackend,
     loadFromBackend,
-    notify
+    notify,
   } = useListings();
 
   const handleSort = (key: keyof Listing) => {
-    setSort(prev => ({
+    setSort((prev) => ({
       key,
-      dir: prev.key === key && prev.dir === 'asc' ? 'desc' : 'asc'
+      dir: prev.key === key && prev.dir === "asc" ? "desc" : "asc",
     }));
   };
 
@@ -40,6 +45,7 @@ export default function Page() {
         onRescoreVisible={rescoreVisible}
         loading={loading}
       />
+      <KpiGrid />
 
       {backendOk === false && (
         <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-amber-900">
@@ -48,13 +54,17 @@ export default function Page() {
       )}
 
       <ListingsTable
-        listings={sortedRows}
+        listings={paginatedRows}
         sort={sort}
         onSort={handleSort}
         onNotify={notify}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        rowsPerPage={rowsPerPage}
+        totalRows={sortedRows.length}
+        onPageChange={setCurrentPage}
+        onRowsPerPageChange={setRowsPerPage}
       />
-
-      <KpiGrid />
     </PageTemplate>
   );
 }

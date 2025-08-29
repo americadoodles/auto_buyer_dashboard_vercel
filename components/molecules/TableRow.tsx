@@ -51,7 +51,7 @@ export const TableRow: React.FC<TableRowProps> = ({ listing, onNotify }) => {
         {listing.dom}d
       </div>
       {/* Source column — clean host + external link icon */}
-      <div className="col-span-1 min-w-0">
+      <div className="col-span-1 truncate min-w-0">
         {parsedSource ? (
           <div className="flex items-center gap-2 min-w-0">
             <span

@@ -86,7 +86,8 @@ def list_listings(limit: int = 500) -> list[ListingOut]:
                 # Fixed query to prevent duplicates by using DISTINCT ON and proper JOINs
                 cur.execute("""
                   SELECT DISTINCT ON (l.vehicle_key) 
-                    l.id, l.vehicle_key, l.vin, 
+                    l.id, l.vehicle_key, 
+                    COALESCE(l.vin, '') AS vin, 
                     COALESCE(v.year, 0) as year, 
                     COALESCE(v.make, '') as make, 
                     COALESCE(v.model, '') as model, 
@@ -96,7 +97,7 @@ def list_listings(limit: int = 500) -> list[ListingOut]:
                     s.buy_max, 
                     COALESCE(s.reason_codes, ARRAY[]::text[]) as reason_codes
                   FROM listings l
-                  LEFT JOIN vehicles v ON v.vin = l.vin
+                  LEFT JOIN vehicles v ON v.vehicle_key = l.vehicle_key
                   LEFT JOIN (
                     SELECT DISTINCT ON (vin) vin, score, buy_max, reason_codes
                     FROM scores
@@ -108,7 +109,7 @@ def list_listings(limit: int = 500) -> list[ListingOut]:
                 out: list[ListingOut] = []
                 for rid, vehicle_key, vin, year, make, model, trim, miles, price, dom, source, score, buy_max, reason_codes in cur.fetchall():
                     out.append(ListingOut(
-                        id=str(rid), vehicle_key=vehicle_key, vin=vin, year=int(year), make=make, model=model, trim=trim,
+                        id=str(rid), vehicle_key=vehicle_key, vin=vin or "", year=int(year), make=make, model=model, trim=trim,
                         miles=int(miles), price=float(price), dom=int(dom), source=source,
                         radius=25, reasonCodes=reason_codes or [],
                         buyMax=float(buy_max) if buy_max is not None else None,

@@ -30,9 +30,9 @@ create table if not exists scores (
 );
 
 create or replace view v_latest_scores as
-select distinct on (vin) vin, score, buy_max, reason_codes, created_at
+select distinct on (vehicle_key) vehicle_key, vin, score, buy_max, reason_codes, created_at
 from scores
-order by vin, created_at desc;
+order by vehicle_key, created_at desc;
 
 -- Add indexes for better performance
 create index if not exists idx_listings_vehicle_key on listings(vehicle_key);

@@ -3,6 +3,7 @@ import { Listing } from '../types/listing';
 export const MOCK_DATA: Listing[] = [
   { 
     id: '1', 
+    vehicle_key: '1HGCM82633A004352',
     vin: '1HGCM82633A004352', 
     year: 2019, 
     make: 'Toyota', 
@@ -19,6 +20,7 @@ export const MOCK_DATA: Listing[] = [
   },
   { 
     id: '2', 
+    vehicle_key: '1C4RJEBG3MC123456',
     vin: '1C4RJEBG3MC123456', 
     year: 2021, 
     make: 'Jeep', 
@@ -35,6 +37,7 @@ export const MOCK_DATA: Listing[] = [
   },
   { 
     id: '3', 
+    vehicle_key: '5YJ3E1EA7KF317000',
     vin: '5YJ3E1EA7KF317000', 
     year: 2019, 
     make: 'Tesla', 

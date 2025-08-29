@@ -9,6 +9,7 @@ interface TableHeaderProps {
 
 const columns = [
   { key: 'score', label: 'Score' },
+  { key: 'vehicle_key', label: 'Vehicle Key' },
   { key: 'vin', label: 'VIN' },
   { key: 'year', label: 'Year' },
   { key: 'make', label: 'Make' },

@@ -20,6 +20,7 @@ class ListingIn(BaseModel):
 
 class ListingOut(BaseModel):
     id: str
+    vehicle_key: str
     vin: str
     year: int
     make: str
@@ -35,6 +36,7 @@ class ListingOut(BaseModel):
     buyMax: Optional[float] = None
 
 class ListingScoreIn(BaseModel):
+    vehicle_key: str
     vin: str
     price: float
     miles: int

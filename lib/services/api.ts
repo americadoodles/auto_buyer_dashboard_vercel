@@ -22,12 +22,14 @@ export class ApiService {
   }
 
   static async scoreListings(listings: Listing[]): Promise<Array<{
+    vehicle_key: string;
     vin: string;
     score: number;
     buyMax: number;
     reasonCodes: string[];
   }>> {
     const payload = listings.map(listing => ({
+      vehicle_key: listing.vehicle_key,
       vin: listing.vin,
       price: listing.price,
       miles: listing.miles,
@@ -62,11 +64,11 @@ export class ApiService {
     return await response.json();
   }
 
-  static async notifyListing(vin: string): Promise<any> {
+  static async notifyListing(vehicle_key: string, vin: string): Promise<any> {
     const response = await fetch(`${BACKEND_URL}/notify`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify([{ vin }])
+      body: JSON.stringify([{ vehicle_key, vin }])
     });
 
     if (!response.ok) {

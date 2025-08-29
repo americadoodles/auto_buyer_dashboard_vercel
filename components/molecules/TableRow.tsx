@@ -16,6 +16,9 @@ export const TableRow: React.FC<TableRowProps> = ({ listing, onNotify }) => {
         <Badge variant="default">{listing.score}</Badge>
       </div>
       <div className="col-span-1 truncate text-xs text-slate-600">
+        {listing.vehicle_key}
+      </div>
+      <div className="col-span-1 truncate text-xs text-slate-600">
         {listing.vin}
       </div>
       <div className="col-span-1">{listing.year}</div>

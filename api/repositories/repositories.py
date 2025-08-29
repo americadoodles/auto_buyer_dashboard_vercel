@@ -2,6 +2,7 @@ import json
 from typing import List, Optional
 from ..core.db import get_conn, DB_ENABLED
 from ..schemas.listing import ListingIn, ListingOut
+import datetime
 
 # In-memory fallback for listings
 _BY_ID: dict[str, ListingOut] = {}
@@ -19,29 +20,42 @@ def ingest_listings(rows: List[ListingIn]) -> List[ListingOut]:
             with conn, conn.cursor() as cur:
                 for item in rows:
                     norm = item.model_dump()
-                    vin = norm["vin"].strip().upper()
-                    make = norm["make"].strip(); model = norm["model"].strip()
+                    vin_raw = (norm.get("vin") or "").strip().upper()
+                    vin = vin_raw if vin_raw else None
+
+                    def make_vehicle_key(n):
+                        if vin:
+                            return vin
+                        # unique by timestamp when VIN missing; include source to be extra safe
+                        created = (n.get("created_at") or datetime.utcnow())
+                        src = (n.get("source") or "unknown").strip().lower()
+                        return f"{src}#{created.isoformat(timespec='milliseconds')}"
+
+                    vehicle_key = make_vehicle_key(norm)
+                    make = norm["make"].strip()
+                    model = norm["model"].strip()
                     trim = (norm["trim"] or None)
+
                     # vehicles
                     cur.execute("""
-                      insert into vehicles (vin, year, make, model, trim)
-                      values (%s,%s,%s,%s,%s)
-                      on conflict (vin) do update set year=excluded.year, make=excluded.make, model=excluded.model, trim=excluded.trim
-                    """, (vin, norm["year"], make, model, trim))
+                         insert into vehicles (vehicle_key, vin, year, make, model, trim)
+                         values (%s,%s,%s,%s,%s,%s)
+                         on conflict (vehicle_key) do update set vin=excluded.vin, year=excluded.year, make=excluded.make, model=excluded.model, trim=excluded.trim
+                     """, (vehicle_key, vin, norm["year"], make, model, trim))
                     # listings
                     # Convert datetime objects to ISO format strings for JSON serialization
                     payload_data = norm.copy()
                     if "created_at" in payload_data and payload_data["created_at"]:
-                        if hasattr(payload_data["created_at"], "isoformat"):
+                        if isinstance(payload_data["created_at"], datetime.datetime):
                             payload_data["created_at"] = payload_data["created_at"].isoformat()
-                    
+
                     cur.execute("""
-                      insert into listings (vin, source, price, miles, dom, payload)
-                      values (%s,%s,%s,%s,%s,%s) returning id
-                    """, (vin, norm["source"], norm["price"], norm["miles"], norm["dom"], json.dumps(payload_data)))
+                      insert into listings (vehicle_key, vin, source, price, miles, dom, payload)
+                      values (%s,%s,%s,%s,%s,%s,%s) returning id
+                    """, (vehicle_key, vin, norm["source"], norm["price"], norm["miles"], norm["dom"], json.dumps(payload_data)))
                     new_id = str(cur.fetchone()[0])
                     out.append(ListingOut(
-                        id=new_id, vin=vin, year=norm["year"], make=make, model=model,
+                        id=new_id, vehicle_key=vehicle_key, vin=vin, year=norm["year"], make=make, model=model,
                         trim=trim, miles=norm["miles"], price=norm["price"], dom=norm["dom"],
                         source=norm["source"], radius=norm.get("radius", 25), reasonCodes=[],
                         buyMax=None, score=None
@@ -71,8 +85,8 @@ def list_listings(limit: int = 500) -> list[ListingOut]:
             with conn, conn.cursor() as cur:
                 # Fixed query to prevent duplicates by using DISTINCT ON and proper JOINs
                 cur.execute("""
-                  SELECT DISTINCT ON (l.id) 
-                    l.id, l.vin, 
+                  SELECT DISTINCT ON (l.vehicle_key) 
+                    l.id, l.vehicle_key, l.vin, 
                     COALESCE(v.year, 0) as year, 
                     COALESCE(v.make, '') as make, 
                     COALESCE(v.model, '') as model, 
@@ -88,13 +102,13 @@ def list_listings(limit: int = 500) -> list[ListingOut]:
                     FROM scores
                     ORDER BY vin, created_at DESC
                   ) s ON s.vin = l.vin
-                  ORDER BY l.id, l.created_at DESC
+                  ORDER BY l.vehicle_key, l.created_at DESC
                   LIMIT %s
                 """, (limit,))
                 out: list[ListingOut] = []
-                for rid, vin, year, make, model, trim, miles, price, dom, source, score, buy_max, reason_codes in cur.fetchall():
+                for rid, vehicle_key, vin, year, make, model, trim, miles, price, dom, source, score, buy_max, reason_codes in cur.fetchall():
                     out.append(ListingOut(
-                        id=str(rid), vin=vin, year=int(year), make=make, model=model, trim=trim,
+                        id=str(rid), vehicle_key=vehicle_key, vin=vin, year=int(year), make=make, model=model, trim=trim,
                         miles=int(miles), price=float(price), dom=int(dom), source=source,
                         radius=25, reasonCodes=reason_codes or [],
                         buyMax=float(buy_max) if buy_max is not None else None,
@@ -119,16 +133,16 @@ def update_cached_score(vin: str, score: int, buy_max: float, reasons: list[str]
 # SCORES REPOSITORY
 # ============================================================================
 
-def insert_score(vin: str, score: int, buy_max: float, reasons: list[str]):
+def insert_score(vehicle_key: str, vin: str, score: int, buy_max: float, reasons: list[str]):
     if not DB_ENABLED:
         return
     conn = get_conn(); assert conn is not None
     try:
         with conn, conn.cursor() as cur:
             cur.execute("""
-              insert into scores (vin, score, buy_max, reason_codes)
-              values (%s,%s,%s,%s)
-            """, (vin, score, buy_max, reasons or ["Heuristic"]))
+              insert into scores (vehicle_key, vin, score, buy_max, reason_codes)
+              values (%s,%s,%s,%s,%s)
+            """, (vehicle_key, vin, score, buy_max, reasons or ["Heuristic"]))
     finally:
         conn.close()
 
@@ -136,15 +150,15 @@ def insert_score(vin: str, score: int, buy_max: float, reasons: list[str]):
 # VEHICLES REPOSITORY
 # ============================================================================
 
-def upsert_vehicle(vin: str, year: int, make: str, model: str, trim: str | None):
+def upsert_vehicle(vehicle_key: str, vin: str, year: int, make: str, model: str, trim: str | None):
     if not DB_ENABLED: return
     conn = get_conn(); assert conn is not None
     try:
         with conn, conn.cursor() as cur:
             cur.execute("""
-            insert into vehicles (vin, year, make, model, trim)
-            values (%s,%s,%s,%s,%s)
-            on conflict (vin) do update set year=excluded.year, make=excluded.make, model=excluded.model, trim=excluded.trim
-            """, (vin, year, make, model, trim))
+            insert into vehicles (vehicle_key, vin, year, make, model, trim)
+            values (%s,%s,%s,%s,%s,%s)
+            on conflict (vehicle_key) do update set vin=excluded.vin, year=excluded.year, make=excluded.make, model=excluded.model, trim=excluded.trim
+            """, (vehicle_key, vin, year, make, model, trim))
     finally:
         conn.close()

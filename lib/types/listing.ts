@@ -1,5 +1,6 @@
 export type Listing = {
   id: string;
+  vehicle_key: string;
   vin: string;
   year: number;
   make: string;

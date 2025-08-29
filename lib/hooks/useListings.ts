@@ -4,7 +4,7 @@ import { MOCK_DATA } from '../data/mockData';
 import { ApiService } from '../services/api';
 
 export const useListings = () => {
-  const [data, setData] = useState<Listing[]>(MOCK_DATA);
+  const [data, setData] = useState<Listing[]>([]);
   const [sort, setSort] = useState<SortConfig>({ key: 'score', dir: 'desc' });
   const [loading, setLoading] = useState<boolean>(false);
   const [backendOk, setBackendOk] = useState<boolean | null>(null);
@@ -34,10 +34,15 @@ export const useListings = () => {
           if (mounted && Array.isArray(listings) && listings.length > 0) {
             setData(listings);
           }
+        } else {
+          // Only show mock data when backend is unavailable
+          setData(MOCK_DATA);
         }
       } catch {
         if (!mounted) return;
         setBackendOk(false);
+        // Only show mock data when backend is unavailable
+        setData(MOCK_DATA);
       }
     };
 

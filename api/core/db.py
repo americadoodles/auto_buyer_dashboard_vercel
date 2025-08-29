@@ -30,38 +30,39 @@ def apply_schema_if_needed() -> None:
     assert conn is not None
     cur = conn.cursor()
     try:
-        # Try file first
+        # Apply schema from schema.sql file
         import pathlib, logging
         schema_path = pathlib.Path(__file__).parents[2] / "db" / "schema.sql"
         if schema_path.exists():
             logging.info("Applying schema from %s", schema_path)
-            cur.execute(schema_path.read_text(encoding="utf-8"))
+            schema_content = schema_path.read_text(encoding="utf-8")
+            # Split by semicolon and execute each statement separately
+            statements = [stmt.strip() for stmt in schema_content.split(';') if stmt.strip()]
+            for statement in statements:
+                if statement:
+                    cur.execute(statement)
+            logging.info("Schema applied successfully from %s", schema_path)
+            
+            # Check if we need to add new columns to existing tables
+            try:
+                # Check if location column exists in listings table
+                cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'listings' AND column_name = 'location'")
+                if not cur.fetchone():
+                    logging.info("Adding location column to listings table")
+                    cur.execute("ALTER TABLE listings ADD COLUMN location text")
+                
+                # Check if buyer column exists in listings table
+                cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'listings' AND column_name = 'buyer'")
+                if not cur.fetchone():
+                    logging.info("Adding buyer column to listings table")
+                    cur.execute("ALTER TABLE listings ADD COLUMN buyer text")
+                    
+            except Exception as e:
+                logging.warning("Could not check/add new columns: %s", e)
+                
         else:
-            logging.info("Applying inline schema (fallback)")
-            cur.execute("""
-                create table if not exists vehicles (
-                  vin text primary key,
-                  year int, make text, model text, trim text
-                );
-                create table if not exists listings (
-                  id serial primary key,
-                  vin text references vehicles(vin),
-                  source text, price numeric, miles int, dom int,
-                  payload jsonb, created_at timestamptz default now()
-                );
-                create table if not exists scores (
-                  id serial primary key,
-                  vin text references vehicles(vin),
-                  score int check (score between 0 and 100),
-                  buy_max numeric,
-                  reason_codes text[],
-                  created_at timestamptz default now()
-                );
-                create or replace view v_latest_scores as
-                select distinct on (vin) vin, score, buy_max, reason_codes, created_at
-                from scores
-                order by vin, created_at desc;
-            """)
+            logging.error("Schema file not found at %s", schema_path)
+            raise FileNotFoundError(f"Schema file not found at {schema_path}")
         logging.info("Schema ensured OK")
     finally:
         cur.close()

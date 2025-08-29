@@ -50,14 +50,16 @@ def ingest_listings(rows: List[ListingIn]) -> List[ListingOut]:
                             payload_data["created_at"] = payload_data["created_at"].isoformat()
 
                     cur.execute("""
-                      insert into listings (vehicle_key, vin, source, price, miles, dom, payload)
-                      values (%s,%s,%s,%s,%s,%s,%s) returning id
-                    """, (vehicle_key, vin, norm["source"], norm["price"], norm["miles"], norm["dom"], json.dumps(payload_data)))
+                      insert into listings (vehicle_key, vin, source, price, miles, dom, location, buyer, payload)
+                      values (%s,%s,%s,%s,%s,%s,%s,%s,%s) returning id
+                    """, (vehicle_key, vin, norm["source"], norm["price"], norm["miles"], norm["dom"], 
+                          norm.get("location"), norm.get("buyer"), json.dumps(payload_data)))
                     new_id = str(cur.fetchone()[0])
                     out.append(ListingOut(
                         id=new_id, vehicle_key=vehicle_key, vin=vin, year=norm["year"], make=make, model=model,
                         trim=trim, miles=norm["miles"], price=norm["price"], dom=norm["dom"],
-                        source=norm["source"], radius=norm.get("radius", 25), reasonCodes=[],
+                        source=norm["source"], location=norm.get("location"), buyer=norm.get("buyer"),
+                        radius=norm.get("radius", 25), reasonCodes=[],
                         buyMax=None, score=None
                     ))
         finally:
@@ -71,7 +73,8 @@ def ingest_listings(rows: List[ListingIn]) -> List[ListingOut]:
         obj = ListingOut(
             id=lid, vin=vin, year=item.year, make=item.make.strip(), model=item.model.strip(),
             trim=item.trim.strip() if item.trim else None, miles=item.miles, price=item.price,
-            dom=item.dom, source=item.source, radius=item.radius or 25, reasonCodes=[], buyMax=None
+            dom=item.dom, source=item.source, location=None, buyer=None,
+            radius=item.radius or 25, reasonCodes=[], buyMax=None
         )
         _BY_ID[lid] = obj
         _IDS_BY_VIN.setdefault(vin, []).append(lid)
@@ -93,6 +96,7 @@ def list_listings(limit: int = 500) -> list[ListingOut]:
                     COALESCE(v.model, '') as model, 
                     v.trim,
                     l.miles, l.price, l.dom, l.source, 
+                    l.location, l.buyer,
                     COALESCE(s.score, 0) as score, 
                     s.buy_max, 
                     COALESCE(s.reason_codes, ARRAY[]::text[]) as reason_codes
@@ -107,10 +111,11 @@ def list_listings(limit: int = 500) -> list[ListingOut]:
                   LIMIT %s
                 """, (limit,))
                 out: list[ListingOut] = []
-                for rid, vehicle_key, vin, year, make, model, trim, miles, price, dom, source, score, buy_max, reason_codes in cur.fetchall():
+                for rid, vehicle_key, vin, year, make, model, trim, miles, price, dom, source, location, buyer, score, buy_max, reason_codes in cur.fetchall():
                     out.append(ListingOut(
                         id=str(rid), vehicle_key=vehicle_key, vin=vin or "", year=int(year), make=make, model=model, trim=trim,
                         miles=int(miles), price=float(price), dom=int(dom), source=source,
+                        location=location, buyer=buyer,
                         radius=25, reasonCodes=reason_codes or [],
                         buyMax=float(buy_max) if buy_max is not None else None,
                         score=int(score) if score is not None else None

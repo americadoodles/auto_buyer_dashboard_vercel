@@ -16,6 +16,8 @@ class ListingIn(BaseModel):
     radius: Optional[int] = 25
     reasonCodes: List[str] = []
     buyMax: Optional[float] = None
+    location: Optional[str] = None
+    buyer: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 class ListingOut(BaseModel):
@@ -34,6 +36,8 @@ class ListingOut(BaseModel):
     radius: Optional[int] = 25
     reasonCodes: List[str] = []
     buyMax: Optional[float] = None
+    location: Optional[str] = None
+    buyer: Optional[str] = None
 
 class ListingScoreIn(BaseModel):
     vehicle_key: str

@@ -1,5 +1,5 @@
 import React from "react";
-import { Gauge, DollarSign, Clock, ExternalLink } from "lucide-react";
+import { Gauge, DollarSign, Clock, ExternalLink, Bell } from "lucide-react";
 import { Listing } from "../../lib/types/listing";
 import { Badge } from "../atoms/Badge";
 import { formatCurrency, formatNumber } from "../../lib/utils/formatters";
@@ -25,13 +25,13 @@ export const TableRow: React.FC<TableRowProps> = ({ listing, onNotify }) => {
   const parsedSource = parseSourceUrl(listing.source);
   
   return (
-    <div className="grid grid-cols-12 items-center border-t px-4 py-3 text-sm hover:bg-slate-50 transition-colors">
+    <div className="grid grid-cols-14 items-center border-t px-4 py-3 text-sm hover:bg-slate-50 transition-colors">
       <div className="col-span-1">
         <Badge variant="default">{listing.score}</Badge>
       </div>
-      <div className="col-span-1 truncate text-xs text-slate-600">
+      {/* <div className="col-span-1 truncate text-xs text-slate-600">
         {listing.vehicle_key}
-      </div>
+      </div> */}
       <div className="col-span-1 truncate text-xs text-slate-600">
         {listing.vin}
       </div>
@@ -80,16 +80,24 @@ export const TableRow: React.FC<TableRowProps> = ({ listing, onNotify }) => {
           </span>
         )}
       </div>
+      <div className="col-span-1 truncate text-xs text-slate-600">
+        {listing.location}
+      </div>
+      <div className="col-span-1 truncate text-xs text-slate-600">
+        {listing.buyer}
+      </div>
       <div className="col-span-1">{listing.radius} mi</div>
       <div className="col-span-1 font-medium">
         {listing.buyMax != null ? formatCurrency(listing.buyMax) : "—"}
       </div>
       <div className="col-span-1 flex gap-2">
         <button
-          className="text-blue-600 hover:underline transition-colors"
+          className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-full transition-colors"
           onClick={() => onNotify(listing.vin)}
+          title="Notify about this listing"
+          aria-label="Notify about this listing"
         >
-          Notify
+          <Bell className="h-4 w-4" />
         </button>
       </div>
     </div>

@@ -15,6 +15,8 @@ create table if not exists listings (
   price numeric,
   miles int,
   dom int,
+  location text,
+  buyer text,
   payload jsonb,
   created_at timestamptz default now()
 );

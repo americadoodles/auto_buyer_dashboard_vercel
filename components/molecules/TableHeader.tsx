@@ -9,7 +9,7 @@ interface TableHeaderProps {
 
 const columns = [
   { key: 'score', label: 'Score' },
-  { key: 'vehicle_key', label: 'Vehicle Key' },
+  // { key: 'vehicle_key', label: 'Vehicle Key' },
   { key: 'vin', label: 'VIN' },
   { key: 'year', label: 'Year' },
   { key: 'make', label: 'Make' },
@@ -18,6 +18,8 @@ const columns = [
   { key: 'price', label: 'Price' },
   { key: 'dom', label: 'DOM' },
   { key: 'source', label: 'Source' },
+  { key: 'location', label: 'Location' },
+  { key: 'buyer', label: 'Buyer' },
   { key: 'radius', label: 'Radius' },
   { key: 'buyMax', label: 'Buy-Max' },
   { key: 'actions', label: '' }
@@ -25,7 +27,7 @@ const columns = [
 
 export const TableHeader: React.FC<TableHeaderProps> = ({ sort, onSort }) => {
   return (
-    <div className="grid grid-cols-12 bg-slate-50 px-4 py-2 text-xs font-medium uppercase tracking-wide text-slate-600">
+    <div className="grid grid-cols-14 bg-slate-50 px-4 py-2 text-xs font-medium uppercase tracking-wide text-slate-600">
       {columns.map(col => (
         <button
           key={col.key}

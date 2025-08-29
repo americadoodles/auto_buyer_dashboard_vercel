@@ -14,6 +14,8 @@ export type Listing = {
   radius: number;
   reasonCodes: string[];
   buyMax: number;
+  location: string;
+  buyer: string;
 };
 
 export type SortConfig = {

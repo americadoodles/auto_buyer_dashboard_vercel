@@ -49,16 +49,19 @@ def ingest_listings(rows: List[ListingIn]) -> List[ListingOut]:
                         if isinstance(payload_data["created_at"], datetime.datetime):
                             payload_data["created_at"] = payload_data["created_at"].isoformat()
 
+                    # Extract buyer from the id field of ListingIn and use it as the buyer field
+                    buyer_from_id = norm.get("id")
+
                     cur.execute("""
                       insert into listings (vehicle_key, vin, source, price, miles, dom, location, buyer, payload)
                       values (%s,%s,%s,%s,%s,%s,%s,%s,%s) returning id
                     """, (vehicle_key, vin, norm["source"], norm["price"], norm["miles"], norm["dom"], 
-                          norm.get("location"), norm.get("buyer"), json.dumps(payload_data)))
+                          norm.get("location"), buyer_from_id, json.dumps(payload_data)))
                     new_id = str(cur.fetchone()[0])
                     out.append(ListingOut(
                         id=new_id, vehicle_key=vehicle_key, vin=vin, year=norm["year"], make=make, model=model,
                         trim=trim, miles=norm["miles"], price=norm["price"], dom=norm["dom"],
-                        source=norm["source"], location=norm.get("location"), buyer=norm.get("buyer"),
+                        source=norm["source"], location=norm.get("location"), buyer=buyer_from_id,
                         radius=norm.get("radius", 25), reasonCodes=[],
                         buyMax=None, score=None
                     ))
@@ -73,7 +76,7 @@ def ingest_listings(rows: List[ListingIn]) -> List[ListingOut]:
         obj = ListingOut(
             id=lid, vin=vin, year=item.year, make=item.make.strip(), model=item.model.strip(),
             trim=item.trim.strip() if item.trim else None, miles=item.miles, price=item.price,
-            dom=item.dom, source=item.source, location=None, buyer=None,
+            dom=item.dom, source=item.source, location=None, buyer=item.id,
             radius=item.radius or 25, reasonCodes=[], buyMax=None
         )
         _BY_ID[lid] = obj

@@ -5,6 +5,8 @@ from .core.lifespan import lifespan
 
 from .routes.routes import ingest_router, listings_router, score_router, notify_router
 
+from .routes.users import user_router
+
 # ---- run-on-cold-start: ensure schema once ----
 import logging
 from .core.db import DB_ENABLED, apply_schema_if_needed
@@ -34,6 +36,7 @@ app.include_router(ingest_router,  prefix="/api")
 app.include_router(listings_router,  prefix="/api")
 app.include_router(score_router,  prefix="/api")
 app.include_router(notify_router,  prefix="/api")
+app.include_router(user_router, prefix="/api")
 
 @app.get("/api/healthz")
 def healthz():

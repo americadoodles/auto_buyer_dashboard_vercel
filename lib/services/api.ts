@@ -1,8 +1,10 @@
 import { Listing } from '../types/listing';
+import { User, UserSignupRequest, UserLoginRequest, UserConfirmRequest, UserRemoveRequest } from '../types/user';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? '/api';
 
 export class ApiService {
+
   static async checkHealth(): Promise<boolean> {
     try {
       const response = await fetch(`${BACKEND_URL}/healthz`);
@@ -10,6 +12,52 @@ export class ApiService {
     } catch {
       return false;
     }
+  }
+
+  static async signup(request: UserSignupRequest): Promise<User> {
+    const response = await fetch(`${BACKEND_URL}/users/signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request)
+    });
+    if (!response.ok) throw new Error('Signup failed');
+    return await response.json();
+  }
+
+  static async login(request: UserLoginRequest): Promise<User> {
+    const response = await fetch(`${BACKEND_URL}/users/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request)
+    });
+    if (!response.ok) throw new Error('Login failed');
+    return await response.json();
+  }
+
+  static async getSignupRequests(): Promise<UserSignupRequest[]> {
+    const response = await fetch(`${BACKEND_URL}/users/signup-requests`);
+    if (!response.ok) throw new Error('Failed to fetch signup requests');
+    return await response.json();
+  }
+
+  static async confirmSignup(request: UserConfirmRequest): Promise<any> {
+    const response = await fetch(`${BACKEND_URL}/users/confirm-signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request)
+    });
+    if (!response.ok) throw new Error('Failed to confirm signup');
+    return await response.json();
+  }
+
+  static async removeUser(request: UserRemoveRequest): Promise<any> {
+    const response = await fetch(`${BACKEND_URL}/users/remove-user`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request)
+    });
+    if (!response.ok) throw new Error('Failed to remove user');
+    return await response.json();
   }
 
   static async getListings(): Promise<Listing[]> {

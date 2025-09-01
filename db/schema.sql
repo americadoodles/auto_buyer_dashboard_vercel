@@ -42,3 +42,21 @@ create index if not exists idx_listings_vin on listings(vin);
 create index if not exists idx_scores_vehicle_key on scores(vehicle_key);
 create index if not exists idx_scores_vin on scores(vin);
 create index if not exists idx_vehicles_vin on vehicles(vin);
+
+-- User authentication and management
+create table if not exists users (
+  id uuid primary key default gen_random_uuid(),
+  email text unique not null,
+  hashed_password text not null,
+  role text not null check (role in ('admin', 'buyer', 'analyst')),
+  is_confirmed boolean not null default false,
+  created_at timestamptz default now()
+);
+
+-- Signup requests for buyers (pending admin confirmation)
+create table if not exists user_signup_requests (
+  id uuid primary key default gen_random_uuid(),
+  email text not null,
+  password text not null,
+  requested_at timestamptz default now()
+);

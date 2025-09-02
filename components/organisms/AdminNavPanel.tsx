@@ -24,7 +24,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   {
-    href: '/',
+    href: '/admin',
     label: 'Dashboard',
     icon: Home,
     description: 'Main dashboard view'
@@ -57,6 +57,13 @@ export const AdminNavPanel = () => {
     setIsExpanded(!isExpanded);
   };
 
+  const isActiveRoute = (href: string) => {
+    if (href === '/admin') {
+      return pathname === '/admin';
+    }
+    return pathname.startsWith(href);
+  };
+
   return (
     <nav 
       className={`h-full bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out ${
@@ -69,7 +76,7 @@ export const AdminNavPanel = () => {
           {isExpanded && (
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <Car className="w-5 h-5 text-white" />
+                <Car className="h-5 w-5 text-white" />
               </div>
               <span className="text-lg font-bold text-gray-900">Admin</span>
             </div>
@@ -92,7 +99,7 @@ export const AdminNavPanel = () => {
       <div className="flex-1 py-4">
         <ul className="space-y-1 px-2">
           {navItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = isActiveRoute(item.href);
             const Icon = item.icon;
             
             return (

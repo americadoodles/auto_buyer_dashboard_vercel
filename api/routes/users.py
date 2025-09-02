@@ -1,6 +1,6 @@
 from ..repositories.roles import get_role_by_name
 from fastapi import APIRouter, HTTPException, Depends
-from ..schemas.user import UserOut, UserSignupRequest, UserConfirmRequest, UserRemoveRequest, UserLoginRequest
+from ..schemas.user import UserOut, UserSignupRequest, UserConfirmRequest, UserRemoveRequest, UserLoginRequest, TokenResponse
 from ..repositories.users import (
     create_user,
     get_user_by_email,
@@ -11,11 +11,12 @@ from ..repositories.users import (
     list_users
 )
 import logging
+from ..core.auth import create_access_token, get_current_user, require_admin
 
 user_router = APIRouter(prefix="/users", tags=["users"])
 
 @user_router.get("/", response_model=list[UserOut])
-def get_users():
+def get_users(_: UserOut = Depends(require_admin)):
     return list_users()
 
 @user_router.post("/signup", response_model=UserOut)
@@ -54,7 +55,7 @@ def signup(request: UserSignupRequest):
         logging.error(f"Unexpected error during signup: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error during signup. Please try again later.")
 
-@user_router.post("/login", response_model=UserOut)
+@user_router.post("/login", response_model=TokenResponse)
 def login(request: UserLoginRequest):
     try:
         db_user = get_user_by_email(request.email)
@@ -67,7 +68,9 @@ def login(request: UserLoginRequest):
         logging.info(f"verify_password returned: {password_check}")
         if not password_check:
             raise HTTPException(status_code=401, detail="Invalid credentials.")
-        return UserOut(id=db_user.id, email=db_user.email, role_id=db_user.role_id, role=db_user.role, is_confirmed=db_user.is_confirmed)
+        user_out = UserOut(id=db_user.id, email=db_user.email, role_id=db_user.role_id, role=db_user.role, is_confirmed=db_user.is_confirmed)
+        token = create_access_token({"sub": db_user.email, "uid": str(db_user.id), "role": db_user.role})
+        return TokenResponse(access_token=token, user=user_out)
     except HTTPException:
         raise
     except Exception as e:
@@ -75,19 +78,24 @@ def login(request: UserLoginRequest):
         raise HTTPException(status_code=500, detail="Internal server error during login. Please try again later.")
 
 @user_router.get("/signup-requests", response_model=list[UserSignupRequest])
-def get_signup_requests():
+def get_signup_requests(_: UserOut = Depends(require_admin)):
     return list_signup_requests()
 
 @user_router.post("/confirm-signup")
-def confirm_signup(request: UserConfirmRequest):
+def confirm_signup(request: UserConfirmRequest, _: UserOut = Depends(require_admin)):
     success = confirm_user_signup(request)
     if not success:
         raise HTTPException(status_code=400, detail="Could not confirm user.")
     return {"ok": True}
 
 @user_router.post("/remove-user")
-def remove_user_api(request: UserRemoveRequest):
+def remove_user_api(request: UserRemoveRequest, _: UserOut = Depends(require_admin)):
     success = remove_user(request)
     if not success:
         raise HTTPException(status_code=400, detail="Could not remove user.")
     return {"ok": True}
+
+
+@user_router.get("/me", response_model=UserOut)
+def me(current_user: UserOut = Depends(get_current_user)):
+    return current_user

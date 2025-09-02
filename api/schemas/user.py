@@ -27,6 +27,13 @@ class UserLoginRequest(BaseModel):
     password: str
 
 
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: "UserOut"
+
+
+
 class UserSignupRequest(BaseModel):
     id: Optional[UUID] = None
     email: EmailStr

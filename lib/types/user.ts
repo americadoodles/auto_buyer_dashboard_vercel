@@ -18,6 +18,12 @@ export type UserLoginRequest = {
   password: string;
 };
 
+export type TokenResponse = {
+  access_token: string;
+  token_type: 'bearer';
+  user: User;
+};
+
 export type UserConfirmRequest = {
   user_id: string;
   confirm: boolean;

@@ -12,7 +12,7 @@ _IDS_BY_VIN: dict[str, list[str]] = {}
 # LISTINGS REPOSITORY
 # ============================================================================
 
-def ingest_listings(rows: List[ListingIn]) -> List[ListingOut]:
+def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> List[ListingOut]:
     out: list[ListingOut] = []
     if DB_ENABLED:
         conn = get_conn(); assert conn is not None
@@ -49,8 +49,8 @@ def ingest_listings(rows: List[ListingIn]) -> List[ListingOut]:
                         if isinstance(payload_data["created_at"], datetime.datetime):
                             payload_data["created_at"] = payload_data["created_at"].isoformat()
 
-                    # Extract buyer from the id field of ListingIn and use it as the buyer field
-                    buyer_from_id = norm.get("id")
+                    # Use buyer_id from authenticated context when provided
+                    buyer_from_id = buyer_id or norm.get("buyer") or None
 
                     cur.execute("""
                       insert into listings (vehicle_key, vin, source, price, miles, dom, location, buyer, payload)
@@ -76,7 +76,7 @@ def ingest_listings(rows: List[ListingIn]) -> List[ListingOut]:
         obj = ListingOut(
             id=lid, vin=vin, year=item.year, make=item.make.strip(), model=item.model.strip(),
             trim=item.trim.strip() if item.trim else None, miles=item.miles, price=item.price,
-            dom=item.dom, source=item.source, location=None, buyer=item.id,
+            dom=item.dom, source=item.source, location=None, buyer=buyer_id or item.buyer,
             radius=item.radius or 25, reasonCodes=[], buyMax=None
         )
         _BY_ID[lid] = obj

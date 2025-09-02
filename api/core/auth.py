@@ -81,7 +81,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserOut:
     if not db_user.is_confirmed:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User not confirmed")
 
-    return UserOut(id=db_user.id, email=db_user.email, role_id=db_user.role_id, role=db_user.role, is_confirmed=db_user.is_confirmed)
+    return UserOut(id=db_user.id, email=db_user.email, username=db_user.username, role_id=db_user.role_id, role=db_user.role, is_confirmed=db_user.is_confirmed)
 
 
 async def require_admin(current_user: UserOut = Depends(get_current_user)) -> UserOut:

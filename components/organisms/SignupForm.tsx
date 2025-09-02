@@ -10,7 +10,7 @@ export const SignupForm: React.FC = () => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  const handleSignup = async (email: string, password: string, confirmPassword?: string) => {
+  const handleSignup = async (email: string, password: string, confirmPassword?: string, username?: string) => {
     setLoading(true);
     setMessage('');
     setError('');
@@ -22,11 +22,9 @@ export const SignupForm: React.FC = () => {
     }
     
     try {
-      // Fetch buyer role_id from backend
-      const roles = await ApiService.getRoles();
-      const buyerRole = roles.find(r => r.name === 'buyer');
-      if (!buyerRole) throw new Error('Buyer role not found');
-      await ApiService.signup({ email, password, role_id: buyerRole.id });
+      if (!username) throw new Error('Username is required');
+      // No need to fetch roles; backend will default to buyer role when role_id is missing
+      await ApiService.signup({ email, username, password });
       setMessage('Signup request submitted successfully! Awaiting admin confirmation.');
     } catch (err: any) {
       setError(err.message || 'Signup failed');
@@ -54,7 +52,7 @@ export const SignupForm: React.FC = () => {
             <h2 className="text-xl font-semibold text-gray-900">Buyer Signup</h2>
           </div>
           
-          <AuthFields onSubmit={handleSignup} loading={loading} submitLabel="Create Account" showConfirmPassword />
+          <AuthFields onSubmit={handleSignup} loading={loading} submitLabel="Create Account" showConfirmPassword showUsername />
           
           {/* Messages */}
           {message && (

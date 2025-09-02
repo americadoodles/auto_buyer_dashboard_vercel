@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
 import { Input } from '../atoms/Input';
 import { FormButton } from '../atoms/FormButton';
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, User as UserIcon } from 'lucide-react';
 
 export interface AuthFieldsProps {
-  onSubmit: (email: string, password: string, confirmPassword?: string) => Promise<void>;
+  onSubmit: (email: string, password: string, confirmPassword?: string, username?: string) => Promise<void>;
   loading?: boolean;
   submitLabel: string;
   showConfirmPassword?: boolean;
+  showUsername?: boolean;
 }
 
-export const AuthFields: React.FC<AuthFieldsProps> = ({ onSubmit, loading, submitLabel, showConfirmPassword }) => {
+export const AuthFields: React.FC<AuthFieldsProps> = ({ onSubmit, loading, submitLabel, showConfirmPassword, showUsername }) => {
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -19,11 +21,9 @@ export const AuthFields: React.FC<AuthFieldsProps> = ({ onSubmit, loading, submi
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (showConfirmPassword) {
-      await onSubmit(email, password, confirmPassword);
-    } else {
-      await onSubmit(email, password);
-    }
+    const cp = showConfirmPassword ? confirmPassword : undefined;
+    const un = showUsername ? username : undefined;
+    await onSubmit(email, password, cp, un);
   };
 
   return (
@@ -47,6 +47,28 @@ export const AuthFields: React.FC<AuthFieldsProps> = ({ onSubmit, loading, submi
           />
         </div>
       </div>
+
+      {/* Username Field (optional) */}
+      {showUsername && (
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">
+            Username
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <UserIcon className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
+              type="text"
+              value={username}
+              onChange={e => setUsername(e.target.value)}
+              className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              placeholder="Choose a username"
+              required
+            />
+          </div>
+        </div>
+      )}
 
       {/* Password Field */}
       <div className="space-y-2">

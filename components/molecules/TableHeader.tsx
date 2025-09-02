@@ -19,7 +19,7 @@ const columns = [
   { key: 'dom', label: 'DOM' },
   { key: 'source', label: 'Source' },
   { key: 'location', label: 'Location' },
-  { key: 'buyer', label: 'Buyer' },
+  { key: 'buyer_username', label: 'Buyer' },
   { key: 'radius', label: 'Radius' },
   { key: 'buyMax', label: 'Buy-Max' },
   { key: 'actions', label: '' }

@@ -64,6 +64,7 @@ const SignupRequestsTable: React.FC = () => {
         <thead>
           <tr>
             <th>Email</th>
+            <th>Username</th>
             <th>Role</th>
             <th>Actions</th>
           </tr>
@@ -72,6 +73,7 @@ const SignupRequestsTable: React.FC = () => {
           {requests.map((req) => (
             <tr key={req.id || req.email}>
               <td>{req.email}</td>
+              <td>{req.username}</td>
               <td>{req.role_id === 1 ? "Admin" : req.role_id === 2 ? "Buyer" : req.role_id === 3 ? "Analyst" : req.role_id}</td>
               <td>
                 <button className="bg-green-600 text-white px-2 py-1 rounded mr-2" onClick={() => handleConfirm(req.id || '', true)} disabled={loading}>Confirm</button>

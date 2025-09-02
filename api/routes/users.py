@@ -29,22 +29,25 @@ def signup(request: UserSignupRequest):
             raise HTTPException(status_code=500, detail="System configuration error: buyer role not found. Please contact administrator.")
         
         buyer_role_id = buyer_role.id
-        if request.role_id != buyer_role_id:
+        if request.role_id is not None and request.role_id != buyer_role_id:
             raise HTTPException(status_code=403, detail="Only buyers can signup.")
         
         from uuid import uuid4
         signup_id = uuid4()
         
         # Try to add signup request, returns False if email exists
-        success = add_signup_request(UserSignupRequest(email=request.email, password=request.password, role_id=request.role_id))
+        # Ensure role_id defaults to buyer if not provided
+        desired_role_id = request.role_id if request.role_id is not None else buyer_role_id
+        success = add_signup_request(UserSignupRequest(email=request.email, username=request.username, password=request.password, role_id=desired_role_id))
         if not success:
             raise HTTPException(status_code=400, detail="Email already exists.")
         
         # Return proper UserOut response with role name
         return UserOut(
             id=signup_id,
-            email=request.email, 
-            role_id=request.role_id,
+            email=request.email,
+            username=request.username,
+            role_id=desired_role_id,
             role="buyer",  # We know it's a buyer role
             is_confirmed=False
         )
@@ -68,7 +71,7 @@ def login(request: UserLoginRequest):
         logging.info(f"verify_password returned: {password_check}")
         if not password_check:
             raise HTTPException(status_code=401, detail="Invalid credentials.")
-        user_out = UserOut(id=db_user.id, email=db_user.email, role_id=db_user.role_id, role=db_user.role, is_confirmed=db_user.is_confirmed)
+        user_out = UserOut(id=db_user.id, email=db_user.email, username=db_user.username, role_id=db_user.role_id, role=db_user.role, is_confirmed=db_user.is_confirmed)
         token = create_access_token({"sub": db_user.email, "uid": str(db_user.id), "role": db_user.role})
         return TokenResponse(access_token=token, user=user_out)
     except HTTPException:

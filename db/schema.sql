@@ -16,7 +16,7 @@ create table if not exists listings (
   miles int,
   dom int,
   location text,
-  buyer text,
+  buyer_id text,
   payload jsonb,
   created_at timestamptz default now()
 );
@@ -56,6 +56,7 @@ create table if not exists roles (
 create table if not exists users (
   id uuid primary key default gen_random_uuid(),
   email text unique not null,
+  username text not null,
   hashed_password text not null,
   role_id int references roles(id) not null,
   is_confirmed boolean not null default false,
@@ -66,6 +67,7 @@ create table if not exists users (
 create table if not exists user_signup_requests (
   id uuid primary key default gen_random_uuid(),
   email text not null,
+  username text not null,
   password text not null,
   role_id int references roles(id) not null,
   requested_at timestamptz default now()
@@ -73,6 +75,8 @@ create table if not exists user_signup_requests (
 
 -- Add indexes for user management
 create index if not exists idx_users_email on users(email);
+create index if not exists idx_users_username on users(username);
 create index if not exists idx_users_role_id on users(role_id);
 create index if not exists idx_signup_requests_email on user_signup_requests(email);
+create index if not exists idx_signup_requests_username on user_signup_requests(username);
 create index if not exists idx_signup_requests_role_id on user_signup_requests(role_id);

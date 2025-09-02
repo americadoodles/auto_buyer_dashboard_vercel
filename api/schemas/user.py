@@ -6,6 +6,7 @@ from uuid import UUID, uuid4
 
 class UserBase(BaseModel):
     email: EmailStr
+    username: str
     role_id: int
 
 
@@ -38,7 +39,8 @@ class UserSignupRequest(BaseModel):
     id: Optional[UUID] = None
     email: EmailStr
     password: str
-    role_id: int
+    username: str
+    role_id: Optional[int] = None
 
 class UserConfirmRequest(BaseModel):
     user_id: UUID

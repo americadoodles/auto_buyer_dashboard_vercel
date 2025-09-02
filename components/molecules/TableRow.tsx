@@ -84,7 +84,7 @@ export const TableRow: React.FC<TableRowProps> = ({ listing, onNotify }) => {
         {listing.location}
       </div>
       <div className="col-span-1 truncate text-xs text-slate-600">
-        {listing.buyer}
+        {listing.buyer_username || listing.buyer_id}
       </div>
       <div className="col-span-1">{listing.radius} mi</div>
       <div className="col-span-1 font-medium">

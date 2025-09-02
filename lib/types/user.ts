@@ -1,6 +1,7 @@
 export type User = {
   id: string;
   email: string;
+  username: string;
   role_id: number;
   role: string;  // Add role name field
   is_confirmed: boolean;
@@ -10,6 +11,7 @@ export type UserSignupRequest = {
   id?: string;
   email: string;
   password: string;
+  username: string;
   role_id?: number;
 };
 

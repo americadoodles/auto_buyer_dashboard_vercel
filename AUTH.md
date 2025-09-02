@@ -5,7 +5,7 @@ Authentication Overview
 - Login: POST `/api/users/login` with JSON `{ "email": "...", "password": "..." }`.
 - Response: `{ "access_token": "...", "token_type": "bearer", "user": { ... } }`.
 - Use header `Authorization: Bearer <token>` for protected routes.
-- Ingestion: POST `/api/ingest` requires a token and records `listings.buyer` as the authenticated user's id.
+- Ingestion: POST `/api/ingest` requires a token and records `listings.buyer_id` as the authenticated user's id.
 
 Environment
 

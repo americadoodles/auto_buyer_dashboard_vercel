@@ -1,3 +1,4 @@
+import logging
 import bcrypt
 from uuid import uuid4, UUID
 from typing import Optional, List
@@ -20,16 +21,23 @@ def create_user(user: UserCreate) -> Optional[UserOut]:
         with conn, conn.cursor() as cur:
             hashed = hash_password(user.password)
             user_id = uuid4()
-            cur.execute("""
-                insert into users (id, email, hashed_password, role_id, is_confirmed)
-                values (%s, %s, %s, %s, %s)
-                returning id, email, role_id, is_confirmed
-            """, (str(user_id), user.email, hashed, user.role_id, False))
+            try:
+                cur.execute("""
+                    insert into users (id, email, username, hashed_password, role_id, is_confirmed)
+                    values (%s, %s, %s, %s, %s, %s)
+                    returning id, email, username, role_id, is_confirmed
+                """, (str(user_id), user.email, user.username, hashed, user.role_id, False))
+            except Exception as log_exc:
+                logging.error(f"Failed to append UserOut: {log_exc}")
             row = cur.fetchone()
             # Get role name
-            cur.execute("SELECT name FROM roles WHERE id = %s", (row[2],))
+            role_idx = 3 if len(row) == 5 else 2
+            cur.execute("SELECT name FROM roles WHERE id = %s", (row[role_idx],))
             role_name = cur.fetchone()[0]
-            return UserOut(id=row[0], email=row[1], role_id=row[2], role=role_name, is_confirmed=row[3])
+            if len(row) == 5:
+                return UserOut(id=row[0], email=row[1], username=row[2], role_id=row[3], role=role_name, is_confirmed=row[4])
+            else:
+                return UserOut(id=row[0], email=row[1], username=user.username, role_id=row[2], role=role_name, is_confirmed=row[3])
     finally:
         conn.close()
 
@@ -40,7 +48,7 @@ def get_user_by_email(email: str) -> Optional[UserInDB]:
     try:
         with conn, conn.cursor() as cur:
             cur.execute("""
-                select u.id, u.email, u.hashed_password, u.role_id, u.is_confirmed, r.name as role_name 
+                select u.id, u.email, u.username, u.hashed_password, u.role_id, u.is_confirmed, r.name as role_name 
                 from users u 
                 left join roles r on u.role_id = r.id 
                 where u.email=%s
@@ -48,10 +56,10 @@ def get_user_by_email(email: str) -> Optional[UserInDB]:
             row = cur.fetchone()
             if row:
                     # Use the value directly if it's already boolean
-                    is_confirmed = bool(row[4])
+                    is_confirmed = bool(row[5])
                     import logging
-                    logging.info(f"Fetched user {row[1]}: is_confirmed raw value = {row[4]}, converted = {is_confirmed}")
-                    return UserInDB(id=row[0], email=row[1], hashed_password=row[2], role_id=row[3], role=row[5], is_confirmed=is_confirmed)
+                    logging.info(f"Fetched user {row[1]}: is_confirmed raw value = {row[5]}, converted = {is_confirmed}")
+                    return UserInDB(id=row[0], email=row[1], username=row[2], hashed_password=row[3], role_id=row[4], role=row[6], is_confirmed=is_confirmed)
     finally:
         conn.close()
     return None
@@ -62,8 +70,8 @@ def list_signup_requests() -> List[UserSignupRequest]:
     conn = get_conn(); assert conn is not None
     try:
         with conn, conn.cursor() as cur:
-            cur.execute("select id, email, password, role_id from user_signup_requests")
-            return [UserSignupRequest(id=row[0], email=row[1], password=row[2], role_id=row[3]) for row in cur.fetchall()]
+            cur.execute("select id, email, username, password, role_id from user_signup_requests")
+            return [UserSignupRequest(id=row[0], email=row[1], username=row[2], password=row[3], role_id=row[4]) for row in cur.fetchall()]
     finally:
         conn.close()
 
@@ -89,10 +97,13 @@ def add_signup_request(request: UserSignupRequest) -> bool:
             if not role_id:
                 buyer_role = get_role_by_name("buyer")
                 role_id = buyer_role.id if buyer_role else None
-            cur.execute("""
-                insert into user_signup_requests (id, email, password, role_id)
-                values (%s, %s, %s, %s)
-            """, (str(uuid4()), request.email, hashed, role_id))
+            try:
+                cur.execute("""
+                    insert into user_signup_requests (id, email, username, password, role_id)
+                    values (%s, %s, %s, %s, %s)
+                """, (str(uuid4()), request.email, request.username, hashed, role_id))
+            except Exception as log_exc:
+                logging.error(f"Failed to append UserOut: {log_exc}")
             return True
     finally:
         conn.close()
@@ -105,15 +116,23 @@ def confirm_user_signup(request: UserConfirmRequest) -> bool:
         with conn, conn.cursor() as cur:
             if request.confirm:
                 # Move from signup_requests to users
-                cur.execute("select email, password, role_id from user_signup_requests where id=%s", (str(request.user_id),))
+                cur.execute("select email, username, password, role_id from user_signup_requests where id=%s", (str(request.user_id),))
                 row = cur.fetchone()
                 if row:
-                    email, password, role_id = row
+                    if len(row) == 4:
+                        email, username, password, role_id = row
+                    else:
+                        # Legacy without username
+                        email, password, role_id = row
+                        username = email.split('@')[0]
                     # password is already hashed, do not hash again
-                    cur.execute("""
-                        insert into users (id, email, hashed_password, role_id, is_confirmed)
-                        values (%s, %s, %s, %s, %s)
-                    """, (str(request.user_id), email, password, role_id, True))
+                    try:
+                        cur.execute("""
+                            insert into users (id, email, username, hashed_password, role_id, is_confirmed)
+                            values (%s, %s, %s, %s, %s, %s)
+                        """, (str(request.user_id), email, username, password, role_id, True))
+                    except Exception as log_exc:
+                        logging.error(f"Failed to append UserOut: {log_exc}")
                 cur.execute("delete from user_signup_requests where id=%s", (str(request.user_id),))
                 return True
             else:
@@ -129,11 +148,11 @@ def list_users() -> List[UserOut]:
     try:
         with conn, conn.cursor() as cur:
             cur.execute("""
-                select u.id, u.email, u.role_id, u.is_confirmed, r.name as role_name 
+                select u.id, u.email, u.username, u.role_id, u.is_confirmed, r.name as role_name 
                 from users u 
                 left join roles r on u.role_id = r.id
             """)
-            return [UserOut(id=row[0], email=row[1], role_id=row[2], role=row[4], is_confirmed=row[3]) for row in cur.fetchall()]
+            return [UserOut(id=row[0], email=row[1], username=row[2], role_id=row[3], role=row[5], is_confirmed=row[4]) for row in cur.fetchall()]
     finally:
         conn.close()
 

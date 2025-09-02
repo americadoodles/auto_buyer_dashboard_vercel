@@ -89,18 +89,36 @@ def apply_schema_if_needed() -> None:
             
             # Check if we need to add new columns to existing tables
             try:
-                # Check if location column exists in listings table
+                # Ensure location column exists
                 cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'listings' AND column_name = 'location'")
                 if not cur.fetchone():
                     logging.info("Adding location column to listings table")
                     cur.execute("ALTER TABLE listings ADD COLUMN location text")
-                
-                # Check if buyer column exists in listings table
-                cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'listings' AND column_name = 'buyer'")
+
+                # Ensure buyer_id column exists; if not, add and backfill from legacy 'buyer'
+                cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'listings' AND column_name = 'buyer_id'")
                 if not cur.fetchone():
-                    logging.info("Adding buyer column to listings table")
-                    cur.execute("ALTER TABLE listings ADD COLUMN buyer text")
-                    
+                    logging.info("Adding buyer_id column to listings table")
+                    cur.execute("ALTER TABLE listings ADD COLUMN buyer_id text")
+                    # Backfill if legacy 'buyer' exists
+                    cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'listings' AND column_name = 'buyer'")
+                    if cur.fetchone():
+                        logging.info("Backfilling buyer_id from legacy buyer column")
+                        cur.execute("UPDATE listings SET buyer_id = buyer WHERE buyer_id IS NULL")
+
+                # Ensure username column exists in users
+                cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'username'")
+                if not cur.fetchone():
+                    logging.info("Adding username column to users table")
+                    cur.execute("ALTER TABLE users ADD COLUMN username text")
+                    # No backfill here; admin can update existing users manually
+
+                # Ensure username column exists in user_signup_requests
+                cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'user_signup_requests' AND column_name = 'username'")
+                if not cur.fetchone():
+                    logging.info("Adding username column to user_signup_requests table")
+                    cur.execute("ALTER TABLE user_signup_requests ADD COLUMN username text")
+
             except Exception as e:
                 logging.warning("Could not check/add new columns: %s", e)
             

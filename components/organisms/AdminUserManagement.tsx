@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { ApiService } from '../../lib/services/api';
 import { UserSignupRequest, UserConfirmRequest, UserRemoveRequest } from '../../lib/types/user';
 import { Role } from '../../lib/types/role';
+import { CheckCircle, XCircle, Trash2, UserPlus, AlertCircle } from 'lucide-react';
 
 export const AdminUserManagement: React.FC = () => {
   const [requests, setRequests] = useState<UserSignupRequest[]>([]);
@@ -48,7 +49,7 @@ export const AdminUserManagement: React.FC = () => {
     try {
       const req: UserConfirmRequest = { user_id, confirm };
       await ApiService.confirmSignup(req);
-      setMessage(confirm ? 'User confirmed.' : 'User declined.');
+      setMessage(confirm ? 'User confirmed successfully!' : 'User declined successfully!');
       fetchRequests();
     } catch (err: any) {
       setMessage(err.message || 'Action failed');
@@ -63,7 +64,7 @@ export const AdminUserManagement: React.FC = () => {
     try {
       const req: UserRemoveRequest = { user_id };
       await ApiService.removeUser(req);
-      setMessage('User removed.');
+      setMessage('User removed successfully!');
       fetchRequests();
     } catch (err: any) {
       setMessage(err.message || 'Remove failed');
@@ -73,33 +74,108 @@ export const AdminUserManagement: React.FC = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-4 border rounded shadow">
-      <h2 className="text-xl font-bold mb-4">User Signup Requests</h2>
-      {loading && <div>Loading...</div>}
-      {message && <div className="mb-2 text-green-700">{message}</div>}
-      <table className="w-full mb-4 border">
-        <thead>
-          <tr>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {requests.map((req) => (
-            <tr key={req.id || req.email}>
-              <td>{req.email}</td>
-              <td>{req.role_id ? getRoleName(req.role_id) : 'Unknown'}</td>
-              <td>
-                <button className="bg-green-600 text-white px-2 py-1 rounded mr-2" onClick={() => handleConfirm(req.id || '', true)} disabled={loading}>Confirm</button>
-                <button className="bg-red-600 text-white px-2 py-1 rounded mr-2" onClick={() => handleConfirm(req.id || '', false)} disabled={loading}>Decline</button>
-                <button className="bg-gray-600 text-white px-2 py-1 rounded" onClick={() => handleRemove(req.id || '')} disabled={loading}>Remove</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {!requests.length && <div>No pending requests.</div>}
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+      {/* Header */}
+      <div className="px-6 py-4 border-b border-gray-200">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+            <UserPlus className="w-5 h-5 text-blue-600" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Pending Signup Requests</h2>
+            <p className="text-sm text-gray-600">
+              {requests.length} request{requests.length !== 1 ? 's' : ''} awaiting review
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Message */}
+      {message && (
+        <div className="px-6 py-3 bg-green-50 border-b border-green-200">
+          <div className="flex items-center space-x-2">
+            <CheckCircle className="w-4 h-4 text-green-600" />
+            <span className="text-sm text-green-800">{message}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Content */}
+      <div className="p-6">
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        ) : requests.length > 0 ? (
+          <div className="overflow-hidden">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Email
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Role
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {requests.map((req) => (
+                  <tr key={req.id || req.email} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{req.email}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {req.role_id ? getRoleName(req.role_id) : 'Unknown'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => handleConfirm(req.id || '', true)}
+                          disabled={loading}
+                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <CheckCircle className="w-3 h-3 mr-1" />
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => handleConfirm(req.id || '', false)}
+                          disabled={loading}
+                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <XCircle className="w-3 h-3 mr-1" />
+                          Decline
+                        </button>
+                        <button
+                          onClick={() => handleRemove(req.id || '')}
+                          disabled={loading}
+                          className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <Trash2 className="w-3 h-3 mr-1" />
+                          Remove
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No pending requests</h3>
+            <p className="text-gray-500">All signup requests have been processed.</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

@@ -71,3 +71,38 @@ def schema_status():
         v = cur.fetchone()
     conn.close()
     return dict(zip(["vehicles","listings","scores","v_latest_scores"], v))
+
+# Check roles status for debugging
+@app.get("/api/_roles_status")
+def roles_status():
+    from .core.db import get_conn, DB_ENABLED
+    if not DB_ENABLED:
+        return {"ok": False, "reason": "DB disabled or no URL"}
+    
+    try:
+        conn = get_conn()
+        with conn.cursor() as cur:
+            # Check if roles table exists and has data
+            cur.execute("SELECT COUNT(*) FROM roles")
+            roles_count = cur.fetchone()[0]
+            
+            # Get all roles
+            cur.execute("SELECT id, name, description FROM roles ORDER BY id")
+            roles = [{"id": row[0], "name": row[1], "description": row[2]} for row in cur.fetchall()]
+            
+            # Check if buyer role exists specifically
+            cur.execute("SELECT id FROM roles WHERE name = 'buyer'")
+            buyer_role = cur.fetchone()
+            
+            return {
+                "ok": True,
+                "roles_count": roles_count,
+                "roles": roles,
+                "buyer_role_exists": buyer_role is not None,
+                "buyer_role_id": buyer_role[0] if buyer_role else None
+            }
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+    finally:
+        if 'conn' in locals():
+            conn.close()

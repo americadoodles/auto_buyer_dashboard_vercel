@@ -47,7 +47,11 @@ def get_user_by_email(email: str) -> Optional[UserInDB]:
             """, (email,))
             row = cur.fetchone()
             if row:
-                return UserInDB(id=row[0], email=row[1], hashed_password=row[2], role_id=row[3], role=row[5], is_confirmed=row[4])
+                    # Use the value directly if it's already boolean
+                    is_confirmed = bool(row[4])
+                    import logging
+                    logging.info(f"Fetched user {row[1]}: is_confirmed raw value = {row[4]}, converted = {is_confirmed}")
+                    return UserInDB(id=row[0], email=row[1], hashed_password=row[2], role_id=row[3], role=row[5], is_confirmed=is_confirmed)
     finally:
         conn.close()
     return None
@@ -105,11 +109,11 @@ def confirm_user_signup(request: UserConfirmRequest) -> bool:
                 row = cur.fetchone()
                 if row:
                     email, password, role_id = row
-                    hashed = hash_password(password)
+                    # password is already hashed, do not hash again
                     cur.execute("""
                         insert into users (id, email, hashed_password, role_id, is_confirmed)
                         values (%s, %s, %s, %s, %s)
-                    """, (str(request.user_id), email, hashed, role_id, True))
+                    """, (str(request.user_id), email, password, role_id, True))
                 cur.execute("delete from user_signup_requests where id=%s", (str(request.user_id),))
                 return True
             else:

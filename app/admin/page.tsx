@@ -9,76 +9,87 @@ import {
   TrendingUp, 
   Activity,
   BarChart3,
-  Settings
+  Settings,
+  List
 } from 'lucide-react';
 import { useAuth } from '../auth/useAuth';
 import { AdminLayout } from '../../components/templates/AdminLayout';
+import { useListings } from '../../lib/hooks/useListings';
 
 interface StatCard {
   title: string;
-  value: string;
+  value: string | number;
   description: string;
   icon: React.ComponentType<{ className?: string }>;
   color: string;
 }
 
-const statCards: StatCard[] = [
-  {
-    title: 'Total Users',
-    value: '24',
-    description: 'Active registered users',
-    icon: Users,
-    color: 'bg-blue-500'
-  },
-  {
-    title: 'Pending Requests',
-    value: '3',
-    description: 'Awaiting approval',
-    icon: UserPlus,
-    color: 'bg-yellow-500'
-  },
-  {
-    title: 'Active Roles',
-    value: '4',
-    description: 'User role types',
-    icon: Shield,
-    color: 'bg-green-500'
-  },
-  {
-    title: 'Total Listings',
-    value: '156',
-    description: 'Vehicle listings',
-    icon: Car,
-    color: 'bg-purple-500'
-  }
-];
-
-const quickActions = [
-  {
-    title: 'Review Signup Requests',
-    description: 'Approve or decline new user registrations',
-    href: '/admin/user-management/signup-requests',
-    icon: UserPlus,
-    color: 'bg-blue-100 text-blue-700'
-  },
-  {
-    title: 'Manage Users',
-    description: 'View and manage existing users',
-    href: '/admin/user-management',
-    icon: Users,
-    color: 'bg-green-100 text-green-700'
-  },
-  {
-    title: 'Configure Roles',
-    description: 'Set up user roles and permissions',
-    href: '/admin/user-management/roles',
-    icon: Shield,
-    color: 'bg-purple-100 text-purple-700'
-  }
-];
-
 export default function AdminDashboardPage() {
   const { user } = useAuth();
+  const { data: listings, backendOk } = useListings();
+
+  // Dynamic stats based on real data
+  const statCards: StatCard[] = [
+    {
+      title: 'Total Users',
+      value: '24', // This would come from user management API
+      description: 'Active registered users',
+      icon: Users,
+      color: 'bg-blue-500'
+    },
+    {
+      title: 'Pending Requests',
+      value: '3', // This would come from signup requests API
+      description: 'Awaiting approval',
+      icon: UserPlus,
+      color: 'bg-yellow-500'
+    },
+    {
+      title: 'Active Roles',
+      value: '4', // This would come from roles API
+      description: 'User role types',
+      icon: Shield,
+      color: 'bg-green-500'
+    },
+    {
+      title: 'Total Listings',
+      value: listings?.length || 0,
+      description: 'Vehicle listings',
+      icon: Car,
+      color: 'bg-purple-500'
+    }
+  ];
+
+  const quickActions = [
+    {
+      title: 'Vehicle Listings',
+      description: 'View and manage all vehicle listings',
+      href: '/admin/listings',
+      icon: List,
+      color: 'bg-green-100 text-green-700'
+    },
+    {
+      title: 'Review Signup Requests',
+      description: 'Approve or decline new user registrations',
+      href: '/admin/user-management/signup-requests',
+      icon: UserPlus,
+      color: 'bg-blue-100 text-blue-700'
+    },
+    {
+      title: 'Manage Users',
+      description: 'View and manage existing users',
+      href: '/admin/user-management',
+      icon: Users,
+      color: 'bg-green-100 text-green-700'
+    },
+    {
+      title: 'Configure Roles',
+      description: 'Set up user roles and permissions',
+      href: '/admin/user-management/roles',
+      icon: Shield,
+      color: 'bg-purple-100 text-purple-700'
+    }
+  ];
 
   return (
     <AdminLayout>
@@ -90,6 +101,24 @@ export default function AdminDashboardPage() {
             Welcome back, {user?.email}. Manage your application from here.
           </p>
         </div>
+
+        {/* Backend Status */}
+        {backendOk === false && (
+          <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-900">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium">
+                  Backend not reachable. Some features may be limited.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -115,7 +144,7 @@ export default function AdminDashboardPage() {
         {/* Quick Actions */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {quickActions.map((action, index) => {
               const Icon = action.icon;
               return (

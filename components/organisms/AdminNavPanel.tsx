@@ -12,7 +12,8 @@ import {
   Home,
   Settings,
   BarChart3,
-  Car
+  Car,
+  List
 } from 'lucide-react';
 
 interface NavItem {
@@ -28,6 +29,12 @@ const navItems: NavItem[] = [
     label: 'Dashboard',
     icon: Home,
     description: 'Main dashboard view'
+  },
+  {
+    href: '/admin/listings',
+    label: 'Vehicle Listings',
+    icon: List,
+    description: 'View and manage vehicle listings'
   },
   {
     href: '/admin/user-management/signup-requests',

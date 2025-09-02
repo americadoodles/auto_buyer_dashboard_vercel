@@ -5,9 +5,20 @@ export const AdminNavPanel = () => (
     <h2 className="text-lg font-bold mb-6">Admin Panel</h2>
     <ul className="space-y-4">
       <li>
-        <Link href="/admin/user-management" className="text-blue-700 hover:underline">User Management</Link>
+        <Link href="/admin/user-management/signup-requests" className="text-blue-700 hover:underline">
+          Signup Requests
+        </Link>
       </li>
-      {/* Add more admin navigation items here */}
+      <li>
+        <Link href="/admin/user-management" className="text-blue-700 hover:underline">
+          Current Users
+        </Link>
+      </li>
+      <li>
+        <Link href="/admin/user-management/roles" className="text-blue-700 hover:underline">
+          Role Management
+        </Link>
+      </li>
     </ul>
   </nav>
 );

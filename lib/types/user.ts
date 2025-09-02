@@ -1,7 +1,7 @@
 export type User = {
   id: string;
   email: string;
-  role: 'admin' | 'buyer' | 'analyst';
+  role_id: number;
   is_confirmed: boolean;
 };
 
@@ -9,7 +9,7 @@ export type UserSignupRequest = {
   id?: string;
   email: string;
   password: string;
-  role?: 'buyer';
+  role_id?: number;
 };
 
 export type UserLoginRequest = {

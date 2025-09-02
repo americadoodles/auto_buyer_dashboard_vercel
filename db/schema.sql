@@ -44,11 +44,20 @@ create index if not exists idx_scores_vin on scores(vin);
 create index if not exists idx_vehicles_vin on vehicles(vin);
 
 -- User authentication and management
+
+-- Roles table for scalable role management
+create table if not exists roles (
+  id serial primary key,
+  name text unique not null,
+  description text
+);
+
+-- Users table with role_id foreign key
 create table if not exists users (
   id uuid primary key default gen_random_uuid(),
   email text unique not null,
   hashed_password text not null,
-  role text not null check (role in ('admin', 'buyer', 'analyst')),
+  role_id int references roles(id),
   is_confirmed boolean not null default false,
   created_at timestamptz default now()
 );

@@ -1,9 +1,44 @@
+ 
 import { Listing } from '../types/listing';
 import { User, UserSignupRequest, UserLoginRequest, UserConfirmRequest, UserRemoveRequest } from '../types/user';
+import { Role, RoleCreate, RoleEdit } from '../types/role';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? '/api';
 
 export class ApiService {
+  static async getRoles(): Promise<Role[]> {
+    const response = await fetch(`${BACKEND_URL}/roles`);
+    if (!response.ok) throw new Error('Failed to fetch roles');
+    return await response.json();
+  }
+
+  static async createRole(role: RoleCreate): Promise<Role> {
+    const response = await fetch(`${BACKEND_URL}/roles`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(role)
+    });
+    if (!response.ok) throw new Error('Failed to create role');
+    return await response.json();
+  }
+
+  static async updateRole(role: RoleEdit): Promise<boolean> {
+    const response = await fetch(`${BACKEND_URL}/roles`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(role)
+    });
+    if (!response.ok) throw new Error('Failed to update role');
+    return await response.json();
+  }
+
+  static async deleteRole(roleId: number): Promise<boolean> {
+    const response = await fetch(`${BACKEND_URL}/roles/${roleId}`, {
+      method: 'DELETE'
+    });
+    if (!response.ok) throw new Error('Failed to delete role');
+    return await response.json();
+  }
 
   static async checkHealth(): Promise<boolean> {
     try {
@@ -34,9 +69,16 @@ export class ApiService {
     return await response.json();
   }
 
+
   static async getSignupRequests(): Promise<UserSignupRequest[]> {
     const response = await fetch(`${BACKEND_URL}/users/signup-requests`);
     if (!response.ok) throw new Error('Failed to fetch signup requests');
+    return await response.json();
+  }
+
+  static async getUsers(): Promise<User[]> {
+    const response = await fetch(`${BACKEND_URL}/users`);
+    if (!response.ok) throw new Error('Failed to fetch users');
     return await response.json();
   }
 

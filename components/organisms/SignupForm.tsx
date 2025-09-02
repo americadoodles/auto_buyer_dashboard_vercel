@@ -18,7 +18,11 @@ export const SignupForm: React.FC = () => {
       return;
     }
     try {
-      await ApiService.signup({ email, password, role: 'buyer' });
+      // Fetch buyer role_id from backend
+      const roles = await ApiService.getRoles();
+      const buyerRole = roles.find(r => r.name === 'buyer');
+      if (!buyerRole) throw new Error('Buyer role not found');
+      await ApiService.signup({ email, password, role_id: buyerRole.id });
       setMessage('Signup request submitted! Await admin confirmation.');
     } catch (err: any) {
       setMessage(err.message || 'Signup failed');

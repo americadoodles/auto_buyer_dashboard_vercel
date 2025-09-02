@@ -67,6 +67,49 @@ export default function AdminListingsPage() {
           <KpiGrid />
         </div>
 
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center">
+              <div className="p-3 rounded-lg bg-blue-100">
+                <TrendingUp className="w-6 h-6 text-blue-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Listings</p>
+                <p className="text-2xl font-bold text-gray-900">{data.length}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center">
+              <div className="p-3 rounded-lg bg-green-100">
+                <Car className="w-6 h-6 text-green-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Scored Listings</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {data.filter(l => l.score !== undefined).length}
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center">
+              <div className="p-3 rounded-lg bg-purple-100">
+                <AlertTriangle className="w-6 h-6 text-purple-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Pending Score</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {data.filter(l => l.score === undefined).length}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Backend Status */}
         {backendOk === false && (
           <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-900">
@@ -117,49 +160,6 @@ export default function AdminListingsPage() {
               onPageChange={setCurrentPage}
               onRowsPerPageChange={setRowsPerPage}
             />
-          </div>
-        </div>
-
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center">
-              <div className="p-3 rounded-lg bg-blue-100">
-                <TrendingUp className="w-6 h-6 text-blue-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Listings</p>
-                <p className="text-2xl font-bold text-gray-900">{data.length}</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center">
-              <div className="p-3 rounded-lg bg-green-100">
-                <Car className="w-6 h-6 text-green-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Scored Listings</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {data.filter(l => l.score !== undefined).length}
-                </p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center">
-              <div className="p-3 rounded-lg bg-purple-100">
-                <AlertTriangle className="w-6 h-6 text-purple-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Pending Score</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {data.filter(l => l.score === undefined).length}
-                </p>
-              </div>
-            </div>
           </div>
         </div>
       </div>

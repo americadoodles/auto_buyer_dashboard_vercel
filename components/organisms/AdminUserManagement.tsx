@@ -3,9 +3,11 @@
 import React, { useEffect, useState } from 'react';
 import { ApiService } from '../../lib/services/api';
 import { UserSignupRequest, UserConfirmRequest, UserRemoveRequest } from '../../lib/types/user';
+import { Role } from '../../lib/types/role';
 
 export const AdminUserManagement: React.FC = () => {
   const [requests, setRequests] = useState<UserSignupRequest[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -21,9 +23,24 @@ export const AdminUserManagement: React.FC = () => {
     }
   };
 
+  const fetchRoles = async () => {
+    try {
+      const rolesData = await ApiService.getRoles();
+      setRoles(rolesData);
+    } catch (err: any) {
+      console.error('Failed to fetch roles:', err);
+    }
+  };
+
   useEffect(() => {
     fetchRequests();
+    fetchRoles();
   }, []);
+
+  const getRoleName = (roleId: number) => {
+    const role = roles.find(r => r.id === roleId);
+    return role ? role.name : `Role ${roleId}`;
+  };
 
   const handleConfirm = async (user_id: string, confirm: boolean) => {
     setLoading(true);
@@ -72,7 +89,7 @@ export const AdminUserManagement: React.FC = () => {
           {requests.map((req) => (
             <tr key={req.id || req.email}>
               <td>{req.email}</td>
-              <td>{req.role}</td>
+              <td>{req.role_id ? getRoleName(req.role_id) : 'Unknown'}</td>
               <td>
                 <button className="bg-green-600 text-white px-2 py-1 rounded mr-2" onClick={() => handleConfirm(req.id || '', true)} disabled={loading}>Confirm</button>
                 <button className="bg-red-600 text-white px-2 py-1 rounded mr-2" onClick={() => handleConfirm(req.id || '', false)} disabled={loading}>Decline</button>

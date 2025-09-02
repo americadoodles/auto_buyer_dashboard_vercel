@@ -57,7 +57,7 @@ create table if not exists users (
   id uuid primary key default gen_random_uuid(),
   email text unique not null,
   hashed_password text not null,
-  role_id int references roles(id),
+  role_id int references roles(id) not null,
   is_confirmed boolean not null default false,
   created_at timestamptz default now()
 );
@@ -67,5 +67,12 @@ create table if not exists user_signup_requests (
   id uuid primary key default gen_random_uuid(),
   email text not null,
   password text not null,
+  role_id int references roles(id) not null,
   requested_at timestamptz default now()
 );
+
+-- Add indexes for user management
+create index if not exists idx_users_email on users(email);
+create index if not exists idx_users_role_id on users(role_id);
+create index if not exists idx_signup_requests_email on user_signup_requests(email);
+create index if not exists idx_signup_requests_role_id on user_signup_requests(role_id);

@@ -26,7 +26,10 @@ def create_user(user: UserCreate) -> Optional[UserOut]:
                 returning id, email, role_id, is_confirmed
             """, (str(user_id), user.email, hashed, user.role_id, False))
             row = cur.fetchone()
-            return UserOut(id=row[0], email=row[1], role_id=row[2], is_confirmed=row[3])
+            # Get role name
+            cur.execute("SELECT name FROM roles WHERE id = %s", (row[2],))
+            role_name = cur.fetchone()[0]
+            return UserOut(id=row[0], email=row[1], role_id=row[2], role=role_name, is_confirmed=row[3])
     finally:
         conn.close()
 
@@ -37,11 +40,14 @@ def get_user_by_email(email: str) -> Optional[UserInDB]:
     try:
         with conn, conn.cursor() as cur:
             cur.execute("""
-                select id, email, hashed_password, role_id, is_confirmed from users where email=%s
+                select u.id, u.email, u.hashed_password, u.role_id, u.is_confirmed, r.name as role_name 
+                from users u 
+                left join roles r on u.role_id = r.id 
+                where u.email=%s
             """, (email,))
             row = cur.fetchone()
             if row:
-                return UserInDB(id=row[0], email=row[1], hashed_password=row[2], role_id=row[3], is_confirmed=row[4])
+                return UserInDB(id=row[0], email=row[1], hashed_password=row[2], role_id=row[3], role=row[5], is_confirmed=row[4])
     finally:
         conn.close()
     return None
@@ -73,7 +79,6 @@ def add_signup_request(request: UserSignupRequest) -> bool:
             if cur.fetchone():
                 return False
             # Hash password before storing
-            from .users import hash_password
             hashed = hash_password(request.password)
             # Ensure role_id is set
             role_id = request.role_id
@@ -96,15 +101,15 @@ def confirm_user_signup(request: UserConfirmRequest) -> bool:
         with conn, conn.cursor() as cur:
             if request.confirm:
                 # Move from signup_requests to users
-                cur.execute("select email, password from user_signup_requests where id=%s", (str(request.user_id),))
+                cur.execute("select email, password, role_id from user_signup_requests where id=%s", (str(request.user_id),))
                 row = cur.fetchone()
                 if row:
-                    email, password = row
+                    email, password, role_id = row
                     hashed = hash_password(password)
                     cur.execute("""
-                        insert into users (id, email, hashed_password, role, is_confirmed)
+                        insert into users (id, email, hashed_password, role_id, is_confirmed)
                         values (%s, %s, %s, %s, %s)
-                    """, (str(request.user_id), email, hashed, 'buyer', True))
+                    """, (str(request.user_id), email, hashed, role_id, True))
                 cur.execute("delete from user_signup_requests where id=%s", (str(request.user_id),))
                 return True
             else:
@@ -112,14 +117,19 @@ def confirm_user_signup(request: UserConfirmRequest) -> bool:
                 return True
     finally:
         conn.close()
+
 def list_users() -> List[UserOut]:
     if not DB_ENABLED:
         return []
     conn = get_conn(); assert conn is not None
     try:
         with conn, conn.cursor() as cur:
-            cur.execute("select u.id, u.email, u.role_id, u.is_confirmed, r.name as role_name from users u left join roles r on u.role_id = r.id")
-            return [UserOut(id=row[0], email=row[1], role_id=row[2], is_confirmed=row[3]) for row in cur.fetchall()]
+            cur.execute("""
+                select u.id, u.email, u.role_id, u.is_confirmed, r.name as role_name 
+                from users u 
+                left join roles r on u.role_id = r.id
+            """)
+            return [UserOut(id=row[0], email=row[1], role_id=row[2], role=row[4], is_confirmed=row[3]) for row in cur.fetchall()]
     finally:
         conn.close()
 

@@ -58,7 +58,7 @@ const CurrentUsersTable: React.FC = () => {
           {users.map((user) => (
             <tr key={user.id}>
               <td>{user.email}</td>
-              <td>{user.role_id === 1 ? "Admin" : user.role_id === 2 ? "Buyer" : user.role_id === 3 ? "Analyst" : user.role_id}</td>
+              <td>{user.role}</td>
               <td>{user.is_confirmed ? "Yes" : "No"}</td>
               <td>
                 <button className="bg-gray-600 text-white px-2 py-1 rounded" onClick={() => handleRemove(user.id)} disabled={loading}>Remove</button>

@@ -2,6 +2,7 @@ export type User = {
   id: string;
   email: string;
   role_id: number;
+  role: string;  // Add role name field
   is_confirmed: boolean;
 };
 

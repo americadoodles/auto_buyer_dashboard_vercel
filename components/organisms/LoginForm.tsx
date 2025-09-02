@@ -20,14 +20,16 @@ export const LoginForm: React.FC = () => {
       const user = await ApiService.login({ email, password });
       setMessage('Login successful!');
       login(user); // Persist user info and update global state
+      
+      // Route based on role
       if (user.role === 'admin') {
         router.replace('/'); // Admin dashboard
       } else if (user.role === 'buyer') {
-        router.replace('/buyer'); // Buyer page (implement this route)
+        router.replace('/'); // Buyer dashboard (same as main for now)
       } else if (user.role === 'analyst') {
-        router.replace('/analyst'); // Analyst page (implement this route)
+        router.replace('/'); // Analyst dashboard (same as main for now)
       } else {
-        router.replace('/');
+        router.replace('/'); // Default to main dashboard
       }
     } catch (err: any) {
       setMessage(err.message || 'Login failed');

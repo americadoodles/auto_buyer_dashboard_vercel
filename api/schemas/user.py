@@ -15,6 +15,7 @@ class UserCreate(UserBase):
 
 class UserOut(UserBase):
     id: UUID
+    role: str  # Add role name field
     is_confirmed: bool
 
 

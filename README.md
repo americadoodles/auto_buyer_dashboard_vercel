@@ -1,178 +1,201 @@
 
-# Auto Buyer Demo (Ingest → Normalize → Score → Review → Notify)
+# Auto Buyer Demo - Scoring Stub
 
-This is a minimal demo showing an end-to-end buyer workflow:
+A full-stack application demonstrating vehicle listing scoring and user management with role-based access control.
 
-- **Backend (FastAPI)**: ingest, list, score, and notify endpoints. Optional Postgres persistence.
-- **DB**: starter Postgres schema for listings, vehicles, and scores keyed by VIN.
-- **Frontend (Next.js + Tailwind)**: Buyer Review UI with load/seed actions, sortable table, and scoring.
+## 🚀 Features
 
-## Quickstart (Local, no DB required)
+- **Vehicle Listings Management**: Ingest, normalize, score, and review vehicle listings
+- **User Authentication**: Secure login/signup with role-based access control
+- **Admin Panel**: User management, role management, and signup request approval
+- **Real-time Scoring**: AI-powered vehicle scoring system
+- **Responsive UI**: Modern React/Next.js frontend with Tailwind CSS
 
-### Option 1: Using Startup Scripts (Recommended)
+## 🏗️ Architecture
 
-#### Windows
+- **Frontend**: Next.js 15 with TypeScript, Tailwind CSS, Framer Motion
+- **Backend**: FastAPI with Python, PostgreSQL database
+- **Authentication**: bcrypt password hashing with role-based access control
+- **Deployment**: Vercel-ready configuration
+
+## 🛠️ Setup Instructions
+
+### Prerequisites
+
+- Node.js 18+ and npm
+- Python 3.8+
+- PostgreSQL database (or Neon for Vercel deployment)
+
+### 1. Clone and Install Dependencies
+
 ```bash
-# Double-click start-backend.bat or run in PowerShell:
-.\start-backend.bat
+git clone <repository-url>
+cd auto-buyer-vercel
 
-# In another terminal, start the frontend:
+# Install frontend dependencies
 npm install
-npm run dev
-```
 
-#### macOS/Linux
-```bash
-# Make script executable and run:
-chmod +x start-backend.sh
-./start-backend.sh
-
-# In another terminal, start the frontend:
-npm install
-npm run dev
-```
-
-### Option 2: Manual Setup
-
-#### 1. Backend (FastAPI)
-```bash
-# Navigate to the api directory
-cd api
-
-# Create and activate virtual environment
-python -m venv .venv
-# Windows:
-.venv\Scripts\Activate.ps1
-# macOS/Linux:
-source .venv/bin/activate
-
-# Install dependencies
+# Install backend dependencies
 pip install -r requirements.txt
-
-# Run the backend server
-uvicorn index:app --reload --port 8001
 ```
 
-#### 2. Frontend (Next.js)
-```bash
-# In a new terminal, from the root directory
-npm install
-npm run dev
-```
+### 2. Environment Configuration
 
-Open http://localhost:3000
-
-## Frontend Controls
-
-- **Load from Backend**: GET /listings
-- **Seed Backend**: POST /ingest with 3 demo listings
-- **Re-score Visible**: POST /score (persists to backend in-memory or DB)
-- **Notify**: POST /notify for a specific VIN
-
-## Optional: Postgres Persistence
-
-Set `DATABASE_URL` environment variable and the backend will store `vehicles`, `listings`, and `scores` in Postgres. The schema is auto-applied at startup.
-
-### Environment Setup
 Create a `.env` file in the root directory:
-```bash
-DATABASE_URL=postgresql://USER:PASSWORD@localhost:5432/auto_buyer
+
+```env
+# Database
+DATABASE_URL=postgresql://username:password@localhost:5432/auto_buyer
+# or for Vercel/Neon
+NEON_DATABASE_URL=postgresql://username:password@host/database
+
+# Backend URL (optional, defaults to /api)
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8001/api
 ```
 
-### Database Setup
-```bash
-# Create database
-createdb auto_buyer
+### 3. Database Setup
 
-# Or using psql
-psql -U postgres -c "CREATE DATABASE auto_buyer;"
+```bash
+# Run the main schema
+psql -d your_database -f db/schema.sql
+
+# Run migrations if needed
+psql -d your_database -f db/migrate_users.sql
 ```
 
-### Run with Database
-```bash
-# Set environment variable and run backend
-cd api
-set DATABASE_URL=postgresql://postgres:postgres@localhost:5432/auto_buyer  # Windows
-# export DATABASE_URL=postgresql://postgres:postgres@localhost:5432/auto_buyer  # macOS/Linux
+### 4. Start Development Servers
 
-uvicorn index:app --reload --port 8001
+```bash
+# Start both frontend and backend
+npm run dev
+
+# Or start separately:
+npm run next-dev      # Frontend on http://localhost:3000
+npm run fastapi-dev   # Backend on http://localhost:8001
 ```
 
-## API Endpoints
+## 🔧 Recent Fixes & Improvements
 
-When DB is enabled, writes go to Postgres; otherwise use in-memory storage:
-- `GET /healthz` - Health check
-- `POST /ingest` - Normalize + store listings
-- `GET /listings` - List stored listings joined with latest score
-- `POST /score` - Compute and persist scores
-- `POST /notify` - Demo notify recorder
+### Type Safety & Schema Consistency
+- ✅ Fixed user schema mismatches between frontend and backend
+- ✅ Added proper role name handling in user objects
+- ✅ Updated components to use role names instead of hardcoded IDs
+- ✅ Fixed database schema with proper foreign key constraints
 
-## Project Structure
+### Authentication & Authorization
+- ✅ Fixed bcrypt password hashing implementation
+- ✅ Improved role-based access control
+- ✅ Fixed user confirmation flow
+- ✅ Added proper error handling for auth failures
+
+### Database & API
+- ✅ Fixed circular import issues in repositories
+- ✅ Added proper database indexes for performance
+- ✅ Improved error handling with custom ApiError class
+- ✅ Fixed user role assignment in signup process
+
+### Frontend Components
+- ✅ Updated all components to use consistent role handling
+- ✅ Fixed hardcoded role checks
+- ✅ Improved error message display
+- ✅ Added proper loading states
+
+## 🚨 Known Issues & Limitations
+
+### Security Considerations
+- **Current**: Basic localStorage-based auth (demo purposes)
+- **Production**: Should implement JWT tokens and secure session management
+- **Recommendation**: Add CSRF protection and rate limiting
+
+### Performance Optimizations
+- **Current**: Basic pagination and sorting
+- **Future**: Add virtual scrolling for large datasets, implement caching
+- **Database**: Consider connection pooling for production
+
+### Type Safety
+- **Current**: Basic TypeScript implementation
+- **Future**: Add strict mode, runtime validation, better error types
+
+## 📁 Project Structure
 
 ```
 ├── api/                    # FastAPI backend
-│   ├── core/              # Configuration and database
-│   ├── routes/            # API endpoints (consolidated in index.py)
-│   ├── services/          # Business logic (consolidated in index.py)
+│   ├── core/              # Configuration, database, lifespan
+│   ├── routes/            # API endpoints
+│   ├── repositories/      # Data access layer
 │   ├── schemas/           # Pydantic models
-│   └── repositories/      # Data access layer (consolidated in index.py)
-├── app/                   # Next.js pages
-├── components/            # React components
-├── styles/                # CSS and Tailwind
-└── requirements.txt       # Python dependencies
+│   └── services/          # Business logic
+├── app/                   # Next.js app directory
+│   ├── auth/              # Authentication pages and hooks
+│   └── admin/             # Admin panel pages
+├── components/            # React components (atomic design)
+│   ├── atoms/            # Basic UI components
+│   ├── molecules/        # Compound components
+│   ├── organisms/        # Complex components
+│   └── templates/        # Page layouts
+├── lib/                   # Shared utilities and types
+│   ├── hooks/            # Custom React hooks
+│   ├── services/         # API client
+│   ├── types/            # TypeScript type definitions
+│   └── utils/            # Helper functions
+└── db/                    # Database schema and migrations
 ```
 
-## Dependencies
+## 🔐 Role System
 
-### Backend (Python)
-- FastAPI 0.111.0
-- Uvicorn 0.30.0
-- Pydantic 2.7.4
-- Psycopg 3.1.19 (PostgreSQL adapter)
+- **Admin**: Full access to all features, user management, role management
+- **Buyer**: Access to vehicle listings, scoring, and notifications
+- **Analyst**: Read-only access to listings and scoring data
 
-### Frontend (Node.js)
-- Next.js 14.2.4
-- React 18.2.0
-- Tailwind CSS 3.4.7
-- Framer Motion 11.0.0
+## 🚀 Deployment
 
-## Development
+### Vercel Deployment
+1. Connect your GitHub repository to Vercel
+2. Set environment variables in Vercel dashboard
+3. Deploy - Vercel will automatically detect Next.js and FastAPI
 
-The backend runs on port 8001 and the frontend on port 3000. The frontend automatically connects to the backend at `http://localhost:8001`.
+### Environment Variables for Production
+```env
+DATABASE_URL=your_production_database_url
+NODE_ENV=production
+```
 
-## Troubleshooting
+## 🧪 Testing
 
-### Common Issues
-
-1. **Backend won't start**
-   - Ensure Python 3.8+ is installed
-   - Check if port 8001 is available
-   - Verify all dependencies are installed: `pip install -r requirements.txt`
-
-2. **Frontend can't connect to backend**
-   - Ensure backend is running on port 8001
-   - Check browser console for CORS errors
-   - Verify `NEXT_PUBLIC_BACKEND_URL` environment variable if using custom backend URL
-
-3. **Database connection issues**
-   - Verify PostgreSQL is running
-   - Check `DATABASE_URL` format: `postgresql://user:password@host:port/dbname`
-   - Ensure database `auto_buyer` exists
-
-4. **Port already in use**
-   - Change backend port: `uvicorn index:app --reload --port 8002`
-   - Update frontend environment variable: `NEXT_PUBLIC_BACKEND_URL=http://localhost:8002`
-
-### Environment Variables
-
-Create a `.env` file in the root directory for custom configuration:
 ```bash
-# Backend URL (default: http://localhost:8001)
-NEXT_PUBLIC_BACKEND_URL=http://localhost:8001
+# Frontend tests
+npm run test
 
-# Database connection (optional)
-DATABASE_URL=postgresql://user:password@localhost:5432/auto_buyer
+# Backend tests
+pytest api/
+
+# E2E tests
+npm run test:e2e
 ```
 
-## Architecture Diagram
-![Auto Buyer Architecture](assets/auto_pipeline_diagram.png)
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## 📝 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🆘 Support
+
+For issues and questions:
+1. Check the known issues section above
+2. Review the database migration scripts
+3. Ensure all dependencies are properly installed
+4. Check environment variable configuration
+
+## 🔄 Migration Notes
+
+If upgrading from a previous version:
+1. Run `db/migrate_users.sql` to update existing user tables
+2. Ensure all environment variables are set
+3. Restart both frontend and backend services

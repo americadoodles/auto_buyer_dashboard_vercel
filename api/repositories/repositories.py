@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import List, Optional
 from ..core.db import get_conn, DB_ENABLED
 from ..schemas.listing import ListingIn, ListingOut
@@ -12,7 +13,7 @@ _IDS_BY_VIN: dict[str, list[str]] = {}
 # LISTINGS REPOSITORY
 # ============================================================================
 
-def ingest_listings(rows: List[ListingIn]) -> List[ListingOut]:
+def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> List[ListingOut]:
     out: list[ListingOut] = []
     if DB_ENABLED:
         conn = get_conn(); assert conn is not None
@@ -49,19 +50,23 @@ def ingest_listings(rows: List[ListingIn]) -> List[ListingOut]:
                         if isinstance(payload_data["created_at"], datetime.datetime):
                             payload_data["created_at"] = payload_data["created_at"].isoformat()
 
-                    # Extract buyer from the id field of ListingIn and use it as the buyer field
-                    buyer_from_id = norm.get("id")
+                    # Use buyer_id from authenticated context when provided; fallback to incoming buyer_id
+                    buyer_from_id = buyer_id or norm.get("buyer_id") or None
 
-                    cur.execute("""
-                      insert into listings (vehicle_key, vin, source, price, miles, dom, location, buyer, payload)
-                      values (%s,%s,%s,%s,%s,%s,%s,%s,%s) returning id
-                    """, (vehicle_key, vin, norm["source"], norm["price"], norm["miles"], norm["dom"], 
-                          norm.get("location"), buyer_from_id, json.dumps(payload_data)))
+                    # Prefer writing to buyer_id column;
+                    try:
+                        cur.execute("""
+                          insert into listings (vehicle_key, vin, source, price, miles, dom, location, buyer_id, payload)
+                          values (%s,%s,%s,%s,%s,%s,%s,%s,%s) returning id
+                        """, (vehicle_key, vin, norm["source"], norm["price"], norm["miles"], norm["dom"], 
+                              norm.get("location"), buyer_from_id, json.dumps(payload_data)))
+                    except Exception as log_exc:
+                        logging.error(f"Failed to insert listing into database: {log_exc}")
                     new_id = str(cur.fetchone()[0])
                     out.append(ListingOut(
                         id=new_id, vehicle_key=vehicle_key, vin=vin, year=norm["year"], make=make, model=model,
                         trim=trim, miles=norm["miles"], price=norm["price"], dom=norm["dom"],
-                        source=norm["source"], location=norm.get("location"), buyer=buyer_from_id,
+                        source=norm["source"], location=norm.get("location"), buyer_id=buyer_from_id,
                         radius=norm.get("radius", 25), reasonCodes=[],
                         buyMax=None, score=None
                     ))
@@ -76,7 +81,7 @@ def ingest_listings(rows: List[ListingIn]) -> List[ListingOut]:
         obj = ListingOut(
             id=lid, vin=vin, year=item.year, make=item.make.strip(), model=item.model.strip(),
             trim=item.trim.strip() if item.trim else None, miles=item.miles, price=item.price,
-            dom=item.dom, source=item.source, location=None, buyer=item.id,
+            dom=item.dom, source=item.source, location=None, buyer_id=buyer_id or item.buyer_id,
             radius=item.radius or 25, reasonCodes=[], buyMax=None
         )
         _BY_ID[lid] = obj
@@ -99,7 +104,8 @@ def list_listings(limit: int = 500) -> list[ListingOut]:
                     COALESCE(v.model, '') as model, 
                     v.trim,
                     l.miles, l.price, l.dom, l.source, 
-                    l.location, l.buyer,
+                    l.location, COALESCE(l.buyer_id, l.buyer) as buyer_id,
+                    u.username as buyer_username,
                     COALESCE(s.score, 0) as score, 
                     s.buy_max, 
                     COALESCE(s.reason_codes, ARRAY[]::text[]) as reason_codes
@@ -110,15 +116,16 @@ def list_listings(limit: int = 500) -> list[ListingOut]:
                     FROM scores
                     ORDER BY vin, created_at DESC
                   ) s ON s.vin = l.vin
+                  LEFT JOIN users u ON u.id::text = COALESCE(l.buyer_id, l.buyer)
                   ORDER BY l.vehicle_key, l.created_at DESC
                   LIMIT %s
                 """, (limit,))
                 out: list[ListingOut] = []
-                for rid, vehicle_key, vin, year, make, model, trim, miles, price, dom, source, location, buyer, score, buy_max, reason_codes in cur.fetchall():
+                for rid, vehicle_key, vin, year, make, model, trim, miles, price, dom, source, location, buyer_id, buyer_username, score, buy_max, reason_codes in cur.fetchall():
                     out.append(ListingOut(
                         id=str(rid), vehicle_key=vehicle_key, vin=vin or "", year=int(year), make=make, model=model, trim=trim,
                         miles=int(miles), price=float(price), dom=int(dom), source=source,
-                        location=location, buyer=buyer,
+                        location=location, buyer_id=buyer_id, buyer_username=buyer_username,
                         radius=25, reasonCodes=reason_codes or [],
                         buyMax=float(buy_max) if buy_max is not None else None,
                         score=int(score) if score is not None else None

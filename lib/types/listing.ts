@@ -15,7 +15,8 @@ export type Listing = {
   reasonCodes: string[];
   buyMax: number;
   location: string;
-  buyer: string;
+  buyer_id: string;
+  buyer_username?: string;
 };
 
 export type SortConfig = {

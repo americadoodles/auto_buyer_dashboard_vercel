@@ -4,6 +4,8 @@ from ..schemas.listing import ListingIn, ListingOut, ListingScoreIn
 from ..schemas.notify import NotifyItem, NotifyResponse
 from ..schemas.scoring import ScoreResponse
 from ..repositories.repositories import ingest_listings, list_listings, update_cached_score, insert_score
+from ..core.auth import get_current_user
+from ..schemas.user import UserOut
 from ..services.services import score_listing, notify as do_notify
 
 # Create routers for each endpoint group
@@ -14,8 +16,8 @@ notify_router = APIRouter(prefix="/notify", tags=["notify"])
 
 # Ingest routes
 @ingest_router.post("", response_model=List[ListingOut])
-def ingest(listings: List[ListingIn]):
-    return ingest_listings(listings)
+def ingest(listings: List[ListingIn], current_user: UserOut = Depends(get_current_user)):
+    return ingest_listings(listings, buyer_id=str(current_user.id))
 
 # Listings routes
 @listings_router.get("", response_model=List[ListingOut])

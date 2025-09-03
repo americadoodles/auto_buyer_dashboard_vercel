@@ -1,5 +1,5 @@
 import React from 'react';
-import { Car } from 'lucide-react';
+import { Car, Download, Database, RefreshCw } from 'lucide-react';
 import { Button } from '../atoms/Button';
 
 interface HeaderProps {
@@ -16,41 +16,54 @@ export const Header: React.FC<HeaderProps> = ({
   loading
 }) => {
   return (
-    <header className="flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        <div className="rounded-2xl bg-slate-900 p-2 text-white shadow">
-          <Car className="h-6 w-6" />
+    <header className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+        <div className="flex items-center space-x-4">
+          <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg">
+            <Car className="h-7 w-7 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Buyer Review Queue</h1>
+            <p className="text-sm text-gray-600 mt-1">
+              Ingest → Normalize → Score → Review → Notify
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Buyer Review Queue</h1>
-          <p className="text-sm text-slate-600">Ingest → Normalize → Score → Review → Notify</p>
+        
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={onLoadFromBackend}
+            disabled={loading}
+            className="flex items-center space-x-2"
+          >
+            <Download className="w-4 h-4" />
+            <span>Load from Backend</span>
+          </Button>
+          
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={onSeedBackend}
+            disabled={loading}
+            className="flex items-center space-x-2"
+          >
+            <Database className="w-4 h-4" />
+            <span>Seed Backend</span>
+          </Button>
+          
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={onRescoreVisible}
+            disabled={loading}
+            className="flex items-center space-x-2"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <span>Re-score Visible</span>
+          </Button>
         </div>
-      </div>
-      <div className="flex gap-2">
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={onLoadFromBackend}
-          disabled={loading}
-        >
-          Load from Backend
-        </Button>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={onSeedBackend}
-          disabled={loading}
-        >
-          Seed Backend
-        </Button>
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={onRescoreVisible}
-          disabled={loading}
-        >
-          Re-score Visible
-        </Button>
       </div>
     </header>
   );

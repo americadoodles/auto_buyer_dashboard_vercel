@@ -135,6 +135,124 @@ def list_listings(limit: int = 500) -> list[ListingOut]:
             conn.close()
     return list(_BY_ID.values())
 
+def list_listings_by_buyer(buyer_id: str, start_date: Optional[datetime.datetime] = None, end_date: Optional[datetime.datetime] = None, limit: int = 500) -> list[ListingOut]:
+    """Get listings for a specific buyer with optional date filtering"""
+    if DB_ENABLED:
+        conn = get_conn(); assert conn is not None
+        try:
+            with conn, conn.cursor() as cur:
+                # Build query with optional date filtering
+                base_query = """
+                  SELECT 
+                    l.id, l.vehicle_key, 
+                    COALESCE(l.vin, '') AS vin, 
+                    COALESCE(v.year, 0) as year, 
+                    COALESCE(v.make, '') as make, 
+                    COALESCE(v.model, '') as model, 
+                    v.trim,
+                    l.miles, l.price, l.dom, l.source, 
+                    l.location, COALESCE(l.buyer_id, l.buyer) as buyer_id,
+                    u.username as buyer_username,
+                    COALESCE(s.score, 0) as score, 
+                    s.buy_max, 
+                    COALESCE(s.reason_codes, ARRAY[]::text[]) as reason_codes,
+                    l.created_at
+                  FROM listings l
+                  LEFT JOIN vehicles v ON v.vehicle_key = l.vehicle_key
+                  LEFT JOIN (
+                    SELECT DISTINCT ON (vin) vin, score, buy_max, reason_codes
+                    FROM scores
+                    ORDER BY vin, created_at DESC
+                  ) s ON s.vin = l.vin
+                  LEFT JOIN users u ON u.id::text = COALESCE(l.buyer_id, l.buyer)
+                  WHERE COALESCE(l.buyer_id, l.buyer) = %s
+                """
+                
+                params = [buyer_id]
+                
+                if start_date:
+                    base_query += " AND l.created_at >= %s"
+                    params.append(start_date)
+                
+                if end_date:
+                    base_query += " AND l.created_at <= %s"
+                    params.append(end_date)
+                
+                base_query += " ORDER BY l.created_at DESC LIMIT %s"
+                params.append(limit)
+                
+                cur.execute(base_query, params)
+                out: list[ListingOut] = []
+                for rid, vehicle_key, vin, year, make, model, trim, miles, price, dom, source, location, buyer_id, buyer_username, score, buy_max, reason_codes, created_at in cur.fetchall():
+                    out.append(ListingOut(
+                        id=str(rid), vehicle_key=vehicle_key, vin=vin or "", year=int(year), make=make, model=model, trim=trim,
+                        miles=int(miles), price=float(price), dom=int(dom), source=source,
+                        location=location, buyer_id=buyer_id, buyer_username=buyer_username,
+                        radius=25, reasonCodes=reason_codes or [],
+                        buyMax=float(buy_max) if buy_max is not None else None,
+                        score=int(score) if score is not None else None
+                    ))
+                return out
+        finally:
+            conn.close()
+    # Fallback to in-memory filtering
+    return [listing for listing in _BY_ID.values() if listing.buyer_id == buyer_id]
+
+def get_buyer_stats(buyer_id: str, start_date: Optional[datetime.datetime] = None, end_date: Optional[datetime.datetime] = None) -> dict:
+    """Get performance statistics for a specific buyer"""
+    if DB_ENABLED:
+        conn = get_conn(); assert conn is not None
+        try:
+            with conn, conn.cursor() as cur:
+                # Base query for buyer stats
+                base_query = """
+                  SELECT 
+                    COUNT(*) as total_listings,
+                    COUNT(CASE WHEN s.score IS NOT NULL THEN 1 END) as scored_listings,
+                    AVG(CASE WHEN s.score IS NOT NULL THEN s.score ELSE NULL END) as avg_score,
+                    AVG(l.price) as avg_price,
+                    MIN(l.created_at) as first_listing,
+                    MAX(l.created_at) as last_listing,
+                    COUNT(DISTINCT l.source) as unique_sources
+                  FROM listings l
+                  LEFT JOIN (
+                    SELECT DISTINCT ON (vin) vin, score, buy_max, reason_codes
+                    FROM scores
+                    ORDER BY vin, created_at DESC
+                  ) s ON s.vin = l.vin
+                  WHERE COALESCE(l.buyer_id, l.buyer) = %s
+                """
+                
+                params = [buyer_id]
+                
+                if start_date:
+                    base_query += " AND l.created_at >= %s"
+                    params.append(start_date)
+                
+                if end_date:
+                    base_query += " AND l.created_at <= %s"
+                    params.append(end_date)
+                
+                cur.execute(base_query, params)
+                result = cur.fetchone()
+                
+                if result:
+                    total_listings, scored_listings, avg_score, avg_price, first_listing, last_listing, unique_sources = result
+                    return {
+                        "total_listings": total_listings or 0,
+                        "scored_listings": scored_listings or 0,
+                        "avg_score": float(avg_score) if avg_score else 0,
+                        "avg_price": float(avg_price) if avg_price else 0,
+                        "first_listing": first_listing.isoformat() if first_listing else None,
+                        "last_listing": last_listing.isoformat() if last_listing else None,
+                        "unique_sources": unique_sources or 0,
+                        "scoring_rate": (scored_listings / total_listings * 100) if total_listings > 0 else 0
+                    }
+                return {}
+        finally:
+            conn.close()
+    return {}
+
 def update_cached_score(vin: str, score: int, buy_max: float, reasons: list[str]):
     # for in-memory cache parity; DB is handled in scores repo
     for lid in _IDS_BY_VIN.get(vin, []):

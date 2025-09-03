@@ -17,6 +17,7 @@ export type Listing = {
   location: string;
   buyer_id: string;
   buyer_username?: string;
+  created_at?: string;
 };
 
 export type SortConfig = {

@@ -50,9 +50,10 @@ def score(payload: List[ListingScoreIn]):
     out: list[ScoreResponse] = []
     for item in payload:
         score_val, buy_max, reasons = score_listing(item)
-        vin_key = (item.vin or "").strip().upper()
-        insert_score(item.vehicle_key, vin_key, score_val, buy_max, reasons)
-        update_cached_score(vin_key, score_val, buy_max, reasons)
+        vin_key = item.vin.strip().upper() if item.vin and item.vin.strip() else None
+        if vin_key:
+            insert_score(item.vehicle_key, vin_key, score_val, buy_max, reasons)
+            update_cached_score(vin_key, score_val, buy_max, reasons)
         out.append(ScoreResponse(vehicle_key=item.vehicle_key, vin=item.vin, score=score_val, buyMax=buy_max, reasonCodes=reasons))
     return out
 

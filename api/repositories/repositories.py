@@ -21,8 +21,8 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
             with conn, conn.cursor() as cur:
                 for item in rows:
                     norm = item.model_dump()
-                    vin_raw = (norm.get("vin") or "").strip().upper()
-                    vin = vin_raw if vin_raw else None
+                    vin_raw = norm.get("vin")
+                    vin = vin_raw.strip().upper() if vin_raw and vin_raw.strip() else None
 
                     def make_vehicle_key(n):
                         if vin:
@@ -76,7 +76,7 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
 
     # in-memory fallback
     for item in rows:
-        vin = item.vin.strip().upper()
+        vin = item.vin.strip().upper() if item.vin and item.vin.strip() else None
         lid = item.id or f"mem-{len(_BY_ID)+1}"
         obj = ListingOut(
             id=lid, vin=vin, year=item.year, make=item.make.strip(), model=item.model.strip(),
@@ -85,7 +85,8 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
             radius=item.radius or 25, reasonCodes=[], buyMax=None
         )
         _BY_ID[lid] = obj
-        _IDS_BY_VIN.setdefault(vin, []).append(lid)
+        if vin:
+            _IDS_BY_VIN.setdefault(vin, []).append(lid)
         out.append(obj)
     return out
 
@@ -255,13 +256,14 @@ def get_buyer_stats(buyer_id: str, start_date: Optional[datetime.datetime] = Non
 
 def update_cached_score(vin: str, score: int, buy_max: float, reasons: list[str]):
     # for in-memory cache parity; DB is handled in scores repo
-    for lid in _IDS_BY_VIN.get(vin, []):
-        if lid in _BY_ID:
-            obj = _BY_ID[lid]
-            obj.score = score
-            obj.buyMax = buy_max
-            obj.reasonCodes = reasons or ["Heuristic"]
-            _BY_ID[lid] = obj
+    if vin:
+        for lid in _IDS_BY_VIN.get(vin, []):
+            if lid in _BY_ID:
+                obj = _BY_ID[lid]
+                obj.score = score
+                obj.buyMax = buy_max
+                obj.reasonCodes = reasons or ["Heuristic"]
+                _BY_ID[lid] = obj
 
 # ============================================================================
 # SCORES REPOSITORY

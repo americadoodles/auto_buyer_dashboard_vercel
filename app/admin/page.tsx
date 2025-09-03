@@ -69,6 +69,13 @@ export default function AdminDashboardPage() {
       color: 'bg-green-100 text-green-700'
     },
     {
+      title: 'Buyer Activity Monitor',
+      description: 'Monitor individual buyer performance and listings',
+      href: '/admin/user-management',
+      icon: Activity,
+      color: 'bg-orange-100 text-orange-700'
+    },
+    {
       title: 'Review Signup Requests',
       description: 'Approve or decline new user registrations',
       href: '/admin/user-management/signup-requests',

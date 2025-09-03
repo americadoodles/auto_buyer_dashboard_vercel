@@ -7,6 +7,7 @@ export { Input } from './atoms/Input';
 
 // Molecules
 export { AuthFields } from './molecules/AuthFields';
+export { DateRangePicker } from './molecules/DateRangePicker';
 export { KpiCard } from './molecules/KpiCard';
 export { Pagination } from './molecules/Pagination';
 export { TableHeader } from './molecules/TableHeader';
@@ -15,6 +16,7 @@ export { TableRow } from './molecules/TableRow';
 // Organisms
 export { AdminNavPanel } from './organisms/AdminNavPanel';
 export { AdminUserManagement } from './organisms/AdminUserManagement';
+export { BuyerPerformanceKpi } from './organisms/BuyerPerformanceKpi';
 export { default as CurrentUsersTable } from './organisms/CurrentUsersTable';
 export { Header } from './organisms/Header';
 export { KpiGrid } from './organisms/KpiGrid';

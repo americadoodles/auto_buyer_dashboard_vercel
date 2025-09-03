@@ -1,11 +1,13 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ApiService } from "../../lib/services/api";
 import { User, UserRemoveRequest } from "../../lib/types/user";
-import { Users, Trash2, CheckCircle, XCircle } from "lucide-react";
+import { Users, Trash2, CheckCircle, XCircle, Activity } from "lucide-react";
 
 const CurrentUsersTable: React.FC = () => {
+  const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -138,14 +140,23 @@ const CurrentUsersTable: React.FC = () => {
                       {getStatusBadge(user.is_confirmed)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => handleRemove(user.id)}
-                        disabled={loading}
-                        className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <Trash2 className="w-3 h-3 mr-1" />
-                        Remove
-                      </button>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => router.push(`/admin/buyer-activity/${user.id}`)}
+                          className="inline-flex items-center px-3 py-1.5 border border-blue-300 text-xs font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        >
+                          <Activity className="w-3 h-3 mr-1" />
+                          View Activity
+                        </button>
+                        <button
+                          onClick={() => handleRemove(user.id)}
+                          disabled={loading}
+                          className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <Trash2 className="w-3 h-3 mr-1" />
+                          Remove
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

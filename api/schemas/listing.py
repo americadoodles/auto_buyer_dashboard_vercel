@@ -3,7 +3,7 @@ from typing import Optional, List
 from pydantic import BaseModel, Field
 
 class ListingIn(BaseModel):
-    vin: str
+    vin: Optional[str] = None
     price: float
     miles: int
     dom: int
@@ -23,7 +23,7 @@ class ListingIn(BaseModel):
 class ListingOut(BaseModel):
     id: str
     vehicle_key: str
-    vin: str
+    vin: Optional[str] = None
     year: int
     make: str
     model: str
@@ -42,7 +42,7 @@ class ListingOut(BaseModel):
 
 class ListingScoreIn(BaseModel):
     vehicle_key: str
-    vin: str
+    vin: Optional[str] = None
     price: float
     miles: int
     dom: int

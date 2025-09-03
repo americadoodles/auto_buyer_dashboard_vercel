@@ -61,7 +61,7 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                         """, (vehicle_key, vin, norm["source"], norm["price"], norm["miles"], norm["dom"], 
                               norm.get("location"), buyer_from_id, json.dumps(payload_data)))
                     except Exception as log_exc:
-                        logging.error(f"Failed to append ListingOut: {log_exc}")
+                        logging.error(f"Failed to insert listing into database: {log_exc}")
                     new_id = str(cur.fetchone()[0])
                     out.append(ListingOut(
                         id=new_id, vehicle_key=vehicle_key, vin=vin, year=norm["year"], make=make, model=model,

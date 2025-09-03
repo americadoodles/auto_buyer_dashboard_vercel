@@ -28,7 +28,7 @@ def create_user(user: UserCreate) -> Optional[UserOut]:
                     returning id, email, username, role_id, is_confirmed
                 """, (str(user_id), user.email, user.username, hashed, user.role_id, False))
             except Exception as log_exc:
-                logging.error(f"Failed to append UserOut: {log_exc}")
+                logging.error(f"Failed to insert into users: {log_exc}")
             row = cur.fetchone()
             # Get role name
             role_idx = 3 if len(row) == 5 else 2
@@ -110,7 +110,7 @@ def add_signup_request(request: UserSignupRequest) -> bool:
                     values (%s, %s, %s, %s, %s)
                 """, (str(uuid4()), request.email, request.username, hashed, role_id))
             except Exception as log_exc:
-                logging.error(f"Failed to append UserOut: {log_exc}")
+                logging.error(f"Failed to insert into user_signup_requests: {log_exc}")
             return True
     finally:
         conn.close()
@@ -139,7 +139,7 @@ def confirm_user_signup(request: UserConfirmRequest) -> bool:
                             values (%s, %s, %s, %s, %s, %s)
                         """, (str(request.user_id), email, username, password, role_id, True))
                     except Exception as log_exc:
-                        logging.error(f"Failed to append UserOut: {log_exc}")
+                        logging.error(f"Failed to insert confirmed user into users: {log_exc}")
                 cur.execute("delete from user_signup_requests where id=%s", (str(request.user_id),))
                 return True
             else:

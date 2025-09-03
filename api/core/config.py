@@ -11,6 +11,7 @@ class Settings(BaseSettings):
         or os.getenv("NEON_DATABASE_URL")    # sometimes used
         or ""
     )
+    ENVIRONMENT: str = os.getenv("ENVIRONMENT", "cloud")
 
     # JWT settings
     JWT_SECRET: str = os.getenv("JWT_SECRET", "change-this-in-prod")

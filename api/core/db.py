@@ -1,4 +1,3 @@
-import os
 from typing import Optional
 from .config import settings
 
@@ -15,13 +14,14 @@ def get_conn() -> Optional["psycopg.Connection"]:
     if not DB_ENABLED:
         return None
     assert psycopg is not None
-    # Always require SSL on Vercel/Neon; add if caller forgot.
     dsn = settings.DATABASE_URL
-    if "sslmode=" not in dsn:
+    environment = settings.ENVIRONMENT  # default to cloud if not set
+    # Only require sslmode=require for cloud environments
+    if environment != "local" and "sslmode=" not in dsn:
         sep = "&" if "?" in dsn else "?"
         dsn = f"{dsn}{sep}sslmode=require"
     # Keep a short timeout to avoid hanging cold starts
-    return psycopg.connect(settings.DATABASE_URL, autocommit=True)  # type: ignore
+    return psycopg.connect(dsn, autocommit=True)  # type: ignore
 
 def seed_default_roles(conn) -> None:
     """Seed default roles if they don't exist"""

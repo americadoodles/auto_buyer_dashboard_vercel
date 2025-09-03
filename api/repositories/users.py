@@ -71,7 +71,14 @@ def list_signup_requests() -> List[UserSignupRequest]:
     try:
         with conn, conn.cursor() as cur:
             cur.execute("select id, email, username, password, role_id from user_signup_requests")
-            return [UserSignupRequest(id=row[0], email=row[1], username=row[2], password=row[3], role_id=row[4]) for row in cur.fetchall()]
+            requests = []
+            for row in cur.fetchall():
+                role_id = row[4]
+                cur.execute("SELECT name FROM roles WHERE id = %s", (role_id,))
+                role_name_row = cur.fetchone()
+                role_name = role_name_row[0] if role_name_row else "buyer"
+                requests.append(UserSignupRequest(id=row[0], email=row[1], username=row[2], password=row[3], role_id=role_id, role_name=role_name))
+            return requests
     finally:
         conn.close()
 

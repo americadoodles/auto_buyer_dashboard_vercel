@@ -74,7 +74,7 @@ const SignupRequestsTable: React.FC = () => {
             <tr key={req.id || req.email}>
               <td>{req.email}</td>
               <td>{req.username}</td>
-              <td>{req.role_id === 1 ? "Admin" : req.role_id === 2 ? "Buyer" : req.role_id === 3 ? "Analyst" : req.role_id}</td>
+              <td>{req.role_name}</td>
               <td>
                 <button className="bg-green-600 text-white px-2 py-1 rounded mr-2" onClick={() => handleConfirm(req.id || '', true)} disabled={loading}>Confirm</button>
                 <button className="bg-red-600 text-white px-2 py-1 rounded mr-2" onClick={() => handleConfirm(req.id || '', false)} disabled={loading}>Decline</button>

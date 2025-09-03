@@ -41,6 +41,7 @@ class UserSignupRequest(BaseModel):
     password: str
     username: str
     role_id: Optional[int] = None
+    role_name: Optional[str] = None
 
 class UserConfirmRequest(BaseModel):
     user_id: UUID

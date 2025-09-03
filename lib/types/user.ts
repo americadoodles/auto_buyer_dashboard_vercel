@@ -13,6 +13,7 @@ export type UserSignupRequest = {
   password: string;
   username: string;
   role_id?: number;
+  role_name?: string;
 };
 
 export type UserLoginRequest = {

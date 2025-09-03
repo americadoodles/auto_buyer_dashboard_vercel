@@ -42,13 +42,14 @@ def signup(request: UserSignupRequest):
         if not success:
             raise HTTPException(status_code=400, detail="Email already exists.")
         
-        # Return proper UserOut response with role name
+        # Get role name from database
+        role_name = buyer_role.name if buyer_role else "buyer"
         return UserOut(
             id=signup_id,
             email=request.email,
             username=request.username,
             role_id=desired_role_id,
-            role="buyer",  # We know it's a buyer role
+            role=role_name,
             is_confirmed=False
         )
     except HTTPException:

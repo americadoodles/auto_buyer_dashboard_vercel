@@ -59,14 +59,14 @@ export class ApiService {
   }
 
   static async getRoles(): Promise<Role[]> {
-    const response = await fetch(`${BACKEND_URL}/roles`, {
+    const response = await fetch(`${BACKEND_URL}/roles/`, {
       headers: this.authHeaders(),
     });
     return this.handleResponse<Role[]>(response);
   }
 
   static async createRole(role: RoleCreate): Promise<Role> {
-    const response = await fetch(`${BACKEND_URL}/roles`, {
+    const response = await fetch(`${BACKEND_URL}/roles/`, {
       method: 'POST',
       headers: this.authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(role)
@@ -75,7 +75,7 @@ export class ApiService {
   }
 
   static async updateRole(role: RoleEdit): Promise<boolean> {
-    const response = await fetch(`${BACKEND_URL}/roles`, {
+    const response = await fetch(`${BACKEND_URL}/roles/`, {
       method: 'PUT',
       headers: this.authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(role)
@@ -135,7 +135,7 @@ export class ApiService {
   }
 
   static async getUsers(): Promise<User[]> {
-    const response = await fetch(`${BACKEND_URL}/users`, {
+    const response = await fetch(`${BACKEND_URL}/users/`, {
       headers: this.authHeaders(),
     });
     return this.handleResponse<User[]>(response);

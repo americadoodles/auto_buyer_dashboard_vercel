@@ -23,7 +23,7 @@ if DB_ENABLED:
 
 # -----------------------------------------------
 
-app = FastAPI(title=settings.APP_TITLE, lifespan=lifespan)
+app = FastAPI(title=settings.APP_TITLE, lifespan=lifespan, redirect_slashes=False)
 
 app.add_middleware(
     CORSMiddleware,

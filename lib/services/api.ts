@@ -160,11 +160,30 @@ export class ApiService {
   }
 
   static async getListings(): Promise<Listing[]> {
-    const response = await fetch(`${BACKEND_URL}/listings`, {
-      headers: this.authHeaders(),
-    });
-    const data = await this.handleResponse<any>(response);
-    return Array.isArray(data) ? data : [];
+    const fullUrl = `${BACKEND_URL}/listings`;
+    console.log(`[API] getListings - Base URL: ${BACKEND_URL}`);
+    console.log(`[API] getListings - Full endpoint URL: ${fullUrl}`);
+    
+    try {
+      const response = await fetch(fullUrl, {
+        headers: this.authHeaders(),
+      });
+      
+      console.log(`[API] getListings - Response status: ${response.status} ${response.statusText}`);
+      
+      const data = await this.handleResponse<any>(response);
+      console.log(`[API] getListings - Success: received ${Array.isArray(data) ? data.length : 'non-array'} items`);
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      console.error(`[API] getListings - Error occurred:`, {
+        baseUrl: BACKEND_URL,
+        fullUrl: fullUrl,
+        error: error instanceof Error ? error.message : String(error),
+        errorType: error instanceof Error ? error.constructor.name : typeof error,
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      throw error;
+    }
   }
 
   static async scoreListings(listings: Listing[]): Promise<Array<{

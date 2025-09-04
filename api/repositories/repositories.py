@@ -105,7 +105,7 @@ def list_listings(limit: int = 500) -> list[ListingOut]:
                     COALESCE(v.model, '') as model, 
                     v.trim,
                     l.miles, l.price, l.dom, l.source, 
-                    l.location, COALESCE(l.buyer_id, l.buyer) as buyer_id,
+                    l.location, l.buyer_id,
                     u.username as buyer_username,
                     COALESCE(s.score, 0) as score, 
                     s.buy_max, 
@@ -117,7 +117,7 @@ def list_listings(limit: int = 500) -> list[ListingOut]:
                     FROM scores
                     ORDER BY vin, created_at DESC
                   ) s ON s.vin = l.vin
-                  LEFT JOIN users u ON u.id::text = COALESCE(l.buyer_id, l.buyer)
+                  LEFT JOIN users u ON u.id::text = l.buyer_id
                   ORDER BY l.vehicle_key, l.created_at DESC
                   LIMIT %s
                 """, (limit,))
@@ -132,6 +132,9 @@ def list_listings(limit: int = 500) -> list[ListingOut]:
                         score=int(score) if score is not None else None
                     ))
                 return out
+        except Exception as e:
+            logging.error(f"Error in list_listings: {str(e)}")
+            raise
         finally:
             conn.close()
     return list(_BY_ID.values())
@@ -152,7 +155,7 @@ def list_listings_by_buyer(buyer_id: str, start_date: Optional[datetime.datetime
                     COALESCE(v.model, '') as model, 
                     v.trim,
                     l.miles, l.price, l.dom, l.source, 
-                    l.location, COALESCE(l.buyer_id, l.buyer) as buyer_id,
+                    l.location, l.buyer_id,
                     u.username as buyer_username,
                     COALESCE(s.score, 0) as score, 
                     s.buy_max, 
@@ -165,8 +168,8 @@ def list_listings_by_buyer(buyer_id: str, start_date: Optional[datetime.datetime
                     FROM scores
                     ORDER BY vin, created_at DESC
                   ) s ON s.vin = l.vin
-                  LEFT JOIN users u ON u.id::text = COALESCE(l.buyer_id, l.buyer)
-                  WHERE COALESCE(l.buyer_id, l.buyer) = %s
+                  LEFT JOIN users u ON u.id::text = l.buyer_id
+                  WHERE l.buyer_id = %s
                 """
                 
                 params = [buyer_id]
@@ -221,7 +224,7 @@ def get_buyer_stats(buyer_id: str, start_date: Optional[datetime.datetime] = Non
                     FROM scores
                     ORDER BY vin, created_at DESC
                   ) s ON s.vin = l.vin
-                  WHERE COALESCE(l.buyer_id, l.buyer) = %s
+                  WHERE l.buyer_id = %s
                 """
                 
                 params = [buyer_id]

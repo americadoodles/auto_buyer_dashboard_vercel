@@ -106,3 +106,47 @@ def roles_status():
     finally:
         if 'conn' in locals():
             conn.close()
+
+# Check listings status for debugging
+@app.get("/api/_listings_status")
+def listings_status():
+    from .core.db import get_conn, DB_ENABLED
+    if not DB_ENABLED:
+        return {"ok": False, "reason": "DB disabled or no URL"}
+    
+    try:
+        conn = get_conn()
+        with conn.cursor() as cur:
+            # Check if listings table exists and has data
+            cur.execute("SELECT COUNT(*) FROM listings")
+            listings_count = cur.fetchone()[0]
+            
+            # Check if vehicles table exists
+            cur.execute("SELECT COUNT(*) FROM vehicles")
+            vehicles_count = cur.fetchone()[0]
+            
+            # Check if scores table exists
+            cur.execute("SELECT COUNT(*) FROM scores")
+            scores_count = cur.fetchone()[0]
+            
+            # Check table structure
+            cur.execute("""
+                SELECT column_name, data_type 
+                FROM information_schema.columns 
+                WHERE table_name = 'listings' 
+                ORDER BY ordinal_position
+            """)
+            listings_columns = [{"name": row[0], "type": row[1]} for row in cur.fetchall()]
+            
+            return {
+                "ok": True,
+                "listings_count": listings_count,
+                "vehicles_count": vehicles_count,
+                "scores_count": scores_count,
+                "listings_columns": listings_columns
+            }
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+    finally:
+        if 'conn' in locals():
+            conn.close()

@@ -22,7 +22,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 19175,
     "location": "Fort Worth, TX",
-    "buyer": "Stephanie Baker"
+    "buyer_id": "buyer-1",
+    "buyer_username": "Stephanie Baker"
   },
   {
     "id": "listing-2",
@@ -43,7 +44,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 20567,
     "location": "San Antonio, TX",
-    "buyer": "Jennifer Martinez"
+    "buyer_id": "buyer-2",
+    "buyer_username": "Jennifer Martinez"
   },
   {
     "id": "listing-3",
@@ -66,7 +68,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 16426,
     "location": "Indianapolis, IN",
-    "buyer": "Sarah Johnson"
+    "buyer_id": "buyer-3",
+    "buyer_username": "Sarah Johnson"
   },
   {
     "id": "listing-4",
@@ -87,7 +90,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 25761,
     "location": "Austin, TX",
-    "buyer": "Christopher Lee"
+    "buyer_id": "buyer-4",
+    "buyer_username": "Christopher Lee"
   },
   {
     "id": "listing-5",
@@ -108,7 +112,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 20068,
     "location": "San Francisco, CA",
-    "buyer": "Christopher Lee"
+    "buyer_id": "buyer-4",
+    "buyer_username": "Christopher Lee"
   },
   {
     "id": "listing-6",
@@ -129,7 +134,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 26175,
     "location": "Washington, DC",
-    "buyer": "James Lopez"
+    "buyer_id": "buyer-5",
+    "buyer_username": "James Lopez"
   },
   {
     "id": "listing-7",
@@ -152,7 +158,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 21794,
     "location": "Jacksonville, FL",
-    "buyer": "Stephanie Baker"
+    "buyer_id": "buyer-1",
+    "buyer_username": "Stephanie Baker"
   },
   {
     "id": "listing-8",
@@ -174,7 +181,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 28013,
     "location": "San Francisco, CA",
-    "buyer": "Michael Brown"
+    "buyer_id": "buyer-6",
+    "buyer_username": "Michael Brown"
   },
   {
     "id": "listing-9",
@@ -195,7 +203,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 18918,
     "location": "San Antonio, TX",
-    "buyer": "Jessica Hall"
+    "buyer_id": "buyer-7",
+    "buyer_username": "Jessica Hall"
   },
   {
     "id": "listing-10",
@@ -217,7 +226,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 20265,
     "location": "Jacksonville, FL",
-    "buyer": "Michelle White"
+    "buyer_id": "buyer-8",
+    "buyer_username": "Michelle White"
   },
   {
     "id": "listing-11",
@@ -240,7 +250,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 14112,
     "location": "Fort Worth, TX",
-    "buyer": "Christopher Lee"
+    "buyer_id": "buyer-4",
+    "buyer_username": "Christopher Lee"
   },
   {
     "id": "listing-12",
@@ -262,7 +273,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 27594,
     "location": "Seattle, WA",
-    "buyer": "William Garcia"
+    "buyer_id": "buyer-9",
+    "buyer_username": "William Garcia"
   },
   {
     "id": "listing-13",
@@ -283,7 +295,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 12222,
     "location": "San Jose, CA",
-    "buyer": "Stephanie Baker"
+    "buyer_id": "buyer-1",
+    "buyer_username": "Stephanie Baker"
   },
   {
     "id": "listing-14",
@@ -305,7 +318,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 26030,
     "location": "Dallas, TX",
-    "buyer": "Amanda Rodriguez"
+    "buyer_id": "buyer-10",
+    "buyer_username": "Amanda Rodriguez"
   },
   {
     "id": "listing-15",
@@ -328,7 +342,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 20868,
     "location": "Phoenix, AZ",
-    "buyer": "John Smith"
+    "buyer_id": "buyer-11",
+    "buyer_username": "John Smith"
   },
   {
     "id": "listing-16",
@@ -349,7 +364,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 26522,
     "location": "Indianapolis, IN",
-    "buyer": "John Smith"
+    "buyer_id": "buyer-11",
+    "buyer_username": "John Smith"
   },
   {
     "id": "listing-17",
@@ -371,7 +387,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 19188,
     "location": "San Antonio, TX",
-    "buyer": "Jessica Hall"
+    "buyer_id": "buyer-7",
+    "buyer_username": "Jessica Hall"
   },
   {
     "id": "listing-18",
@@ -392,7 +409,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 13988,
     "location": "Phoenix, AZ",
-    "buyer": "Nicole Wright"
+    "buyer_id": "buyer-12",
+    "buyer_username": "Nicole Wright"
   },
   {
     "id": "listing-19",
@@ -413,7 +431,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 29263,
     "location": "Columbus, OH",
-    "buyer": "Nicole Wright"
+    "buyer_id": "buyer-12",
+    "buyer_username": "Nicole Wright"
   },
   {
     "id": "listing-20",
@@ -434,7 +453,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 21655,
     "location": "Chicago, IL",
-    "buyer": "Joshua Green"
+    "buyer_id": "buyer-13",
+    "buyer_username": "Joshua Green"
   },
   {
     "id": "listing-21",
@@ -455,7 +475,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 27552,
     "location": "Philadelphia, PA",
-    "buyer": "William Garcia"
+    "buyer_id": "buyer-9",
+    "buyer_username": "William Garcia"
   },
   {
     "id": "listing-22",
@@ -478,7 +499,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 19963,
     "location": "New York, NY",
-    "buyer": "Joshua Green"
+    "buyer_id": "buyer-13",
+    "buyer_username": "Joshua Green"
   },
   {
     "id": "listing-23",
@@ -500,7 +522,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 15952,
     "location": "New York, NY",
-    "buyer": "Ashley Young"
+    "buyer_id": "buyer-14",
+    "buyer_username": "Ashley Young"
   },
   {
     "id": "listing-24",
@@ -523,7 +546,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 9104,
     "location": "Dallas, TX",
-    "buyer": "Michael Brown"
+    "buyer_id": "buyer-6",
+    "buyer_username": "Michael Brown"
   },
   {
     "id": "listing-25",
@@ -545,7 +569,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 13872,
     "location": "Austin, TX",
-    "buyer": "Matthew King"
+    "buyer_id": "buyer-15",
+    "buyer_username": "Matthew King"
   },
   {
     "id": "listing-26",
@@ -566,7 +591,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 23174,
     "location": "Indianapolis, IN",
-    "buyer": "Lisa Anderson"
+    "buyer_id": "buyer-16",
+    "buyer_username": "Lisa Anderson"
   },
   {
     "id": "listing-27",
@@ -589,7 +615,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 19448,
     "location": "Denver, CO",
-    "buyer": "Emily Davis"
+    "buyer_id": "buyer-17",
+    "buyer_username": "Emily Davis"
   },
   {
     "id": "listing-28",
@@ -610,7 +637,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 21338,
     "location": "San Diego, CA",
-    "buyer": "Lisa Anderson"
+    "buyer_id": "buyer-16",
+    "buyer_username": "Lisa Anderson"
   },
   {
     "id": "listing-29",
@@ -631,7 +659,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 23295,
     "location": "Philadelphia, PA",
-    "buyer": "Amanda Rodriguez"
+    "buyer_id": "buyer-10",
+    "buyer_username": "Amanda Rodriguez"
   },
   {
     "id": "listing-30",
@@ -652,7 +681,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 19070,
     "location": "Jacksonville, FL",
-    "buyer": "Daniel Allen"
+    "buyer_id": "buyer-18",
+    "buyer_username": "Daniel Allen"
   },
   {
     "id": "listing-31",
@@ -673,7 +703,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 27226,
     "location": "Phoenix, AZ",
-    "buyer": "Jennifer Martinez"
+    "buyer_id": "buyer-2",
+    "buyer_username": "Jennifer Martinez"
   },
   {
     "id": "listing-32",
@@ -695,7 +726,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 23343,
     "location": "Washington, DC",
-    "buyer": "Jennifer Martinez"
+    "buyer_id": "buyer-2",
+    "buyer_username": "Jennifer Martinez"
   },
   {
     "id": "listing-33",
@@ -717,7 +749,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 12991,
     "location": "Seattle, WA",
-    "buyer": "Lisa Anderson"
+    "buyer_id": "buyer-16",
+    "buyer_username": "Lisa Anderson"
   },
   {
     "id": "listing-34",
@@ -739,7 +772,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 29832,
     "location": "Seattle, WA",
-    "buyer": "Jennifer Martinez"
+    "buyer_id": "buyer-2",
+    "buyer_username": "Jennifer Martinez"
   },
   {
     "id": "listing-35",
@@ -761,7 +795,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 26929,
     "location": "Charlotte, NC",
-    "buyer": "Stephanie Baker"
+    "buyer_id": "buyer-1",
+    "buyer_username": "Stephanie Baker"
   },
   {
     "id": "listing-36",
@@ -782,7 +817,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 20724,
     "location": "Chicago, IL",
-    "buyer": "Daniel Allen"
+    "buyer_id": "buyer-18",
+    "buyer_username": "Daniel Allen"
   },
   {
     "id": "listing-37",
@@ -803,7 +839,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 19134,
     "location": "San Diego, CA",
-    "buyer": "Emily Davis"
+    "buyer_id": "buyer-17",
+    "buyer_username": "Emily Davis"
   },
   {
     "id": "listing-38",
@@ -825,7 +862,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 24894,
     "location": "Phoenix, AZ",
-    "buyer": "Christopher Lee"
+    "buyer_id": "buyer-4",
+    "buyer_username": "Christopher Lee"
   },
   {
     "id": "listing-39",
@@ -847,7 +885,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 27143,
     "location": "Phoenix, AZ",
-    "buyer": "Amanda Rodriguez"
+    "buyer_id": "buyer-10",
+    "buyer_username": "Amanda Rodriguez"
   },
   {
     "id": "listing-40",
@@ -870,7 +909,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 27737,
     "location": "Philadelphia, PA",
-    "buyer": "Joshua Green"
+    "buyer_id": "buyer-13",
+    "buyer_username": "Joshua Green"
   },
   {
     "id": "listing-41",
@@ -891,7 +931,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 26591,
     "location": "San Antonio, TX",
-    "buyer": "Lisa Anderson"
+    "buyer_id": "buyer-16",
+    "buyer_username": "Lisa Anderson"
   },
   {
     "id": "listing-42",
@@ -912,7 +953,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 21061,
     "location": "Columbus, OH",
-    "buyer": "Sarah Johnson"
+    "buyer_id": "buyer-3",
+    "buyer_username": "Sarah Johnson"
   },
   {
     "id": "listing-43",
@@ -935,7 +977,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 28798,
     "location": "San Francisco, CA",
-    "buyer": "Amanda Rodriguez"
+    "buyer_id": "buyer-10",
+    "buyer_username": "Amanda Rodriguez"
   },
   {
     "id": "listing-44",
@@ -958,7 +1001,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 27317,
     "location": "Jacksonville, FL",
-    "buyer": "Sarah Johnson"
+    "buyer_id": "buyer-3",
+    "buyer_username": "Sarah Johnson"
   },
   {
     "id": "listing-45",
@@ -981,7 +1025,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 18843,
     "location": "Seattle, WA",
-    "buyer": "Daniel Allen"
+    "buyer_id": "buyer-18",
+    "buyer_username": "Daniel Allen"
   },
   {
     "id": "listing-46",
@@ -1002,7 +1047,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 20083,
     "location": "San Francisco, CA",
-    "buyer": "Michael Brown"
+    "buyer_id": "buyer-6",
+    "buyer_username": "Michael Brown"
   },
   {
     "id": "listing-47",
@@ -1024,7 +1070,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 13036,
     "location": "Seattle, WA",
-    "buyer": "Jennifer Martinez"
+    "buyer_id": "buyer-2",
+    "buyer_username": "Jennifer Martinez"
   },
   {
     "id": "listing-48",
@@ -1046,7 +1093,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 25368,
     "location": "Columbus, OH",
-    "buyer": "Ashley Young"
+    "buyer_id": "buyer-14",
+    "buyer_username": "Ashley Young"
   },
   {
     "id": "listing-49",
@@ -1069,7 +1117,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 23916,
     "location": "Philadelphia, PA",
-    "buyer": "James Lopez"
+    "buyer_id": "buyer-5",
+    "buyer_username": "James Lopez"
   },
   {
     "id": "listing-50",
@@ -1092,7 +1141,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 23903,
     "location": "Los Angeles, CA",
-    "buyer": "Jennifer Martinez"
+    "buyer_id": "buyer-2",
+    "buyer_username": "Jennifer Martinez"
   },
   {
     "id": "listing-51",
@@ -1113,7 +1163,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 30171,
     "location": "San Diego, CA",
-    "buyer": "Jessica Hall"
+    "buyer_id": "buyer-7",
+    "buyer_username": "Jessica Hall"
   },
   {
     "id": "listing-52",
@@ -1136,7 +1187,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 17704,
     "location": "Washington, DC",
-    "buyer": "Michael Brown"
+    "buyer_id": "buyer-6",
+    "buyer_username": "Michael Brown"
   },
   {
     "id": "listing-53",
@@ -1159,7 +1211,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 25684,
     "location": "New York, NY",
-    "buyer": "Amanda Rodriguez"
+    "buyer_id": "buyer-10",
+    "buyer_username": "Amanda Rodriguez"
   },
   {
     "id": "listing-54",
@@ -1182,7 +1235,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 9866,
     "location": "Austin, TX",
-    "buyer": "Michelle White"
+    "buyer_id": "buyer-8",
+    "buyer_username": "Michelle White"
   },
   {
     "id": "listing-55",
@@ -1204,7 +1258,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 26378,
     "location": "Fort Worth, TX",
-    "buyer": "Michelle White"
+    "buyer_id": "buyer-8",
+    "buyer_username": "Michelle White"
   },
   {
     "id": "listing-56",
@@ -1227,7 +1282,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 30647,
     "location": "San Jose, CA",
-    "buyer": "John Smith"
+    "buyer_id": "buyer-11",
+    "buyer_username": "John Smith"
   },
   {
     "id": "listing-57",
@@ -1248,7 +1304,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 33343,
     "location": "Washington, DC",
-    "buyer": "Michael Brown"
+    "buyer_id": "buyer-6",
+    "buyer_username": "Michael Brown"
   },
   {
     "id": "listing-58",
@@ -1271,7 +1328,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 18447,
     "location": "Houston, TX",
-    "buyer": "Nicole Wright"
+    "buyer_id": "buyer-12",
+    "buyer_username": "Nicole Wright"
   },
   {
     "id": "listing-59",
@@ -1292,7 +1350,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 13202,
     "location": "Seattle, WA",
-    "buyer": "Emily Davis"
+    "buyer_id": "buyer-17",
+    "buyer_username": "Emily Davis"
   },
   {
     "id": "listing-60",
@@ -1313,7 +1372,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 18450,
     "location": "Jacksonville, FL",
-    "buyer": "James Lopez"
+    "buyer_id": "buyer-5",
+    "buyer_username": "James Lopez"
   },
   {
     "id": "listing-61",
@@ -1335,7 +1395,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 9053,
     "location": "Chicago, IL",
-    "buyer": "Christopher Lee"
+    "buyer_id": "buyer-4",
+    "buyer_username": "Christopher Lee"
   },
   {
     "id": "listing-62",
@@ -1356,7 +1417,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 12458,
     "location": "San Diego, CA",
-    "buyer": "Amanda Rodriguez"
+    "buyer_id": "buyer-10",
+    "buyer_username": "Amanda Rodriguez"
   },
   {
     "id": "listing-63",
@@ -1378,7 +1440,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 17287,
     "location": "San Jose, CA",
-    "buyer": "Sarah Johnson"
+    "buyer_id": "buyer-3",
+    "buyer_username": "Sarah Johnson"
   },
   {
     "id": "listing-64",
@@ -1401,7 +1464,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 22689,
     "location": "Seattle, WA",
-    "buyer": "Daniel Allen"
+    "buyer_id": "buyer-18",
+    "buyer_username": "Daniel Allen"
   },
   {
     "id": "listing-65",
@@ -1422,7 +1486,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 22524,
     "location": "Philadelphia, PA",
-    "buyer": "Daniel Allen"
+    "buyer_id": "buyer-18",
+    "buyer_username": "Daniel Allen"
   },
   {
     "id": "listing-66",
@@ -1443,7 +1508,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 20107,
     "location": "Jacksonville, FL",
-    "buyer": "Amanda Rodriguez"
+    "buyer_id": "buyer-10",
+    "buyer_username": "Amanda Rodriguez"
   },
   {
     "id": "listing-67",
@@ -1465,7 +1531,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 24591,
     "location": "Indianapolis, IN",
-    "buyer": "Nicole Wright"
+    "buyer_id": "buyer-12",
+    "buyer_username": "Nicole Wright"
   },
   {
     "id": "listing-68",
@@ -1487,7 +1554,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 23603,
     "location": "Philadelphia, PA",
-    "buyer": "Matthew King"
+    "buyer_id": "buyer-15",
+    "buyer_username": "Matthew King"
   },
   {
     "id": "listing-69",
@@ -1510,7 +1578,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 26497,
     "location": "Houston, TX",
-    "buyer": "Lisa Anderson"
+    "buyer_id": "buyer-16",
+    "buyer_username": "Lisa Anderson"
   },
   {
     "id": "listing-70",
@@ -1533,7 +1602,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 20268,
     "location": "Jacksonville, FL",
-    "buyer": "Lisa Anderson"
+    "buyer_id": "buyer-16",
+    "buyer_username": "Lisa Anderson"
   },
   {
     "id": "listing-71",
@@ -1555,7 +1625,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 17998,
     "location": "Phoenix, AZ",
-    "buyer": "Jessica Hall"
+    "buyer_id": "buyer-7",
+    "buyer_username": "Jessica Hall"
   },
   {
     "id": "listing-72",
@@ -1578,7 +1649,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 20808,
     "location": "San Jose, CA",
-    "buyer": "Sarah Johnson"
+    "buyer_id": "buyer-3",
+    "buyer_username": "Sarah Johnson"
   },
   {
     "id": "listing-73",
@@ -1600,7 +1672,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 23021,
     "location": "Austin, TX",
-    "buyer": "Michael Brown"
+    "buyer_id": "buyer-6",
+    "buyer_username": "Michael Brown"
   },
   {
     "id": "listing-74",
@@ -1623,7 +1696,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 20697,
     "location": "Philadelphia, PA",
-    "buyer": "David Wilson"
+    "buyer_id": "buyer-19",
+    "buyer_username": "David Wilson"
   },
   {
     "id": "listing-75",
@@ -1645,7 +1719,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 11383,
     "location": "Indianapolis, IN",
-    "buyer": "Emily Davis"
+    "buyer_id": "buyer-17",
+    "buyer_username": "Emily Davis"
   },
   {
     "id": "listing-76",
@@ -1666,7 +1741,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 26506,
     "location": "Dallas, TX",
-    "buyer": "Joshua Green"
+    "buyer_id": "buyer-13",
+    "buyer_username": "Joshua Green"
   },
   {
     "id": "listing-77",
@@ -1688,7 +1764,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 25489,
     "location": "Chicago, IL",
-    "buyer": "John Smith"
+    "buyer_id": "buyer-11",
+    "buyer_username": "John Smith"
   },
   {
     "id": "listing-78",
@@ -1709,7 +1786,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 26208,
     "location": "Dallas, TX",
-    "buyer": "Michael Brown"
+    "buyer_id": "buyer-6",
+    "buyer_username": "Michael Brown"
   },
   {
     "id": "listing-79",
@@ -1731,7 +1809,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 22417,
     "location": "Washington, DC",
-    "buyer": "Michael Brown"
+    "buyer_id": "buyer-6",
+    "buyer_username": "Michael Brown"
   },
   {
     "id": "listing-80",
@@ -1753,7 +1832,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 27382,
     "location": "Dallas, TX",
-    "buyer": "Lisa Anderson"
+    "buyer_id": "buyer-16",
+    "buyer_username": "Lisa Anderson"
   },
   {
     "id": "listing-81",
@@ -1774,7 +1854,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 26761,
     "location": "New York, NY",
-    "buyer": "Emily Davis"
+    "buyer_id": "buyer-17",
+    "buyer_username": "Emily Davis"
   },
   {
     "id": "listing-82",
@@ -1797,7 +1878,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 18461,
     "location": "Los Angeles, CA",
-    "buyer": "Daniel Allen"
+    "buyer_id": "buyer-18",
+    "buyer_username": "Daniel Allen"
   },
   {
     "id": "listing-83",
@@ -1818,7 +1900,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 18061,
     "location": "Jacksonville, FL",
-    "buyer": "John Smith"
+    "buyer_id": "buyer-11",
+    "buyer_username": "John Smith"
   },
   {
     "id": "listing-84",
@@ -1841,7 +1924,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 28931,
     "location": "New York, NY",
-    "buyer": "David Wilson"
+    "buyer_id": "buyer-19",
+    "buyer_username": "David Wilson"
   },
   {
     "id": "listing-85",
@@ -1862,7 +1946,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 32586,
     "location": "Houston, TX",
-    "buyer": "Michelle White"
+    "buyer_id": "buyer-8",
+    "buyer_username": "Michelle White"
   },
   {
     "id": "listing-86",
@@ -1885,7 +1970,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 24100,
     "location": "Charlotte, NC",
-    "buyer": "Michelle White"
+    "buyer_id": "buyer-8",
+    "buyer_username": "Michelle White"
   },
   {
     "id": "listing-87",
@@ -1906,7 +1992,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 19067,
     "location": "Charlotte, NC",
-    "buyer": "Stephanie Baker"
+    "buyer_id": "buyer-1",
+    "buyer_username": "Stephanie Baker"
   },
   {
     "id": "listing-88",
@@ -1929,7 +2016,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 30339,
     "location": "Denver, CO",
-    "buyer": "Michael Brown"
+    "buyer_id": "buyer-6",
+    "buyer_username": "Michael Brown"
   },
   {
     "id": "listing-89",
@@ -1952,7 +2040,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 30041,
     "location": "Charlotte, NC",
-    "buyer": "Jennifer Martinez"
+    "buyer_id": "buyer-2",
+    "buyer_username": "Jennifer Martinez"
   },
   {
     "id": "listing-90",
@@ -1974,7 +2063,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 32475,
     "location": "Indianapolis, IN",
-    "buyer": "Nicole Wright"
+    "buyer_id": "buyer-12",
+    "buyer_username": "Nicole Wright"
   },
   {
     "id": "listing-91",
@@ -1997,7 +2087,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 10009,
     "location": "Charlotte, NC",
-    "buyer": "Lisa Anderson"
+    "buyer_id": "buyer-16",
+    "buyer_username": "Lisa Anderson"
   },
   {
     "id": "listing-92",
@@ -2019,7 +2110,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 25571,
     "location": "Houston, TX",
-    "buyer": "Jessica Hall"
+    "buyer_id": "buyer-7",
+    "buyer_username": "Jessica Hall"
   },
   {
     "id": "listing-93",
@@ -2042,7 +2134,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 20925,
     "location": "Los Angeles, CA",
-    "buyer": "Matthew King"
+    "buyer_id": "buyer-15",
+    "buyer_username": "Matthew King"
   },
   {
     "id": "listing-94",
@@ -2065,7 +2158,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 25435,
     "location": "Phoenix, AZ",
-    "buyer": "Emily Davis"
+    "buyer_id": "buyer-17",
+    "buyer_username": "Emily Davis"
   },
   {
     "id": "listing-95",
@@ -2086,7 +2180,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 12250,
     "location": "Denver, CO",
-    "buyer": "Sarah Johnson"
+    "buyer_id": "buyer-3",
+    "buyer_username": "Sarah Johnson"
   },
   {
     "id": "listing-96",
@@ -2108,7 +2203,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 19947,
     "location": "Houston, TX",
-    "buyer": "John Smith"
+    "buyer_id": "buyer-11",
+    "buyer_username": "John Smith"
   },
   {
     "id": "listing-97",
@@ -2131,7 +2227,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 22781,
     "location": "Austin, TX",
-    "buyer": "Michelle White"
+    "buyer_id": "buyer-8",
+    "buyer_username": "Michelle White"
   },
   {
     "id": "listing-98",
@@ -2153,7 +2250,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 26044,
     "location": "Charlotte, NC",
-    "buyer": "Michael Brown"
+    "buyer_id": "buyer-6",
+    "buyer_username": "Michael Brown"
   },
   {
     "id": "listing-99",
@@ -2176,7 +2274,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 23371,
     "location": "Austin, TX",
-    "buyer": "Joshua Green"
+    "buyer_id": "buyer-13",
+    "buyer_username": "Joshua Green"
   },
   {
     "id": "listing-100",
@@ -2199,7 +2298,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 19090,
     "location": "Philadelphia, PA",
-    "buyer": "Christopher Lee"
+    "buyer_id": "buyer-4",
+    "buyer_username": "Christopher Lee"
   },
   {
     "id": "listing-101",
@@ -2222,7 +2322,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 22223,
     "location": "Columbus, OH",
-    "buyer": "Joshua Green"
+    "buyer_id": "buyer-13",
+    "buyer_username": "Joshua Green"
   },
   {
     "id": "listing-102",
@@ -2244,7 +2345,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 17209,
     "location": "New York, NY",
-    "buyer": "Stephanie Baker"
+    "buyer_id": "buyer-1",
+    "buyer_username": "Stephanie Baker"
   },
   {
     "id": "listing-103",
@@ -2266,7 +2368,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 10841,
     "location": "Fort Worth, TX",
-    "buyer": "Christopher Lee"
+    "buyer_id": "buyer-4",
+    "buyer_username": "Christopher Lee"
   },
   {
     "id": "listing-104",
@@ -2288,7 +2391,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 9212,
     "location": "New York, NY",
-    "buyer": "Sarah Johnson"
+    "buyer_id": "buyer-3",
+    "buyer_username": "Sarah Johnson"
   },
   {
     "id": "listing-105",
@@ -2311,7 +2415,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 26413,
     "location": "Houston, TX",
-    "buyer": "William Garcia"
+    "buyer_id": "buyer-9",
+    "buyer_username": "William Garcia"
   },
   {
     "id": "listing-106",
@@ -2334,7 +2439,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 26053,
     "location": "Columbus, OH",
-    "buyer": "Michelle White"
+    "buyer_id": "buyer-8",
+    "buyer_username": "Michelle White"
   },
   {
     "id": "listing-107",
@@ -2357,7 +2463,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 29637,
     "location": "Columbus, OH",
-    "buyer": "Emily Davis"
+    "buyer_id": "buyer-17",
+    "buyer_username": "Emily Davis"
   },
   {
     "id": "listing-108",
@@ -2379,7 +2486,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 28677,
     "location": "Chicago, IL",
-    "buyer": "Sarah Johnson"
+    "buyer_id": "buyer-3",
+    "buyer_username": "Sarah Johnson"
   },
   {
     "id": "listing-109",
@@ -2402,7 +2510,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 22656,
     "location": "Chicago, IL",
-    "buyer": "David Wilson"
+    "buyer_id": "buyer-19",
+    "buyer_username": "David Wilson"
   },
   {
     "id": "listing-110",
@@ -2425,7 +2534,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 29033,
     "location": "Indianapolis, IN",
-    "buyer": "Sarah Johnson"
+    "buyer_id": "buyer-3",
+    "buyer_username": "Sarah Johnson"
   },
   {
     "id": "listing-111",
@@ -2446,7 +2556,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 21743,
     "location": "San Antonio, TX",
-    "buyer": "Christopher Lee"
+    "buyer_id": "buyer-4",
+    "buyer_username": "Christopher Lee"
   },
   {
     "id": "listing-112",
@@ -2469,7 +2580,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 31028,
     "location": "San Jose, CA",
-    "buyer": "Stephanie Baker"
+    "buyer_id": "buyer-1",
+    "buyer_username": "Stephanie Baker"
   },
   {
     "id": "listing-113",
@@ -2492,7 +2604,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 26720,
     "location": "Chicago, IL",
-    "buyer": "Amanda Rodriguez"
+    "buyer_id": "buyer-10",
+    "buyer_username": "Amanda Rodriguez"
   },
   {
     "id": "listing-114",
@@ -2515,7 +2628,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 30382,
     "location": "New York, NY",
-    "buyer": "David Wilson"
+    "buyer_id": "buyer-19",
+    "buyer_username": "David Wilson"
   },
   {
     "id": "listing-115",
@@ -2538,7 +2652,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 13467,
     "location": "Indianapolis, IN",
-    "buyer": "Stephanie Baker"
+    "buyer_id": "buyer-1",
+    "buyer_username": "Stephanie Baker"
   },
   {
     "id": "listing-116",
@@ -2561,7 +2676,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 27221,
     "location": "Fort Worth, TX",
-    "buyer": "Daniel Allen"
+    "buyer_id": "buyer-18",
+    "buyer_username": "Daniel Allen"
   },
   {
     "id": "listing-117",
@@ -2583,7 +2699,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 20897,
     "location": "Phoenix, AZ",
-    "buyer": "Christopher Lee"
+    "buyer_id": "buyer-4",
+    "buyer_username": "Christopher Lee"
   },
   {
     "id": "listing-118",
@@ -2605,7 +2722,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 25629,
     "location": "San Francisco, CA",
-    "buyer": "Robert Taylor"
+    "buyer_id": "buyer-20",
+    "buyer_username": "Robert Taylor"
   },
   {
     "id": "listing-119",
@@ -2626,7 +2744,8 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 16754,
     "location": "Fort Worth, TX",
-    "buyer": "Emily Davis"
+    "buyer_id": "buyer-17",
+    "buyer_username": "Emily Davis"
   },
   {
     "id": "listing-120",
@@ -2647,6 +2766,7 @@ export const MOCK_DATA: Listing[] = [
     ],
     "buyMax": 29278,
     "location": "Seattle, WA",
-    "buyer": "Michelle White"
+    "buyer_id": "buyer-8",
+    "buyer_username": "Michelle White"
   }
 ]

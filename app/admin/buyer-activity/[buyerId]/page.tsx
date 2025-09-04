@@ -43,7 +43,7 @@ export default function BuyerActivityPage() {
   const fetchBuyerData = async () => {
     setLoading(true);
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8001';
+      const baseUrl = (process.env.NEXT_PUBLIC_BACKEND_URL ?? '/api').replace(/\/+$/, '');
       
       // Build query parameters
       const queryParams = new URLSearchParams();
@@ -128,7 +128,7 @@ export default function BuyerActivityPage() {
 
   const handleNotify = async (vin: string) => {
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8001';
+      const baseUrl = (process.env.NEXT_PUBLIC_BACKEND_URL ?? '/api').replace(/\/+$/, '');
       await fetch(`${baseUrl}/notify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

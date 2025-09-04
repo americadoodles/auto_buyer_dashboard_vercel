@@ -76,7 +76,7 @@ export const useListings = () => {
         byVin[s.vin] = { score: s.score, buyMax: s.buyMax, reasonCodes: s.reasonCodes };
       }
       
-      setData(d => d.map(x => byVin[x.vin] ? { ...x, ...byVin[x.vin] } : x));
+      setData(d => d.map(x => x.vin && byVin[x.vin] ? { ...x, ...byVin[x.vin] } : x));
       alert(`Re-scored ${scores.length} listings.`);
     } catch (e: any) {
       alert('Failed to score: ' + e.message);

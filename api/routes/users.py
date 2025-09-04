@@ -15,7 +15,7 @@ from ..core.auth import create_access_token, get_current_user, require_admin
 
 user_router = APIRouter(prefix="/users", tags=["users"])
 
-@user_router.get("", response_model=list[UserOut])
+@user_router.get("/", response_model=list[UserOut])
 def get_users(_: UserOut = Depends(require_admin)):
     return list_users()
 

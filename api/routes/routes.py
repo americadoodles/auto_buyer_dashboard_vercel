@@ -16,12 +16,14 @@ score_router = APIRouter(prefix="/score", tags=["score"])
 notify_router = APIRouter(prefix="/notify", tags=["notify"])
 
 # Ingest routes
-@ingest_router.post("", response_model=List[ListingOut])
+@ingest_router.post("", include_in_schema=False, response_model=List[ListingOut])  # /api/ingest
+@ingest_router.post("/", response_model=List[ListingOut])  # /api/ingest/
 def ingest(listings: List[ListingIn], current_user: UserOut = Depends(get_current_user)):
     return ingest_listings(listings, buyer_id=str(current_user.id))
 
 # Listings routes
-@listings_router.get("", response_model=List[ListingOut])
+@listings_router.get("", include_in_schema=False, response_model=List[ListingOut])  # /api/listings
+@listings_router.get("/", response_model=List[ListingOut])  # /api/listings/
 def list_(limit: int = Query(500, ge=1, le=1000)):
     return list_listings(limit=limit)
 
@@ -45,7 +47,8 @@ def get_buyer_performance_stats(
     return get_buyer_stats(buyer_id, start_date, end_date)
 
 # Score routes
-@score_router.post("", response_model=List[ScoreResponse])
+@score_router.post("", include_in_schema=False, response_model=List[ScoreResponse])  # /api/score
+@score_router.post("/", response_model=List[ScoreResponse])  # /api/score/
 def score(payload: List[ListingScoreIn]):
     out: list[ScoreResponse] = []
     for item in payload:
@@ -58,6 +61,7 @@ def score(payload: List[ListingScoreIn]):
     return out
 
 # Notify routes
-@notify_router.post("", response_model=List[NotifyResponse])
+@notify_router.post("", include_in_schema=False, response_model=List[NotifyResponse])  # /api/notify
+@notify_router.post("/", response_model=List[NotifyResponse])  # /api/notify/
 def notify(items: List[NotifyItem]):
     return [NotifyResponse(**do_notify(it)) for it in items]

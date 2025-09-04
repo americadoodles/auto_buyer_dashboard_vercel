@@ -92,10 +92,11 @@ export const TableRow: React.FC<TableRowProps> = ({ listing, onNotify }) => {
       </div>
       <div className="col-span-1 flex gap-2">
         <button
-          className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-full transition-colors"
-          onClick={() => onNotify(listing.vin)}
-          title="Notify about this listing"
-          aria-label="Notify about this listing"
+          className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={() => listing.vin && onNotify(listing.vin)}
+          disabled={!listing.vin}
+          title={listing.vin ? "Notify about this listing" : "VIN not available"}
+          aria-label={listing.vin ? "Notify about this listing" : "VIN not available"}
         >
           <Bell className="h-4 w-4" />
         </button>

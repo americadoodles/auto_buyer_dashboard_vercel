@@ -9,6 +9,9 @@ class Settings(BaseSettings):
         os.getenv("DATABASE_URL")
         or os.getenv("POSTGRES_URL")         # Vercel Neon integration
         or os.getenv("NEON_DATABASE_URL")    # sometimes used
+        or os.getenv("STAGING_DATABASE_URL")
+        or os.getenv("STAGING_POSTGRES_URL")         
+        or os.getenv("STAGING_NEON_DATABASE_URL")
         or ""
     )
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "cloud")

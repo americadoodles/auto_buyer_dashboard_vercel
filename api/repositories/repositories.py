@@ -301,3 +301,131 @@ def upsert_vehicle(vehicle_key: str, vin: str, year: int, make: str, model: str,
             """, (vehicle_key, vin, year, make, model, trim))
     finally:
         conn.close()
+
+# ============================================================================
+# TRENDS REPOSITORY
+# ============================================================================
+
+def get_trends_data(days_back: int = 30) -> dict:
+    """Get trend data comparing current period vs previous period"""
+    if not DB_ENABLED:
+        return {
+            "total_listings": {"current": 0, "previous": 0, "trend": 0, "trend_up": False},
+            "average_price": {"current": 0, "previous": 0, "trend": 0, "trend_up": False},
+            "conversion_rate": {"current": 0, "previous": 0, "trend": 0, "trend_up": False},
+            "active_buyers": {"current": 0, "previous": 0, "trend": 0, "trend_up": False},
+            "average_profit": {"current": 0, "previous": 0, "trend": 0, "trend_up": False},
+            "aged_inventory": {"current": 0, "previous": 0, "trend": 0, "trend_up": False},
+        }
+    
+    conn = get_conn(); assert conn is not None
+    try:
+        with conn, conn.cursor() as cur:
+            # Calculate date ranges
+            cur.execute("SELECT NOW() as now")
+            now = cur.fetchone()[0]
+            
+            # Current period: last N days
+            current_start = now - datetime.timedelta(days=days_back)
+            # Previous period: N days before that
+            previous_start = now - datetime.timedelta(days=days_back * 2)
+            previous_end = current_start
+            
+            # Query for current period metrics
+            cur.execute("""
+                SELECT 
+                    COUNT(*) as total_listings,
+                    AVG(l.price) as avg_price,
+                    COUNT(DISTINCT l.buyer_id) as active_buyers,
+                    COUNT(CASE WHEN s.score IS NOT NULL THEN 1 END) as scored_listings,
+                    COUNT(CASE WHEN l.created_at < %s THEN 1 END) as aged_inventory
+                FROM listings l
+                LEFT JOIN (
+                    SELECT DISTINCT ON (vin) vin, score
+                    FROM scores
+                    ORDER BY vin, created_at DESC
+                ) s ON s.vin = l.vin
+                WHERE l.created_at >= %s
+            """, (now - datetime.timedelta(days=30), current_start))
+            
+            current_result = cur.fetchone()
+            current_total, current_avg_price, current_buyers, current_scored, current_aged = current_result or (0, 0, 0, 0, 0)
+            current_conversion = (current_scored / current_total * 100) if current_total > 0 else 0
+            current_profit = float(current_avg_price) * 0.15 if current_avg_price else 0
+            
+            # Query for previous period metrics
+            cur.execute("""
+                SELECT 
+                    COUNT(*) as total_listings,
+                    AVG(l.price) as avg_price,
+                    COUNT(DISTINCT l.buyer_id) as active_buyers,
+                    COUNT(CASE WHEN s.score IS NOT NULL THEN 1 END) as scored_listings,
+                    COUNT(CASE WHEN l.created_at < %s THEN 1 END) as aged_inventory
+                FROM listings l
+                LEFT JOIN (
+                    SELECT DISTINCT ON (vin) vin, score
+                    FROM scores
+                    ORDER BY vin, created_at DESC
+                ) s ON s.vin = l.vin
+                WHERE l.created_at >= %s AND l.created_at < %s
+            """, (now - datetime.timedelta(days=30), previous_start, previous_end))
+            
+            previous_result = cur.fetchone()
+            previous_total, previous_avg_price, previous_buyers, previous_scored, previous_aged = previous_result or (0, 0, 0, 0, 0)
+            previous_conversion = (previous_scored / previous_total * 100) if previous_total > 0 else 0
+            previous_profit = float(previous_avg_price) * 0.15 if previous_avg_price else 0
+            
+            def calculate_trend(current: float, previous: float) -> tuple[float, bool]:
+                if previous == 0:
+                    return (100.0 if current > 0 else 0.0, current > 0)
+                change = ((current - previous) / previous) * 100
+                return (abs(change), change > 0)
+            
+            # Calculate trends for each metric
+            total_trend, total_up = calculate_trend(current_total, previous_total)
+            price_trend, price_up = calculate_trend(current_avg_price or 0, previous_avg_price or 0)
+            conversion_trend, conversion_up = calculate_trend(current_conversion, previous_conversion)
+            buyers_trend, buyers_up = calculate_trend(current_buyers, previous_buyers)
+            profit_trend, profit_up = calculate_trend(current_profit, previous_profit)
+            aged_trend, aged_up = calculate_trend(current_aged, previous_aged)
+            
+            return {
+                "total_listings": {
+                    "current": int(current_total),
+                    "previous": int(previous_total),
+                    "trend": round(total_trend, 1),
+                    "trend_up": total_up
+                },
+                "average_price": {
+                    "current": round(float(current_avg_price or 0), 2),
+                    "previous": round(float(previous_avg_price or 0), 2),
+                    "trend": round(price_trend, 1),
+                    "trend_up": price_up
+                },
+                "conversion_rate": {
+                    "current": round(current_conversion, 1),
+                    "previous": round(previous_conversion, 1),
+                    "trend": round(conversion_trend, 1),
+                    "trend_up": conversion_up
+                },
+                "active_buyers": {
+                    "current": int(current_buyers),
+                    "previous": int(previous_buyers),
+                    "trend": round(buyers_trend, 1),
+                    "trend_up": buyers_up
+                },
+                "average_profit": {
+                    "current": round(current_profit, 2),
+                    "previous": round(previous_profit, 2),
+                    "trend": round(profit_trend, 1),
+                    "trend_up": profit_up
+                },
+                "aged_inventory": {
+                    "current": int(current_aged),
+                    "previous": int(previous_aged),
+                    "trend": round(aged_trend, 1),
+                    "trend_up": aged_up
+                }
+            }
+    finally:
+        conn.close()

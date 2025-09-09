@@ -4,7 +4,7 @@ from datetime import datetime
 from ..schemas.listing import ListingIn, ListingOut, ListingScoreIn
 from ..schemas.notify import NotifyItem, NotifyResponse
 from ..schemas.scoring import ScoreResponse
-from ..repositories.repositories import ingest_listings, list_listings, list_listings_by_buyer, get_buyer_stats, update_cached_score, insert_score
+from ..repositories.repositories import ingest_listings, list_listings, list_listings_by_buyer, get_buyer_stats, update_cached_score, insert_score, get_trends_data
 from ..core.auth import get_current_user
 from ..schemas.user import UserOut
 from ..services.services import score_listing, notify as do_notify
@@ -14,6 +14,7 @@ ingest_router = APIRouter(prefix="/ingest", tags=["ingest"])
 listings_router = APIRouter(prefix="/listings", tags=["listings"])
 score_router = APIRouter(prefix="/score", tags=["score"])
 notify_router = APIRouter(prefix="/notify", tags=["notify"])
+trends_router = APIRouter(prefix="/trends", tags=["trends"])
 
 # Ingest routes
 @ingest_router.post("", include_in_schema=False, response_model=List[ListingOut])  # /api/ingest
@@ -65,3 +66,10 @@ def score(payload: List[ListingScoreIn]):
 @notify_router.post("/", response_model=List[NotifyResponse])  # /api/notify/
 def notify(items: List[NotifyItem]):
     return [NotifyResponse(**do_notify(it)) for it in items]
+
+# Trends routes
+@trends_router.get("", include_in_schema=False)  # /api/trends
+@trends_router.get("/", response_model=dict)  # /api/trends/
+def get_trends(days_back: int = Query(30, ge=7, le=90, description="Number of days to look back for trend calculation")):
+    """Get KPI trends comparing current period vs previous period"""
+    return get_trends_data(days_back)

@@ -15,6 +15,7 @@ import {
 import { useAuth } from '../auth/useAuth';
 import { AdminLayout } from '../../components/templates/AdminLayout';
 import { useListings } from '../../lib/hooks/useListings';
+import { useAdminStats } from '../../lib/hooks/useAdminStats';
 
 interface StatCard {
   title: string;
@@ -27,33 +28,34 @@ interface StatCard {
 export default function AdminDashboardPage() {
   const { user } = useAuth();
   const { data: listings, backendOk } = useListings();
+  const { totalUsers, pendingRequests, activeRoles, totalListings, loading: statsLoading, error: statsError } = useAdminStats();
 
   // Dynamic stats based on real data
   const statCards: StatCard[] = [
     {
       title: 'Total Users',
-      value: '24', // This would come from user management API
+      value: statsLoading ? '...' : totalUsers,
       description: 'Active registered users',
       icon: Users,
       color: 'bg-blue-500'
     },
     {
       title: 'Pending Requests',
-      value: '3', // This would come from signup requests API
+      value: statsLoading ? '...' : pendingRequests,
       description: 'Awaiting approval',
       icon: UserPlus,
       color: 'bg-yellow-500'
     },
     {
       title: 'Active Roles',
-      value: '4', // This would come from roles API
+      value: statsLoading ? '...' : activeRoles,
       description: 'User role types',
       icon: Shield,
       color: 'bg-green-500'
     },
     {
       title: 'Total Listings',
-      value: listings?.length || 0,
+      value: statsLoading ? '...' : totalListings,
       description: 'Vehicle listings',
       icon: Car,
       color: 'bg-purple-500'
@@ -127,6 +129,24 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
+        {/* Stats Error */}
+        {statsError && (
+          <div className="rounded-xl border border-red-300 bg-red-50 p-4 text-red-900">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium">
+                  {statsError}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {statCards.map((card, index) => {
@@ -177,29 +197,48 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Recent Activity */}
+        {/* System Overview */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Recent Activity</h2>
-          <div className="space-y-4">
-            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <div className="flex-1">
-                <p className="text-sm text-gray-900">New user registration from john@example.com</p>
-                <p className="text-xs text-gray-500">2 minutes ago</p>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">System Overview</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="text-sm text-gray-900">Backend Status</span>
+                </div>
+                <span className={`text-sm font-medium ${backendOk ? 'text-green-600' : 'text-red-600'}`}>
+                  {backendOk ? 'Connected' : 'Disconnected'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span className="text-sm text-gray-900">Data Loading</span>
+                </div>
+                <span className={`text-sm font-medium ${statsLoading ? 'text-yellow-600' : 'text-green-600'}`}>
+                  {statsLoading ? 'Loading...' : 'Ready'}
+                </span>
               </div>
             </div>
-            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <div className="flex-1">
-                <p className="text-sm text-gray-900">User role updated for analyst@company.com</p>
-                <p className="text-xs text-gray-500">15 minutes ago</p>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  <span className="text-sm text-gray-900">Listings Data</span>
+                </div>
+                <span className={`text-sm font-medium ${listings ? 'text-green-600' : 'text-yellow-600'}`}>
+                  {listings ? `${listings.length} items` : 'Loading...'}
+                </span>
               </div>
-            </div>
-            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-              <div className="flex-1">
-                <p className="text-sm text-gray-900">New vehicle listing added</p>
-                <p className="text-xs text-gray-500">1 hour ago</p>
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                  <span className="text-sm text-gray-900">User Session</span>
+                </div>
+                <span className="text-sm font-medium text-green-600">
+                  {user?.email || 'Not logged in'}
+                </span>
               </div>
             </div>
           </div>

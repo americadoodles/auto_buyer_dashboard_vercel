@@ -48,14 +48,14 @@ export const useKpiTrends = (listings: Listing[] = []) => {
           // Current period (last 30 days)
           fetch(`${baseUrl}/listings/?start_date=${thirtyDaysAgo.toISOString()}&end_date=${now.toISOString()}`, {
             headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+              'Authorization': `Bearer ${localStorage.getItem('auth.token')}`,
             },
           }).then(res => res.ok ? res.json() : []),
           
           // Previous period (30-60 days ago)
           fetch(`${baseUrl}/listings/?start_date=${sixtyDaysAgo.toISOString()}&end_date=${thirtyDaysAgo.toISOString()}`, {
             headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+              'Authorization': `Bearer ${localStorage.getItem('auth.token')}`,
             },
           }).then(res => res.ok ? res.json() : [])
         ]);

@@ -30,7 +30,7 @@ export const useTrendsApi = (daysBack: number = 30) => {
         const baseUrl = (process.env.NEXT_PUBLIC_BACKEND_URL ?? '/api').replace(/\/+$/, '');
         const response = await fetch(`${baseUrl}/trends/?days_back=${daysBack}`, {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Authorization': `Bearer ${localStorage.getItem('auth.token')}`,
           },
         });
 

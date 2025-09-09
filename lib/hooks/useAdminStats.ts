@@ -30,22 +30,22 @@ export const useAdminStats = () => {
         const [usersResponse, signupRequestsResponse, rolesResponse, listingsResponse] = await Promise.all([
           fetch(`${baseUrl}/users/`, {
             headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+              'Authorization': `Bearer ${localStorage.getItem('auth.token')}`,
             },
           }),
           fetch(`${baseUrl}/users/signup-requests`, {
             headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+              'Authorization': `Bearer ${localStorage.getItem('auth.token')}`,
             },
           }),
           fetch(`${baseUrl}/roles/`, {
             headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+              'Authorization': `Bearer ${localStorage.getItem('auth.token')}`,
             },
           }),
           fetch(`${baseUrl}/listings/`, {
             headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+              'Authorization': `Bearer ${localStorage.getItem('auth.token')}`,
             },
           }),
         ]);

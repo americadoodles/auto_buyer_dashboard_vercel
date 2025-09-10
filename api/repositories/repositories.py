@@ -37,12 +37,33 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                     model = norm["model"].strip()
                     trim = (norm["trim"] or None)
 
+                    # Handle external API data: map status, reasonCodes, buyMax to Decision object
+                    decision = None
+                    if norm.get("status") or norm.get("reasonCodes") or norm.get("buyMax"):
+                        from ..schemas.listing import Decision
+                        decision = Decision(
+                            status=norm.get("status", ""),
+                            reasons=norm.get("reasonCodes", []),
+                            buyMax=float(norm.get("buyMax", 0)) if norm.get("buyMax") is not None else 0
+                        )
+
                     # vehicles
                     cur.execute("""
                          insert into vehicles (vehicle_key, vin, year, make, model, trim)
                          values (%s,%s,%s,%s,%s,%s)
                          on conflict (vehicle_key) do update set vin=excluded.vin, year=excluded.year, make=excluded.make, model=excluded.model, trim=excluded.trim
                      """, (vehicle_key, vin, norm["year"], make, model, trim))
+                    
+                    # Store decision data in scores table if provided
+                    if decision and vin:
+                        try:
+                            cur.execute("""
+                                insert into scores (vehicle_key, vin, score, buy_max, reason_codes)
+                                values (%s, %s, %s, %s, %s)
+                            """, (vehicle_key, vin, 0, decision.buyMax, decision.reasons))
+                        except Exception as log_exc:
+                            logging.error(f"Failed to insert score data: {log_exc}")
+                    
                     # listings
                     # Convert datetime objects to ISO format strings for JSON serialization
                     payload_data = norm.copy()
@@ -63,12 +84,17 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                     except Exception as log_exc:
                         logging.error(f"Failed to insert listing into database: {log_exc}")
                     new_id = str(cur.fetchone()[0])
+                    
+                    # Extract reasonCodes and buyMax for ListingOut
+                    reason_codes = norm.get("reasonCodes", [])
+                    buy_max = float(norm.get("buyMax", 0)) if norm.get("buyMax") is not None else None
+                    
                     out.append(ListingOut(
                         id=new_id, vehicle_key=vehicle_key, vin=vin, year=norm["year"], make=make, model=model,
                         trim=trim, miles=norm["miles"], price=norm["price"], dom=norm["dom"],
                         source=norm["source"], location=norm.get("location"), buyer_id=buyer_from_id,
-                        radius=norm.get("radius", 25), reasonCodes=[],
-                        buyMax=None, score=None
+                        radius=norm.get("radius", 25), reasonCodes=reason_codes,
+                        buyMax=buy_max, score=None, decision=decision
                     ))
         finally:
             conn.close()
@@ -76,13 +102,28 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
 
     # in-memory fallback
     for item in rows:
+        norm = item.model_dump()
         vin = item.vin.strip().upper() if item.vin and item.vin.strip() else None
+        
+        # Handle external API data: map status, reasonCodes, buyMax to Decision object
+        decision = None
+        if norm.get("status") or norm.get("reasonCodes") or norm.get("buyMax"):
+            from ..schemas.listing import Decision
+            decision = Decision(
+                status=norm.get("status", ""),
+                reasons=norm.get("reasonCodes", []),
+                buyMax=float(norm.get("buyMax", 0)) if norm.get("buyMax") is not None else 0
+            )
+        
         lid = item.id or f"mem-{len(_BY_ID)+1}"
+        reason_codes = norm.get("reasonCodes", [])
+        buy_max = float(norm.get("buyMax", 0)) if norm.get("buyMax") is not None else None
+        
         obj = ListingOut(
             id=lid, vin=vin, year=item.year, make=item.make.strip(), model=item.model.strip(),
             trim=item.trim.strip() if item.trim else None, miles=item.miles, price=item.price,
-            dom=item.dom, source=item.source, location=None, buyer_id=buyer_id or item.buyer_id,
-            radius=item.radius or 25, reasonCodes=[], buyMax=None
+            dom=item.dom, source=item.source, location=norm.get("location"), buyer_id=buyer_id or item.buyer_id,
+            radius=item.radius or 25, reasonCodes=reason_codes, buyMax=buy_max, decision=decision
         )
         _BY_ID[lid] = obj
         if vin:
@@ -109,7 +150,8 @@ def list_listings(limit: int = 500) -> list[ListingOut]:
                     u.username as buyer_username,
                     COALESCE(s.score, 0) as score, 
                     s.buy_max, 
-                    COALESCE(s.reason_codes, ARRAY[]::text[]) as reason_codes
+                    COALESCE(s.reason_codes, ARRAY[]::text[]) as reason_codes,
+                    l.payload
                   FROM listings l
                   LEFT JOIN vehicles v ON v.vehicle_key = l.vehicle_key
                   LEFT JOIN (
@@ -122,14 +164,26 @@ def list_listings(limit: int = 500) -> list[ListingOut]:
                   LIMIT %s
                 """, (limit,))
                 out: list[ListingOut] = []
-                for rid, vehicle_key, vin, year, make, model, trim, miles, price, dom, source, location, buyer_id, buyer_username, score, buy_max, reason_codes in cur.fetchall():
+                for rid, vehicle_key, vin, year, make, model, trim, miles, price, dom, source, location, buyer_id, buyer_username, score, buy_max, reason_codes, payload in cur.fetchall():
+                    # Extract decision data from payload if available
+                    decision = None
+                    if payload:
+                        payload_data = json.loads(payload) if isinstance(payload, str) else payload
+                        if payload_data.get("status") or payload_data.get("reasonCodes") or payload_data.get("buyMax"):
+                            from ..schemas.listing import Decision
+                            decision = Decision(
+                                status=payload_data.get("status", ""),
+                                reasons=payload_data.get("reasonCodes", []),
+                                buyMax=float(payload_data.get("buyMax", 0)) if payload_data.get("buyMax") is not None else 0
+                            )
+                    
                     out.append(ListingOut(
                         id=str(rid), vehicle_key=vehicle_key, vin=vin or "", year=int(year), make=make, model=model, trim=trim,
                         miles=int(miles), price=float(price), dom=int(dom), source=source,
                         location=location, buyer_id=buyer_id, buyer_username=buyer_username,
                         radius=25, reasonCodes=reason_codes or [],
                         buyMax=float(buy_max) if buy_max is not None else None,
-                        score=int(score) if score is not None else None
+                        score=int(score) if score is not None else None, decision=decision
                     ))
                 return out
         except Exception as e:
@@ -160,7 +214,8 @@ def list_listings_by_buyer(buyer_id: str, start_date: Optional[datetime.datetime
                     COALESCE(s.score, 0) as score, 
                     s.buy_max, 
                     COALESCE(s.reason_codes, ARRAY[]::text[]) as reason_codes,
-                    l.created_at
+                    l.created_at,
+                    l.payload
                   FROM listings l
                   LEFT JOIN vehicles v ON v.vehicle_key = l.vehicle_key
                   LEFT JOIN (
@@ -187,14 +242,26 @@ def list_listings_by_buyer(buyer_id: str, start_date: Optional[datetime.datetime
                 
                 cur.execute(base_query, params)
                 out: list[ListingOut] = []
-                for rid, vehicle_key, vin, year, make, model, trim, miles, price, dom, source, location, buyer_id, buyer_username, score, buy_max, reason_codes, created_at in cur.fetchall():
+                for rid, vehicle_key, vin, year, make, model, trim, miles, price, dom, source, location, buyer_id, buyer_username, score, buy_max, reason_codes, created_at, payload in cur.fetchall():
+                    # Extract decision data from payload if available
+                    decision = None
+                    if payload:
+                        payload_data = json.loads(payload) if isinstance(payload, str) else payload
+                        if payload_data.get("status") or payload_data.get("reasonCodes") or payload_data.get("buyMax"):
+                            from ..schemas.listing import Decision
+                            decision = Decision(
+                                status=payload_data.get("status", ""),
+                                reasons=payload_data.get("reasonCodes", []),
+                                buyMax=float(payload_data.get("buyMax", 0)) if payload_data.get("buyMax") is not None else 0
+                            )
+                    
                     out.append(ListingOut(
                         id=str(rid), vehicle_key=vehicle_key, vin=vin or "", year=int(year), make=make, model=model, trim=trim,
                         miles=int(miles), price=float(price), dom=int(dom), source=source,
                         location=location, buyer_id=buyer_id, buyer_username=buyer_username,
                         radius=25, reasonCodes=reason_codes or [],
                         buyMax=float(buy_max) if buy_max is not None else None,
-                        score=int(score) if score is not None else None
+                        score=int(score) if score is not None else None, decision=decision
                     ))
                 return out
         finally:

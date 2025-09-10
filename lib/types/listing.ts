@@ -1,3 +1,9 @@
+export type Decision = {
+  buyMax: number;
+  status: string;
+  reasons: string[];
+};
+
 export type Listing = {
   id: string;
   vehicle_key: string;
@@ -18,10 +24,11 @@ export type Listing = {
   buyer_id: string;
   buyer_username?: string;
   created_at?: string;
+  decision?: Decision;
 };
 
 export type SortConfig = {
-  key: keyof Listing;
+  key: keyof Listing | 'decision_status' | 'decision_reasons';
   dir: 'asc' | 'desc';
 };
 

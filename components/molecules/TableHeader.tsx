@@ -22,12 +22,14 @@ const columns = [
   { key: 'buyer_username', label: 'Buyer' },
   { key: 'radius', label: 'Radius' },
   { key: 'buyMax', label: 'Buy-Max' },
+  { key: 'decision_status', label: 'Status' },
+  { key: 'decision_reasons', label: 'Reasons' },
   { key: 'actions', label: '' }
 ];
 
 export const TableHeader: React.FC<TableHeaderProps> = ({ sort, onSort }) => {
   return (
-    <div className="grid grid-cols-14 bg-slate-50 px-4 py-2 text-xs font-medium uppercase tracking-wide text-slate-600">
+    <div className="grid grid-cols-16 bg-slate-50 px-4 py-2 text-xs font-medium uppercase tracking-wide text-slate-600">
       {columns.map(col => (
         <button
           key={col.key}

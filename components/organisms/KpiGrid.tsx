@@ -7,7 +7,7 @@ import { useTrendsApi } from '../../lib/hooks/useTrendsApi';
 
 export const KpiGrid: React.FC = () => {
   const { data: listings, backendOk } = useListings();
-  const metrics = useKpiMetrics(listings);
+  const { metrics, loading: kpiLoading, error: kpiError } = useKpiMetrics();
   const { trends: trendsData, loading: trendsLoading, error: trendsError } = useTrendsApi(30);
 
   const formatCurrency = (amount: number) => {
@@ -31,8 +31,8 @@ export const KpiGrid: React.FC = () => {
     return `${trend.toFixed(1)}%`;
   };
 
-  // Show loading state when backend is not available or data is loading
-  const isLoading = !backendOk || !listings || trendsLoading;
+  // Show loading state when data is loading
+  const isLoading = kpiLoading || trendsLoading;
 
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

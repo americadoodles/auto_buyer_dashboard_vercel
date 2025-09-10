@@ -236,4 +236,42 @@ export class ApiService {
 
     return this.handleResponse<any>(response);
   }
+
+  static async getKpiMetrics(): Promise<{
+    metrics: {
+      average_profit_per_unit: number;
+      lead_to_purchase_time: number;
+      aged_inventory: number;
+      total_listings: number;
+      active_buyers: number;
+      conversion_rate: number;
+      average_price: number;
+      total_value: number;
+      scoring_rate: number;
+      average_score: number;
+    };
+    success: boolean;
+    message?: string;
+  }> {
+    const response = await fetch(`${BACKEND_URL}/kpi`, {
+      headers: this.authHeaders(),
+    });
+
+    return this.handleResponse<{
+      metrics: {
+        average_profit_per_unit: number;
+        lead_to_purchase_time: number;
+        aged_inventory: number;
+        total_listings: number;
+        active_buyers: number;
+        conversion_rate: number;
+        average_price: number;
+        total_value: number;
+        scoring_rate: number;
+        average_score: number;
+      };
+      success: boolean;
+      message?: string;
+    }>(response);
+  }
 }

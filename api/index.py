@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .core.config import settings
 from .core.lifespan import lifespan
 
-from .routes.routes import ingest_router, listings_router, score_router, notify_router, trends_router
+from .routes.routes import ingest_router, listings_router, score_router, notify_router, trends_router, kpi_router
 
 from .routes.users import user_router
 from .routes.roles import role_router
@@ -38,6 +38,7 @@ app.include_router(listings_router,  prefix="/api")
 app.include_router(score_router,  prefix="/api")
 app.include_router(notify_router,  prefix="/api")
 app.include_router(trends_router,  prefix="/api")
+app.include_router(kpi_router,  prefix="/api")
 app.include_router(user_router, prefix="/api")
 app.include_router(role_router, prefix="/api")
 

@@ -4,7 +4,8 @@ from datetime import datetime
 from ..schemas.listing import ListingIn, ListingOut, ListingScoreIn
 from ..schemas.notify import NotifyItem, NotifyResponse
 from ..schemas.scoring import ScoreResponse
-from ..repositories.repositories import ingest_listings, list_listings, list_listings_by_buyer, get_buyer_stats, update_cached_score, insert_score, get_trends_data
+from ..schemas.kpi import KpiResponse, KpiMetrics
+from ..repositories.repositories import ingest_listings, list_listings, list_listings_by_buyer, get_buyer_stats, update_cached_score, insert_score, get_trends_data, get_kpi_metrics
 from ..core.auth import get_current_user
 from ..schemas.user import UserOut
 from ..services.services import score_listing, notify as do_notify
@@ -15,6 +16,7 @@ listings_router = APIRouter(prefix="/listings", tags=["listings"])
 score_router = APIRouter(prefix="/score", tags=["score"])
 notify_router = APIRouter(prefix="/notify", tags=["notify"])
 trends_router = APIRouter(prefix="/trends", tags=["trends"])
+kpi_router = APIRouter(prefix="/kpi", tags=["kpi"])
 
 # Ingest routes
 @ingest_router.post("", include_in_schema=False, response_model=List[ListingOut])  # /api/ingest
@@ -73,3 +75,30 @@ def notify(items: List[NotifyItem]):
 def get_trends(days_back: int = Query(30, ge=7, le=90, description="Number of days to look back for trend calculation")):
     """Get KPI trends comparing current period vs previous period"""
     return get_trends_data(days_back)
+
+# KPI routes
+@kpi_router.get("", include_in_schema=False, response_model=KpiResponse)  # /api/kpi
+@kpi_router.get("/", response_model=KpiResponse)  # /api/kpi/
+def get_kpi_metrics_endpoint(current_user: UserOut = Depends(get_current_user)):
+    """Get comprehensive KPI metrics for the dashboard"""
+    try:
+        metrics_data = get_kpi_metrics()
+        metrics = KpiMetrics(**metrics_data)
+        return KpiResponse(metrics=metrics, success=True)
+    except Exception as e:
+        return KpiResponse(
+            metrics=KpiMetrics(
+                average_profit_per_unit=0.0,
+                lead_to_purchase_time=0.0,
+                aged_inventory=0,
+                total_listings=0,
+                active_buyers=0,
+                conversion_rate=0.0,
+                average_price=0.0,
+                total_value=0.0,
+                scoring_rate=0.0,
+                average_score=0.0
+            ),
+            success=False,
+            message=f"Error calculating KPI metrics: {str(e)}"
+        )

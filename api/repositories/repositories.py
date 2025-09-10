@@ -429,3 +429,92 @@ def get_trends_data(days_back: int = 30) -> dict:
             }
     finally:
         conn.close()
+
+
+# ============================================================================
+# KPI REPOSITORY
+# ============================================================================
+
+def get_kpi_metrics() -> dict:
+    """Get comprehensive KPI metrics for the dashboard"""
+    if not DB_ENABLED:
+        return {
+            "average_profit_per_unit": 0.0,
+            "lead_to_purchase_time": 0.0,
+            "aged_inventory": 0,
+            "total_listings": 0,
+            "active_buyers": 0,
+            "conversion_rate": 0.0,
+            "average_price": 0.0,
+            "total_value": 0.0,
+            "scoring_rate": 0.0,
+            "average_score": 0.0
+        }
+    
+    conn = get_conn(); assert conn is not None
+    try:
+        with conn, conn.cursor() as cur:
+            # Get current timestamp for calculations
+            cur.execute("SELECT NOW() as now")
+            now = cur.fetchone()[0]
+            
+            # Calculate 30 days ago for aged inventory
+            thirty_days_ago = now - datetime.timedelta(days=30)
+            
+            # Main metrics query
+            cur.execute("""
+                SELECT 
+                    COUNT(*) as total_listings,
+                    COALESCE(AVG(l.price), 0) as average_price,
+                    COALESCE(SUM(l.price), 0) as total_value,
+                    COUNT(DISTINCT l.buyer_id) as active_buyers,
+                    COUNT(CASE WHEN s.score IS NOT NULL THEN 1 END) as scored_listings,
+                    COALESCE(AVG(CASE WHEN s.score IS NOT NULL THEN s.score ELSE NULL END), 0) as average_score,
+                    COUNT(CASE WHEN l.created_at < %s THEN 1 END) as aged_inventory,
+                    COALESCE(AVG(EXTRACT(EPOCH FROM (NOW() - l.created_at)) / 86400), 0) as avg_days_since_creation
+                FROM listings l
+                LEFT JOIN (
+                    SELECT DISTINCT ON (vin) vin, score
+                    FROM scores
+                    ORDER BY vin, created_at DESC
+                ) s ON s.vin = l.vin
+            """, (thirty_days_ago,))
+            
+            result = cur.fetchone()
+            if not result:
+                return {
+                    "average_profit_per_unit": 0.0,
+                    "lead_to_purchase_time": 0.0,
+                    "aged_inventory": 0,
+                    "total_listings": 0,
+                    "active_buyers": 0,
+                    "conversion_rate": 0.0,
+                    "average_price": 0.0,
+                    "total_value": 0.0,
+                    "scoring_rate": 0.0,
+                    "average_score": 0.0
+                }
+            
+            (total_listings, average_price, total_value, active_buyers, 
+             scored_listings, average_score, aged_inventory, avg_days_since_creation) = result
+            
+            # Calculate derived metrics
+            average_profit_per_unit = float(average_price) * 0.15  # 15% margin
+            lead_to_purchase_time = float(avg_days_since_creation) if avg_days_since_creation else 0.0
+            conversion_rate = (scored_listings / total_listings * 100) if total_listings > 0 else 0.0
+            scoring_rate = (scored_listings / total_listings * 100) if total_listings > 0 else 0.0
+            
+            return {
+                "average_profit_per_unit": round(float(average_profit_per_unit), 2),
+                "lead_to_purchase_time": round(float(lead_to_purchase_time), 1),
+                "aged_inventory": int(aged_inventory),
+                "total_listings": int(total_listings),
+                "active_buyers": int(active_buyers),
+                "conversion_rate": round(float(conversion_rate), 1),
+                "average_price": round(float(average_price), 2),
+                "total_value": round(float(total_value), 2),
+                "scoring_rate": round(float(scoring_rate), 1),
+                "average_score": round(float(average_score), 1)
+            }
+    finally:
+        conn.close()

@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Listing } from '../types/listing';
+import { ApiService } from '../services/api';
 
 interface KpiMetrics {
   averageProfitPerUnit: number;
@@ -14,75 +15,55 @@ interface KpiMetrics {
   averageScore: number;
 }
 
-export const useKpiMetrics = (listings: Listing[] = []) => {
-  return useMemo(() => {
-    if (!listings || listings.length === 0) {
-      return {
-        averageProfitPerUnit: 0,
-        leadToPurchaseTime: 0,
-        agedInventory: 0,
-        totalListings: 0,
-        activeBuyers: 0,
-        conversionRate: 0,
-        averagePrice: 0,
-        totalValue: 0,
-        scoringRate: 0,
-        averageScore: 0,
-      };
-    }
+export const useKpiMetrics = () => {
+  const [metrics, setMetrics] = useState<KpiMetrics>({
+    averageProfitPerUnit: 0,
+    leadToPurchaseTime: 0,
+    agedInventory: 0,
+    totalListings: 0,
+    activeBuyers: 0,
+    conversionRate: 0,
+    averagePrice: 0,
+    totalValue: 0,
+    scoringRate: 0,
+    averageScore: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-    // Calculate basic metrics
-    const totalListings = listings.length;
-    const totalValue = listings.reduce((sum, listing) => sum + (listing.price || 0), 0);
-    const averagePrice = totalValue / totalListings;
-
-    // Calculate unique buyers
-    const uniqueBuyers = new Set(listings.map(listing => listing.buyer_id)).size;
-
-    // Calculate scoring metrics
-    const scoredListings = listings.filter(listing => listing.score !== null && listing.score !== undefined);
-    const scoringRate = (scoredListings.length / totalListings) * 100;
-    const averageScore = scoredListings.length > 0 
-      ? scoredListings.reduce((sum, listing) => sum + (listing.score || 0), 0) / scoredListings.length 
-      : 0;
-
-    // Calculate aged inventory (listings older than 30 days)
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const agedInventory = listings.filter(listing => {
-      if (!listing.created_at) return false;
-      const listingDate = new Date(listing.created_at);
-      return listingDate < thirtyDaysAgo;
-    }).length;
-
-    // Calculate average profit per unit (assuming 15% margin)
-    const averageProfitPerUnit = averagePrice * 0.15;
-
-    // Calculate lead to purchase time (simulated based on listing age)
-    const now = new Date();
-    const totalDays = listings.reduce((sum, listing) => {
-      if (!listing.created_at) return sum;
-      const listingDate = new Date(listing.created_at);
-      const daysDiff = Math.ceil((now.getTime() - listingDate.getTime()) / (1000 * 60 * 60 * 24));
-      return sum + daysDiff;
-    }, 0);
-    const leadToPurchaseTime = totalDays / totalListings;
-
-    // Calculate conversion rate (simulated - listings with scores above 70 are considered "converted")
-    const convertedListings = listings.filter(listing => (listing.score || 0) >= 70).length;
-    const conversionRate = (convertedListings / totalListings) * 100;
-
-    return {
-      averageProfitPerUnit,
-      leadToPurchaseTime,
-      agedInventory,
-      totalListings,
-      activeBuyers: uniqueBuyers,
-      conversionRate,
-      averagePrice,
-      totalValue,
-      scoringRate,
-      averageScore,
+  // Fetch metrics from backend only
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await ApiService.getKpiMetrics();
+        
+        if (response.success) {
+          setMetrics({
+            averageProfitPerUnit: response.metrics.average_profit_per_unit,
+            leadToPurchaseTime: response.metrics.lead_to_purchase_time,
+            agedInventory: response.metrics.aged_inventory,
+            totalListings: response.metrics.total_listings,
+            activeBuyers: response.metrics.active_buyers,
+            conversionRate: response.metrics.conversion_rate,
+            averagePrice: response.metrics.average_price,
+            totalValue: response.metrics.total_value,
+            scoringRate: response.metrics.scoring_rate,
+            averageScore: response.metrics.average_score,
+          });
+        } else {
+          setError(response.message || 'Failed to fetch KPI metrics');
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
+        setLoading(false);
+      }
     };
-  }, [listings]);
+
+    fetchMetrics();
+  }, []);
+
+  return { metrics, loading, error };
 };

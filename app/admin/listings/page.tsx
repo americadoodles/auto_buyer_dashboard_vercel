@@ -29,7 +29,7 @@ export default function AdminListingsPage() {
     notify,
   } = useListings();
 
-  const handleSort = (key: keyof Listing) => {
+  const handleSort = (key: keyof Listing | 'decision_status' | 'decision_reasons') => {
     setSort((prev) => ({
       key,
       dir: prev.key === key && prev.dir === "asc" ? "desc" : "asc",

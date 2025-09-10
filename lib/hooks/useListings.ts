@@ -14,8 +14,21 @@ export const useListings = () => {
   const sortedRows = useMemo(() => {
     const dir = sort.dir === 'asc' ? 1 : -1;
     return [...data].sort((a, b) => {
-      const av = a[sort.key] as any;
-      const bv = b[sort.key] as any;
+      let av: any;
+      let bv: any;
+      
+      // Handle nested decision fields
+      if (sort.key === 'decision_status') {
+        av = a.decision?.status;
+        bv = b.decision?.status;
+      } else if (sort.key === 'decision_reasons') {
+        av = a.decision?.reasons?.join(', ') || '';
+        bv = b.decision?.reasons?.join(', ') || '';
+      } else {
+        av = a[sort.key as keyof Listing];
+        bv = b[sort.key as keyof Listing];
+      }
+      
       if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
       return String(av).localeCompare(String(bv)) * dir;
     });

@@ -3,11 +3,27 @@ import logging
 from typing import List, Optional
 from ..core.db import get_conn, DB_ENABLED
 from ..schemas.listing import ListingIn, ListingOut
+from ..schemas.listing import Decision
+
 import datetime
 
 # In-memory fallback for listings
 _BY_ID: dict[str, ListingOut] = {}
 _IDS_BY_VIN: dict[str, list[str]] = {}
+
+# ============================================================================
+# HELPER FUNCTIONS
+# ============================================================================
+
+def create_decision_from_data(data: dict) -> Optional[Decision]:
+    """Create a Decision object from data if status, reasonCodes, or buyMax are present."""
+    if data.get("status") or data.get("reasonCodes") or data.get("buyMax"):
+        return Decision(
+            status=data.get("status", ""),
+            reasons=data.get("reasonCodes", []),
+            buyMax=float(data.get("buyMax", 0)) if data.get("buyMax") is not None else 0
+        )
+    return None
 
 # ============================================================================
 # LISTINGS REPOSITORY
@@ -38,14 +54,7 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                     trim = (norm["trim"] or None)
 
                     # Handle external API data: map status, reasonCodes, buyMax to Decision object
-                    decision = None
-                    if norm.get("status") or norm.get("reasonCodes") or norm.get("buyMax"):
-                        from ..schemas.listing import Decision
-                        decision = Decision(
-                            status=norm.get("status", ""),
-                            reasons=norm.get("reasonCodes", []),
-                            buyMax=float(norm.get("buyMax", 0)) if norm.get("buyMax") is not None else 0
-                        )
+                    decision = create_decision_from_data(norm)
 
                     # vehicles
                     cur.execute("""
@@ -106,14 +115,7 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
         vin = item.vin.strip().upper() if item.vin and item.vin.strip() else None
         
         # Handle external API data: map status, reasonCodes, buyMax to Decision object
-        decision = None
-        if norm.get("status") or norm.get("reasonCodes") or norm.get("buyMax"):
-            from ..schemas.listing import Decision
-            decision = Decision(
-                status=norm.get("status", ""),
-                reasons=norm.get("reasonCodes", []),
-                buyMax=float(norm.get("buyMax", 0)) if norm.get("buyMax") is not None else 0
-            )
+        decision = create_decision_from_data(norm)
         
         lid = item.id or f"mem-{len(_BY_ID)+1}"
         reason_codes = norm.get("reasonCodes", [])
@@ -169,13 +171,7 @@ def list_listings(limit: int = 500) -> list[ListingOut]:
                     decision = None
                     if payload:
                         payload_data = json.loads(payload) if isinstance(payload, str) else payload
-                        if payload_data.get("status") or payload_data.get("reasonCodes") or payload_data.get("buyMax"):
-                            from ..schemas.listing import Decision
-                            decision = Decision(
-                                status=payload_data.get("status", ""),
-                                reasons=payload_data.get("reasonCodes", []),
-                                buyMax=float(payload_data.get("buyMax", 0)) if payload_data.get("buyMax") is not None else 0
-                            )
+                        decision = create_decision_from_data(payload_data)
                     
                     out.append(ListingOut(
                         id=str(rid), vehicle_key=vehicle_key, vin=vin or "", year=int(year), make=make, model=model, trim=trim,
@@ -247,13 +243,7 @@ def list_listings_by_buyer(buyer_id: str, start_date: Optional[datetime.datetime
                     decision = None
                     if payload:
                         payload_data = json.loads(payload) if isinstance(payload, str) else payload
-                        if payload_data.get("status") or payload_data.get("reasonCodes") or payload_data.get("buyMax"):
-                            from ..schemas.listing import Decision
-                            decision = Decision(
-                                status=payload_data.get("status", ""),
-                                reasons=payload_data.get("reasonCodes", []),
-                                buyMax=float(payload_data.get("buyMax", 0)) if payload_data.get("buyMax") is not None else 0
-                            )
+                        decision = create_decision_from_data(payload_data)
                     
                     out.append(ListingOut(
                         id=str(rid), vehicle_key=vehicle_key, vin=vin or "", year=int(year), make=make, model=model, trim=trim,

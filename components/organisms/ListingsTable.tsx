@@ -6,8 +6,8 @@ import { Pagination } from '../molecules/Pagination';
 
 interface ListingsTableProps {
   listings: Listing[];
-  sort: { key: keyof Listing; dir: 'asc' | 'desc' };
-  onSort: (key: keyof Listing) => void;
+  sort: { key: keyof Listing | 'decision_status' | 'decision_reasons'; dir: 'asc' | 'desc' };
+  onSort: (key: keyof Listing | 'decision_status' | 'decision_reasons') => void;
   onNotify: (vin: string) => void;
   currentPage: number;
   totalPages: number;
@@ -29,7 +29,7 @@ export const ListingsTable: React.FC<ListingsTableProps> = ({
   onPageChange,
   onRowsPerPageChange
 }) => {
-  const handleSort = (key: keyof Listing) => {
+  const handleSort = (key: keyof Listing | 'decision_status' | 'decision_reasons') => {
     onSort(key);
   };
 

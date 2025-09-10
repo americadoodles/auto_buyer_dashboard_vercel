@@ -25,7 +25,7 @@ export const TableRow: React.FC<TableRowProps> = ({ listing, onNotify }) => {
   const parsedSource = parseSourceUrl(listing.source);
   
   return (
-    <div className="grid grid-cols-14 items-center border-t px-4 py-3 text-sm hover:bg-slate-50 transition-colors">
+    <div className="grid grid-cols-16 items-center border-t px-4 py-3 text-sm hover:bg-slate-50 transition-colors">
       <div className="col-span-1">
         <Badge variant="default">{listing.score}</Badge>
       </div>
@@ -89,6 +89,33 @@ export const TableRow: React.FC<TableRowProps> = ({ listing, onNotify }) => {
       <div className="col-span-1">{listing.radius} mi</div>
       <div className="col-span-1 font-medium">
         {listing.buyMax != null ? formatCurrency(listing.buyMax) : "—"}
+      </div>
+      <div className="col-span-1">
+        {listing.decision?.status ? (
+          <Badge variant={listing.decision.status === 'approved' ? 'success' : listing.decision.status === 'rejected' ? 'destructive' : 'default'}>
+            {listing.decision.status}
+          </Badge>
+        ) : (
+          <span className="text-slate-400">—</span>
+        )}
+      </div>
+      <div className="col-span-1">
+        {listing.decision?.reasons && listing.decision.reasons.length > 0 ? (
+          <div className="flex flex-wrap gap-1">
+            {listing.decision.reasons.slice(0, 2).map((reason, index) => (
+              <Badge key={index} variant="outline" className="text-xs">
+                {reason}
+              </Badge>
+            ))}
+            {listing.decision.reasons.length > 2 && (
+              <Badge variant="outline" className="text-xs">
+                +{listing.decision.reasons.length - 2}
+              </Badge>
+            )}
+          </div>
+        ) : (
+          <span className="text-slate-400">—</span>
+        )}
       </div>
       <div className="col-span-1 flex gap-2">
         <button

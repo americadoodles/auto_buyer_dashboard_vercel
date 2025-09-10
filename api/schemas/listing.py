@@ -2,6 +2,11 @@ from datetime import datetime
 from typing import Optional, List
 from pydantic import BaseModel, Field
 
+class Decision(BaseModel):
+    buyMax: float = 0
+    status: str = ''
+    reasons: List[str] = []
+
 class ListingIn(BaseModel):
     vin: Optional[str] = None
     price: float
@@ -18,6 +23,7 @@ class ListingIn(BaseModel):
     buyMax: Optional[float] = None
     location: Optional[str] = None
     buyer_id: Optional[str] = None
+    decision: Optional[Decision] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 class ListingOut(BaseModel):
@@ -39,6 +45,7 @@ class ListingOut(BaseModel):
     location: Optional[str] = None
     buyer_id: Optional[str] = None
     buyer_username: Optional[str] = None
+    decision: Optional[Decision] = None
 
 class ListingScoreIn(BaseModel):
     vehicle_key: str

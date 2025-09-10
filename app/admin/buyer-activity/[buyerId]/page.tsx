@@ -97,8 +97,20 @@ export default function BuyerActivityPage() {
 
   // Sort listings
   const sortedListings = [...(Array.isArray(listings) ? listings : [])].sort((a, b) => {
-    const aVal = a[sort.key];
-    const bVal = b[sort.key];
+    let aVal: any;
+    let bVal: any;
+    
+    // Handle nested decision fields
+    if (sort.key === 'decision_status') {
+      aVal = a.decision?.status;
+      bVal = b.decision?.status;
+    } else if (sort.key === 'decision_reasons') {
+      aVal = a.decision?.reasons?.join(', ') || '';
+      bVal = b.decision?.reasons?.join(', ') || '';
+    } else {
+      aVal = a[sort.key as keyof Listing];
+      bVal = b[sort.key as keyof Listing];
+    }
     
     if (aVal === undefined || aVal === null) return 1;
     if (bVal === undefined || bVal === null) return -1;
@@ -119,7 +131,7 @@ export default function BuyerActivityPage() {
   const startIndex = (currentPage - 1) * rowsPerPage;
   const paginatedListings = sortedListings.slice(startIndex, startIndex + rowsPerPage);
 
-  const handleSort = (key: keyof Listing) => {
+  const handleSort = (key: keyof Listing | 'decision_status' | 'decision_reasons') => {
     setSort((prev) => ({
       key,
       dir: prev.key === key && prev.dir === "asc" ? "desc" : "asc",

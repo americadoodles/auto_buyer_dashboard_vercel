@@ -6,6 +6,7 @@ from ..schemas.listing import ListingIn, ListingOut
 from ..schemas.listing import Decision
 
 import datetime
+from datetime import timezone
 
 # In-memory fallback for listings
 _BY_ID: dict[str, ListingOut] = {}
@@ -44,7 +45,7 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                         if vin:
                             return vin
                         # unique by timestamp when VIN missing; include source to be extra safe
-                        created = (n.get("created_at") or datetime.now(datetime.timezone.utc))
+                        created = (n.get("created_at") or datetime.now(timezone.utc))
                         src = (n.get("source") or "unknown").strip().lower()
                         return f"{src}#{created.isoformat(timespec='milliseconds')}"
 

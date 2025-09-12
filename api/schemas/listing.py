@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List
 from pydantic import BaseModel, Field
 
@@ -25,7 +25,7 @@ class ListingIn(BaseModel):
     location: Optional[str] = None
     buyer_id: Optional[str] = None
     decision: Optional[Decision] = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(datetime.timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class ListingOut(BaseModel):
     id: str

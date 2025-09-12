@@ -91,9 +91,9 @@ export const TableRow: React.FC<TableRowProps> = ({ listing, onNotify }) => {
         {listing.buyMax != null ? formatCurrency(listing.buyMax) : "—"}
       </div>
       <div className="col-span-1">
-        {listing.decision?.status ? (
-          <Badge variant={listing.decision.status === 'approved' ? 'success' : listing.decision.status === 'rejected' ? 'destructive' : 'default'}>
-            {listing.decision.status}
+        {listing.status ? (
+          <Badge variant={listing.status === 'approved' ? 'success' : listing.status === 'rejected' ? 'destructive' : 'default'}>
+            {listing.status}
           </Badge>
         ) : (
           <span className="text-slate-400">—</span>

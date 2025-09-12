@@ -24,7 +24,7 @@ class ListingIn(BaseModel):
     location: Optional[str] = None
     buyer_id: Optional[str] = None
     decision: Optional[Decision] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(datetime.timezone.utc))
 
 class ListingOut(BaseModel):
     id: str
@@ -42,6 +42,7 @@ class ListingOut(BaseModel):
     radius: Optional[int] = 25
     reasonCodes: List[str] = []
     buyMax: Optional[float] = None
+    status: Optional[str] = None
     location: Optional[str] = None
     buyer_id: Optional[str] = None
     buyer_username: Optional[str] = None

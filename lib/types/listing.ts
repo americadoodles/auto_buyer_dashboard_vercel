@@ -20,6 +20,7 @@ export type Listing = {
   radius: number;
   reasonCodes: string[];
   buyMax: number;
+  status?: string;
   location: string;
   buyer_id: string;
   buyer_username?: string;

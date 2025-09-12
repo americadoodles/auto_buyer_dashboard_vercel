@@ -94,16 +94,17 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                         logging.error(f"Failed to insert listing into database: {log_exc}")
                     new_id = str(cur.fetchone()[0])
                     
-                    # Extract reasonCodes and buyMax for ListingOut
+                    # Extract reasonCodes, buyMax, and status for ListingOut
                     reason_codes = norm.get("reasonCodes", [])
                     buy_max = float(norm.get("buyMax", 0)) if norm.get("buyMax") is not None else None
+                    status = norm.get("status", "")
                     
                     out.append(ListingOut(
                         id=new_id, vehicle_key=vehicle_key, vin=vin, year=norm["year"], make=make, model=model,
                         trim=trim, miles=norm["miles"], price=norm["price"], dom=norm["dom"],
                         source=norm["source"], location=norm.get("location"), buyer_id=buyer_from_id,
                         radius=norm.get("radius", 25), reasonCodes=reason_codes,
-                        buyMax=buy_max, score=None, decision=decision
+                        buyMax=buy_max, status=status, score=None, decision=decision
                     ))
         finally:
             conn.close()
@@ -120,12 +121,13 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
         lid = item.id or f"mem-{len(_BY_ID)+1}"
         reason_codes = norm.get("reasonCodes", [])
         buy_max = float(norm.get("buyMax", 0)) if norm.get("buyMax") is not None else None
+        status = norm.get("status", "")
         
         obj = ListingOut(
             id=lid, vin=vin, year=item.year, make=item.make.strip(), model=item.model.strip(),
             trim=item.trim.strip() if item.trim else None, miles=item.miles, price=item.price,
             dom=item.dom, source=item.source, location=norm.get("location"), buyer_id=buyer_id or item.buyer_id,
-            radius=item.radius or 25, reasonCodes=reason_codes, buyMax=buy_max, decision=decision
+            radius=item.radius or 25, reasonCodes=reason_codes, buyMax=buy_max, status=status, decision=decision
         )
         _BY_ID[lid] = obj
         if vin:
@@ -169,9 +171,11 @@ def list_listings(limit: int = 500) -> list[ListingOut]:
                 for rid, vehicle_key, vin, year, make, model, trim, miles, price, dom, source, location, buyer_id, buyer_username, score, buy_max, reason_codes, payload in cur.fetchall():
                     # Extract decision data from payload if available
                     decision = None
+                    status = ""
                     if payload:
                         payload_data = json.loads(payload) if isinstance(payload, str) else payload
                         decision = create_decision_from_data(payload_data)
+                        status = payload_data.get("status", "")
                     
                     out.append(ListingOut(
                         id=str(rid), vehicle_key=vehicle_key, vin=vin or "", year=int(year), make=make, model=model, trim=trim,
@@ -179,7 +183,7 @@ def list_listings(limit: int = 500) -> list[ListingOut]:
                         location=location, buyer_id=buyer_id, buyer_username=buyer_username,
                         radius=25, reasonCodes=reason_codes or [],
                         buyMax=float(buy_max) if buy_max is not None else None,
-                        score=int(score) if score is not None else None, decision=decision
+                        status=status, score=int(score) if score is not None else None, decision=decision
                     ))
                 return out
         except Exception as e:
@@ -241,9 +245,11 @@ def list_listings_by_buyer(buyer_id: str, start_date: Optional[datetime.datetime
                 for rid, vehicle_key, vin, year, make, model, trim, miles, price, dom, source, location, buyer_id, buyer_username, score, buy_max, reason_codes, created_at, payload in cur.fetchall():
                     # Extract decision data from payload if available
                     decision = None
+                    status = ""
                     if payload:
                         payload_data = json.loads(payload) if isinstance(payload, str) else payload
                         decision = create_decision_from_data(payload_data)
+                        status = payload_data.get("status", "")
                     
                     out.append(ListingOut(
                         id=str(rid), vehicle_key=vehicle_key, vin=vin or "", year=int(year), make=make, model=model, trim=trim,
@@ -251,7 +257,7 @@ def list_listings_by_buyer(buyer_id: str, start_date: Optional[datetime.datetime
                         location=location, buyer_id=buyer_id, buyer_username=buyer_username,
                         radius=25, reasonCodes=reason_codes or [],
                         buyMax=float(buy_max) if buy_max is not None else None,
-                        score=int(score) if score is not None else None, decision=decision
+                        status=status, score=int(score) if score is not None else None, decision=decision
                     ))
                 return out
         finally:

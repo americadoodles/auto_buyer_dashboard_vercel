@@ -44,7 +44,7 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                         if vin:
                             return vin
                         # unique by timestamp when VIN missing; include source to be extra safe
-                        created = (n.get("created_at") or datetime.utcnow())
+                        created = (n.get("created_at") or datetime.now(datetime.timezone.utc))
                         src = (n.get("source") or "unknown").strip().lower()
                         return f"{src}#{created.isoformat(timespec='milliseconds')}"
 
@@ -90,9 +90,10 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                           values (%s,%s,%s,%s,%s,%s,%s,%s,%s) returning id
                         """, (vehicle_key, vin, norm["source"], norm["price"], norm["miles"], norm["dom"], 
                               norm.get("location"), buyer_from_id, json.dumps(payload_data)))
+                        new_id = str(cur.fetchone()[0])
                     except Exception as log_exc:
                         logging.error(f"Failed to insert listing into database: {log_exc}")
-                    new_id = str(cur.fetchone()[0])
+                        new_id = f"error-{len(out)+1}"
                     
                     # Extract reasonCodes, buyMax, and status for ListingOut
                     reason_codes = norm.get("reasonCodes", [])

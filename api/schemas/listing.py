@@ -21,6 +21,7 @@ class ListingIn(BaseModel):
     radius: Optional[int] = 25
     reasonCodes: List[str] = []
     buyMax: Optional[float] = None
+    status: Optional[str] = None
     location: Optional[str] = None
     buyer_id: Optional[str] = None
     decision: Optional[Decision] = None

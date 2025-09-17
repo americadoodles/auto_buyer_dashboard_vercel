@@ -25,6 +25,31 @@ export class ApiService {
     try { return localStorage.getItem(ApiService.tokenKey); } catch { return null; }
   }
 
+  private static isTokenExpired(token: string): boolean {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const exp = payload.exp;
+      if (!exp) return true;
+      return Date.now() >= exp * 1000;
+    } catch {
+      return true;
+    }
+  }
+
+  private static validateToken(): boolean {
+    const token = ApiService.getToken();
+    if (!token) return false;
+    
+    if (ApiService.isTokenExpired(token)) {
+      ApiService.logout();
+      if (typeof window !== 'undefined') {
+        window.location.href = '/auth';
+      }
+      return false;
+    }
+    return true;
+  }
+
   private static setToken(token: string | null) {
     if (typeof window === 'undefined') return;
     try {
@@ -38,6 +63,11 @@ export class ApiService {
   }
 
   private static authHeaders(extra?: HeadersInit): HeadersInit {
+    // Validate token before making request
+    if (!ApiService.validateToken()) {
+      return { ...(extra as any) };
+    }
+    
     const token = ApiService.getToken();
     const base: Record<string, string> = {};
     if (token) base['Authorization'] = `Bearer ${token}`;
@@ -46,6 +76,15 @@ export class ApiService {
 
   private static async handleResponse<T>(response: Response): Promise<T> {
     if (!response.ok) {
+      // Handle token expiration (401 Unauthorized)
+      if (response.status === 401) {
+        ApiService.logout();
+        // Redirect to auth page if we're in the browser
+        if (typeof window !== 'undefined') {
+          window.location.href = '/auth';
+        }
+      }
+      
       let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
       try {
         const errorData = await response.json();

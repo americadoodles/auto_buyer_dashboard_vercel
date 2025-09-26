@@ -1,6 +1,6 @@
  
 import { Listing } from '../types/listing';
-import { User, UserSignupRequest, UserLoginRequest, UserConfirmRequest, UserRemoveRequest, TokenResponse } from '../types/user';
+import { User, UserSignupRequest, UserLoginRequest, UserConfirmRequest, UserRemoveRequest, TokenResponse, UserUpdateRequest, UserUpdatePasswordRequest } from '../types/user';
 import { Role, RoleCreate, RoleEdit } from '../types/role';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? '/api';
@@ -192,6 +192,49 @@ export class ApiService {
   static async removeUser(request: UserRemoveRequest): Promise<any> {
     const response = await fetch(`${BACKEND_URL}/users/remove-user`, {
       method: 'POST',
+      headers: this.authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify(request)
+    });
+    return this.handleResponse<any>(response);
+  }
+
+  static async getUser(userId: string): Promise<User> {
+    const response = await fetch(`${BACKEND_URL}/users/${userId}`, {
+      headers: this.authHeaders(),
+    });
+    return this.handleResponse<User>(response);
+  }
+
+  static async updateUser(userId: string, request: UserUpdateRequest): Promise<User> {
+    const response = await fetch(`${BACKEND_URL}/users/${userId}`, {
+      method: 'PUT',
+      headers: this.authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify(request)
+    });
+    return this.handleResponse<User>(response);
+  }
+
+  static async updateUserPassword(userId: string, request: UserUpdatePasswordRequest): Promise<any> {
+    const response = await fetch(`${BACKEND_URL}/users/${userId}/password`, {
+      method: 'PUT',
+      headers: this.authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify(request)
+    });
+    return this.handleResponse<any>(response);
+  }
+
+  static async updateMyProfile(request: UserUpdateRequest): Promise<User> {
+    const response = await fetch(`${BACKEND_URL}/users/me`, {
+      method: 'PUT',
+      headers: this.authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify(request)
+    });
+    return this.handleResponse<User>(response);
+  }
+
+  static async updateMyPassword(request: UserUpdatePasswordRequest): Promise<any> {
+    const response = await fetch(`${BACKEND_URL}/users/me/password`, {
+      method: 'PUT',
       headers: this.authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(request)
     });

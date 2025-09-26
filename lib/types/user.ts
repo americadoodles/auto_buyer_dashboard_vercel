@@ -16,6 +16,18 @@ export type UserSignupRequest = {
   role_name?: string;
 };
 
+export type UserUpdateRequest = {
+  email?: string;
+  username?: string;
+  role_id?: number;
+  is_confirmed?: boolean;
+};
+
+export type UserUpdatePasswordRequest = {
+  current_password: string;
+  new_password: string;
+};
+
 export type UserLoginRequest = {
   email: string;
   password: string;

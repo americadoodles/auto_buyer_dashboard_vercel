@@ -173,3 +173,89 @@ def remove_user(request: UserRemoveRequest) -> bool:
             return True
     finally:
         conn.close()
+
+def update_user(user_id: UUID, update_data: dict) -> Optional[UserOut]:
+    if not DB_ENABLED:
+        return None
+    conn = get_conn(); assert conn is not None
+    try:
+        with conn, conn.cursor() as cur:
+            # Build dynamic update query
+            update_fields = []
+            update_values = []
+            
+            if 'email' in update_data and update_data['email'] is not None:
+                update_fields.append("email = %s")
+                update_values.append(update_data['email'])
+            
+            if 'username' in update_data and update_data['username'] is not None:
+                update_fields.append("username = %s")
+                update_values.append(update_data['username'])
+            
+            if 'role_id' in update_data and update_data['role_id'] is not None:
+                update_fields.append("role_id = %s")
+                update_values.append(update_data['role_id'])
+            
+            if 'is_confirmed' in update_data and update_data['is_confirmed'] is not None:
+                update_fields.append("is_confirmed = %s")
+                update_values.append(update_data['is_confirmed'])
+            
+            if not update_fields:
+                return None
+            
+            update_values.append(str(user_id))
+            query = f"UPDATE users SET {', '.join(update_fields)} WHERE id = %s RETURNING id, email, username, role_id, is_confirmed"
+            
+            cur.execute(query, update_values)
+            row = cur.fetchone()
+            
+            if row:
+                # Get role name
+                cur.execute("SELECT name FROM roles WHERE id = %s", (row[3],))
+                role_row = cur.fetchone()
+                role_name = role_row[0] if role_row else "unknown"
+                return UserOut(id=row[0], email=row[1], username=row[2], role_id=row[3], role=role_name, is_confirmed=row[4])
+    finally:
+        conn.close()
+    return None
+
+def update_user_password(user_id: UUID, current_password: str, new_password: str) -> bool:
+    if not DB_ENABLED:
+        return False
+    conn = get_conn(); assert conn is not None
+    try:
+        with conn, conn.cursor() as cur:
+            # First verify current password
+            cur.execute("SELECT hashed_password FROM users WHERE id = %s", (str(user_id),))
+            row = cur.fetchone()
+            if not row:
+                return False
+            
+            if not verify_password(current_password, row[0]):
+                return False
+            
+            # Update password
+            new_hashed = hash_password(new_password)
+            cur.execute("UPDATE users SET hashed_password = %s WHERE id = %s", (new_hashed, str(user_id)))
+            return True
+    finally:
+        conn.close()
+
+def get_user_by_id(user_id: UUID) -> Optional[UserOut]:
+    if not DB_ENABLED:
+        return None
+    conn = get_conn(); assert conn is not None
+    try:
+        with conn, conn.cursor() as cur:
+            cur.execute("""
+                select u.id, u.email, u.username, u.role_id, u.is_confirmed, r.name as role_name 
+                from users u 
+                left join roles r on u.role_id = r.id 
+                where u.id=%s
+            """, (str(user_id),))
+            row = cur.fetchone()
+            if row:
+                return UserOut(id=row[0], email=row[1], username=row[2], role_id=row[3], role=row[5], is_confirmed=row[4])
+    finally:
+        conn.close()
+    return None

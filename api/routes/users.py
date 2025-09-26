@@ -1,6 +1,6 @@
 from ..repositories.roles import get_role_by_name
 from fastapi import APIRouter, HTTPException, Depends
-from ..schemas.user import UserOut, UserSignupRequest, UserConfirmRequest, UserRemoveRequest, UserLoginRequest, TokenResponse
+from ..schemas.user import UserOut, UserSignupRequest, UserConfirmRequest, UserRemoveRequest, UserLoginRequest, TokenResponse, UserUpdateRequest, UserUpdatePasswordRequest
 from ..repositories.users import (
     create_user,
     get_user_by_email,
@@ -8,7 +8,10 @@ from ..repositories.users import (
     list_signup_requests,
     confirm_user_signup,
     remove_user,
-    list_users
+    list_users,
+    update_user,
+    update_user_password,
+    get_user_by_id
 )
 import logging
 from ..core.auth import create_access_token, get_current_user, require_admin
@@ -104,3 +107,89 @@ def remove_user_api(request: UserRemoveRequest, _: UserOut = Depends(require_adm
 @user_router.get("/me", response_model=UserOut)
 def me(current_user: UserOut = Depends(get_current_user)):
     return current_user
+
+@user_router.get("/{user_id}", response_model=UserOut)
+def get_user(user_id: str, _: UserOut = Depends(require_admin)):
+    from uuid import UUID
+    try:
+        user_uuid = UUID(user_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid user ID format")
+    
+    user = get_user_by_id(user_uuid)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+@user_router.put("/{user_id}", response_model=UserOut)
+def update_user_api(user_id: str, request: UserUpdateRequest, _: UserOut = Depends(require_admin)):
+    from uuid import UUID
+    try:
+        user_uuid = UUID(user_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid user ID format")
+    
+    # Check if user exists
+    existing_user = get_user_by_id(user_uuid)
+    if not existing_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Convert request to dict, excluding None values
+    update_data = {}
+    if request.email is not None:
+        update_data['email'] = request.email
+    if request.username is not None:
+        update_data['username'] = request.username
+    if request.role_id is not None:
+        update_data['role_id'] = request.role_id
+    if request.is_confirmed is not None:
+        update_data['is_confirmed'] = request.is_confirmed
+    
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    
+    updated_user = update_user(user_uuid, update_data)
+    if not updated_user:
+        raise HTTPException(status_code=500, detail="Failed to update user")
+    
+    return updated_user
+
+@user_router.put("/{user_id}/password")
+def update_user_password_api(user_id: str, request: UserUpdatePasswordRequest, _: UserOut = Depends(require_admin)):
+    from uuid import UUID
+    try:
+        user_uuid = UUID(user_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid user ID format")
+    
+    success = update_user_password(user_uuid, request.current_password, request.new_password)
+    if not success:
+        raise HTTPException(status_code=400, detail="Failed to update password. Check current password.")
+    
+    return {"ok": True}
+
+@user_router.put("/me", response_model=UserOut)
+def update_my_profile(request: UserUpdateRequest, current_user: UserOut = Depends(get_current_user)):
+    # Users can only update their own email and username, not role or confirmation status
+    update_data = {}
+    if request.email is not None:
+        update_data['email'] = request.email
+    if request.username is not None:
+        update_data['username'] = request.username
+    
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    
+    updated_user = update_user(current_user.id, update_data)
+    if not updated_user:
+        raise HTTPException(status_code=500, detail="Failed to update profile")
+    
+    return updated_user
+
+@user_router.put("/me/password")
+def update_my_password(request: UserUpdatePasswordRequest, current_user: UserOut = Depends(get_current_user)):
+    success = update_user_password(current_user.id, request.current_password, request.new_password)
+    if not success:
+        raise HTTPException(status_code=400, detail="Failed to update password. Check current password.")
+    
+    return {"ok": True}

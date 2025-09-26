@@ -49,3 +49,13 @@ class UserConfirmRequest(BaseModel):
 
 class UserRemoveRequest(BaseModel):
     user_id: UUID
+
+class UserUpdateRequest(BaseModel):
+    email: Optional[EmailStr] = None
+    username: Optional[str] = None
+    role_id: Optional[int] = None
+    is_confirmed: Optional[bool] = None
+
+class UserUpdatePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str

@@ -13,7 +13,8 @@ import {
   Settings,
   BarChart3,
   Car,
-  List
+  List,
+  User
 } from 'lucide-react';
 
 interface NavItem {
@@ -53,6 +54,12 @@ const navItems: NavItem[] = [
     label: 'Role Management',
     icon: Shield,
     description: 'Configure user roles and permissions'
+  },
+  {
+    href: '/admin/profile',
+    label: 'My Profile',
+    icon: User,
+    description: 'Manage your profile and settings'
   }
 ];
 
@@ -67,6 +74,9 @@ export const AdminNavPanel = () => {
   const isActiveRoute = (href: string) => {
     if (href === '/admin') {
       return pathname === '/admin';
+    }
+    if (href === '/admin/profile') {
+      return pathname === '/admin/profile';
     }
     return pathname.startsWith(href);
   };

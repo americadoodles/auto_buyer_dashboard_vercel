@@ -268,6 +268,33 @@ export class ApiService {
     }
   }
 
+  static async getBuyerListings(buyerId: string): Promise<Listing[]> {
+    const fullUrl = `${BACKEND_URL}/listings/buyer/${buyerId}`;
+    console.log(`[API] getBuyerListings - Base URL: ${BACKEND_URL}`);
+    console.log(`[API] getBuyerListings - Full endpoint URL: ${fullUrl}`);
+    
+    try {
+      const response = await fetch(fullUrl, {
+        headers: this.authHeaders(),
+      });
+      
+      console.log(`[API] getBuyerListings - Response status: ${response.status} ${response.statusText}`);
+      
+      const data = await this.handleResponse<any>(response);
+      console.log(`[API] getBuyerListings - Success: received ${Array.isArray(data) ? data.length : 'non-array'} items`);
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      console.error(`[API] getBuyerListings - Error occurred:`, {
+        baseUrl: BACKEND_URL,
+        fullUrl: fullUrl,
+        error: error instanceof Error ? error.message : String(error),
+        errorType: error instanceof Error ? error.constructor.name : typeof error,
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      throw error;
+    }
+  }
+
   static async scoreListings(listings: Listing[]): Promise<Array<{
     vehicle_key: string;
     vin: string;

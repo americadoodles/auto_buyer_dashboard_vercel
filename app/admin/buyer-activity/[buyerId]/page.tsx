@@ -45,6 +45,9 @@ export default function BuyerActivityPage() {
   const [makeFilter, setMakeFilter] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [userRole, setUserRole] = useState("admin"); // This should come from auth context
+  
+  // Selection state
+  const [selectedListings, setSelectedListings] = useState<Set<string>>(new Set());
 
   // Fetch buyer listings and stats
   const fetchBuyerData = async () => {
@@ -198,6 +201,32 @@ export default function BuyerActivityPage() {
     setMakeFilter("");
   };
 
+  // Selection handlers
+  const handleSelectListing = (listingId: string, selected: boolean) => {
+    setSelectedListings(prev => {
+      const newSet = new Set(prev);
+      if (selected) {
+        newSet.add(listingId);
+      } else {
+        newSet.delete(listingId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = (selected: boolean) => {
+    if (selected) {
+      const allIds = new Set(sortedListings.map(listing => listing.id));
+      setSelectedListings(allIds);
+    } else {
+      setSelectedListings(new Set());
+    }
+  };
+
+  // Calculate selection state for header checkbox
+  const isAllSelected = sortedListings.length > 0 && sortedListings.every(listing => selectedListings.has(listing.id));
+  const isIndeterminate = selectedListings.size > 0 && selectedListings.size < sortedListings.length;
+
   return (
     <AdminLayout>
       <div className="p-6 space-y-6">
@@ -231,6 +260,7 @@ export default function BuyerActivityPage() {
                 variant="success"
                 size="sm"
                 buyerId={buyerId}
+                selectedListings={selectedListings}
               />
             </div>
           </div>
@@ -315,6 +345,17 @@ export default function BuyerActivityPage() {
                 <span>Filters</span>
               </Button>
 
+              {selectedListings.size > 0 && (
+                <Button
+                  onClick={() => setSelectedListings(new Set())}
+                  variant="outline"
+                  size="sm"
+                  className="text-blue-600 hover:text-blue-700"
+                >
+                  Clear Selection ({selectedListings.size})
+                </Button>
+              )}
+
               {(searchTerm || statusFilter || makeFilter) && (
                 <Button
                   onClick={resetFilters}
@@ -379,6 +420,11 @@ export default function BuyerActivityPage() {
                 <h2 className="text-lg font-semibold text-gray-900">Vehicle Listings</h2>
                 <p className="text-sm text-gray-600">
                   {sortedListings.length} filtered listings • {paginatedListings.length} showing
+                  {selectedListings.size > 0 && (
+                    <span className="ml-2 text-blue-600 font-medium">
+                      • {selectedListings.size} selected
+                    </span>
+                  )}
                   {(dateRange.start || dateRange.end) && (
                     <span className="ml-2 text-blue-600">
                       (filtered by date range)
@@ -430,6 +476,11 @@ export default function BuyerActivityPage() {
                 totalRows={sortedListings.length}
                 onPageChange={setCurrentPage}
                 onRowsPerPageChange={setRowsPerPage}
+                selectedListings={selectedListings}
+                onSelectListing={handleSelectListing}
+                onSelectAll={handleSelectAll}
+                isAllSelected={isAllSelected}
+                isIndeterminate={isIndeterminate}
               />
             )}
           </div>

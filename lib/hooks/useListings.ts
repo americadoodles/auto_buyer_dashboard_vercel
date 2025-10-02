@@ -2,8 +2,10 @@ import { useState, useEffect, useMemo } from 'react';
 import { Listing, SortConfig } from '../types/listing';
 import { MOCK_DATA } from '../data/mockData';
 import { ApiService } from '../services/api';
+import { useAuth } from '../../app/auth/useAuth';
 
 export const useListings = () => {
+  const { user } = useAuth();
   const [data, setData] = useState<Listing[]>([]);
   const [sort, setSort] = useState<SortConfig>({ key: 'score', dir: 'desc' });
   const [loading, setLoading] = useState<boolean>(false);
@@ -58,7 +60,12 @@ export const useListings = () => {
         setBackendOk(isHealthy);
         
         if (isHealthy) {
-          const listings = await ApiService.getListings();
+          // Use appropriate API call based on user role
+          const listings = user?.role === 'admin' 
+            ? await ApiService.getListings()
+            : user?.id 
+              ? await ApiService.getBuyerListings(user.id)
+              : [];
           if (mounted && Array.isArray(listings) && listings.length > 0) {
             setData(listings);
           }
@@ -77,7 +84,7 @@ export const useListings = () => {
     checkBackend();
     
     return () => { mounted = false; };
-  }, []);
+  }, [user]);
 
   const rescoreVisible = async () => {
     try {
@@ -115,7 +122,12 @@ export const useListings = () => {
   const loadFromBackend = async () => {
     try {
       setLoading(true);
-      const listings = await ApiService.getListings();
+      // Use appropriate API call based on user role
+      const listings = user?.role === 'admin' 
+        ? await ApiService.getListings()
+        : user?.id 
+          ? await ApiService.getBuyerListings(user.id)
+          : [];
       setData(Array.isArray(listings) && listings.length ? listings : data);
       setBackendOk(true);
     } catch (e: any) {

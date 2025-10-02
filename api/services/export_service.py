@@ -50,7 +50,7 @@ class ExportService:
                 # Admin exporting all data
                 query, params = ExportService._build_admin_query(start_date, end_date)
         else:
-            # Buyers can only export their own data (ignore buyer_id parameter)
+            # Buyers can only export their own data (ignore buyer_id parameter for security)
             query, params = ExportService._build_buyer_query(user.id, start_date, end_date)
         
         conn = get_conn()

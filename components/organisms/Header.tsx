@@ -1,19 +1,24 @@
 import React from 'react';
 import { Car, Download, Database, RefreshCw } from 'lucide-react';
 import { Button } from '../atoms/Button';
+import { ExportButton } from '../molecules/ExportButton';
 
 interface HeaderProps {
   onLoadFromBackend: () => void;
   onSeedBackend: () => void;
   onRescoreVisible: () => void;
   loading: boolean;
+  userRole?: string;
+  buyerId?: string;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   onLoadFromBackend,
   onSeedBackend,
   onRescoreVisible,
-  loading
+  loading,
+  userRole = 'buyer',
+  buyerId
 }) => {
   return (
     <header className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -31,6 +36,14 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
         
         <div className="flex flex-col sm:flex-row gap-3">
+          <ExportButton
+            exportType="listings"
+            userRole={userRole}
+            variant="outline"
+            size="sm"
+            buyerId={buyerId}
+          />
+          
           <Button
             variant="secondary"
             size="sm"

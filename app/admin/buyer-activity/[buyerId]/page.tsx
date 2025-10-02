@@ -6,6 +6,7 @@ import { AdminLayout } from "../../../../components/templates/AdminLayout";
 import { ListingsTable } from "../../../../components/organisms/ListingsTable";
 import { BuyerPerformanceKpi } from "../../../../components/organisms/BuyerPerformanceKpi";
 import { DateRangePicker } from "../../../../components/molecules/DateRangePicker";
+import { ExportButton } from "../../../../components/molecules/ExportButton";
 import { Listing } from "../../../../lib/types/listing";
 import { SortConfig } from "../../../../lib/types/listing";
 import { Car, ArrowLeft, Calendar, TrendingUp, User } from "lucide-react";
@@ -38,6 +39,7 @@ export default function BuyerActivityPage() {
     start: null,
     end: null
   });
+  const [userRole, setUserRole] = useState("admin"); // This should come from auth context
 
   // Fetch buyer listings and stats
   const fetchBuyerData = async () => {
@@ -186,6 +188,15 @@ export default function BuyerActivityPage() {
                   Vehicle listings and performance for buyer ID: {buyerId}
                 </p>
               </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              <ExportButton
+                exportType="listings"
+                userRole={userRole}
+                variant="outline"
+                size="sm"
+                buyerId={buyerId}
+              />
             </div>
           </div>
         </div>

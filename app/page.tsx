@@ -46,7 +46,15 @@ export default function Page() {
       router.replace('/auth');
     }
   }, [authLoading, user, router]);
-  
+
+  // Admin users should go to admin dashboard
+  useEffect(() => {
+    if (user && user.role === 'admin') {
+      router.replace('/admin');
+    }
+  }, [user, router]);
+
+  // Show loading state
   if (authLoading || !user) return null;
 
   // Role-based access: Only allow access for confirmed users
@@ -67,9 +75,8 @@ export default function Page() {
     );
   }
 
-  // Admin users should go to admin dashboard
+  // Admin users should go to admin dashboard (return null while redirecting)
   if (user.role === 'admin') {
-    router.replace('/admin');
     return null;
   }
 
@@ -82,6 +89,8 @@ export default function Page() {
           onSeedBackend={seedBackend}
           onRescoreVisible={rescoreVisible}
           loading={listingsLoading}
+          userRole={user.role}
+          buyerId={user.id}
         />
         <div className="mt-6">
           <KpiGrid />

@@ -7,6 +7,7 @@ from .routes.routes import ingest_router, listings_router, score_router, notify_
 
 from .routes.users import user_router
 from .routes.roles import role_router
+from .routes.export import export_router
 
 # ---- run-on-cold-start: ensure schema once ----
 import logging
@@ -41,6 +42,7 @@ app.include_router(trends_router,  prefix="/api")
 app.include_router(kpi_router,  prefix="/api")
 app.include_router(user_router, prefix="/api")
 app.include_router(role_router, prefix="/api")
+app.include_router(export_router, prefix="/api")
 
 @app.get("/api/healthz")
 def healthz():

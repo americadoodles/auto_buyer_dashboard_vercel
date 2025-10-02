@@ -12,6 +12,7 @@ interface ExportModalProps {
   exportType: 'listings' | 'users';
   userRole: string;
   buyerId?: string;  // For exporting specific buyer's data
+  selectedListings?: Set<string>;  // For selective export
 }
 
 export const ExportModal: React.FC<ExportModalProps> = ({
@@ -20,17 +21,31 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   exportType,
   userRole,
   buyerId,
+  selectedListings,
 }) => {
-  const [selectedExportType, setSelectedExportType] = useState<ExportType>('all');
+  const [selectedExportType, setSelectedExportType] = useState<ExportType>(
+    selectedListings && selectedListings.size > 0 ? 'selected' : 'all'
+  );
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [preview, setPreview] = useState<any>(null);
   const [showPreview, setShowPreview] = useState(false);
 
-  const handleExport = async () => {
+  const validateDateRange = (): boolean => {
     if (selectedExportType === 'range' && (!startDate || !endDate)) {
       alert('Please select both start and end dates for range export');
+      return false;
+    }
+    if (selectedExportType === 'selected' && (!selectedListings || selectedListings.size === 0)) {
+      alert('Please select at least one listing to export');
+      return false;
+    }
+    return true;
+  };
+
+  const handleExport = async () => {
+    if (!validateDateRange()) {
       return;
     }
 
@@ -42,6 +57,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         end_date: selectedExportType === 'range' ? endDate : undefined,
         format: 'csv',
         buyer_id: buyerId,
+        selected_listing_ids: selectedExportType === 'selected' ? Array.from(selectedListings || []) : undefined,
       };
 
       const blob = exportType === 'listings' 
@@ -62,8 +78,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   };
 
   const handlePreview = async () => {
-    if (selectedExportType === 'range' && (!startDate || !endDate)) {
-      alert('Please select both start and end dates for range export');
+    if (!validateDateRange()) {
       return;
     }
 
@@ -118,6 +133,18 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               Export Type
             </label>
             <div className="space-y-2">
+              {selectedListings && selectedListings.size > 0 && (
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    value="selected"
+                    checked={selectedExportType === 'selected'}
+                    onChange={(e) => setSelectedExportType(e.target.value as ExportType)}
+                    className="mr-2"
+                  />
+                  Export Selected Listings ({selectedListings.size} items)
+                </label>
+              )}
               <label className="flex items-center">
                 <input
                   type="radio"
@@ -181,9 +208,11 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           {exportType === 'listings' && (
             <div className="text-sm text-gray-600">
               <p>
-                {userRole === 'admin' 
-                  ? 'You will export all listings data based on your selection.'
-                  : 'You will export only your own listings data based on your selection.'
+                {selectedExportType === 'selected' 
+                  ? `You will export ${selectedListings?.size || 0} selected listings.`
+                  : userRole === 'admin' 
+                    ? 'You will export all listings data based on your selection.'
+                    : 'You will export only your own listings data based on your selection.'
                 }
               </p>
             </div>

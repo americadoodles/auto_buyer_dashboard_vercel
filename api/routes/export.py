@@ -20,7 +20,7 @@ def export_listings_csv(
     - Buyers can only export their own listings
     """
     try:
-        # Validate date range for RANGE export type
+        # Validate export type specific requirements
         if request.export_type == ExportType.RANGE:
             if not request.start_date or not request.end_date:
                 raise HTTPException(
@@ -32,6 +32,12 @@ def export_listings_csv(
                     status_code=400, 
                     detail="Start date cannot be after end date"
                 )
+        elif request.export_type == ExportType.SELECTED:
+            if not request.selected_listing_ids or len(request.selected_listing_ids) == 0:
+                raise HTTPException(
+                    status_code=400, 
+                    detail="At least one listing must be selected for selective export"
+                )
         
         # Export data
         csv_content, record_count = ExportService.export_listings_csv(
@@ -39,7 +45,8 @@ def export_listings_csv(
             export_type=request.export_type,
             start_date=request.start_date,
             end_date=request.end_date,
-            buyer_id=request.buyer_id
+            buyer_id=request.buyer_id,
+            selected_listing_ids=request.selected_listing_ids
         )
         
         if not csv_content:
@@ -168,7 +175,8 @@ def preview_listings_export(
             export_type=export_type,
             start_date=parsed_start_date,
             end_date=parsed_end_date,
-            buyer_id=parsed_buyer_id
+            buyer_id=parsed_buyer_id,
+            selected_listing_ids=None  # Preview doesn't support selected export
         )
         
         # Parse first few lines for preview

@@ -11,6 +11,7 @@ interface ExportButtonProps {
   variant?: 'primary' | 'outline' | 'secondary' | 'success';
   size?: 'sm' | 'md' | 'lg';
   buyerId?: string;  // For exporting specific buyer's data
+  selectedListings?: Set<string>;  // For selective export
 }
 
 export const ExportButton: React.FC<ExportButtonProps> = ({
@@ -20,6 +21,7 @@ export const ExportButton: React.FC<ExportButtonProps> = ({
   variant = 'outline',
   size = 'md',
   buyerId,
+  selectedListings,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -53,7 +55,12 @@ export const ExportButton: React.FC<ExportButtonProps> = ({
             d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
           />
         </svg>
-        <span>Export {exportType === 'listings' ? 'Listings' : 'Users'}</span>
+        <span>
+          Export {exportType === 'listings' ? 'Listings' : 'Users'}
+          {selectedListings && selectedListings.size > 0 && (
+            <span className="ml-1">({selectedListings.size} selected)</span>
+          )}
+        </span>
       </Button>
 
       <ExportModal
@@ -62,6 +69,7 @@ export const ExportButton: React.FC<ExportButtonProps> = ({
         exportType={exportType}
         userRole={userRole}
         buyerId={buyerId}
+        selectedListings={selectedListings}
       />
     </>
   );

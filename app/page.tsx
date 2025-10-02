@@ -10,6 +10,7 @@ import { KpiGrid } from "../components/organisms/KpiGrid";
 import { Listing } from "../lib/types/listing";
 import { Button } from "../components/atoms/Button";
 import { Input } from "../components/atoms/Input";
+import { ExportButton } from "../components/molecules/ExportButton";
 import { Search, Filter } from "lucide-react";
 
 export const preferredRegion = ["iad1"];
@@ -41,6 +42,9 @@ export default function Page() {
   const [statusFilter, setStatusFilter] = useState("");
   const [makeFilter, setMakeFilter] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  
+  // Selection state
+  const [selectedListings, setSelectedListings] = useState<Set<string>>(new Set());
 
   const handleSort = (key: keyof Listing | 'decision_status' | 'decision_reasons') => {
     setSort((prev) => ({
@@ -83,6 +87,32 @@ export default function Page() {
     setStatusFilter("");
     setMakeFilter("");
   };
+
+  // Selection handlers
+  const handleSelectListing = (listingId: string, selected: boolean) => {
+    setSelectedListings(prev => {
+      const newSet = new Set(prev);
+      if (selected) {
+        newSet.add(listingId);
+      } else {
+        newSet.delete(listingId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = (selected: boolean) => {
+    if (selected) {
+      const allIds = new Set(filteredListings.map(listing => listing.id));
+      setSelectedListings(allIds);
+    } else {
+      setSelectedListings(new Set());
+    }
+  };
+
+  // Calculate selection state for header checkbox
+  const isAllSelected = filteredListings.length > 0 && filteredListings.every(listing => selectedListings.has(listing.id));
+  const isIndeterminate = selectedListings.size > 0 && selectedListings.size < filteredListings.length;
 
   // Show nothing while loading auth state
   useEffect(() => {
@@ -185,6 +215,26 @@ export default function Page() {
                 <span>Filters</span>
               </Button>
 
+              <ExportButton
+                exportType="listings"
+                userRole={user?.role || "buyer"}
+                variant="success"
+                size="sm"
+                buyerId={user?.id}
+                selectedListings={selectedListings}
+              />
+
+              {selectedListings.size > 0 && (
+                <Button
+                  onClick={() => setSelectedListings(new Set())}
+                  variant="outline"
+                  size="sm"
+                  className="text-blue-600 hover:text-blue-700"
+                >
+                  Clear Selection ({selectedListings.size})
+                </Button>
+              )}
+
               {(searchTerm || statusFilter || makeFilter) && (
                 <Button
                   onClick={resetFilters}
@@ -242,18 +292,47 @@ export default function Page() {
         </div>
 
         <div className="mt-6">
-          <ListingsTable
-            listings={paginatedFilteredListings}
-            sort={sort}
-            onSort={handleSort}
-            onNotify={notify}
-            currentPage={currentPage}
-            totalPages={totalFilteredPages}
-            rowsPerPage={rowsPerPage}
-            totalRows={filteredListings.length}
-            onPageChange={setCurrentPage}
-            onRowsPerPageChange={setRowsPerPage}
-          />
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">Vehicle Listings</h2>
+                  <p className="text-sm text-gray-600">
+                    {filteredListings.length} filtered listings • {paginatedFilteredListings.length} showing
+                    {selectedListings.size > 0 && (
+                      <span className="ml-2 text-blue-600 font-medium">
+                        • {selectedListings.size} selected
+                      </span>
+                    )}
+                  </p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="text-sm text-gray-500">
+                    Page {currentPage} of {totalFilteredPages}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="p-6">
+              <ListingsTable
+                listings={paginatedFilteredListings}
+                sort={sort}
+                onSort={handleSort}
+                onNotify={notify}
+                currentPage={currentPage}
+                totalPages={totalFilteredPages}
+                rowsPerPage={rowsPerPage}
+                totalRows={filteredListings.length}
+                onPageChange={setCurrentPage}
+                onRowsPerPageChange={setRowsPerPage}
+                selectedListings={selectedListings}
+                onSelectListing={handleSelectListing}
+                onSelectAll={handleSelectAll}
+                isAllSelected={isAllSelected}
+                isIndeterminate={isIndeterminate}
+              />
+            </div>
+          </div>
         </div>
         <div className="mt-8 flex justify-center space-x-4">
           <button 

@@ -1,5 +1,6 @@
 import csv
 import io
+import json
 import os
 from datetime import datetime, date, timedelta
 from typing import List, Optional, Dict, Any
@@ -16,7 +17,8 @@ class ExportService:
         export_type: ExportType,
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
-        buyer_id: Optional[UUID] = None
+        buyer_id: Optional[UUID] = None,
+        selected_listing_ids: Optional[List[str]] = None
     ) -> tuple[str, int]:
         """
         Export listings to CSV format based on user role and export type.
@@ -33,9 +35,14 @@ class ExportService:
             start_date = None
             end_date = None
         # For RANGE, use provided dates
+        # For SELECTED, use selected_listing_ids
         
-        # Build query based on user role and buyer_id parameter
-        if user.role == "admin":
+        # Build query based on user role and export type
+        if export_type == ExportType.SELECTED:
+            if not selected_listing_ids:
+                return "", 0
+            query, params = ExportService._build_selected_query(selected_listing_ids, user.role == "admin", user.id)
+        elif user.role == "admin":
             if buyer_id:
                 # Admin exporting specific buyer's data
                 query, params = ExportService._build_buyer_query(buyer_id, start_date, end_date)
@@ -43,7 +50,7 @@ class ExportService:
                 # Admin exporting all data
                 query, params = ExportService._build_admin_query(start_date, end_date)
         else:
-            # Buyers can only export their own data (ignore buyer_id parameter)
+            # Buyers can only export their own data (ignore buyer_id parameter for security)
             query, params = ExportService._build_buyer_query(user.id, start_date, end_date)
         
         conn = get_conn()
@@ -212,6 +219,51 @@ class ExportService:
         return query, params
     
     @staticmethod
+    def _build_selected_query(selected_listing_ids: List[str], is_admin: bool, user_id: UUID) -> tuple[str, list]:
+        """Build query for exporting selected listings"""
+        base_query = """
+            SELECT 
+                l.id,
+                l.vehicle_key,
+                l.vin,
+                v.year,
+                v.make,
+                v.model,
+                v.trim,
+                l.miles,
+                l.price,
+                s.score,
+                l.dom,
+                l.source,
+                25 as radius,
+                s.reason_codes,
+                s.buy_max,
+                'active' as status,
+                l.location,
+                l.buyer_id,
+                u.username as buyer_username,
+                l.created_at,
+                s.buy_max as decision_buy_max,
+                'pending' as decision_status,
+                s.reason_codes as decision_reasons
+            FROM listings l
+            LEFT JOIN vehicles v ON l.vehicle_key = v.vehicle_key
+            LEFT JOIN v_latest_scores s ON l.vehicle_key = s.vehicle_key
+            LEFT JOIN users u ON l.buyer_id::uuid = u.id
+            WHERE l.id = ANY(%s)
+        """
+        
+        params = [selected_listing_ids]
+        
+        # Add buyer restriction for non-admin users
+        if not is_admin:
+            base_query += " AND l.buyer_id::uuid = %s"
+            params.append(str(user_id))
+        
+        query = f"{base_query} ORDER BY l.created_at DESC"
+        return query, params
+    
+    @staticmethod
     def _build_users_query(start_date: Optional[date], end_date: Optional[date]) -> tuple[str, list]:
         """Build query for exporting users (admin only)"""
         base_query = """
@@ -300,7 +352,6 @@ class ExportService:
                 reason_codes = row[13] if row[13] else []
                 if isinstance(reason_codes, str):
                     try:
-                        import json
                         reason_codes = json.loads(reason_codes)
                     except:
                         reason_codes = []
@@ -309,7 +360,6 @@ class ExportService:
                 decision_reasons = row[22] if len(row) > 22 and row[22] else []
                 if isinstance(decision_reasons, str):
                     try:
-                        import json
                         decision_reasons = json.loads(decision_reasons)
                     except:
                         decision_reasons = []

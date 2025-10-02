@@ -15,6 +15,11 @@ interface ListingsTableProps {
   totalRows: number;
   onPageChange: (page: number) => void;
   onRowsPerPageChange: (rowsPerPage: number) => void;
+  selectedListings?: Set<string>;
+  onSelectListing?: (listingId: string, selected: boolean) => void;
+  onSelectAll?: (selected: boolean) => void;
+  isAllSelected?: boolean;
+  isIndeterminate?: boolean;
 }
 
 export const ListingsTable: React.FC<ListingsTableProps> = ({
@@ -27,7 +32,12 @@ export const ListingsTable: React.FC<ListingsTableProps> = ({
   rowsPerPage,
   totalRows,
   onPageChange,
-  onRowsPerPageChange
+  onRowsPerPageChange,
+  selectedListings = new Set(),
+  onSelectListing,
+  onSelectAll,
+  isAllSelected = false,
+  isIndeterminate = false
 }) => {
   const handleSort = (key: keyof Listing | 'decision_status' | 'decision_reasons') => {
     onSort(key);
@@ -35,12 +45,20 @@ export const ListingsTable: React.FC<ListingsTableProps> = ({
 
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <TableHeader sort={sort} onSort={handleSort} />
+      <TableHeader 
+        sort={sort} 
+        onSort={handleSort}
+        onSelectAll={onSelectAll}
+        isAllSelected={isAllSelected}
+        isIndeterminate={isIndeterminate}
+      />
       {listings.map(listing => (
         <TableRow
           key={listing.id}
           listing={listing}
           onNotify={onNotify}
+          isSelected={selectedListings.has(listing.id)}
+          onSelect={onSelectListing}
         />
       ))}
       <Pagination

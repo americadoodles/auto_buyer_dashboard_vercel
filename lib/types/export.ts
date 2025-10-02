@@ -1,4 +1,4 @@
-export type ExportType = 'all' | 'daily' | 'range';
+export type ExportType = 'all' | 'daily' | 'range' | 'selected';
 
 export type ExportRequest = {
   export_type: ExportType;
@@ -6,6 +6,7 @@ export type ExportRequest = {
   end_date?: string;
   format: string;
   buyer_id?: string;  // For exporting specific buyer's data
+  selected_listing_ids?: string[];  // For selective export
 };
 
 export type ExportResponse = {

@@ -6,6 +6,11 @@
 // This includes: select, score, vin, year, make, model, miles, price, dom, source, location, buyer_username, radius, buyMax, status, reasons, actions
 export const LISTINGS_TABLE_GRID_COLS = 17;
 
+// CSS class name for the grid (must match Tailwind config)
+// Note: We use static class name 'grid-cols-17' instead of template literal
+// because Tailwind CSS doesn't generate dynamic class names at runtime
+export const LISTINGS_TABLE_GRID_CLASS = 'grid-cols-17';
+
 // Column configuration for the listings table
 export const LISTINGS_TABLE_COLUMNS = [
   { key: 'select', label: '' },

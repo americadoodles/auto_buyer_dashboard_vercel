@@ -189,7 +189,7 @@ export default function BuyerActivityPage() {
   };
 
   // Get unique makes for filter dropdown
-  const uniqueMakes = Array.from(new Set(listings.map(l => l.make))).sort();
+  const uniqueMakes = Array.from(new Set((Array.isArray(listings) ? listings : []).map(l => l.make))).sort();
 
   // Reset filters
   const resetFilters = () => {

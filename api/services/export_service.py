@@ -1,5 +1,6 @@
 import csv
 import io
+import json
 import os
 from datetime import datetime, date, timedelta
 from typing import List, Optional, Dict, Any
@@ -300,7 +301,6 @@ class ExportService:
                 reason_codes = row[13] if row[13] else []
                 if isinstance(reason_codes, str):
                     try:
-                        import json
                         reason_codes = json.loads(reason_codes)
                     except:
                         reason_codes = []
@@ -309,7 +309,6 @@ class ExportService:
                 decision_reasons = row[22] if len(row) > 22 and row[22] else []
                 if isinstance(decision_reasons, str):
                     try:
-                        import json
                         decision_reasons = json.loads(decision_reasons)
                     except:
                         decision_reasons = []

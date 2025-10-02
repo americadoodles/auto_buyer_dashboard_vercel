@@ -28,9 +28,16 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   const [preview, setPreview] = useState<any>(null);
   const [showPreview, setShowPreview] = useState(false);
 
-  const handleExport = async () => {
+  const validateDateRange = (): boolean => {
     if (selectedExportType === 'range' && (!startDate || !endDate)) {
       alert('Please select both start and end dates for range export');
+      return false;
+    }
+    return true;
+  };
+
+  const handleExport = async () => {
+    if (!validateDateRange()) {
       return;
     }
 
@@ -62,8 +69,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   };
 
   const handlePreview = async () => {
-    if (selectedExportType === 'range' && (!startDate || !endDate)) {
-      alert('Please select both start and end dates for range export');
+    if (!validateDateRange()) {
       return;
     }
 

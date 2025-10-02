@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useListings } from "../../../lib/hooks/useListings";
+import { useAuth } from "../../auth/useAuth";
 import { Header } from "../../../components/organisms/Header";
 import { ListingsTable } from "../../../components/organisms/ListingsTable";
 import { KpiGrid } from "../../../components/organisms/KpiGrid";
@@ -13,6 +14,7 @@ import { Input } from "../../../components/atoms/Input";
 import { Button } from "../../../components/atoms/Button";
 
 export default function AdminListingsPage() {
+  const { user, loading: authLoading } = useAuth();
   const {
     data,
     sortedRows,
@@ -37,7 +39,9 @@ export default function AdminListingsPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [makeFilter, setMakeFilter] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const [userRole, setUserRole] = useState("admin"); // This should come from auth context
+
+  // Get user role from authentication context
+  const userRole = user?.role || "buyer"; // Default to buyer if no user or role
 
   const handleSort = (key: keyof Listing | 'decision_status' | 'decision_reasons') => {
     setSort((prev) => ({
@@ -75,6 +79,20 @@ export default function AdminListingsPage() {
     setStatusFilter("");
     setMakeFilter("");
   };
+
+  // Show loading state while authentication is being determined
+  if (authLoading) {
+    return (
+      <AdminLayout>
+        <div className="p-6 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading...</p>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>

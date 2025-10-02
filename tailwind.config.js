@@ -1,6 +1,9 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = { 
   content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"], 
+  safelist: [
+    'grid-cols-17', // Ensure this class is never purged
+  ],
   theme: { 
     extend: {
       gridTemplateColumns: {

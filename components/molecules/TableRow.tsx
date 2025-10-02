@@ -3,6 +3,7 @@ import { Gauge, DollarSign, Clock, ExternalLink, Bell } from "lucide-react";
 import { Listing } from "../../lib/types/listing";
 import { Badge } from "../atoms/Badge";
 import { formatCurrency, formatNumber } from "../../lib/utils/formatters";
+import { LISTINGS_TABLE_GRID_COLS } from "../../lib/constants/table";
 
 interface TableRowProps {
   listing: Listing;
@@ -27,7 +28,7 @@ export const TableRow: React.FC<TableRowProps> = ({ listing, onNotify, isSelecte
   const parsedSource = parseSourceUrl(listing.source);
   
   return (
-    <div className="grid grid-cols-17 items-center border-t px-4 py-3 text-sm hover:bg-slate-50 transition-colors">
+    <div className={`grid grid-cols-${LISTINGS_TABLE_GRID_COLS} items-center border-t px-4 py-3 text-sm hover:bg-slate-50 transition-colors`}>
       <div className="col-span-1 flex items-center justify-center">
         <input
           type="checkbox"

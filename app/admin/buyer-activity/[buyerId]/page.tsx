@@ -12,6 +12,7 @@ import { SortConfig } from "../../../../lib/types/listing";
 import { Car, ArrowLeft, Calendar, TrendingUp, User, Search, Filter } from "lucide-react";
 import { Button } from "../../../../components/atoms/Button";
 import { Input } from "../../../../components/atoms/Input";
+import { useAuth } from "../../../auth/useAuth";
 
 interface BuyerStats {
   total_listings: number;
@@ -28,6 +29,7 @@ export default function BuyerActivityPage() {
   const params = useParams();
   const router = useRouter();
   const buyerId = params.buyerId as string;
+  const { user } = useAuth();
   
   const [listings, setListings] = useState<Listing[]>([]);
   const [buyerStats, setBuyerStats] = useState<BuyerStats | null>(null);
@@ -44,7 +46,9 @@ export default function BuyerActivityPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [makeFilter, setMakeFilter] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const [userRole, setUserRole] = useState("admin"); // This should come from auth context
+  
+  // Get user role from auth context
+  const userRole = user?.role || "admin";
   
   // Selection state
   const [selectedListings, setSelectedListings] = useState<Set<string>>(new Set());

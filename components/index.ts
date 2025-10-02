@@ -8,6 +8,8 @@ export { Input } from './atoms/Input';
 // Molecules
 export { AuthFields } from './molecules/AuthFields';
 export { DateRangePicker } from './molecules/DateRangePicker';
+export { ExportButton } from './molecules/ExportButton';
+export { ExportModal } from './molecules/ExportModal';
 export { KpiCard } from './molecules/KpiCard';
 export { Pagination } from './molecules/Pagination';
 export { TableHeader } from './molecules/TableHeader';

@@ -3,10 +3,13 @@ import { Gauge, DollarSign, Clock, ExternalLink, Bell } from "lucide-react";
 import { Listing } from "../../lib/types/listing";
 import { Badge } from "../atoms/Badge";
 import { formatCurrency, formatNumber } from "../../lib/utils/formatters";
+import { LISTINGS_TABLE_GRID_COLS } from "../../lib/constants/table";
 
 interface TableRowProps {
   listing: Listing;
   onNotify: (vin: string) => void;
+  isSelected?: boolean;
+  onSelect?: (listingId: string, selected: boolean) => void;
 }
 
 // Small helper to safely parse URLs and extract a clean host
@@ -21,11 +24,19 @@ function parseSourceUrl(src?: string) {
   }
 }
 
-export const TableRow: React.FC<TableRowProps> = ({ listing, onNotify }) => {
+export const TableRow: React.FC<TableRowProps> = ({ listing, onNotify, isSelected = false, onSelect }) => {
   const parsedSource = parseSourceUrl(listing.source);
   
   return (
-    <div className="grid grid-cols-16 items-center border-t px-4 py-3 text-sm hover:bg-slate-50 transition-colors">
+    <div className={`grid grid-cols-${LISTINGS_TABLE_GRID_COLS} items-center border-t px-4 py-3 text-sm hover:bg-slate-50 transition-colors`}>
+      <div className="col-span-1 flex items-center justify-center">
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={(e) => onSelect?.(listing.id, e.target.checked)}
+          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+        />
+      </div>
       <div className="col-span-1">
         <Badge variant="default">{listing.score}</Badge>
       </div>

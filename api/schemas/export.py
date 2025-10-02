@@ -8,6 +8,7 @@ class ExportType(str, Enum):
     ALL = "all"
     DAILY = "daily"
     RANGE = "range"
+    SELECTED = "selected"
 
 class ExportRequest(BaseModel):
     export_type: ExportType
@@ -15,6 +16,7 @@ class ExportRequest(BaseModel):
     end_date: Optional[date] = None
     format: str = "csv"
     buyer_id: Optional[UUID] = None  # For exporting specific buyer's data
+    selected_listing_ids: Optional[List[str]] = None  # For selective export
 
 class ExportResponse(BaseModel):
     message: str

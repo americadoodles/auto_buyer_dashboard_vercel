@@ -39,6 +39,9 @@ export default function AdminListingsPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [makeFilter, setMakeFilter] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  
+  // Selection state
+  const [selectedListings, setSelectedListings] = useState<Set<string>>(new Set());
 
   // Get user role from authentication context
   const userRole = user?.role || "buyer"; // Default to buyer if no user or role
@@ -79,6 +82,32 @@ export default function AdminListingsPage() {
     setStatusFilter("");
     setMakeFilter("");
   };
+
+  // Selection handlers
+  const handleSelectListing = (listingId: string, selected: boolean) => {
+    setSelectedListings(prev => {
+      const newSet = new Set(prev);
+      if (selected) {
+        newSet.add(listingId);
+      } else {
+        newSet.delete(listingId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = (selected: boolean) => {
+    if (selected) {
+      const allIds = new Set(filteredListings.map(listing => listing.id));
+      setSelectedListings(allIds);
+    } else {
+      setSelectedListings(new Set());
+    }
+  };
+
+  // Calculate selection state for header checkbox
+  const isAllSelected = filteredListings.length > 0 && filteredListings.every(listing => selectedListings.has(listing.id));
+  const isIndeterminate = selectedListings.size > 0 && selectedListings.size < filteredListings.length;
 
   // Show loading state while authentication is being determined
   if (authLoading) {
@@ -221,7 +250,19 @@ export default function AdminListingsPage() {
                 userRole={userRole}
                 variant="success"
                 size="sm"
+                selectedListings={selectedListings}
               />
+
+              {selectedListings.size > 0 && (
+                <Button
+                  onClick={() => setSelectedListings(new Set())}
+                  variant="outline"
+                  size="sm"
+                  className="text-blue-600 hover:text-blue-700"
+                >
+                  Clear Selection ({selectedListings.size})
+                </Button>
+              )}
 
               {(searchTerm || statusFilter || makeFilter) && (
                 <Button
@@ -287,6 +328,11 @@ export default function AdminListingsPage() {
                 <h2 className="text-lg font-semibold text-gray-900">Vehicle Listings</h2>
                 <p className="text-sm text-gray-600">
                   {filteredListings.length} filtered listings • {paginatedRows.length} showing
+                  {selectedListings.size > 0 && (
+                    <span className="ml-2 text-blue-600 font-medium">
+                      • {selectedListings.size} selected
+                    </span>
+                  )}
                 </p>
               </div>
               <div className="flex items-center space-x-2">
@@ -309,6 +355,11 @@ export default function AdminListingsPage() {
               totalRows={filteredListings.length}
               onPageChange={setCurrentPage}
               onRowsPerPageChange={setRowsPerPage}
+              selectedListings={selectedListings}
+              onSelectListing={handleSelectListing}
+              onSelectAll={handleSelectAll}
+              isAllSelected={isAllSelected}
+              isIndeterminate={isIndeterminate}
             />
           </div>
         </div>

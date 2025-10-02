@@ -1,7 +1,7 @@
 import React from 'react';
 import { ArrowUpDown } from 'lucide-react';
 import { Listing, SortConfig } from '../../lib/types/listing';
-import { LISTINGS_TABLE_GRID_CLASS, LISTINGS_TABLE_COLUMNS } from '../../lib/constants/table';
+import { LISTINGS_TABLE_GRID_CLASS, LISTINGS_TABLE_GRID_STYLE, LISTINGS_TABLE_COLUMNS } from '../../lib/constants/table';
 
 interface TableHeaderProps {
   sort: SortConfig;
@@ -16,7 +16,10 @@ const columns = LISTINGS_TABLE_COLUMNS;
 
 export const TableHeader: React.FC<TableHeaderProps> = ({ sort, onSort, onSelectAll, isAllSelected = false, isIndeterminate = false }) => {
   return (
-    <div className={`grid ${LISTINGS_TABLE_GRID_CLASS} bg-slate-50 px-4 py-2 text-xs font-medium uppercase tracking-wide text-slate-600`}>
+    <div 
+      className={`grid ${LISTINGS_TABLE_GRID_CLASS} bg-slate-50 px-4 py-2 text-xs font-medium uppercase tracking-wide text-slate-600`}
+      style={LISTINGS_TABLE_GRID_STYLE}
+    >
       {columns.map(col => {
         if (col.key === 'select') {
           return (

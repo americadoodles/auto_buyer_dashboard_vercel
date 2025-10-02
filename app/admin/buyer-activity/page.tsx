@@ -274,7 +274,7 @@ export default function BuyerActivityPage() {
               <ExportButton
                 exportType="listings"
                 userRole={userRole}
-                variant="outline"
+                variant="success"
                 size="sm"
               />
 

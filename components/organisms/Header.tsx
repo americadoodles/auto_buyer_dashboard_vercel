@@ -39,7 +39,7 @@ export const Header: React.FC<HeaderProps> = ({
           <ExportButton
             exportType="listings"
             userRole={userRole}
-            variant="outline"
+            variant="success"
             size="sm"
             buyerId={buyerId}
           />

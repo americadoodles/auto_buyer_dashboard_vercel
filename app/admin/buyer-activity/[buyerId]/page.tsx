@@ -9,8 +9,9 @@ import { DateRangePicker } from "../../../../components/molecules/DateRangePicke
 import { ExportButton } from "../../../../components/molecules/ExportButton";
 import { Listing } from "../../../../lib/types/listing";
 import { SortConfig } from "../../../../lib/types/listing";
-import { Car, ArrowLeft, Calendar, TrendingUp, User } from "lucide-react";
+import { Car, ArrowLeft, Calendar, TrendingUp, User, Search, Filter } from "lucide-react";
 import { Button } from "../../../../components/atoms/Button";
+import { Input } from "../../../../components/atoms/Input";
 
 interface BuyerStats {
   total_listings: number;
@@ -39,6 +40,10 @@ export default function BuyerActivityPage() {
     start: null,
     end: null
   });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [makeFilter, setMakeFilter] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
   const [userRole, setUserRole] = useState("admin"); // This should come from auth context
 
   // Fetch buyer listings and stats
@@ -97,8 +102,28 @@ export default function BuyerActivityPage() {
     }
   }, [buyerId, dateRange]);
 
+  // Filter listings based on search and filter criteria
+  const filteredListings = (Array.isArray(listings) ? listings : []).filter((listing) => {
+    const matchesSearch = searchTerm === "" || 
+      listing.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      listing.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      listing.vin?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      listing.location?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === "" || 
+      (statusFilter === "scored" && listing.score !== undefined) ||
+      (statusFilter === "pending" && listing.score === undefined) ||
+      (statusFilter === "decided" && listing.decision?.status) ||
+      (statusFilter === "undecided" && !listing.decision?.status);
+    
+    const matchesMake = makeFilter === "" || 
+      listing.make.toLowerCase() === makeFilter.toLowerCase();
+    
+    return matchesSearch && matchesStatus && matchesMake;
+  });
+
   // Sort listings
-  const sortedListings = [...(Array.isArray(listings) ? listings : [])].sort((a, b) => {
+  const sortedListings = [...filteredListings].sort((a, b) => {
     let aVal: any;
     let bVal: any;
     
@@ -163,6 +188,16 @@ export default function BuyerActivityPage() {
     setCurrentPage(1);
   };
 
+  // Get unique makes for filter dropdown
+  const uniqueMakes = Array.from(new Set(listings.map(l => l.make))).sort();
+
+  // Reset filters
+  const resetFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("");
+    setMakeFilter("");
+  };
+
   return (
     <AdminLayout>
       <div className="p-6 space-y-6">
@@ -193,7 +228,7 @@ export default function BuyerActivityPage() {
               <ExportButton
                 exportType="listings"
                 userRole={userRole}
-                variant="outline"
+                variant="success"
                 size="sm"
                 buyerId={buyerId}
               />
@@ -251,6 +286,91 @@ export default function BuyerActivityPage() {
           <BuyerPerformanceKpi stats={buyerStats} />
         )}
 
+        {/* Search and Filter Controls */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+            {/* Search Bar */}
+            <div className="flex-1 max-w-md">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  type="text"
+                  placeholder="Search by make, model, VIN, or location..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            {/* Filter Controls */}
+            <div className="flex items-center space-x-3">
+              <Button
+                onClick={() => setShowFilters(!showFilters)}
+                variant="outline"
+                size="sm"
+                className="flex items-center space-x-2"
+              >
+                <Filter className="w-4 h-4" />
+                <span>Filters</span>
+              </Button>
+
+              {(searchTerm || statusFilter || makeFilter) && (
+                <Button
+                  onClick={resetFilters}
+                  variant="outline"
+                  size="sm"
+                  className="text-red-600 hover:text-red-700"
+                >
+                  Clear Filters
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Advanced Filters */}
+          {showFilters && (
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Status
+                  </label>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">All Status</option>
+                    <option value="scored">Scored</option>
+                    <option value="pending">Pending Score</option>
+                    <option value="decided">Decided</option>
+                    <option value="undecided">Undecided</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Make
+                  </label>
+                  <select
+                    value={makeFilter}
+                    onChange={(e) => setMakeFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">All Makes</option>
+                    {uniqueMakes.map((make) => (
+                      <option key={make} value={make}>
+                        {make}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Listings Table */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
           <div className="px-6 py-4 border-b border-gray-200">
@@ -258,10 +378,15 @@ export default function BuyerActivityPage() {
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">Vehicle Listings</h2>
                 <p className="text-sm text-gray-600">
-                  {sortedListings.length} total listings • {paginatedListings.length} showing
+                  {sortedListings.length} filtered listings • {paginatedListings.length} showing
                   {(dateRange.start || dateRange.end) && (
                     <span className="ml-2 text-blue-600">
                       (filtered by date range)
+                    </span>
+                  )}
+                  {(searchTerm || statusFilter || makeFilter) && (
+                    <span className="ml-2 text-green-600">
+                      (filtered by search/filters)
                     </span>
                   )}
                 </p>

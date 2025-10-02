@@ -201,7 +201,7 @@ export default function AdminListingsPage() {
               <ExportButton
                 exportType="listings"
                 userRole={userRole}
-                variant="outline"
+                variant="success"
                 size="sm"
               />
 

@@ -1,13 +1,16 @@
 import React from "react";
-import { Gauge, DollarSign, Clock, ExternalLink, Bell } from "lucide-react";
+import { Gauge, DollarSign, Clock, ExternalLink, Bell, Send, Workflow } from "lucide-react";
 import { Listing } from "../../lib/types/listing";
 import { Badge } from "../atoms/Badge";
 import { formatCurrency, formatNumber } from "../../lib/utils/formatters";
-import { LISTINGS_TABLE_GRID_CLASS, LISTINGS_TABLE_GRID_STYLE } from "../../lib/constants/table";
+import { LISTINGS_TABLE_GRID_CLASS, LISTINGS_TABLE_GRID_STYLE, LISTINGS_TABLE_COLUMNS } from "../../lib/constants/table";
+
 
 interface TableRowProps {
   listing: Listing;
   onNotify: (vin: string) => void;
+  onNotifySlack?: (vin: string, customMessage?: string) => void;
+  onTriggerWorkflow?: (vin: string, customMessage?: string) => void;
   isSelected?: boolean;
   onSelect?: (listingId: string, selected: boolean) => void;
 }
@@ -24,15 +27,21 @@ function parseSourceUrl(src?: string) {
   }
 }
 
-export const TableRow: React.FC<TableRowProps> = ({ listing, onNotify, isSelected = false, onSelect }) => {
+export const TableRow: React.FC<TableRowProps> = ({ listing, onNotify, onNotifySlack, onTriggerWorkflow, isSelected = false, onSelect }) => {
   const parsedSource = parseSourceUrl(listing.source);
+  
+  // Helper function to get column configuration
+  const getColumnConfig = (key: string) => {
+    return LISTINGS_TABLE_COLUMNS.find(col => col.key === key);
+  };
   
   return (
     <div 
       className={`grid ${LISTINGS_TABLE_GRID_CLASS} items-center border-t px-4 py-3 text-sm hover:bg-slate-50 transition-colors`}
       style={LISTINGS_TABLE_GRID_STYLE}
     >
-      <div className="col-span-1 flex items-center justify-center">
+      {/* Select checkbox */}
+      <div className={`col-span-${getColumnConfig('select')?.colSpan} flex items-center justify-center`}>
         <input
           type="checkbox"
           checked={isSelected}
@@ -40,32 +49,52 @@ export const TableRow: React.FC<TableRowProps> = ({ listing, onNotify, isSelecte
           className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
         />
       </div>
-      <div className="col-span-1">
+      
+      {/* Score */}
+      <div className={`col-span-${getColumnConfig('score')?.colSpan} flex items-center`}>
         <Badge variant="default">{listing.score}</Badge>
       </div>
-      {/* <div className="col-span-1 truncate text-xs text-slate-600">
-        {listing.vehicle_key}
-      </div> */}
-      <div className="col-span-1 truncate text-xs text-slate-600">
-        {listing.vin}
+      
+      {/* VIN - Wider column */}
+      <div className={`col-span-${getColumnConfig('vin')?.colSpan} truncate text-xs text-slate-600 font-mono`}>
+        <span title={listing.vin}>{listing.vin}</span>
       </div>
-      <div className="col-span-1">{listing.year}</div>
-      <div className="col-span-1">{listing.make}</div>
-      <div className="col-span-1">{listing.model}</div>
-      <div className="col-span-1 flex items-center gap-1">
-        <Gauge className="h-3 w-3" />
-        {formatNumber(listing.miles)}
+      
+      {/* Year */}
+      <div className={`col-span-${getColumnConfig('year')?.colSpan} hidden md:flex items-center`}>
+        {listing.year}
       </div>
-      <div className="col-span-1 flex items-center gap-1">
-        <DollarSign className="h-3 w-3" />
-        {formatCurrency(listing.price)}
+      
+      {/* Make */}
+      <div className={`col-span-${getColumnConfig('make')?.colSpan} hidden md:flex items-center`}>
+        {listing.make}
       </div>
-      <div className="col-span-1 flex items-center gap-1">
-        <Clock className="h-3 w-3" />
-        {listing.dom}d
+      
+      {/* Model - Wider column */}
+      <div className={`col-span-${getColumnConfig('model')?.colSpan} truncate`}>
+        <span title={listing.model}>{listing.model}</span>
       </div>
-      {/* Source column — clean host + external link icon */}
-      <div className="col-span-1 truncate min-w-0">
+      
+      {/* Miles */}
+      <div className={`col-span-${getColumnConfig('miles')?.colSpan} hidden md:flex items-center gap-1`}>
+        <Gauge className="h-3 w-3 flex-shrink-0" />
+        <span className="truncate">{formatNumber(listing.miles)}</span>
+      </div>
+      
+      {/* Price */}
+      <div className={`col-span-${getColumnConfig('price')?.colSpan} flex items-center gap-1 font-medium`}>
+        <DollarSign className="h-3 w-3 flex-shrink-0" />
+        <span className="truncate">{formatCurrency(listing.price)}</span>
+      </div>
+      
+      {/* DOM */}
+      <div className={`col-span-${getColumnConfig('dom')?.colSpan} hidden md:flex items-center gap-1`}>
+        <Clock className="h-3 w-3 flex-shrink-0" />
+        <span>{listing.dom}d</span>
+      </div>
+      
+      {/* Source - Hidden on smaller screens */}
+      <div className={`col-span-${getColumnConfig('source')?.colSpan} hidden lg:flex truncate min-w-0`}>
         {parsedSource ? (
           <div className="flex items-center gap-2 min-w-0">
             <span
@@ -94,17 +123,31 @@ export const TableRow: React.FC<TableRowProps> = ({ listing, onNotify, isSelecte
           </span>
         )}
       </div>
-      <div className="col-span-1 truncate text-xs text-slate-600">
-        {listing.location}
+      
+      {/* Location - Wider column, hidden on mobile */}
+      <div className={`col-span-${getColumnConfig('location')?.colSpan} hidden md:flex truncate text-xs text-slate-600`}>
+        <span title={listing.location}>{listing.location}</span>
       </div>
-      <div className="col-span-1 truncate text-xs text-slate-600">
-        {listing.buyer_username || listing.buyer_id}
+      
+      {/* Buyer - Hidden on smaller screens */}
+      <div className={`col-span-${getColumnConfig('buyer_username')?.colSpan} hidden lg:flex truncate text-xs text-slate-600`}>
+        <span title={listing.buyer_username || listing.buyer_id}>
+          {listing.buyer_username || listing.buyer_id}
+        </span>
       </div>
-      <div className="col-span-1">{listing.radius} mi</div>
-      <div className="col-span-1 font-medium">
+      
+      {/* Radius - Hidden on smaller screens */}
+      <div className={`col-span-${getColumnConfig('radius')?.colSpan} hidden lg:flex items-center`}>
+        {listing.radius} mi
+      </div>
+      
+      {/* Buy Max */}
+      <div className={`col-span-${getColumnConfig('buyMax')?.colSpan} hidden md:flex items-center font-medium`}>
         {listing.buyMax != null ? formatCurrency(listing.buyMax) : "—"}
       </div>
-      <div className="col-span-1">
+      
+      {/* Status */}
+      <div className={`col-span-${getColumnConfig('decision_status')?.colSpan} flex items-center`}>
         {listing.status ? (
           <Badge variant={listing.status === 'approved' ? 'success' : listing.status === 'rejected' ? 'destructive' : 'default'}>
             {listing.status}
@@ -113,16 +156,18 @@ export const TableRow: React.FC<TableRowProps> = ({ listing, onNotify, isSelecte
           <span className="text-slate-400">—</span>
         )}
       </div>
-      <div className="col-span-1">
+      
+      {/* Decision Reasons - Wider column, hidden on smaller screens */}
+      <div className={`col-span-${getColumnConfig('decision_reasons')?.colSpan} hidden lg:flex min-w-0`}>
         {listing.decision?.reasons && listing.decision.reasons.length > 0 ? (
-          <div className="flex flex-wrap gap-1">
+          <div className="flex flex-wrap gap-1 min-w-0 w-full">
             {listing.decision.reasons.slice(0, 2).map((reason, index) => (
-              <Badge key={index} variant="outline" className="text-xs">
+              <Badge key={index} variant="outline" className="text-xs max-w-full truncate">
                 {reason}
               </Badge>
             ))}
             {listing.decision.reasons.length > 2 && (
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className="text-xs flex-shrink-0">
                 +{listing.decision.reasons.length - 2}
               </Badge>
             )}
@@ -131,16 +176,52 @@ export const TableRow: React.FC<TableRowProps> = ({ listing, onNotify, isSelecte
           <span className="text-slate-400">—</span>
         )}
       </div>
-      <div className="col-span-1 flex gap-2">
+      
+      {/* Notify Action */}
+      <div className={`col-span-${getColumnConfig('notify')?.colSpan} flex items-center justify-center`}>
         <button
-          className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="p-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={() => listing.vin && onNotify(listing.vin)}
           disabled={!listing.vin}
           title={listing.vin ? "Notify about this listing" : "VIN not available"}
           aria-label={listing.vin ? "Notify about this listing" : "VIN not available"}
         >
-          <Bell className="h-4 w-4" />
+          <Bell className="h-3.5 w-3.5" />
         </button>
+      </div>
+      
+      {/* Slack Action */}
+      <div className={`col-span-${getColumnConfig('slack')?.colSpan} flex items-center justify-center`}>
+        {onNotifySlack ? (
+          <button
+            className="p-1.5 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={() => listing.vin && onNotifySlack(listing.vin)}
+            disabled={!listing.vin}
+            title={listing.vin ? "Send to Slack" : "VIN not available"}
+            aria-label={listing.vin ? "Send to Slack" : "VIN not available"}
+          >
+            <Send className="h-3.5 w-3.5" />
+          </button>
+        ) : (
+          <span className="text-slate-400 text-xs">—</span>
+        )}
+      </div>
+      
+      {/* Workflow Action */}
+      <div className={`col-span-${getColumnConfig('workflow')?.colSpan} flex items-center justify-center`}>
+        {onTriggerWorkflow ? (
+          <button
+            className="p-1.5 text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={() => listing.vin && onTriggerWorkflow(listing.vin)}
+            disabled={!listing.vin}
+            title={listing.vin ? "Trigger Slack Workflow" : "VIN not available"}
+            aria-label={listing.vin ? "Trigger Slack Workflow" : "VIN not available"}
+          >
+            <Workflow className="h-3.5 w-3.5" />
+          </button>
+        ) : (
+          <span className="text-slate-400 text-xs">—</span>
+        )}
       </div>
     </div>
   );

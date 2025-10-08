@@ -21,6 +21,17 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
     JWT_EXPIRES_MINUTES: int = int(os.getenv("JWT_EXPIRES_MINUTES", "60"))
 
+    # Slack settings
+    SLACK_WEBHOOK_URL: str = os.getenv("SLACK_WEBHOOK_URL", "")
+    SLACK_CHANNEL: str = os.getenv("SLACK_CHANNEL", "#leads-inbox")
+    SLACK_ENABLED: bool = bool(os.getenv("SLACK_ENABLED", "false").lower() == "true")
+    
+    # Slack workflow settings
+    SLACK_BOT_TOKEN: str = os.getenv("SLACK_BOT_TOKEN", "")
+    SLACK_WORKFLOW_WEBHOOK_URL: str = os.getenv("SLACK_WORKFLOW_WEBHOOK_URL", "")
+    SLACK_WORKFLOW_STEP_ID: str = os.getenv("SLACK_WORKFLOW_STEP_ID", "")
+    SLACK_WORKFLOW_ENABLED: bool = bool(os.getenv("SLACK_WORKFLOW_ENABLED", "false").lower() == "true")
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 

@@ -1,5 +1,5 @@
 import React from "react";
-import { Gauge, DollarSign, Clock, ExternalLink, Bell } from "lucide-react";
+import { Gauge, DollarSign, Clock, ExternalLink, Bell, Send } from "lucide-react";
 import { Listing } from "../../lib/types/listing";
 import { Badge } from "../atoms/Badge";
 import { formatCurrency, formatNumber } from "../../lib/utils/formatters";
@@ -8,6 +8,7 @@ import { LISTINGS_TABLE_GRID_CLASS, LISTINGS_TABLE_GRID_STYLE } from "../../lib/
 interface TableRowProps {
   listing: Listing;
   onNotify: (vin: string) => void;
+  onNotifySlack?: (vin: string, customMessage?: string) => void;
   isSelected?: boolean;
   onSelect?: (listingId: string, selected: boolean) => void;
 }
@@ -24,7 +25,7 @@ function parseSourceUrl(src?: string) {
   }
 }
 
-export const TableRow: React.FC<TableRowProps> = ({ listing, onNotify, isSelected = false, onSelect }) => {
+export const TableRow: React.FC<TableRowProps> = ({ listing, onNotify, onNotifySlack, isSelected = false, onSelect }) => {
   const parsedSource = parseSourceUrl(listing.source);
   
   return (
@@ -141,6 +142,17 @@ export const TableRow: React.FC<TableRowProps> = ({ listing, onNotify, isSelecte
         >
           <Bell className="h-4 w-4" />
         </button>
+        {onNotifySlack && (
+          <button
+            className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={() => listing.vin && onNotifySlack(listing.vin)}
+            disabled={!listing.vin}
+            title={listing.vin ? "Send to Slack" : "VIN not available"}
+            aria-label={listing.vin ? "Send to Slack" : "VIN not available"}
+          >
+            <Send className="h-4 w-4" />
+          </button>
+        )}
       </div>
     </div>
   );

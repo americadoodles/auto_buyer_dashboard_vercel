@@ -346,6 +346,50 @@ export class ApiService {
     return this.handleResponse<any>(response);
   }
 
+  static async sendSlackNotification(vehicle_key: string, vin: string, custom_message?: string): Promise<{
+    vehicle_key: string;
+    vin: string;
+    sent: boolean;
+    channel: string;
+    message: string;
+    error?: string;
+  }> {
+    const response = await fetch(`${BACKEND_URL}/slack/notify`, {
+      method: 'POST',
+      headers: this.authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ 
+        vehicle_key, 
+        vin, 
+        custom_message 
+      })
+    });
+
+    return this.handleResponse<{
+      vehicle_key: string;
+      vin: string;
+      sent: boolean;
+      channel: string;
+      message: string;
+      error?: string;
+    }>(response);
+  }
+
+  static async getSlackStatus(): Promise<{
+    enabled: boolean;
+    webhook_configured: boolean;
+    channel: string;
+  }> {
+    const response = await fetch(`${BACKEND_URL}/slack/status`, {
+      headers: this.authHeaders(),
+    });
+
+    return this.handleResponse<{
+      enabled: boolean;
+      webhook_configured: boolean;
+      channel: string;
+    }>(response);
+  }
+
   static async getKpiMetrics(): Promise<{
     metrics: {
       average_profit_per_unit: number;

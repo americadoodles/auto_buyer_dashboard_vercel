@@ -9,6 +9,7 @@ interface ListingsTableProps {
   sort: { key: keyof Listing | 'decision_status' | 'decision_reasons'; dir: 'asc' | 'desc' };
   onSort: (key: keyof Listing | 'decision_status' | 'decision_reasons') => void;
   onNotify: (vin: string) => void;
+  onNotifySlack?: (vin: string, customMessage?: string) => void;
   currentPage: number;
   totalPages: number;
   rowsPerPage: number;
@@ -27,6 +28,7 @@ export const ListingsTable: React.FC<ListingsTableProps> = ({
   sort,
   onSort,
   onNotify,
+  onNotifySlack,
   currentPage,
   totalPages,
   rowsPerPage,
@@ -57,6 +59,7 @@ export const ListingsTable: React.FC<ListingsTableProps> = ({
           key={listing.id}
           listing={listing}
           onNotify={onNotify}
+          onNotifySlack={onNotifySlack}
           isSelected={selectedListings.has(listing.id)}
           onSelect={onSelectListing}
         />

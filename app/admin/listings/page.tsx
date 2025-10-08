@@ -32,6 +32,7 @@ export default function AdminListingsPage() {
     seedBackend,
     loadFromBackend,
     notify,
+    notifySlack,
   } = useListings();
 
   // Filtering and search state
@@ -349,6 +350,7 @@ export default function AdminListingsPage() {
               sort={sort}
               onSort={handleSort}
               onNotify={notify}
+              onNotifySlack={notifySlack}
               currentPage={currentPage}
               totalPages={Math.ceil(filteredListings.length / rowsPerPage)}
               rowsPerPage={rowsPerPage}

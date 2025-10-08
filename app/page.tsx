@@ -35,6 +35,7 @@ export default function Page() {
     seedBackend,
     loadFromBackend,
     notify,
+    notifySlack,
   } = useListings();
 
   // Filtering and search state
@@ -319,6 +320,7 @@ export default function Page() {
                 sort={sort}
                 onSort={handleSort}
                 onNotify={notify}
+                onNotifySlack={notifySlack}
                 currentPage={currentPage}
                 totalPages={totalFilteredPages}
                 rowsPerPage={rowsPerPage}

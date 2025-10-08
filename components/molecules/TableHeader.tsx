@@ -23,7 +23,7 @@ export const TableHeader: React.FC<TableHeaderProps> = ({ sort, onSort, onSelect
       {columns.map(col => {
         if (col.key === 'select') {
           return (
-            <div key={col.key} className="col-span-1 flex items-center justify-center">
+            <div key={col.key} className={`col-span-${col.colSpan} flex items-center justify-center`}>
               <input
                 type="checkbox"
                 checked={isAllSelected}
@@ -41,13 +41,16 @@ export const TableHeader: React.FC<TableHeaderProps> = ({ sort, onSort, onSelect
         return (
           <button
             key={col.key}
-            className="col-span-1 flex items-center gap-1 hover:text-slate-800 transition-colors"
-            onClick={() => col.key !== 'actions' && onSort(col.key as keyof Listing | 'decision_status' | 'decision_reasons')}
-            disabled={col.key === 'actions'}
+            className={`col-span-${col.colSpan} flex items-center gap-1 hover:text-slate-800 transition-colors ${
+              col.priority === 'low' ? 'hidden lg:flex' : 
+              col.priority === 'medium' ? 'hidden md:flex' : 'flex'
+            }`}
+            onClick={() => !['notify', 'slack', 'workflow'].includes(col.key) && onSort(col.key as keyof Listing | 'decision_status' | 'decision_reasons')}
+            disabled={['notify', 'slack', 'workflow'].includes(col.key)}
           >
-            <span>{col.label}</span>
-            {col.key !== 'actions' && (
-              <ArrowUpDown className="h-3 w-3" />
+            <span className="truncate">{col.label}</span>
+            {!['notify', 'slack', 'workflow'].includes(col.key) && (
+              <ArrowUpDown className="h-3 w-3 flex-shrink-0" />
             )}
           </button>
         );

@@ -36,6 +36,7 @@ export default function Page() {
     loadFromBackend,
     notify,
     notifySlack,
+    triggerWorkflow,
   } = useListings();
 
   // Filtering and search state
@@ -321,6 +322,7 @@ export default function Page() {
                 onSort={handleSort}
                 onNotify={notify}
                 onNotifySlack={notifySlack}
+                onTriggerWorkflow={triggerWorkflow}
                 currentPage={currentPage}
                 totalPages={totalFilteredPages}
                 rowsPerPage={rowsPerPage}

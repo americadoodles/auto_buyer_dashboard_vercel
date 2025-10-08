@@ -185,6 +185,68 @@ export default function BuyerActivityPage() {
     }
   };
 
+  const handleNotifySlack = async (vin: string, customMessage?: string) => {
+    try {
+      const baseUrl = (process.env.NEXT_PUBLIC_BACKEND_URL ?? '/api').replace(/\/+$/, '');
+      const listing = listings.find(l => l.vin === vin);
+      if (!listing) {
+        alert('Listing not found');
+        return;
+      }
+      
+      const response = await fetch(`${baseUrl}/slack/notify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vehicle_key: listing.vehicle_key,
+          vin: vin,
+          custom_message: customMessage
+        })
+      });
+      
+      const result = await response.json();
+      if (result.sent) {
+        alert(`✅ Slack notification sent to ${result.channel} for VIN ${vin}`);
+      } else {
+        alert(`❌ Failed to send Slack notification: ${result.error || result.message}`);
+      }
+    } catch (error) {
+      console.error('Error sending Slack notification:', error);
+      alert('Failed to send Slack notification: ' + error);
+    }
+  };
+
+  const handleTriggerWorkflow = async (vin: string, customMessage?: string) => {
+    try {
+      const baseUrl = (process.env.NEXT_PUBLIC_BACKEND_URL ?? '/api').replace(/\/+$/, '');
+      const listing = listings.find(l => l.vin === vin);
+      if (!listing) {
+        alert('Listing not found');
+        return;
+      }
+      
+      const response = await fetch(`${baseUrl}/slack/trigger-workflow`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vehicle_key: listing.vehicle_key,
+          vin: vin,
+          custom_message: customMessage
+        })
+      });
+      
+      const result = await response.json();
+      if (result.triggered) {
+        alert(`✅ Slack workflow triggered for VIN ${vin}${result.workflow_id ? ` (ID: ${result.workflow_id})` : ''}`);
+      } else {
+        alert(`❌ Failed to trigger Slack workflow: ${result.error || result.message}`);
+      }
+    } catch (error) {
+      console.error('Error triggering Slack workflow:', error);
+      alert('Failed to trigger Slack workflow: ' + error);
+    }
+  };
+
   const handleDateRangeChange = (start: Date | null, end: Date | null) => {
     setDateRange({ start, end });
     setCurrentPage(1); // Reset to first page when date range changes
@@ -474,6 +536,8 @@ export default function BuyerActivityPage() {
                 sort={sort}
                 onSort={handleSort}
                 onNotify={handleNotify}
+                onNotifySlack={handleNotifySlack}
+                onTriggerWorkflow={handleTriggerWorkflow}
                 currentPage={currentPage}
                 totalPages={totalPages}
                 rowsPerPage={rowsPerPage}

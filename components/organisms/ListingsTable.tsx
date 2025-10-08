@@ -10,6 +10,7 @@ interface ListingsTableProps {
   onSort: (key: keyof Listing | 'decision_status' | 'decision_reasons') => void;
   onNotify: (vin: string) => void;
   onNotifySlack?: (vin: string, customMessage?: string) => void;
+  onTriggerWorkflow?: (vin: string, customMessage?: string) => void;
   currentPage: number;
   totalPages: number;
   rowsPerPage: number;
@@ -29,6 +30,7 @@ export const ListingsTable: React.FC<ListingsTableProps> = ({
   onSort,
   onNotify,
   onNotifySlack,
+  onTriggerWorkflow,
   currentPage,
   totalPages,
   rowsPerPage,
@@ -60,6 +62,7 @@ export const ListingsTable: React.FC<ListingsTableProps> = ({
           listing={listing}
           onNotify={onNotify}
           onNotifySlack={onNotifySlack}
+          onTriggerWorkflow={onTriggerWorkflow}
           isSelected={selectedListings.has(listing.id)}
           onSelect={onSelectListing}
         />

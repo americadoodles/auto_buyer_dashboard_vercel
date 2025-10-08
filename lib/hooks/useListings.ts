@@ -179,6 +179,29 @@ export const useListings = () => {
     }
   };
 
+  const triggerWorkflow = async (vin: string, customMessage?: string) => {
+    try {
+      setLoading(true);
+      // Find the listing to get the vehicle_key
+      const listing = data.find(l => l.vin === vin);
+      if (!listing) {
+        alert('Listing not found');
+        return;
+      }
+      
+      const res = await ApiService.triggerSlackWorkflow(listing.vehicle_key, vin, customMessage);
+      if (res.triggered) {
+        alert(`✅ Slack workflow triggered for VIN ${vin}${res.workflow_id ? ` (ID: ${res.workflow_id})` : ''}`);
+      } else {
+        alert(`❌ Failed to trigger Slack workflow: ${res.error || res.message}`);
+      }
+    } catch (e: any) {
+      alert('Failed to trigger Slack workflow: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     data,
     sortedRows,
@@ -196,6 +219,7 @@ export const useListings = () => {
     seedBackend,
     loadFromBackend,
     notify,
-    notifySlack
+    notifySlack,
+    triggerWorkflow
   };
 };

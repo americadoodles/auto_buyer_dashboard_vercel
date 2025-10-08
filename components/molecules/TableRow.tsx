@@ -1,5 +1,5 @@
 import React from "react";
-import { Gauge, DollarSign, Clock, ExternalLink, Bell, Send } from "lucide-react";
+import { Gauge, DollarSign, Clock, ExternalLink, Bell, Send, Workflow } from "lucide-react";
 import { Listing } from "../../lib/types/listing";
 import { Badge } from "../atoms/Badge";
 import { formatCurrency, formatNumber } from "../../lib/utils/formatters";
@@ -9,6 +9,7 @@ interface TableRowProps {
   listing: Listing;
   onNotify: (vin: string) => void;
   onNotifySlack?: (vin: string, customMessage?: string) => void;
+  onTriggerWorkflow?: (vin: string, customMessage?: string) => void;
   isSelected?: boolean;
   onSelect?: (listingId: string, selected: boolean) => void;
 }
@@ -25,7 +26,7 @@ function parseSourceUrl(src?: string) {
   }
 }
 
-export const TableRow: React.FC<TableRowProps> = ({ listing, onNotify, onNotifySlack, isSelected = false, onSelect }) => {
+export const TableRow: React.FC<TableRowProps> = ({ listing, onNotify, onNotifySlack, onTriggerWorkflow, isSelected = false, onSelect }) => {
   const parsedSource = parseSourceUrl(listing.source);
   
   return (
@@ -151,6 +152,17 @@ export const TableRow: React.FC<TableRowProps> = ({ listing, onNotify, onNotifyS
             aria-label={listing.vin ? "Send to Slack" : "VIN not available"}
           >
             <Send className="h-4 w-4" />
+          </button>
+        )}
+        {onTriggerWorkflow && (
+          <button
+            className="p-2 text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={() => listing.vin && onTriggerWorkflow(listing.vin)}
+            disabled={!listing.vin}
+            title={listing.vin ? "Trigger Slack Workflow" : "VIN not available"}
+            aria-label={listing.vin ? "Trigger Slack Workflow" : "VIN not available"}
+          >
+            <Workflow className="h-4 w-4" />
           </button>
         )}
       </div>

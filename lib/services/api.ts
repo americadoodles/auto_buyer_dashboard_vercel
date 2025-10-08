@@ -375,18 +375,60 @@ export class ApiService {
   }
 
   static async getSlackStatus(): Promise<{
-    enabled: boolean;
-    webhook_configured: boolean;
-    channel: string;
+    notifications: {
+      enabled: boolean;
+      webhook_configured: boolean;
+      channel: string;
+    };
+    workflows: {
+      enabled: boolean;
+      bot_token_configured: boolean;
+      workflow_webhook_configured: boolean;
+    };
   }> {
     const response = await fetch(`${BACKEND_URL}/slack/status`, {
       headers: this.authHeaders(),
     });
 
     return this.handleResponse<{
-      enabled: boolean;
-      webhook_configured: boolean;
-      channel: string;
+      notifications: {
+        enabled: boolean;
+        webhook_configured: boolean;
+        channel: string;
+      };
+      workflows: {
+        enabled: boolean;
+        bot_token_configured: boolean;
+        workflow_webhook_configured: boolean;
+      };
+    }>(response);
+  }
+
+  static async triggerSlackWorkflow(vehicle_key: string, vin: string, custom_message?: string): Promise<{
+    vehicle_key: string;
+    vin: string;
+    triggered: boolean;
+    workflow_id?: string;
+    message: string;
+    error?: string;
+  }> {
+    const response = await fetch(`${BACKEND_URL}/slack/trigger-workflow`, {
+      method: 'POST',
+      headers: this.authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ 
+        vehicle_key, 
+        vin, 
+        custom_message 
+      })
+    });
+
+    return this.handleResponse<{
+      vehicle_key: string;
+      vin: string;
+      triggered: boolean;
+      workflow_id?: string;
+      message: string;
+      error?: string;
     }>(response);
   }
 

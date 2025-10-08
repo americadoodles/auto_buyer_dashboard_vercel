@@ -5,6 +5,7 @@ import { Badge } from "../atoms/Badge";
 import { formatCurrency, formatNumber } from "../../lib/utils/formatters";
 import { LISTINGS_TABLE_GRID_CLASS, LISTINGS_TABLE_GRID_STYLE, LISTINGS_TABLE_COLUMNS } from "../../lib/constants/table";
 
+
 interface TableRowProps {
   listing: Listing;
   onNotify: (vin: string) => void;

@@ -156,6 +156,52 @@ export const useListings = () => {
     }
   };
 
+  const notifySlack = async (vin: string, customMessage?: string) => {
+    try {
+      setLoading(true);
+      // Find the listing to get the vehicle_key
+      const listing = data.find(l => l.vin === vin);
+      if (!listing) {
+        alert('Listing not found');
+        return;
+      }
+      
+      const res = await ApiService.sendSlackNotification(listing.vehicle_key, vin, customMessage);
+      if (res.sent) {
+        alert(`✅ Slack notification sent to ${res.channel} for VIN ${vin}`);
+      } else {
+        alert(`❌ Failed to send Slack notification: ${res.error || res.message}`);
+      }
+    } catch (e: any) {
+      alert('Failed to send Slack notification: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const triggerWorkflow = async (vin: string, customMessage?: string) => {
+    try {
+      setLoading(true);
+      // Find the listing to get the vehicle_key
+      const listing = data.find(l => l.vin === vin);
+      if (!listing) {
+        alert('Listing not found');
+        return;
+      }
+      
+      const res = await ApiService.triggerSlackWorkflow(listing.vehicle_key, vin, customMessage);
+      if (res.triggered) {
+        alert(`✅ Slack workflow triggered for VIN ${vin}${res.workflow_id ? ` (ID: ${res.workflow_id})` : ''}`);
+      } else {
+        alert(`❌ Failed to trigger Slack workflow: ${res.error || res.message}`);
+      }
+    } catch (e: any) {
+      alert('Failed to trigger Slack workflow: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     data,
     sortedRows,
@@ -172,6 +218,8 @@ export const useListings = () => {
     rescoreVisible,
     seedBackend,
     loadFromBackend,
-    notify
+    notify,
+    notifySlack,
+    triggerWorkflow
   };
 };

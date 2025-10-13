@@ -26,8 +26,8 @@ export const useAdminStats = () => {
         
         const baseUrl = (process.env.NEXT_PUBLIC_BACKEND_URL ?? '/api').replace(/\/+$/, '');
         
-        // Fetch all stats in parallel
-        const [usersResponse, signupRequestsResponse, rolesResponse, listingsResponse] = await Promise.all([
+        // Fetch all stats in parallel - use KPI endpoint for total listings to get accurate count
+        const [usersResponse, signupRequestsResponse, rolesResponse, kpiResponse] = await Promise.all([
           fetch(`${baseUrl}/users/`, {
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('auth.token')}`,
@@ -43,25 +43,25 @@ export const useAdminStats = () => {
               'Authorization': `Bearer ${localStorage.getItem('auth.token')}`,
             },
           }),
-          fetch(`${baseUrl}/listings/`, {
+          fetch(`${baseUrl}/kpi/`, {
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('auth.token')}`,
             },
           }),
         ]);
 
-        const [users, signupRequests, roles, listings] = await Promise.all([
+        const [users, signupRequests, roles, kpiData] = await Promise.all([
           usersResponse.ok ? usersResponse.json() : [],
           signupRequestsResponse.ok ? signupRequestsResponse.json() : [],
           rolesResponse.ok ? rolesResponse.json() : [],
-          listingsResponse.ok ? listingsResponse.json() : [],
+          kpiResponse.ok ? kpiResponse.json() : { metrics: { total_listings: 0 } },
         ]);
 
         setStats({
           totalUsers: Array.isArray(users) ? users.length : 0,
           pendingRequests: Array.isArray(signupRequests) ? signupRequests.length : 0,
           activeRoles: Array.isArray(roles) ? roles.length : 0,
-          totalListings: Array.isArray(listings) ? listings.length : 0,
+          totalListings: kpiData?.metrics?.total_listings || 0,
           loading: false,
           error: null,
         });

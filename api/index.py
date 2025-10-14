@@ -50,6 +50,7 @@ app.include_router(slack_router, prefix="/api")
 def healthz():
     return {"ok": True}
 
+
 # in an admin-only or temp route:
 @app.get("/api/db-check")
 def db_check():

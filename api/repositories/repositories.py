@@ -305,62 +305,109 @@ def list_listings_by_buyer(
 
 def get_buyer_stats(buyer_id: str, start_date: Optional[datetime.datetime] = None, end_date: Optional[datetime.datetime] = None) -> dict:
     """Get performance statistics for a specific buyer"""
-    if DB_ENABLED:
-        with get_db_connection() as conn:
-            if not conn:
-                return []
-                
-            try:
-                with conn.cursor() as cur:
-                    # Base query for buyer stats
-                    base_query = """
-                  SELECT 
-                    COUNT(*) as total_listings,
-                    COUNT(CASE WHEN s.score IS NOT NULL THEN 1 END) as scored_listings,
-                    AVG(CASE WHEN s.score IS NOT NULL THEN s.score ELSE NULL END) as avg_score,
-                    AVG(l.price) as avg_price,
-                    MIN(l.created_at) as first_listing,
-                    MAX(l.created_at) as last_listing,
-                    COUNT(DISTINCT l.source) as unique_sources
-                  FROM listings l
-                  LEFT JOIN (
-                    SELECT DISTINCT ON (vin) vin, score, buy_max, reason_codes
-                    FROM scores
-                    ORDER BY vin, created_at DESC
-                  ) s ON s.vin = l.vin
-                  WHERE l.buyer_id = %s
-                """
-                
-                params = [buyer_id]
-                
-                if start_date:
-                    base_query += " AND l.created_at >= %s"
-                    params.append(start_date)
-                
-                if end_date:
-                    base_query += " AND l.created_at <= %s"
-                    params.append(end_date)
-                
-                cur.execute(base_query, params)
-                result = cur.fetchone()
-                
-                if result:
-                    total_listings, scored_listings, avg_score, avg_price, first_listing, last_listing, unique_sources = result
-                    return {
-                        "total_listings": total_listings or 0,
-                        "scored_listings": scored_listings or 0,
-                        "avg_score": float(avg_score) if avg_score else 0,
-                        "avg_price": float(avg_price) if avg_price else 0,
-                        "first_listing": first_listing.isoformat() if first_listing else None,
-                        "last_listing": last_listing.isoformat() if last_listing else None,
-                        "unique_sources": unique_sources or 0,
-                        "scoring_rate": (scored_listings / total_listings * 100) if total_listings > 0 else 0
-                    }
-                return {}
-            except Exception as e:
-                logging.error(f"Database error: {e}")
-                return []
-    return {}
+    try:
+        if DB_ENABLED:
+            with get_db_connection() as conn:
+                if not conn:
+                    return {}
+                    
+                try:
+                    with conn.cursor() as cur:
+                        # Simple query without complex joins first
+                        base_query = """
+                      SELECT 
+                        COUNT(*) as total_listings,
+                        AVG(l.price) as avg_price,
+                        MIN(l.created_at) as first_listing,
+                        MAX(l.created_at) as last_listing,
+                        COUNT(DISTINCT l.source) as unique_sources
+                      FROM listings l
+                      WHERE l.buyer_id = %s
+                    """
+                        
+                        params = [buyer_id]
+                        
+                        if start_date:
+                            base_query += " AND l.created_at >= %s"
+                            params.append(start_date)
+                        
+                        if end_date:
+                            base_query += " AND l.created_at <= %s"
+                            params.append(end_date)
+                        
+                        cur.execute(base_query, params)
+                        result = cur.fetchone()
+                        
+                        if result:
+                            total_listings, avg_price, first_listing, last_listing, unique_sources = result
+                            
+                            # Get scored listings count separately
+                            scored_query = """
+                            SELECT COUNT(*) as scored_listings, AVG(s.score) as avg_score
+                            FROM listings l
+                            JOIN v_latest_scores s ON s.vin = l.vin
+                            WHERE l.buyer_id = %s
+                            """
+                            scored_params = [buyer_id]
+                            
+                            if start_date:
+                                scored_query += " AND l.created_at >= %s"
+                                scored_params.append(start_date)
+                            
+                            if end_date:
+                                scored_query += " AND l.created_at <= %s"
+                                scored_params.append(end_date)
+                            
+                            cur.execute(scored_query, scored_params)
+                            scored_result = cur.fetchone()
+                            
+                            scored_listings = scored_result[0] if scored_result else 0
+                            avg_score = scored_result[1] if scored_result and scored_result[1] else 0
+                            
+                            return {
+                                "total_listings": total_listings or 0,
+                                "scored_listings": scored_listings or 0,
+                                "avg_score": float(avg_score) if avg_score else 0,
+                                "avg_price": float(avg_price) if avg_price else 0,
+                                "first_listing": first_listing.isoformat() if first_listing else None,
+                                "last_listing": last_listing.isoformat() if last_listing else None,
+                                "unique_sources": unique_sources or 0,
+                                "scoring_rate": (scored_listings / total_listings * 100) if total_listings > 0 else 0
+                            }
+                        return {}
+                except Exception as e:
+                    logging.error(f"Database error: {e}")
+                    return {}
+        
+        # Fallback to in-memory calculation
+        buyer_listings = [listing for listing in _BY_ID.values() if listing.buyer_id == buyer_id]
+        
+        if not buyer_listings:
+            return {}
+        
+        # Calculate stats from in-memory data
+        total_listings = len(buyer_listings)
+        scored_listings = len([l for l in buyer_listings if l.score is not None])
+        avg_score = sum(l.score for l in buyer_listings if l.score is not None) / scored_listings if scored_listings > 0 else 0
+        avg_price = sum(l.price for l in buyer_listings) / total_listings if total_listings > 0 else 0
+        first_listing = min(buyer_listings, key=lambda x: x.created_at).created_at if buyer_listings else None
+        last_listing = max(buyer_listings, key=lambda x: x.created_at).created_at if buyer_listings else None
+        unique_sources = len(set(l.source for l in buyer_listings))
+        scoring_rate = (scored_listings / total_listings * 100) if total_listings > 0 else 0
+        
+        return {
+            "total_listings": total_listings,
+            "scored_listings": scored_listings,
+            "avg_score": float(avg_score),
+            "avg_price": float(avg_price),
+            "first_listing": first_listing.isoformat() if first_listing else None,
+            "last_listing": last_listing.isoformat() if last_listing else None,
+            "unique_sources": unique_sources,
+            "scoring_rate": scoring_rate
+        }
+    except Exception as e:
+        logging.error(f"Unexpected error in get_buyer_stats: {e}")
+        return {}
 
 def update_cached_score(vin: str, score: int, buy_max: float, reasons: list[str]):
     # for in-memory cache parity; DB is handled in scores repo

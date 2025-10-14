@@ -176,25 +176,25 @@ def list_listings(limit: int = 500) -> list[ListingOut]:
                   ORDER BY l.vehicle_key, l.created_at DESC
                   LIMIT %s
                 """, (limit,))
-                out: list[ListingOut] = []
-                for rid, vehicle_key, vin, year, make, model, trim, miles, price, dom, source, location, buyer_id, buyer_username, score, buy_max, reason_codes, payload in cur.fetchall():
-                    # Extract decision data from payload if available
-                    decision = None
-                    status = ""
-                    if payload:
-                        payload_data = json.loads(payload) if isinstance(payload, str) else payload
-                        decision = create_decision_from_data(payload_data)
-                        status = payload_data.get("status", "")
-                    
-                    out.append(ListingOut(
-                        id=str(rid), vehicle_key=vehicle_key, vin=vin or "", year=int(year), make=make, model=model, trim=trim,
-                        miles=int(miles), price=float(price), dom=int(dom), source=source,
-                        location=location, buyer_id=buyer_id, buyer_username=buyer_username,
-                        radius=25, reasonCodes=reason_codes or [],
-                        buyMax=float(buy_max) if buy_max is not None else None,
-                        status=status, score=int(score) if score is not None else None, decision=decision
-                    ))
-                return out
+                    out: list[ListingOut] = []
+                    for rid, vehicle_key, vin, year, make, model, trim, miles, price, dom, source, location, buyer_id, buyer_username, score, buy_max, reason_codes, payload in cur.fetchall():
+                        # Extract decision data from payload if available
+                        decision = None
+                        status = ""
+                        if payload:
+                            payload_data = json.loads(payload) if isinstance(payload, str) else payload
+                            decision = create_decision_from_data(payload_data)
+                            status = payload_data.get("status", "")
+                        
+                        out.append(ListingOut(
+                            id=str(rid), vehicle_key=vehicle_key, vin=vin or "", year=int(year), make=make, model=model, trim=trim,
+                            miles=int(miles), price=float(price), dom=int(dom), source=source,
+                            location=location, buyer_id=buyer_id, buyer_username=buyer_username,
+                            radius=25, reasonCodes=reason_codes or [],
+                            buyMax=float(buy_max) if buy_max is not None else None,
+                            status=status, score=int(score) if score is not None else None, decision=decision
+                        ))
+                    return out
             except Exception as e:
                 logging.error(f"Error in list_listings: {str(e)}")
                 return []

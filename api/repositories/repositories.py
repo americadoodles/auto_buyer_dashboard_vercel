@@ -1,7 +1,8 @@
 import json
 import logging
 from typing import List, Optional
-from ..core.db import get_conn, DB_ENABLED
+from ..core.db import DB_ENABLED
+from ..core.db_helpers import get_db_connection
 from ..schemas.listing import ListingIn, ListingOut
 from ..schemas.listing import Decision
 
@@ -33,83 +34,87 @@ def create_decision_from_data(data: dict) -> Optional[Decision]:
 def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> List[ListingOut]:
     out: list[ListingOut] = []
     if DB_ENABLED:
-        conn = get_conn(); assert conn is not None
-        try:
-            with conn, conn.cursor() as cur:
-                for item in rows:
-                    norm = item.model_dump()
-                    vin_raw = norm.get("vin")
-                    vin = vin_raw.strip().upper() if vin_raw and vin_raw.strip() else None
+        with get_db_connection() as conn:
+            if not conn:
+                return out
+                
+            try:
+                with conn.cursor() as cur:
+                    for item in rows:
+                        norm = item.model_dump()
+                        vin_raw = norm.get("vin")
+                        vin = vin_raw.strip().upper() if vin_raw and vin_raw.strip() else None
 
-                    def make_vehicle_key(n):
-                        if vin:
-                            return vin
-                        # unique by timestamp when VIN missing; include source to be extra safe
-                        created = (n.get("created_at") or datetime.now(timezone.utc))
-                        src = (n.get("source") or "unknown").strip().lower()
-                        return f"{src}#{created.isoformat(timespec='milliseconds')}"
+                        def make_vehicle_key(n):
+                            if vin:
+                                return vin
+                            # unique by timestamp when VIN missing; include source to be extra safe
+                            created = (n.get("created_at") or datetime.now(timezone.utc))
+                            src = (n.get("source") or "unknown").strip().lower()
+                            return f"{src}#{created.isoformat(timespec='milliseconds')}"
 
-                    vehicle_key = make_vehicle_key(norm)
-                    make = norm["make"].strip()
-                    model = norm["model"].strip()
-                    trim = (norm["trim"] or None)
+                        vehicle_key = make_vehicle_key(norm)
+                        make = norm["make"].strip()
+                        model = norm["model"].strip()
+                        trim = (norm["trim"] or None)
 
-                    # Handle external API data: map status, reasonCodes, buyMax to Decision object
-                    decision = create_decision_from_data(norm)
+                        # Handle external API data: map status, reasonCodes, buyMax to Decision object
+                        decision = create_decision_from_data(norm)
 
-                    # vehicles
-                    cur.execute("""
-                         insert into vehicles (vehicle_key, vin, year, make, model, trim)
-                         values (%s,%s,%s,%s,%s,%s)
-                         on conflict (vehicle_key) do update set vin=excluded.vin, year=excluded.year, make=excluded.make, model=excluded.model, trim=excluded.trim
-                     """, (vehicle_key, vin, norm["year"], make, model, trim))
-                    
-                    # Store decision data in scores table if provided
-                    if decision and vin:
+                        # vehicles
+                        cur.execute("""
+                             insert into vehicles (vehicle_key, vin, year, make, model, trim)
+                             values (%s,%s,%s,%s,%s,%s)
+                             on conflict (vehicle_key) do update set vin=excluded.vin, year=excluded.year, make=excluded.make, model=excluded.model, trim=excluded.trim
+                         """, (vehicle_key, vin, norm["year"], make, model, trim))
+                        
+                        # Store decision data in scores table if provided
+                        if decision and vin:
+                            try:
+                                cur.execute("""
+                                    insert into scores (vehicle_key, vin, score, buy_max, reason_codes)
+                                    values (%s, %s, %s, %s, %s)
+                                """, (vehicle_key, vin, 0, decision.buyMax, decision.reasons))
+                            except Exception as log_exc:
+                                logging.error(f"Failed to insert score data: {log_exc}")
+                        
+                        # listings
+                        # Convert datetime objects to ISO format strings for JSON serialization
+                        payload_data = norm.copy()
+                        if "created_at" in payload_data and payload_data["created_at"]:
+                            if isinstance(payload_data["created_at"], datetime.datetime):
+                                payload_data["created_at"] = payload_data["created_at"].isoformat()
+
+                        # Use buyer_id from authenticated context when provided; fallback to incoming buyer_id
+                        buyer_from_id = buyer_id or norm.get("buyer_id") or None
+
+                        # Prefer writing to buyer_id column;
                         try:
                             cur.execute("""
-                                insert into scores (vehicle_key, vin, score, buy_max, reason_codes)
-                                values (%s, %s, %s, %s, %s)
-                            """, (vehicle_key, vin, 0, decision.buyMax, decision.reasons))
+                              insert into listings (vehicle_key, vin, source, price, miles, dom, location, buyer_id, payload)
+                              values (%s,%s,%s,%s,%s,%s,%s,%s,%s) returning id
+                            """, (vehicle_key, vin, norm["source"], norm["price"], norm["miles"], norm["dom"], 
+                                  norm.get("location"), buyer_from_id, json.dumps(payload_data)))
+                            new_id = str(cur.fetchone()[0])
                         except Exception as log_exc:
-                            logging.error(f"Failed to insert score data: {log_exc}")
-                    
-                    # listings
-                    # Convert datetime objects to ISO format strings for JSON serialization
-                    payload_data = norm.copy()
-                    if "created_at" in payload_data and payload_data["created_at"]:
-                        if isinstance(payload_data["created_at"], datetime.datetime):
-                            payload_data["created_at"] = payload_data["created_at"].isoformat()
-
-                    # Use buyer_id from authenticated context when provided; fallback to incoming buyer_id
-                    buyer_from_id = buyer_id or norm.get("buyer_id") or None
-
-                    # Prefer writing to buyer_id column;
-                    try:
-                        cur.execute("""
-                          insert into listings (vehicle_key, vin, source, price, miles, dom, location, buyer_id, payload)
-                          values (%s,%s,%s,%s,%s,%s,%s,%s,%s) returning id
-                        """, (vehicle_key, vin, norm["source"], norm["price"], norm["miles"], norm["dom"], 
-                              norm.get("location"), buyer_from_id, json.dumps(payload_data)))
-                        new_id = str(cur.fetchone()[0])
-                    except Exception as log_exc:
-                        logging.error(f"Failed to insert listing into database: {log_exc}")
-                        new_id = f"error-{len(out)+1}"
-                    
-                    # Extract reasonCodes, buyMax, and status for ListingOut
-                    reason_codes = norm.get("reasonCodes", [])
-                    buy_max = float(norm.get("buyMax", 0)) if norm.get("buyMax") is not None else None
-                    status = norm.get("status", "")
-                    
-                    out.append(ListingOut(
-                        id=new_id, vehicle_key=vehicle_key, vin=vin, year=norm["year"], make=make, model=model,
-                        trim=trim, miles=norm["miles"], price=norm["price"], dom=norm["dom"],
-                        source=norm["source"], location=norm.get("location"), buyer_id=buyer_from_id,
-                        radius=norm.get("radius", 25), reasonCodes=reason_codes,
-                        buyMax=buy_max, status=status, score=None, decision=decision
-                    ))
-        finally:
-            conn.close()
+                            logging.error(f"Failed to insert listing into database: {log_exc}")
+                            new_id = f"error-{len(out)+1}"
+                        
+                        # Extract reasonCodes, buyMax, and status for ListingOut
+                        reason_codes = norm.get("reasonCodes", [])
+                        buy_max = float(norm.get("buyMax", 0)) if norm.get("buyMax") is not None else None
+                        status = norm.get("status", "")
+                        
+                        out.append(ListingOut(
+                            id=new_id, vehicle_key=vehicle_key, vin=vin, year=norm["year"], make=make, model=model,
+                            trim=trim, miles=norm["miles"], price=norm["price"], dom=norm["dom"],
+                            source=norm["source"], location=norm.get("location"), buyer_id=buyer_from_id,
+                            radius=norm.get("radius", 25), reasonCodes=reason_codes,
+                            buyMax=buy_max, status=status, score=None, decision=decision
+                        ))
+            except Exception as e:
+                logging.error(f"Database error in ingest_listings: {e}")
+                return out
         return out
 
     # in-memory fallback
@@ -139,11 +144,14 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
 
 def list_listings(limit: int = 500) -> list[ListingOut]:
     if DB_ENABLED:
-        conn = get_conn(); assert conn is not None
-        try:
-            with conn, conn.cursor() as cur:
-                # Fixed query to prevent duplicates by using DISTINCT ON and proper JOINs
-                cur.execute("""
+        with get_db_connection() as conn:
+            if not conn:
+                return []
+                
+            try:
+                with conn.cursor() as cur:
+                    # Fixed query to prevent duplicates by using DISTINCT ON and proper JOINs
+                    cur.execute("""
                   SELECT DISTINCT ON (l.vehicle_key) 
                     l.id, l.vehicle_key, 
                     COALESCE(l.vin, '') AS vin, 
@@ -188,19 +196,20 @@ def list_listings(limit: int = 500) -> list[ListingOut]:
                         status=status, score=int(score) if score is not None else None, decision=decision
                     ))
                 return out
-        except Exception as e:
-            logging.error(f"Error in list_listings: {str(e)}")
-            raise
-        finally:
-            conn.close()
+            except Exception as e:
+                logging.error(f"Error in list_listings: {str(e)}")
+                return []
     return list(_BY_ID.values())
 
 def list_listings_by_buyer(buyer_id: str, start_date: Optional[datetime.datetime] = None, end_date: Optional[datetime.datetime] = None, limit: int = 500) -> list[ListingOut]:
     """Get listings for a specific buyer with optional date filtering"""
     if DB_ENABLED:
-        conn = get_conn(); assert conn is not None
-        try:
-            with conn, conn.cursor() as cur:
+        with get_db_connection() as conn:
+            if not conn:
+                return []
+                
+            try:
+                with conn.cursor() as cur:
                 # Build query with optional date filtering
                 base_query = """
                   SELECT 
@@ -262,17 +271,21 @@ def list_listings_by_buyer(buyer_id: str, start_date: Optional[datetime.datetime
                         status=status, score=int(score) if score is not None else None, decision=decision
                     ))
                 return out
-        finally:
-            conn.close()
+            except Exception as e:
+                logging.error(f"Database error: {e}")
+                return []
     # Fallback to in-memory filtering
     return [listing for listing in _BY_ID.values() if listing.buyer_id == buyer_id]
 
 def get_buyer_stats(buyer_id: str, start_date: Optional[datetime.datetime] = None, end_date: Optional[datetime.datetime] = None) -> dict:
     """Get performance statistics for a specific buyer"""
     if DB_ENABLED:
-        conn = get_conn(); assert conn is not None
-        try:
-            with conn, conn.cursor() as cur:
+        with get_db_connection() as conn:
+            if not conn:
+                return []
+                
+            try:
+                with conn.cursor() as cur:
                 # Base query for buyer stats
                 base_query = """
                   SELECT 
@@ -318,8 +331,9 @@ def get_buyer_stats(buyer_id: str, start_date: Optional[datetime.datetime] = Non
                         "scoring_rate": (scored_listings / total_listings * 100) if total_listings > 0 else 0
                     }
                 return {}
-        finally:
-            conn.close()
+            except Exception as e:
+                logging.error(f"Database error: {e}")
+                return []
     return {}
 
 def update_cached_score(vin: str, score: int, buy_max: float, reasons: list[str]):

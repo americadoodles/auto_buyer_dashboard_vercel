@@ -1,5 +1,6 @@
 from typing import Optional
 from .config import settings
+from .connection_pool import db_pool, initialize_pool, close_pool, get_connection
 
 try:
     import psycopg
@@ -11,17 +12,26 @@ except Exception:
 DB_ENABLED: bool = bool(settings.DATABASE_URL and _psycopg_available)
 
 def get_conn() -> Optional["psycopg.Connection"]:
+    """
+    Get a database connection from the connection pool.
+    This function is kept for backward compatibility.
+    For new code, use the connection pool context manager directly.
+    """
     if not DB_ENABLED:
         return None
-    assert psycopg is not None
-    dsn = settings.DATABASE_URL
-    environment = settings.ENVIRONMENT  # default to cloud if not set
-    # Only require sslmode=require for cloud environments
-    if environment != "local" and "sslmode=" not in dsn:
-        sep = "&" if "?" in dsn else "?"
-        dsn = f"{dsn}{sep}sslmode=require"
-    # Keep a short timeout to avoid hanging cold starts
-    return psycopg.connect(dsn, autocommit=True)  # type: ignore
+    
+    # Initialize pool if not already done
+    if not db_pool._initialized:
+        initialize_pool()
+    
+    # Return a connection from the pool
+    # Note: This is a simplified version for backward compatibility
+    # The connection should be properly managed by the caller
+    try:
+        with db_pool.get_connection() as conn:
+            return conn
+    except Exception:
+        return None
 
 def seed_default_roles(conn) -> None:
     """Seed default roles if they don't exist"""
@@ -70,67 +80,73 @@ def seed_default_roles(conn) -> None:
 def apply_schema_if_needed() -> None:
     if not DB_ENABLED:
         return
-    conn = get_conn()
-    assert conn is not None
-    cur = conn.cursor()
-    try:
-        # Apply schema from schema.sql file
-        import pathlib, logging
-        schema_path = pathlib.Path(__file__).parents[2] / "db" / "schema.sql"
-        if schema_path.exists():
-            logging.info("Applying schema from %s", schema_path)
-            schema_content = schema_path.read_text(encoding="utf-8")
-            # Split by semicolon and execute each statement separately
-            statements = [stmt.strip() for stmt in schema_content.split(';') if stmt.strip()]
-            for statement in statements:
-                if statement:
-                    cur.execute(statement)
-            logging.info("Schema applied successfully from %s", schema_path)
+    
+    # Initialize pool if not already done
+    if not db_pool._initialized:
+        initialize_pool()
+    
+    with db_pool.get_connection() as conn:
+        if not conn:
+            return
             
-            # Check if we need to add new columns to existing tables
+            cur = conn.cursor()
             try:
-                # Ensure location column exists
-                cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'listings' AND column_name = 'location'")
-                if not cur.fetchone():
-                    logging.info("Adding location column to listings table")
-                    cur.execute("ALTER TABLE listings ADD COLUMN location text")
+                # Apply schema from schema.sql file
+                import pathlib, logging
+                schema_path = pathlib.Path(__file__).parents[2] / "db" / "schema.sql"
+                if schema_path.exists():
+                    logging.info("Applying schema from %s", schema_path)
+                    schema_content = schema_path.read_text(encoding="utf-8")
+                    # Split by semicolon and execute each statement separately
+                    statements = [stmt.strip() for stmt in schema_content.split(';') if stmt.strip()]
+                    for statement in statements:
+                        if statement:
+                            cur.execute(statement)
+                    logging.info("Schema applied successfully from %s", schema_path)
+                    
+                    # Check if we need to add new columns to existing tables
+                    try:
+                        # Ensure location column exists
+                        cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'listings' AND column_name = 'location'")
+                        if not cur.fetchone():
+                            logging.info("Adding location column to listings table")
+                            cur.execute("ALTER TABLE listings ADD COLUMN location text")
 
-                # Ensure buyer_id column exists; if not, add and backfill from legacy 'buyer'
-                cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'listings' AND column_name = 'buyer_id'")
-                if not cur.fetchone():
-                    logging.info("Adding buyer_id column to listings table")
-                    cur.execute("ALTER TABLE listings ADD COLUMN buyer_id text")
-                    # Backfill if legacy 'buyer' exists
-                    cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'listings' AND column_name = 'buyer'")
-                    if cur.fetchone():
-                        logging.info("Backfilling buyer_id from legacy buyer column")
-                        cur.execute("UPDATE listings SET buyer_id = buyer WHERE buyer_id IS NULL")
+                        # Ensure buyer_id column exists; if not, add and backfill from legacy 'buyer'
+                        cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'listings' AND column_name = 'buyer_id'")
+                        if not cur.fetchone():
+                            logging.info("Adding buyer_id column to listings table")
+                            cur.execute("ALTER TABLE listings ADD COLUMN buyer_id text")
+                            # Backfill if legacy 'buyer' exists
+                            cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'listings' AND column_name = 'buyer'")
+                            if cur.fetchone():
+                                logging.info("Backfilling buyer_id from legacy buyer column")
+                                cur.execute("UPDATE listings SET buyer_id = buyer WHERE buyer_id IS NULL")
 
-                # Ensure username column exists in users
-                cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'username'")
-                if not cur.fetchone():
-                    logging.info("Adding username column to users table")
-                    cur.execute("ALTER TABLE users ADD COLUMN username text")
-                    # No backfill here; admin can update existing users manually
+                        # Ensure username column exists in users
+                        cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'username'")
+                        if not cur.fetchone():
+                            logging.info("Adding username column to users table")
+                            cur.execute("ALTER TABLE users ADD COLUMN username text")
+                            # No backfill here; admin can update existing users manually
 
-                # Ensure username column exists in user_signup_requests
-                cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'user_signup_requests' AND column_name = 'username'")
-                if not cur.fetchone():
-                    logging.info("Adding username column to user_signup_requests table")
-                    cur.execute("ALTER TABLE user_signup_requests ADD COLUMN username text")
+                        # Ensure username column exists in user_signup_requests
+                        cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'user_signup_requests' AND column_name = 'username'")
+                        if not cur.fetchone():
+                            logging.info("Adding username column to user_signup_requests table")
+                            cur.execute("ALTER TABLE user_signup_requests ADD COLUMN username text")
 
-            except Exception as e:
-                logging.warning("Could not check/add new columns: %s", e)
-            
-            # Seed default roles after schema is applied
-            print("Starting role seeding...")
-            seed_default_roles(conn)
-            print("Role seeding completed")
-                
-        else:
-            logging.error("Schema file not found at %s", schema_path)
-            raise FileNotFoundError(f"Schema file not found at {schema_path}")
-        logging.info("Schema ensured OK")
-    finally:
-        cur.close()
-        conn.close()
+                    except Exception as e:
+                        logging.warning("Could not check/add new columns: %s", e)
+                    
+                    # Seed default roles after schema is applied
+                    print("Starting role seeding...")
+                    seed_default_roles(conn)
+                    print("Role seeding completed")
+                        
+                else:
+                    logging.error("Schema file not found at %s", schema_path)
+                    raise FileNotFoundError(f"Schema file not found at {schema_path}")
+                logging.info("Schema ensured OK")
+            finally:
+                cur.close()

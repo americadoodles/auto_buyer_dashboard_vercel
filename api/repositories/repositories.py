@@ -200,7 +200,12 @@ def list_listings(limit: int = 500) -> list[ListingOut]:
                 return []
     return list(_BY_ID.values())
 
-def list_listings_by_buyer(buyer_id: str, start_date: Optional[datetime.datetime] = None, end_date: Optional[datetime.datetime] = None, limit: int = 500) -> list[ListingOut]:
+def list_listings_by_buyer(
+    buyer_id: str,
+    start_date: Optional[datetime.datetime] = None,
+    end_date: Optional[datetime.datetime] = None,
+    limit: int = 500
+) -> list[ListingOut]:
     """Get listings for a specific buyer with optional date filtering"""
     if DB_ENABLED:
         with get_db_connection() as conn:
@@ -211,70 +216,92 @@ def list_listings_by_buyer(buyer_id: str, start_date: Optional[datetime.datetime
                 with conn.cursor() as cur:
                     # Build query with optional date filtering
                     base_query = """
-                  SELECT 
-                    l.id, l.vehicle_key, 
-                    COALESCE(l.vin, '') AS vin, 
-                    COALESCE(v.year, 0) as year, 
-                    COALESCE(v.make, '') as make, 
-                    COALESCE(v.model, '') as model, 
-                    v.trim,
-                    l.miles, l.price, l.dom, l.source, 
-                    l.location, l.buyer_id,
-                    u.username as buyer_username,
-                    COALESCE(s.score, 0) as score, 
-                    s.buy_max, 
-                    COALESCE(s.reason_codes, ARRAY[]::text[]) as reason_codes,
-                    l.created_at,
-                    l.payload
-                  FROM listings l
-                  LEFT JOIN vehicles v ON v.vehicle_key = l.vehicle_key
-                  LEFT JOIN (
-                    SELECT DISTINCT ON (vin) vin, score, buy_max, reason_codes
-                    FROM scores
-                    ORDER BY vin, created_at DESC
-                  ) s ON s.vin = l.vin
-                  LEFT JOIN users u ON u.id::text = l.buyer_id
-                  WHERE l.buyer_id = %s
-                """
-                
-                params = [buyer_id]
-                
-                if start_date:
-                    base_query += " AND l.created_at >= %s"
-                    params.append(start_date)
-                
-                if end_date:
-                    base_query += " AND l.created_at <= %s"
-                    params.append(end_date)
-                
-                base_query += " ORDER BY l.created_at DESC LIMIT %s"
-                params.append(limit)
-                
-                cur.execute(base_query, params)
-                out: list[ListingOut] = []
-                for rid, vehicle_key, vin, year, make, model, trim, miles, price, dom, source, location, buyer_id, buyer_username, score, buy_max, reason_codes, created_at, payload in cur.fetchall():
-                    # Extract decision data from payload if available
-                    decision = None
-                    status = ""
-                    if payload:
-                        payload_data = json.loads(payload) if isinstance(payload, str) else payload
-                        decision = create_decision_from_data(payload_data)
-                        status = payload_data.get("status", "")
+                        SELECT 
+                            l.id, l.vehicle_key, 
+                            COALESCE(l.vin, '') AS vin, 
+                            COALESCE(v.year, 0) AS year, 
+                            COALESCE(v.make, '') AS make, 
+                            COALESCE(v.model, '') AS model, 
+                            v.trim,
+                            l.miles, l.price, l.dom, l.source, 
+                            l.location, l.buyer_id,
+                            u.username AS buyer_username,
+                            COALESCE(s.score, 0) AS score, 
+                            s.buy_max, 
+                            COALESCE(s.reason_codes, ARRAY[]::text[]) AS reason_codes,
+                            l.created_at,
+                            l.payload
+                        FROM listings l
+                        LEFT JOIN vehicles v ON v.vehicle_key = l.vehicle_key
+                        LEFT JOIN (
+                            SELECT DISTINCT ON (vin) vin, score, buy_max, reason_codes
+                            FROM scores
+                            ORDER BY vin, created_at DESC
+                        ) s ON s.vin = l.vin
+                        LEFT JOIN users u ON u.id::text = l.buyer_id
+                        WHERE l.buyer_id = %s
+                    """
                     
-                    out.append(ListingOut(
-                        id=str(rid), vehicle_key=vehicle_key, vin=vin or "", year=int(year), make=make, model=model, trim=trim,
-                        miles=int(miles), price=float(price), dom=int(dom), source=source,
-                        location=location, buyer_id=buyer_id, buyer_username=buyer_username,
-                        radius=25, reasonCodes=reason_codes or [],
-                        buyMax=float(buy_max) if buy_max is not None else None,
-                        status=status, score=int(score) if score is not None else None, decision=decision
-                    ))
-                return out
+                    params = [buyer_id]
+                    
+                    if start_date:
+                        base_query += " AND l.created_at >= %s"
+                        params.append(start_date)
+                    
+                    if end_date:
+                        base_query += " AND l.created_at <= %s"
+                        params.append(end_date)
+                    
+                    base_query += " ORDER BY l.created_at DESC LIMIT %s"
+                    params.append(limit)
+                    
+                    cur.execute(base_query, params)
+
+                    out: list[ListingOut] = []
+                    for (
+                        rid, vehicle_key, vin, year, make, model, trim, miles, price, dom,
+                        source, location, buyer_id, buyer_username, score, buy_max,
+                        reason_codes, created_at, payload
+                    ) in cur.fetchall():
+                        
+                        # Extract decision data from payload if available
+                        decision = None
+                        status = ""
+                        if payload:
+                            payload_data = json.loads(payload) if isinstance(payload, str) else payload
+                            decision = create_decision_from_data(payload_data)
+                            status = payload_data.get("status", "")
+                        
+                        out.append(ListingOut(
+                            id=str(rid),
+                            vehicle_key=vehicle_key,
+                            vin=vin or "",
+                            year=int(year),
+                            make=make,
+                            model=model,
+                            trim=trim,
+                            miles=int(miles),
+                            price=float(price),
+                            dom=int(dom),
+                            source=source,
+                            location=location,
+                            buyer_id=buyer_id,
+                            buyer_username=buyer_username,
+                            radius=25,
+                            reasonCodes=reason_codes or [],
+                            buyMax=float(buy_max) if buy_max is not None else None,
+                            status=status,
+                            score=int(score) if score is not None else None,
+                            decision=decision
+                        ))
+                    return out
             except Exception as e:
                 logging.error(f"Database error: {e}")
                 return []
+
     # Fallback to in-memory filtering
     return [listing for listing in _BY_ID.values() if listing.buyer_id == buyer_id]
+
 
 def get_buyer_stats(buyer_id: str, start_date: Optional[datetime.datetime] = None, end_date: Optional[datetime.datetime] = None) -> dict:
     """Get performance statistics for a specific buyer"""

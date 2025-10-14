@@ -5,7 +5,8 @@ import os
 from datetime import datetime, date, timedelta
 from typing import List, Optional, Dict, Any
 from uuid import UUID
-from ..core.db import get_conn, DB_ENABLED
+from ..core.db import DB_ENABLED
+from ..core.db_helpers import get_db_connection
 from ..schemas.export import ExportType
 from ..schemas.listing import ListingOut
 from ..schemas.user import UserOut
@@ -53,20 +54,17 @@ class ExportService:
             # Buyers can only export their own data (ignore buyer_id parameter for security)
             query, params = ExportService._build_buyer_query(user.id, start_date, end_date)
         
-        conn = get_conn()
-        if not conn:
-            return "", 0
-        
-        try:
-            with conn, conn.cursor() as cur:
+        with get_db_connection() as conn:
+            if not conn:
+                return "", 0
+            
+            with conn.cursor() as cur:
                 cur.execute(query, params)
                 rows = cur.fetchall()
                 
                 # Convert to CSV
                 csv_content = ExportService._rows_to_csv(rows, user.role == "admin")
                 return csv_content, len(rows)
-        finally:
-            conn.close()
     
     @staticmethod
     def export_users_csv(
@@ -95,20 +93,17 @@ class ExportService:
         
         query, params = ExportService._build_users_query(start_date, end_date)
         
-        conn = get_conn()
-        if not conn:
-            return "", 0
-        
-        try:
-            with conn, conn.cursor() as cur:
+        with get_db_connection() as conn:
+            if not conn:
+                return "", 0
+            
+            with conn.cursor() as cur:
                 cur.execute(query, params)
                 rows = cur.fetchall()
                 
                 # Convert to CSV
                 csv_content = ExportService._rows_to_csv(rows, is_admin=True, is_users=True)
                 return csv_content, len(rows)
-        finally:
-            conn.close()
     
     @staticmethod
     def _build_admin_query(start_date: Optional[date], end_date: Optional[date]) -> tuple[str, list]:

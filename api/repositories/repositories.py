@@ -1,13 +1,12 @@
 import json
 import logging
+import datetime
 from typing import List, Optional
+from datetime import timezone
 from ..core.db import DB_ENABLED
 from ..core.db_helpers import get_db_connection
 from ..schemas.listing import ListingIn, ListingOut
 from ..schemas.listing import Decision
-
-import datetime
-from datetime import timezone
 
 # In-memory fallback for listings
 _BY_ID: dict[str, ListingOut] = {}
@@ -49,7 +48,7 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                             if vin:
                                 return vin
                             # unique by timestamp when VIN missing; include source to be extra safe
-                            created = (n.get("created_at") or datetime.now(timezone.utc))
+                            created = (n.get("created_at") or datetime.datetime.now(timezone.utc))
                             src = (n.get("source") or "unknown").strip().lower()
                             return f"{src}#{created.isoformat(timespec='milliseconds')}"
 
@@ -210,8 +209,8 @@ def list_listings_by_buyer(buyer_id: str, start_date: Optional[datetime.datetime
                 
             try:
                 with conn.cursor() as cur:
-                # Build query with optional date filtering
-                base_query = """
+                    # Build query with optional date filtering
+                    base_query = """
                   SELECT 
                     l.id, l.vehicle_key, 
                     COALESCE(l.vin, '') AS vin, 
@@ -286,8 +285,8 @@ def get_buyer_stats(buyer_id: str, start_date: Optional[datetime.datetime] = Non
                 
             try:
                 with conn.cursor() as cur:
-                # Base query for buyer stats
-                base_query = """
+                    # Base query for buyer stats
+                    base_query = """
                   SELECT 
                     COUNT(*) as total_listings,
                     COUNT(CASE WHEN s.score IS NOT NULL THEN 1 END) as scored_listings,
@@ -354,32 +353,44 @@ def update_cached_score(vin: str, score: int, buy_max: float, reasons: list[str]
 def insert_score(vehicle_key: str, vin: str, score: int, buy_max: float, reasons: list[str]):
     if not DB_ENABLED:
         return
-    conn = get_conn(); assert conn is not None
-    try:
-        with conn, conn.cursor() as cur:
-            cur.execute("""
-              insert into scores (vehicle_key, vin, score, buy_max, reason_codes)
-              values (%s,%s,%s,%s,%s)
-            """, (vehicle_key, vin, score, buy_max, reasons or ["Heuristic"]))
-    finally:
-        conn.close()
+    with get_db_connection() as conn:
+        if not conn:
+            return
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                insert into scores (vehicle_key, vin, score, buy_max, reason_codes)
+                values (%s, %s, %s, %s, %s)
+                """,
+                (vehicle_key, vin, score, buy_max, reasons or ["Heuristic"]),
+            )
+
 
 # ============================================================================
 # VEHICLES REPOSITORY
 # ============================================================================
 
 def upsert_vehicle(vehicle_key: str, vin: str, year: int, make: str, model: str, trim: str | None):
-    if not DB_ENABLED: return
-    conn = get_conn(); assert conn is not None
-    try:
-        with conn, conn.cursor() as cur:
-            cur.execute("""
-            insert into vehicles (vehicle_key, vin, year, make, model, trim)
-            values (%s,%s,%s,%s,%s,%s)
-            on conflict (vehicle_key) do update set vin=excluded.vin, year=excluded.year, make=excluded.make, model=excluded.model, trim=excluded.trim
-            """, (vehicle_key, vin, year, make, model, trim))
-    finally:
-        conn.close()
+    if not DB_ENABLED:
+        return
+    with get_db_connection() as conn:
+        if not conn:
+            return
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                insert into vehicles (vehicle_key, vin, year, make, model, trim)
+                values (%s,%s,%s,%s,%s,%s)
+                on conflict (vehicle_key) do update
+                set vin = excluded.vin,
+                    year = excluded.year,
+                    make = excluded.make,
+                    model = excluded.model,
+                    trim = excluded.trim
+                """,
+                (vehicle_key, vin, year, make, model, trim),
+            )
+
 
 # ============================================================================
 # TRENDS REPOSITORY
@@ -397,9 +408,18 @@ def get_trends_data(days_back: int = 30) -> dict:
             "aged_inventory": {"current": 0, "previous": 0, "trend": 0, "trend_up": False},
         }
     
-    conn = get_conn(); assert conn is not None
-    try:
-        with conn, conn.cursor() as cur:
+    with get_db_connection() as conn:
+        if not conn:
+            return {
+                "total_listings": {"current": 0, "previous": 0, "trend": 0, "trend_up": False},
+                "average_price": {"current": 0, "previous": 0, "trend": 0, "trend_up": False},
+                "conversion_rate": {"current": 0, "previous": 0, "trend": 0, "trend_up": False},
+                "active_buyers": {"current": 0, "previous": 0, "trend": 0, "trend_up": False},
+                "average_profit": {"current": 0, "previous": 0, "trend": 0, "trend_up": False},
+                "aged_inventory": {"current": 0, "previous": 0, "trend": 0, "trend_up": False},
+            }
+        
+        with conn.cursor() as cur:
             # Calculate date ranges
             cur.execute("SELECT NOW() as now")
             now = cur.fetchone()[0]
@@ -506,8 +526,6 @@ def get_trends_data(days_back: int = 30) -> dict:
                     "trend_up": aged_up
                 }
             }
-    finally:
-        conn.close()
 
 
 # ============================================================================
@@ -530,9 +548,22 @@ def get_kpi_metrics() -> dict:
             "average_score": 0.0
         }
     
-    conn = get_conn(); assert conn is not None
-    try:
-        with conn, conn.cursor() as cur:
+    with get_db_connection() as conn:
+        if not conn:
+            return {
+                "average_profit_per_unit": 0.0,
+                "lead_to_purchase_time": 0.0,
+                "aged_inventory": 0,
+                "total_listings": 0,
+                "active_buyers": 0,
+                "conversion_rate": 0.0,
+                "average_price": 0.0,
+                "total_value": 0.0,
+                "scoring_rate": 0.0,
+                "average_score": 0.0
+            }
+        
+        with conn.cursor() as cur:
             # Get current timestamp for calculations
             cur.execute("SELECT NOW() as now")
             now = cur.fetchone()[0]
@@ -595,5 +626,3 @@ def get_kpi_metrics() -> dict:
                 "scoring_rate": round(float(scoring_rate), 1),
                 "average_score": round(float(average_score), 1)
             }
-    finally:
-        conn.close()

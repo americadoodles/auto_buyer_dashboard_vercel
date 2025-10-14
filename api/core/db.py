@@ -1,152 +1,193 @@
-from typing import Optional
+from typing import Optional, Sequence, Any
+import logging
+import pathlib
+
 from .config import settings
-from .connection_pool import db_pool, initialize_pool, close_pool, get_connection
+from .connection_pool import db_pool, initialize_pool
 
 try:
-    import psycopg
+    import psycopg  # psycopg3
+    from psycopg.rows import dict_row  # optional, if you want dict rows
     _psycopg_available = True
 except Exception:
     psycopg = None  # type: ignore
+    dict_row = None  # type: ignore
     _psycopg_available = False
+
+logger = logging.getLogger(__name__)
 
 DB_ENABLED: bool = bool(settings.DATABASE_URL and _psycopg_available)
 
+
+def _ensure_pool_initialized() -> bool:
+    if not DB_ENABLED:
+        return False
+    if not getattr(db_pool, "_initialized", False):
+        try:
+            initialize_pool()
+        except Exception as e:
+            logger.error("Failed to initialize DB pool: %s", e, exc_info=True)
+            return False
+    return True
+
+
 def get_conn() -> Optional["psycopg.Connection"]:
     """
-    Get a database connection from the connection pool.
-    This function is kept for backward compatibility.
-    For new code, use the connection pool context manager directly.
+    BACKWARD COMPAT: Return a *direct* connection (not managed by the pool context).
+    Caller is responsible for closing it.
+
+    NOTE: Prefer using: `with db_pool.get_connection() as conn: ...`
     """
     if not DB_ENABLED:
         return None
-    
-    # Initialize pool if not already done
-    if not db_pool._initialized:
-        initialize_pool()
-    
-    # Return a connection from the pool
-    # Note: This is a simplified version for backward compatibility
-    # The connection should be properly managed by the caller
+
+    # Do NOT acquire via the pool context and return it—would return a closed conn.
+    # To preserve old behavior safely, open a direct connection (short-lived use only).
+    dsn = settings.DATABASE_URL
+    if not dsn:
+        return None
     try:
-        with db_pool.get_connection() as conn:
-            return conn
-    except Exception:
+        # Keep it simple and consistent with pool autocommit=True
+        conn = psycopg.connect(dsn, autocommit=True)
+        return conn
+    except Exception as e:
+        logger.error("get_conn(): failed to open direct connection: %s", e, exc_info=True)
         return None
 
-def seed_default_roles(conn) -> None:
-    """Seed default roles if they don't exist"""
+
+def seed_default_roles(conn: "psycopg.Connection") -> None:
+    """Seed default roles if they don't exist."""
     try:
         with conn.cursor() as cur:
-            # Check if roles table has any data
             cur.execute("SELECT COUNT(*) FROM roles")
             roles_count = cur.fetchone()[0]
-            print(f"Current roles count: {roles_count}")
-            
-            if roles_count == 0:
-                # Insert default roles
-                default_roles = [
-                    ("admin", "Full access to all features"),
-                    ("buyer", "Can buy and view listings"),
-                    ("analyst", "Can view and score listings")
-                ]
-                for name, description in default_roles:
-                    cur.execute(
-                        "INSERT INTO roles (name, description) VALUES (%s, %s)",
-                        (name, description)
-                    )
-                    print(f"Inserted role: {name}")
-                print("Default roles seeded successfully")
-            else:
-                # Check what roles exist
-                cur.execute("SELECT name FROM roles ORDER BY id")
-                existing_roles = [row[0] for row in cur.fetchall()]
-                print(f"Existing roles: {existing_roles}")
-                
-                # Ensure buyer role exists
-                if "buyer" not in existing_roles:
-                    print("Buyer role missing, adding it...")
-                    cur.execute(
-                        "INSERT INTO roles (name, description) VALUES (%s, %s)",
-                        ("buyer", "Can buy and view listings")
-                    )
-                    print("Buyer role added")
-                else:
-                    print("Buyer role already exists")
+            logger.info("Current roles count: %s", roles_count)
+
+            # Ensure the three baseline roles exist idempotently
+            default_roles = [
+                ("admin", "Full access to all features"),
+                ("buyer", "Can buy and view listings"),
+                ("analyst", "Can view and score listings"),
+            ]
+            # Use ON CONFLICT if you have a unique constraint on (name); otherwise check existence
+            for name, description in default_roles:
+                cur.execute(
+                    """
+                    INSERT INTO roles (name, description)
+                    SELECT %s, %s
+                    WHERE NOT EXISTS (SELECT 1 FROM roles WHERE name = %s)
+                    """,
+                    (name, description, name),
+                )
+            logger.info("Default roles ensured.")
     except Exception as e:
-        print(f"Warning: Could not seed default roles: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.warning("Could not seed default roles: %s", e, exc_info=True)
+
+
+def _read_schema_file() -> Optional[str]:
+    # Allow override via settings if you have it
+    schema_path = getattr(settings, "SCHEMA_PATH", None)
+    if schema_path:
+        p = pathlib.Path(schema_path)
+    else:
+        # repo_root/db/schema.sql (adjust if your layout differs)
+        p = pathlib.Path(__file__).parents[2] / "db" / "schema.sql"
+
+    if not p.exists():
+        logger.error("Schema file not found at %s", p)
+        return None
+
+    try:
+        return p.read_text(encoding="utf-8")
+    except Exception as e:
+        logger.error("Failed reading schema file %s: %s", p, e, exc_info=True)
+        return None
+
+
+def _exec_sql_script(cur: "psycopg.Cursor", script: str) -> None:
+    """
+    Execute a multi-statement SQL script safely enough for simple schemas.
+
+    NOTE: This still splits on semicolons. If you have functions/procedures with
+    embedded semicolons, use a proper migrator (Alembic/Dbmate/etc).
+    """
+    # Cheap normalization; avoids empty statements on stray semicolons/newlines
+    statements = [stmt.strip() for stmt in script.split(";") if stmt.strip()]
+    for stmt in statements:
+        cur.execute(stmt)
+
 
 def apply_schema_if_needed() -> None:
+    """Create/alter fundamental tables/columns and seed defaults, idempotently."""
     if not DB_ENABLED:
         return
-    
-    # Initialize pool if not already done
-    if not db_pool._initialized:
-        initialize_pool()
-    
+    if not _ensure_pool_initialized():
+        return
+
+    schema_content = _read_schema_file()
+    if schema_content is None:
+        return
+
+    def _table_exists(cur, qualified: str) -> bool:
+        # qualified like 'public.users' (defaults to search_path if no schema provided)
+        cur.execute("SELECT to_regclass(%s)", (qualified,))
+        return cur.fetchone()[0] is not None
+
     with db_pool.get_connection() as conn:
         if not conn:
             return
-            
-            cur = conn.cursor()
+
+        with conn.cursor() as cur:
             try:
-                # Apply schema from schema.sql file
-                import pathlib, logging
-                schema_path = pathlib.Path(__file__).parents[2] / "db" / "schema.sql"
-                if schema_path.exists():
-                    logging.info("Applying schema from %s", schema_path)
-                    schema_content = schema_path.read_text(encoding="utf-8")
-                    # Split by semicolon and execute each statement separately
-                    statements = [stmt.strip() for stmt in schema_content.split(';') if stmt.strip()]
-                    for statement in statements:
-                        if statement:
-                            cur.execute(statement)
-                    logging.info("Schema applied successfully from %s", schema_path)
-                    
-                    # Check if we need to add new columns to existing tables
-                    try:
-                        # Ensure location column exists
-                        cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'listings' AND column_name = 'location'")
-                        if not cur.fetchone():
-                            logging.info("Adding location column to listings table")
-                            cur.execute("ALTER TABLE listings ADD COLUMN location text")
+                logger.info("Applying schema...")
+                _exec_sql_script(cur, schema_content)
+                logger.info("Base schema applied.")
 
-                        # Ensure buyer_id column exists; if not, add and backfill from legacy 'buyer'
-                        cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'listings' AND column_name = 'buyer_id'")
-                        if not cur.fetchone():
-                            logging.info("Adding buyer_id column to listings table")
-                            cur.execute("ALTER TABLE listings ADD COLUMN buyer_id text")
-                            # Backfill if legacy 'buyer' exists
-                            cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'listings' AND column_name = 'buyer'")
-                            if cur.fetchone():
-                                logging.info("Backfilling buyer_id from legacy buyer column")
-                                cur.execute("UPDATE listings SET buyer_id = buyer WHERE buyer_id IS NULL")
+                # ----- listings table columns -----
+                if _table_exists(cur, "public.listings"):
+                    # ADD COLUMN IF NOT EXISTS is valid on PG >= 9.6
+                    cur.execute("ALTER TABLE public.listings ADD COLUMN IF NOT EXISTS location text")
+                    cur.execute("ALTER TABLE public.listings ADD COLUMN IF NOT EXISTS buyer_id text")
 
-                        # Ensure username column exists in users
-                        cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'username'")
-                        if not cur.fetchone():
-                            logging.info("Adding username column to users table")
-                            cur.execute("ALTER TABLE users ADD COLUMN username text")
-                            # No backfill here; admin can update existing users manually
+                    # Backfill buyer_id from legacy 'buyer' if present
+                    cur.execute("""
+                        DO $$
+                        BEGIN
+                            IF EXISTS (
+                                SELECT 1
+                                FROM information_schema.columns
+                                WHERE table_schema = 'public'
+                                  AND table_name = 'listings'
+                                  AND column_name = 'buyer'
+                            ) THEN
+                                UPDATE public.listings
+                                   SET buyer_id = buyer
+                                 WHERE buyer_id IS NULL;
+                            END IF;
+                        END $$;
+                    """)
 
-                        # Ensure username column exists in user_signup_requests
-                        cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'user_signup_requests' AND column_name = 'username'")
-                        if not cur.fetchone():
-                            logging.info("Adding username column to user_signup_requests table")
-                            cur.execute("ALTER TABLE user_signup_requests ADD COLUMN username text")
-
-                    except Exception as e:
-                        logging.warning("Could not check/add new columns: %s", e)
-                    
-                    # Seed default roles after schema is applied
-                    print("Starting role seeding...")
-                    seed_default_roles(conn)
-                    print("Role seeding completed")
-                        
                 else:
-                    logging.error("Schema file not found at %s", schema_path)
-                    raise FileNotFoundError(f"Schema file not found at {schema_path}")
-                logging.info("Schema ensured OK")
-            finally:
-                cur.close()
+                    logger.warning("Skipping ALTERs for listings: table does not exist yet")
+
+                # ----- users.username column -----
+                if _table_exists(cur, "public.users"):
+                    cur.execute("ALTER TABLE public.users ADD COLUMN IF NOT EXISTS username text")
+                else:
+                    logger.warning("Skipping ALTER users: table does not exist yet")
+
+                # ----- user_signup_requests.username column -----
+                if _table_exists(cur, "public.user_signup_requests"):
+                    cur.execute("ALTER TABLE public.user_signup_requests ADD COLUMN IF NOT EXISTS username text")
+                else:
+                    logger.warning("Skipping ALTER user_signup_requests: table does not exist yet")
+
+                # Seed default roles
+                seed_default_roles(conn)
+
+                logger.info("Schema ensured OK.")
+            except Exception as e:
+                logger.error("Schema application failed: %s", e, exc_info=True)
+                # decide whether to re-raise; keeping logged-only to avoid crashing boot
+                # raise
+

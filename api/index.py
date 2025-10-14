@@ -53,106 +53,110 @@ def healthz():
 # in an admin-only or temp route:
 @app.get("/api/db-check")
 def db_check():
-    from .core.db import get_conn, DB_ENABLED
+    from .core.db import DB_ENABLED
+    from .core.db_helpers import get_db_connection
     if not DB_ENABLED:
         return {"ok": False, "reason": "DB disabled or no URL"}
-    conn = get_conn()
-    with conn, conn.cursor() as cur:
-        cur.execute("select 1")
-        return {"ok": True, "one": cur.fetchone()[0]}
+    with get_db_connection() as conn:
+        if not conn:
+            return {"ok": False, "reason": "No connection available"}
+        with conn.cursor() as cur:
+            cur.execute("select 1")
+            return {"ok": True, "one": cur.fetchone()[0]}
 
 # temporary route to confirm the tables/view exist
 @app.get("/api/_schema_status")
 def schema_status():
-    from .core.db import get_conn
-    conn = get_conn()
-    with conn.cursor() as cur:
-        cur.execute("""
-          select
-            to_regclass('public.vehicles') as vehicles,
-            to_regclass('public.listings') as listings,
-            to_regclass('public.scores') as scores,
-            to_regclass('public.v_latest_scores') as v_latest_scores
-        """)
-        v = cur.fetchone()
-    conn.close()
-    return dict(zip(["vehicles","listings","scores","v_latest_scores"], v))
+    from .core.db_helpers import get_db_connection
+    with get_db_connection() as conn:
+        if not conn:
+            return {"error": "No connection available"}
+        with conn.cursor() as cur:
+            cur.execute("""
+              select
+                to_regclass('public.vehicles') as vehicles,
+                to_regclass('public.listings') as listings,
+                to_regclass('public.scores') as scores,
+                to_regclass('public.v_latest_scores') as v_latest_scores
+            """)
+            v = cur.fetchone()
+        return dict(zip(["vehicles","listings","scores","v_latest_scores"], v))
 
 # Check roles status for debugging
 @app.get("/api/_roles_status")
 def roles_status():
-    from .core.db import get_conn, DB_ENABLED
+    from .core.db import DB_ENABLED
+    from .core.db_helpers import get_db_connection
     if not DB_ENABLED:
         return {"ok": False, "reason": "DB disabled or no URL"}
     
     try:
-        conn = get_conn()
-        with conn.cursor() as cur:
-            # Check if roles table exists and has data
-            cur.execute("SELECT COUNT(*) FROM roles")
-            roles_count = cur.fetchone()[0]
-            
-            # Get all roles
-            cur.execute("SELECT id, name, description FROM roles ORDER BY id")
-            roles = [{"id": row[0], "name": row[1], "description": row[2]} for row in cur.fetchall()]
-            
-            # Check if buyer role exists specifically
-            cur.execute("SELECT id FROM roles WHERE name = 'buyer'")
-            buyer_role = cur.fetchone()
-            
-            return {
-                "ok": True,
-                "roles_count": roles_count,
-                "roles": roles,
-                "buyer_role_exists": buyer_role is not None,
-                "buyer_role_id": buyer_role[0] if buyer_role else None
-            }
+        with get_db_connection() as conn:
+            if not conn:
+                return {"ok": False, "reason": "No connection available"}
+            with conn.cursor() as cur:
+                # Check if roles table exists and has data
+                cur.execute("SELECT COUNT(*) FROM roles")
+                roles_count = cur.fetchone()[0]
+                
+                # Get all roles
+                cur.execute("SELECT id, name, description FROM roles ORDER BY id")
+                roles = [{"id": row[0], "name": row[1], "description": row[2]} for row in cur.fetchall()]
+                
+                # Check if buyer role exists specifically
+                cur.execute("SELECT id FROM roles WHERE name = 'buyer'")
+                buyer_role = cur.fetchone()
+                
+                return {
+                    "ok": True,
+                    "roles_count": roles_count,
+                    "roles": roles,
+                    "buyer_role_exists": buyer_role is not None,
+                    "buyer_role_id": buyer_role[0] if buyer_role else None
+                }
     except Exception as e:
         return {"ok": False, "error": str(e)}
-    finally:
-        if 'conn' in locals():
-            conn.close()
 
 # Check listings status for debugging
 @app.get("/api/_listings_status")
 def listings_status():
-    from .core.db import get_conn, DB_ENABLED
+    from .core.db import DB_ENABLED
+    from .core.db_helpers import get_db_connection
     if not DB_ENABLED:
         return {"ok": False, "reason": "DB disabled or no URL"}
     
     try:
-        conn = get_conn()
-        with conn.cursor() as cur:
-            # Check if listings table exists and has data
-            cur.execute("SELECT COUNT(*) FROM listings")
-            listings_count = cur.fetchone()[0]
-            
-            # Check if vehicles table exists
-            cur.execute("SELECT COUNT(*) FROM vehicles")
-            vehicles_count = cur.fetchone()[0]
-            
-            # Check if scores table exists
-            cur.execute("SELECT COUNT(*) FROM scores")
-            scores_count = cur.fetchone()[0]
-            
-            # Check table structure
-            cur.execute("""
-                SELECT column_name, data_type 
-                FROM information_schema.columns 
-                WHERE table_name = 'listings' 
-                ORDER BY ordinal_position
-            """)
-            listings_columns = [{"name": row[0], "type": row[1]} for row in cur.fetchall()]
-            
-            return {
-                "ok": True,
-                "listings_count": listings_count,
-                "vehicles_count": vehicles_count,
-                "scores_count": scores_count,
-                "listings_columns": listings_columns
-            }
+        with get_db_connection() as conn:
+            if not conn:
+                return {"ok": False, "reason": "No connection available"}
+            with conn.cursor() as cur:
+                # Check if listings table exists and has data
+                cur.execute("SELECT COUNT(*) FROM listings")
+                listings_count = cur.fetchone()[0]
+                
+                # Check if vehicles table exists
+                cur.execute("SELECT COUNT(*) FROM vehicles")
+                vehicles_count = cur.fetchone()[0]
+                
+                # Check if scores table exists
+                cur.execute("SELECT COUNT(*) FROM scores")
+                scores_count = cur.fetchone()[0]
+                
+                # Check table structure
+                cur.execute("""
+                    SELECT column_name, data_type 
+                    FROM information_schema.columns 
+                    WHERE table_name = 'listings' 
+                    ORDER BY ordinal_position
+                """)
+                listings_columns = [{"name": row[0], "type": row[1]} for row in cur.fetchall()]
+                
+                return {
+                    "ok": True,
+                    "listings_count": listings_count,
+                    "vehicles_count": vehicles_count,
+                    "scores_count": scores_count,
+                    "listings_columns": listings_columns
+                }
     except Exception as e:
         return {"ok": False, "error": str(e)}
-    finally:
-        if 'conn' in locals():
-            conn.close()

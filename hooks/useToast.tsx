@@ -86,7 +86,10 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
   return (
     <ToastContext.Provider value={contextValue}>
       {children}
-      <ToastContainer toasts={toasts} onClose={removeToast} />
+      <ToastContainer 
+        toasts={toasts.map(toast => ({ ...toast, onClose: removeToast }))} 
+        onClose={removeToast} 
+      />
     </ToastContext.Provider>
   );
 };

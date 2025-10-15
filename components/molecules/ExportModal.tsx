@@ -5,6 +5,7 @@ import { ExportType, ExportRequest } from '../../lib/types/export';
 import { exportApi } from '../../lib/services/exportApi';
 import { Button } from '../atoms/Button';
 import { Input } from '../atoms/Input';
+import { useToast } from '../../hooks/useToast';
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -31,14 +32,15 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [preview, setPreview] = useState<any>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const { showSuccess, showError, showWarning } = useToast();
 
   const validateDateRange = (): boolean => {
     if (selectedExportType === 'range' && (!startDate || !endDate)) {
-      alert('Please select both start and end dates for range export');
+      showWarning('Date Range Required', 'Please select both start and end dates for range export');
       return false;
     }
     if (selectedExportType === 'selected' && (!selectedListings || selectedListings.size === 0)) {
-      alert('Please select at least one listing to export');
+      showWarning('No Listings Selected', 'Please select at least one listing to export');
       return false;
     }
     return true;
@@ -71,7 +73,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       onClose();
     } catch (error) {
       console.error('Export failed:', error);
-      alert(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      showError('Export Failed', `Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsLoading(false);
     }
@@ -93,7 +95,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       setShowPreview(true);
     } catch (error) {
       console.error('Preview failed:', error);
-      alert(`Preview failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      showError('Preview Failed', `Preview failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 

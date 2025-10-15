@@ -13,6 +13,7 @@ import { Car, ArrowLeft, Calendar, TrendingUp, User, Search, Filter } from "luci
 import { Button } from "../../../../components/atoms/Button";
 import { Input } from "../../../../components/atoms/Input";
 import { useAuth } from "../../../auth/useAuth";
+import { useToast } from "../../../../hooks/useToast";
 
 interface BuyerStats {
   total_listings: number;
@@ -30,6 +31,7 @@ export default function BuyerActivityPage() {
   const router = useRouter();
   const buyerId = params.buyerId as string;
   const { user } = useAuth();
+  const { showSuccess, showError, showWarning } = useToast();
   
   const [listings, setListings] = useState<Listing[]>([]);
   const [buyerStats, setBuyerStats] = useState<BuyerStats | null>(null);
@@ -190,7 +192,7 @@ export default function BuyerActivityPage() {
       const baseUrl = (process.env.NEXT_PUBLIC_BACKEND_URL ?? '/api').replace(/\/+$/, '');
       const listing = listings.find(l => l.vin === vin);
       if (!listing) {
-        alert('Listing not found');
+        showWarning('Listing Not Found', 'The requested listing could not be found.');
         return;
       }
       
@@ -206,13 +208,13 @@ export default function BuyerActivityPage() {
       
       const result = await response.json();
       if (result.sent) {
-        alert(`✅ Slack notification sent to ${result.channel} for VIN ${vin}`);
+        showSuccess('Slack Notification Sent', `Slack notification sent to ${result.channel} for VIN ${vin}`);
       } else {
-        alert(`❌ Failed to send Slack notification: ${result.error || result.message}`);
+        showError('Slack Notification Failed', `Failed to send Slack notification: ${result.error || result.message}`);
       }
     } catch (error) {
       console.error('Error sending Slack notification:', error);
-      alert('Failed to send Slack notification: ' + error);
+      showError('Slack Notification Failed', 'Failed to send Slack notification: ' + error);
     }
   };
 
@@ -221,7 +223,7 @@ export default function BuyerActivityPage() {
       const baseUrl = (process.env.NEXT_PUBLIC_BACKEND_URL ?? '/api').replace(/\/+$/, '');
       const listing = listings.find(l => l.vin === vin);
       if (!listing) {
-        alert('Listing not found');
+        showWarning('Listing Not Found', 'The requested listing could not be found.');
         return;
       }
       
@@ -237,13 +239,13 @@ export default function BuyerActivityPage() {
       
       const result = await response.json();
       if (result.triggered) {
-        alert(`✅ Slack workflow triggered for VIN ${vin}${result.workflow_id ? ` (ID: ${result.workflow_id})` : ''}`);
+        showSuccess('Slack Workflow Triggered', `Slack workflow triggered for VIN ${vin}${result.workflow_id ? ` (ID: ${result.workflow_id})` : ''}`);
       } else {
-        alert(`❌ Failed to trigger Slack workflow: ${result.error || result.message}`);
+        showError('Slack Workflow Failed', `Failed to trigger Slack workflow: ${result.error || result.message}`);
       }
     } catch (error) {
       console.error('Error triggering Slack workflow:', error);
-      alert('Failed to trigger Slack workflow: ' + error);
+      showError('Slack Workflow Failed', 'Failed to trigger Slack workflow: ' + error);
     }
   };
 

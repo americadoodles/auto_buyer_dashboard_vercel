@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Button } from '../atoms/Button';
 import { ExportModal } from './ExportModal';
+import { useToast } from '../../hooks/useToast';
 
 interface ExportButtonProps {
   exportType: 'listings' | 'users';
@@ -24,10 +25,11 @@ export const ExportButton: React.FC<ExportButtonProps> = ({
   selectedListings,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { showWarning } = useToast();
 
   const handleClick = () => {
     if (exportType === 'users' && userRole !== 'admin') {
-      alert('Only administrators can export user data.');
+      showWarning('Access Denied', 'Only administrators can export user data.');
       return;
     }
     setIsModalOpen(true);

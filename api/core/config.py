@@ -32,6 +32,12 @@ class Settings(BaseSettings):
     SLACK_WORKFLOW_STEP_ID: str = os.getenv("SLACK_WORKFLOW_STEP_ID", "")
     SLACK_WORKFLOW_ENABLED: bool = bool(os.getenv("SLACK_WORKFLOW_ENABLED", "false").lower() == "true")
 
+    # Database connection pool settings
+    DB_POOL_MIN_SIZE: int = int(os.getenv("DB_POOL_MIN_SIZE", "2"))
+    DB_POOL_MAX_SIZE: int = int(os.getenv("DB_POOL_MAX_SIZE", "10"))
+    DB_POOL_RECYCLE_SECONDS: int = int(os.getenv("DB_POOL_RECYCLE_SECONDS", "3600"))  # 1 hour
+    DB_POOL_TIMEOUT_SECONDS: int = int(os.getenv("DB_POOL_TIMEOUT_SECONDS", "30"))
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 

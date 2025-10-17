@@ -4,6 +4,8 @@ export { Button } from './atoms/Button';
 export { FormButton } from './atoms/FormButton';
 export { Icon } from './atoms/Icon';
 export { Input } from './atoms/Input';
+export { default as Toast } from './atoms/Toast';
+export { default as ToastContainer } from './atoms/ToastContainer';
 
 // Molecules
 export { AuthFields } from './molecules/AuthFields';

@@ -3,9 +3,11 @@ import { Listing, SortConfig } from '../types/listing';
 import { MOCK_DATA } from '../data/mockData';
 import { ApiService } from '../services/api';
 import { useAuth } from '../../app/auth/useAuth';
+import { useToast } from '../../hooks/useToast';
 
 export const useListings = () => {
   const { user } = useAuth();
+  const { showSuccess, showError, showWarning } = useToast();
   const [data, setData] = useState<Listing[]>([]);
   const [sort, setSort] = useState<SortConfig>({ key: 'score', dir: 'desc' });
   const [loading, setLoading] = useState<boolean>(false);
@@ -97,9 +99,9 @@ export const useListings = () => {
       }
       
       setData(d => d.map(x => x.vin && byVin[x.vin] ? { ...x, ...byVin[x.vin] } : x));
-      alert(`Re-scored ${scores.length} listings.`);
+      showSuccess('Re-scoring Complete', `Re-scored ${scores.length} listings.`);
     } catch (e: any) {
-      alert('Failed to score: ' + e.message);
+      showError('Re-scoring Failed', 'Failed to score: ' + e.message);
     } finally {
       setLoading(false);
     }
@@ -111,9 +113,9 @@ export const useListings = () => {
       const seeded = await ApiService.ingestListings(MOCK_DATA);
       setData(seeded);
       setBackendOk(true);
-      alert(`Seeded ${seeded.length} listings to backend.`);
+      showSuccess('Backend Seeded', `Seeded ${seeded.length} listings to backend.`);
     } catch (e: any) {
-      alert('Failed to seed backend: ' + e.message);
+      showError('Seeding Failed', 'Failed to seed backend: ' + e.message);
     } finally {
       setLoading(false);
     }
@@ -131,7 +133,7 @@ export const useListings = () => {
       setData(Array.isArray(listings) && listings.length ? listings : data);
       setBackendOk(true);
     } catch (e: any) {
-      alert('Failed to load from backend: ' + e.message);
+      showError('Load Failed', 'Failed to load from backend: ' + e.message);
     } finally {
       setLoading(false);
     }
@@ -143,14 +145,14 @@ export const useListings = () => {
       // Find the listing to get the vehicle_key
       const listing = data.find(l => l.vin === vin);
       if (!listing) {
-        alert('Listing not found');
+        showWarning('Listing Not Found', 'The requested listing could not be found.');
         return;
       }
       
       const res = await ApiService.notifyListing(listing.vehicle_key, vin);
-      alert(`Notified for VIN ${vin}: ${res?.[0]?.channel ?? 'ok'}`);
+      showSuccess('Notification Sent', `Notified for VIN ${vin}: ${res?.[0]?.channel ?? 'ok'}`);
     } catch (e: any) {
-      alert('Failed to notify: ' + e.message);
+      showError('Notification Failed', 'Failed to notify: ' + e.message);
     } finally {
       setLoading(false);
     }
@@ -162,18 +164,18 @@ export const useListings = () => {
       // Find the listing to get the vehicle_key
       const listing = data.find(l => l.vin === vin);
       if (!listing) {
-        alert('Listing not found');
+        showWarning('Listing Not Found', 'The requested listing could not be found.');
         return;
       }
       
       const res = await ApiService.sendSlackNotification(listing.vehicle_key, vin, customMessage);
       if (res.sent) {
-        alert(`✅ Slack notification sent to ${res.channel} for VIN ${vin}`);
+        showSuccess('Slack Notification Sent', `Slack notification sent to ${res.channel} for VIN ${vin}`);
       } else {
-        alert(`❌ Failed to send Slack notification: ${res.error || res.message}`);
+        showError('Slack Notification Failed', `Failed to send Slack notification: ${res.error || res.message}`);
       }
     } catch (e: any) {
-      alert('Failed to send Slack notification: ' + e.message);
+      showError('Slack Notification Failed', 'Failed to send Slack notification: ' + e.message);
     } finally {
       setLoading(false);
     }
@@ -185,18 +187,18 @@ export const useListings = () => {
       // Find the listing to get the vehicle_key
       const listing = data.find(l => l.vin === vin);
       if (!listing) {
-        alert('Listing not found');
+        showWarning('Listing Not Found', 'The requested listing could not be found.');
         return;
       }
       
       const res = await ApiService.triggerSlackWorkflow(listing.vehicle_key, vin, customMessage);
       if (res.triggered) {
-        alert(`✅ Slack workflow triggered for VIN ${vin}${res.workflow_id ? ` (ID: ${res.workflow_id})` : ''}`);
+        showSuccess('Slack Workflow Triggered', `Slack workflow triggered for VIN ${vin}${res.workflow_id ? ` (ID: ${res.workflow_id})` : ''}`);
       } else {
-        alert(`❌ Failed to trigger Slack workflow: ${res.error || res.message}`);
+        showError('Slack Workflow Failed', `Failed to trigger Slack workflow: ${res.error || res.message}`);
       }
     } catch (e: any) {
-      alert('Failed to trigger Slack workflow: ' + e.message);
+      showError('Slack Workflow Failed', 'Failed to trigger Slack workflow: ' + e.message);
     } finally {
       setLoading(false);
     }

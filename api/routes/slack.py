@@ -18,7 +18,7 @@ async def send_slack_notification(
     """Send a vehicle listing notification to Slack"""
     
     # Find the listing by vehicle_key
-    listings = list_listings(limit=1000)  # Get all listings to find the specific one
+    listings = list_listings()  # Get all listings to find the specific one
     listing = next((l for l in listings if l.vehicle_key == request.vehicle_key), None)
     
     if not listing:
@@ -37,7 +37,7 @@ async def send_batch_slack_notifications(
     """Send multiple vehicle listing notifications to Slack"""
     
     # Get all listings
-    listings = list_listings(limit=1000)
+    listings = list_listings()
     listing_map = {l.vehicle_key: l for l in listings}
     
     results = []
@@ -66,7 +66,7 @@ async def trigger_slack_workflow(
     """Trigger a Slack workflow with auto-populated form data"""
     
     # Find the listing by vehicle_key
-    listings = list_listings(limit=1000)  # Get all listings to find the specific one
+    listings = list_listings()  # Get all listings to find the specific one
     listing = next((l for l in listings if l.vehicle_key == request.vehicle_key), None)
     
     if not listing:
@@ -85,7 +85,7 @@ async def trigger_batch_slack_workflows(
     """Trigger multiple Slack workflows with auto-populated form data"""
     
     # Get all listings
-    listings = list_listings(limit=1000)
+    listings = list_listings()
     listing_map = {l.vehicle_key: l for l in listings}
     
     results = []

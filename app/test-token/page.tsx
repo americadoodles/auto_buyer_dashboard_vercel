@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../auth/useAuth';
 import { createTestTokenWithExpiration, isTokenExpired } from '../../lib/utils/tokenTest';
+import { useToast } from '../../hooks/useToast';
 
 export default function TestTokenPage() {
   const { user, logout, validateToken } = useAuth();
+  const { showSuccess, showError } = useToast();
   const [testToken, setTestToken] = useState<string>('');
   const [tokenStatus, setTokenStatus] = useState<string>('');
   const [timeLeft, setTimeLeft] = useState<number>(0);
@@ -62,12 +64,12 @@ export default function TestTokenPage() {
       });
       
       if (response.ok) {
-        alert('API call successful!');
+        showSuccess('API Test Successful', 'API call successful!');
       } else {
-        alert(`API call failed: ${response.status}`);
+        showError('API Test Failed', `API call failed: ${response.status}`);
       }
     } catch (error) {
-      alert(`API call error: ${error}`);
+      showError('API Test Error', `API call error: ${error}`);
     }
   };
 

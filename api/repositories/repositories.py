@@ -141,7 +141,7 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
         out.append(obj)
     return out
 
-def list_listings(limit: int = 500) -> list[ListingOut]:
+def list_listings(limit: Optional[int] = None) -> list[ListingOut]:
     if DB_ENABLED:
         with get_db_connection() as conn:
             if not conn:
@@ -150,7 +150,7 @@ def list_listings(limit: int = 500) -> list[ListingOut]:
             try:
                 with conn.cursor() as cur:
                     # Fixed query to prevent duplicates by using DISTINCT ON and proper JOINs
-                    cur.execute("""
+                    query = """
                   SELECT DISTINCT ON (l.vehicle_key) 
                     l.id, l.vehicle_key, 
                     COALESCE(l.vin, '') AS vin, 
@@ -174,8 +174,13 @@ def list_listings(limit: int = 500) -> list[ListingOut]:
                   ) s ON s.vin = l.vin
                   LEFT JOIN users u ON u.id::text = l.buyer_id
                   ORDER BY l.vehicle_key, l.created_at DESC
-                  LIMIT %s
-                """, (limit,))
+                """
+                    
+                    if limit is not None:
+                        query += " LIMIT %s"
+                        cur.execute(query, (limit,))
+                    else:
+                        cur.execute(query)
                     out: list[ListingOut] = []
                     for rid, vehicle_key, vin, year, make, model, trim, miles, price, dom, source, location, buyer_id, buyer_username, score, buy_max, reason_codes, payload in cur.fetchall():
                         # Extract decision data from payload if available
@@ -204,7 +209,7 @@ def list_listings_by_buyer(
     buyer_id: str,
     start_date: Optional[datetime.datetime] = None,
     end_date: Optional[datetime.datetime] = None,
-    limit: int = 500
+    limit: Optional[int] = None
 ) -> list[ListingOut]:
     """Get listings for a specific buyer with optional date filtering"""
     if DB_ENABLED:
@@ -252,8 +257,11 @@ def list_listings_by_buyer(
                         base_query += " AND l.created_at <= %s"
                         params.append(end_date)
                     
-                    base_query += " ORDER BY l.created_at DESC LIMIT %s"
-                    params.append(limit)
+                    base_query += " ORDER BY l.created_at DESC"
+                    
+                    if limit is not None:
+                        base_query += " LIMIT %s"
+                        params.append(limit)
                     
                     cur.execute(base_query, params)
 

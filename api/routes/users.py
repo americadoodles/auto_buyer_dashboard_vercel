@@ -76,7 +76,13 @@ def login(request: UserLoginRequest):
         logging.info(f"verify_password returned: {password_check}")
         if not password_check:
             raise HTTPException(status_code=401, detail="Invalid credentials.")
-        user_out = UserOut(id=db_user.id, email=db_user.email, username=db_user.username, role_id=db_user.role_id, role=db_user.role, is_confirmed=db_user.is_confirmed)
+        user_out = UserOut(id=db_user.id, email=db_user.email, username=db_user.username, role_id=db_user.role_id, role=db_user.role, is_confirmed=db_user.is_confirmed, last_login=db_user.last_login)
+        
+        # Update last_login timestamp
+        from datetime import datetime, timezone
+        from ..repositories.users import update_user
+        update_user(db_user.id, {"last_login": datetime.now(timezone.utc)})
+        
         token = create_access_token({"sub": db_user.email, "uid": str(db_user.id), "role": db_user.role})
         return TokenResponse(access_token=token, user=user_out)
     except HTTPException:

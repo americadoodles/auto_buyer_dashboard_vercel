@@ -87,7 +87,7 @@ def get_user_by_email(email: str) -> Optional[UserInDB]:
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    select u.id, u.email, u.username, u.hashed_password, u.role_id, u.is_confirmed, r.name as role_name
+                    select u.id, u.email, u.username, u.hashed_password, u.role_id, u.is_confirmed, r.name as role_name, u.last_login
                     from users u
                     left join roles r on u.role_id = r.id
                     where u.email = %s
@@ -109,6 +109,7 @@ def get_user_by_email(email: str) -> Optional[UserInDB]:
                         role_id=row[4],
                         role=row[6],
                         is_confirmed=is_confirmed,
+                        last_login=row[7],
                     )
                 return None
         except Exception as e:
@@ -252,7 +253,7 @@ def list_users() -> List[UserOut]:
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    select u.id, u.email, u.username, u.role_id, u.is_confirmed, r.name as role_name
+                    select u.id, u.email, u.username, u.role_id, u.is_confirmed, r.name as role_name, u.last_login
                     from users u
                     left join roles r on u.role_id = r.id
                     """
@@ -265,6 +266,7 @@ def list_users() -> List[UserOut]:
                         role_id=row[3],
                         role=row[5],
                         is_confirmed=row[4],
+                        last_login=row[6],
                     )
                     for row in cur.fetchall()
                 ]
@@ -316,13 +318,17 @@ def update_user(user_id: UUID, update_data: dict) -> Optional[UserOut]:
                     update_fields.append("is_confirmed = %s")
                     update_values.append(update_data["is_confirmed"])
 
+                if "last_login" in update_data and update_data["last_login"] is not None:
+                    update_fields.append("last_login = %s")
+                    update_values.append(update_data["last_login"])
+
                 if not update_fields:
                     return None
 
                 update_values.append(str(user_id))
                 query = (
                     f"UPDATE users SET {', '.join(update_fields)} "
-                    "WHERE id = %s RETURNING id, email, username, role_id, is_confirmed"
+                    "WHERE id = %s RETURNING id, email, username, role_id, is_confirmed, last_login"
                 )
 
                 cur.execute(query, update_values)
@@ -339,6 +345,7 @@ def update_user(user_id: UUID, update_data: dict) -> Optional[UserOut]:
                         role_id=row[3],
                         role=role_name,
                         is_confirmed=row[4],
+                        last_login=row[5],
                     )
                 return None
         except Exception as e:
@@ -382,7 +389,7 @@ def get_user_by_id(user_id: UUID) -> Optional[UserOut]:
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    select u.id, u.email, u.username, u.role_id, u.is_confirmed, r.name as role_name
+                    select u.id, u.email, u.username, u.role_id, u.is_confirmed, r.name as role_name, u.last_login
                     from users u
                     left join roles r on u.role_id = r.id
                     where u.id = %s
@@ -398,6 +405,7 @@ def get_user_by_id(user_id: UUID) -> Optional[UserOut]:
                         role_id=row[3],
                         role=row[5],
                         is_confirmed=row[4],
+                        last_login=row[6],
                     )
                 return None
         except Exception as e:

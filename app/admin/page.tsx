@@ -16,6 +16,7 @@ import { useAuth } from '../auth/useAuth';
 import { AdminLayout } from '../../components/templates/AdminLayout';
 import { useListings } from '../../lib/hooks/useListings';
 import { useAdminStats } from '../../lib/hooks/useAdminStats';
+import UserActivityCard from '../../components/organisms/UserActivityCard';
 
 interface StatCard {
   title: string;
@@ -196,6 +197,9 @@ export default function AdminDashboardPage() {
             })}
           </div>
         </div>
+
+        {/* User Activity Overview */}
+        <UserActivityCard />
 
         {/* System Overview */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">

@@ -1,0 +1,329 @@
+'use client';
+
+import React, { useState } from 'react';
+import { Card } from '../molecules/Card';
+import { TableHeader } from '../molecules/TableHeader';
+import { TableRow } from '../molecules/TableRow';
+import { Badge } from '../atoms/Badge';
+import { Button } from '../atoms/Button';
+import { Input } from '../atoms/Input';
+import { Icon } from '../atoms/Icon';
+import { Pagination } from '../molecules/Pagination';
+
+interface Contact {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  mobile: string;
+  company: string;
+  job_title: string;
+  contact_type: {
+    id: number;
+    name: string;
+    color: string;
+  };
+  assigned_to: {
+    id: string;
+    username: string;
+  };
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  last_contact: string;
+}
+
+interface ContactManagementProps {
+  contacts: Contact[];
+  totalContacts: number;
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  onContactClick: (contactId: string) => void;
+  onCreateContact: () => void;
+  onExportContacts: () => void;
+}
+
+export const ContactManagement: React.FC<ContactManagementProps> = ({
+  contacts,
+  totalContacts,
+  currentPage,
+  totalPages,
+  onPageChange,
+  onContactClick,
+  onCreateContact,
+  onExportContacts
+}) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [assignedFilter, setAssignedFilter] = useState('all');
+
+  const getTypeColor = (type: string) => {
+    switch (type.toLowerCase()) {
+      case 'customer': return 'green';
+      case 'prospect': return 'blue';
+      case 'vendor': return 'purple';
+      case 'partner': return 'orange';
+      default: return 'gray';
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) return '1 day ago';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+    return date.toLocaleDateString();
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Contact Management</h1>
+          <p className="text-gray-600 mt-1">
+            Manage your contacts and customer relationships ({totalContacts} total)
+          </p>
+        </div>
+        <div className="flex space-x-2">
+          <Button variant="outline" onClick={onExportContacts}>
+            <Icon name="download" className="w-4 h-4 mr-2" />
+            Export
+          </Button>
+          <Button onClick={onCreateContact}>
+            <Icon name="plus" className="w-4 h-4 mr-2" />
+            New Contact
+          </Button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <Card className="p-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Search
+            </label>
+            <Input
+              type="text"
+              placeholder="Search contacts..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Type
+            </label>
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All Types</option>
+              <option value="customer">Customer</option>
+              <option value="prospect">Prospect</option>
+              <option value="vendor">Vendor</option>
+              <option value="partner">Partner</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Status
+            </label>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Assigned To
+            </label>
+            <select
+              value={assignedFilter}
+              onChange={(e) => setAssignedFilter(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All Users</option>
+              <option value="me">Me</option>
+              <option value="john">John Doe</option>
+              <option value="jane">Jane Smith</option>
+            </select>
+          </div>
+        </div>
+      </Card>
+
+      {/* Contact Analytics */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="p-4">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <Icon name="users" className="w-4 h-4 text-blue-600" />
+              </div>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm font-medium text-gray-500">Total Contacts</p>
+              <p className="text-2xl font-semibold text-gray-900">{totalContacts}</p>
+            </div>
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                <Icon name="user-check" className="w-4 h-4 text-green-600" />
+              </div>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm font-medium text-gray-500">Customers</p>
+              <p className="text-2xl font-semibold text-gray-900">
+                {contacts.filter(contact => contact.contact_type.name === 'Customer').length}
+              </p>
+            </div>
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                <Icon name="user-plus" className="w-4 h-4 text-yellow-600" />
+              </div>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm font-medium text-gray-500">Prospects</p>
+              <p className="text-2xl font-semibold text-gray-900">
+                {contacts.filter(contact => contact.contact_type.name === 'Prospect').length}
+              </p>
+            </div>
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                <Icon name="activity" className="w-4 h-4 text-purple-600" />
+              </div>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm font-medium text-gray-500">Active</p>
+              <p className="text-2xl font-semibold text-gray-900">
+                {contacts.filter(contact => contact.is_active).length}
+              </p>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Contact List */}
+      <Card className="p-6">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <TableHeader
+              columns={[
+                { key: 'name', label: 'Name', sortable: true },
+                { key: 'company', label: 'Company', sortable: true },
+                { key: 'email', label: 'Email', sortable: true },
+                { key: 'phone', label: 'Phone', sortable: true },
+                { key: 'type', label: 'Type', sortable: true },
+                { key: 'assigned', label: 'Assigned To', sortable: true },
+                { key: 'last_contact', label: 'Last Contact', sortable: true },
+                { key: 'status', label: 'Status', sortable: true },
+                { key: 'actions', label: 'Actions', sortable: false }
+              ]}
+            />
+            <tbody className="bg-white divide-y divide-gray-200">
+              {contacts.map((contact) => (
+                <TableRow key={contact.id} onClick={() => onContactClick(contact.id)} className="cursor-pointer hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0 h-10 w-10">
+                        <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                          <span className="text-sm font-medium text-gray-700">
+                            {contact.first_name[0]}{contact.last_name[0]}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="ml-4">
+                        <div className="text-sm font-medium text-gray-900">
+                          {contact.first_name} {contact.last_name}
+                        </div>
+                        {contact.job_title && (
+                          <div className="text-sm text-gray-500">{contact.job_title}</div>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {contact.company}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {contact.email}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {contact.phone || contact.mobile}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <Badge color={getTypeColor(contact.contact_type.name)}>
+                      {contact.contact_type.name}
+                    </Badge>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {contact.assigned_to.username}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {formatDate(contact.last_contact)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <Badge color={contact.is_active ? 'green' : 'gray'}>
+                      {contact.is_active ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex space-x-2">
+                      <Button variant="ghost" size="sm">
+                        <Icon name="eye" className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <Icon name="edit" className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <Icon name="phone" className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <Icon name="mail" className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </td>
+                </TableRow>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        <div className="mt-6">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={onPageChange}
+          />
+        </div>
+      </Card>
+    </div>
+  );
+};

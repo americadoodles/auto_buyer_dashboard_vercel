@@ -14,7 +14,11 @@ import {
   BarChart3,
   Car,
   List,
-  User
+  User,
+  Target,
+  Phone,
+  Handshake,
+  CheckSquare
 } from 'lucide-react';
 
 interface NavItem {
@@ -36,6 +40,36 @@ const navItems: NavItem[] = [
     label: 'Vehicle Listings',
     icon: List,
     description: 'View and manage vehicle listings'
+  },
+  {
+    href: '/admin/crm',
+    label: 'CRM Dashboard',
+    icon: BarChart3,
+    description: 'CRM overview and analytics'
+  },
+  {
+    href: '/admin/crm/leads',
+    label: 'Leads',
+    icon: Target,
+    description: 'Manage sales leads'
+  },
+  {
+    href: '/admin/crm/contacts',
+    label: 'Contacts',
+    icon: Phone,
+    description: 'Customer contact management'
+  },
+  {
+    href: '/admin/crm/deals',
+    label: 'Deals',
+    icon: Handshake,
+    description: 'Sales pipeline and deals'
+  },
+  {
+    href: '/admin/crm/tasks',
+    label: 'Tasks',
+    icon: CheckSquare,
+    description: 'Task and activity management'
   },
   {
     href: '/admin/user-management/signup-requests',

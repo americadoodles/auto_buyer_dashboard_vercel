@@ -11,6 +11,13 @@ from .routes.export import export_router
 from .routes.slack import slack_router
 from .routes.user_activity import user_activity_router
 
+# CRM Routes
+from .routes.crm_leads import lead_router
+from .routes.crm_contacts import contact_router
+from .routes.crm_deals import deal_router
+from .routes.crm_tasks import task_router
+from .routes.crm_dashboard import dashboard_router
+
 # ---- run-on-cold-start: ensure schema once ----
 import logging
 from .core.db import DB_ENABLED, apply_schema_if_needed
@@ -47,6 +54,13 @@ app.include_router(role_router, prefix="/api")
 app.include_router(export_router, prefix="/api")
 app.include_router(slack_router, prefix="/api")
 app.include_router(user_activity_router, prefix="/api")
+
+# CRM Routes
+app.include_router(lead_router, prefix="/api")
+app.include_router(contact_router, prefix="/api")
+app.include_router(deal_router, prefix="/api")
+app.include_router(task_router, prefix="/api")
+app.include_router(dashboard_router, prefix="/api")
 
 @app.get("/api/healthz")
 def healthz():

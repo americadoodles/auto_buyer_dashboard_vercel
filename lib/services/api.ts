@@ -94,7 +94,13 @@ export class ApiService {
       }
       throw new ApiError(errorMessage, response.status);
     }
-    return await response.json();
+    
+    try {
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to parse JSON response:', error);
+      throw new ApiError('Invalid response format from server', response.status);
+    }
   }
 
   static async getRoles(): Promise<Role[]> {
@@ -149,21 +155,36 @@ export class ApiService {
   }
 
   static async login(request: UserLoginRequest): Promise<User> {
-    const response = await fetch(`${BACKEND_URL}/users/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(request)
-    });
-    const data = await this.handleResponse<TokenResponse>(response);
-    this.setToken(data.access_token);
-    return data.user;
+    try {
+      const response = await fetch(`${BACKEND_URL}/users/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(request)
+      });
+      
+      const data = await this.handleResponse<TokenResponse>(response);
+      this.setToken(data.access_token);
+      return data.user;
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new ApiError('Login request timed out. Please try again.', 408);
+      }
+      throw error;
+    }
   }
 
   static async me(): Promise<User> {
-    const response = await fetch(`${BACKEND_URL}/users/me`, {
-      headers: this.authHeaders(),
-    });
-    return this.handleResponse<User>(response);
+    try {
+      const response = await fetch(`${BACKEND_URL}/users/me`, {
+        headers: this.authHeaders()
+      });
+      return this.handleResponse<User>(response);
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new ApiError('Authentication check timed out. Please try again.', 408);
+      }
+      throw error;
+    }
   }
 
   static async getSignupRequests(): Promise<UserSignupRequest[]> {

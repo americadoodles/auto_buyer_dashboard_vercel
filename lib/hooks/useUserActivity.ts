@@ -37,7 +37,7 @@ export const useUserActivity = () => {
         
         const baseUrl = (process.env.NEXT_PUBLIC_BACKEND_URL ?? '/api').replace(/\/+$/, '');
         
-        const response = await fetch(`${baseUrl}/user-activity/`, {
+        const response = await fetch(`${baseUrl}/user_activity/`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('auth.token')}`,
           },

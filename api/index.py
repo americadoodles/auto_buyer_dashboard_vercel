@@ -10,6 +10,7 @@ from .routes.roles import role_router
 from .routes.export import export_router
 from .routes.slack import slack_router
 from .routes.user_activity import user_activity_router
+from .routes.activity_heatmap import activity_heatmap_router
 
 # CRM Routes
 from .routes.crm_leads import lead_router
@@ -54,6 +55,7 @@ app.include_router(role_router, prefix="/api")
 app.include_router(export_router, prefix="/api")
 app.include_router(slack_router, prefix="/api")
 app.include_router(user_activity_router, prefix="/api")
+app.include_router(activity_heatmap_router, prefix="/api")
 
 # CRM Routes
 app.include_router(lead_router, prefix="/api")

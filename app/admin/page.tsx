@@ -17,6 +17,8 @@ import { AdminLayout } from '../../components/templates/AdminLayout';
 import { useListings } from '../../lib/hooks/useListings';
 import { useAdminStats } from '../../lib/hooks/useAdminStats';
 import UserActivityCard from '../../components/organisms/UserActivityCard';
+import ActivityHeatmap from '../../components/organisms/ActivityHeatmap';
+import { useActivityHeatmap } from '../../lib/hooks/useActivityHeatmap';
 
 interface StatCard {
   title: string;
@@ -30,6 +32,7 @@ export default function AdminDashboardPage() {
   const { user } = useAuth();
   const { data: listings, backendOk } = useListings();
   const { totalUsers, pendingRequests, activeRoles, totalListings, loading: statsLoading, error: statsError } = useAdminStats();
+  const { data: heatmapData, loading: heatmapLoading, error: heatmapError } = useActivityHeatmap();
 
   // Dynamic stats based on real data
   const statCards: StatCard[] = [
@@ -197,6 +200,16 @@ export default function AdminDashboardPage() {
             })}
           </div>
         </div>
+
+        {/* Activity Heatmap */}
+        <ActivityHeatmap 
+          title="Historical Activity Heatmap"
+          subtitle="Daily activity patterns over the last year"
+          data={heatmapData.data}
+          loading={heatmapLoading}
+          error={heatmapError}
+          year="last"
+        />
 
         {/* User Activity Overview */}
         <UserActivityCard />

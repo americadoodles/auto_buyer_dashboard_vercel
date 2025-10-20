@@ -1,6 +1,7 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useUserActivity } from '../../lib/hooks/useUserActivity';
 import { 
   Users, 
@@ -10,8 +11,11 @@ import {
   TrendingUp, 
   UserCheck,
   Calendar,
-  AlertCircle
+  AlertCircle,
+  ArrowUpDown
 } from 'lucide-react';
+import { TableHeader } from '../molecules/TableHeader';
+import { TableRow } from '../molecules/TableRow';
 
 interface UserActivityCardProps {
   className?: string;
@@ -19,6 +23,8 @@ interface UserActivityCardProps {
 
 const UserActivityCard: React.FC<UserActivityCardProps> = ({ className = "" }) => {
   const { data, loading, error } = useUserActivity();
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
+  const router = useRouter();
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'Never';
@@ -59,6 +65,55 @@ const UserActivityCard: React.FC<UserActivityCardProps> = ({ className = "" }) =
         {config.label}
       </span>
     );
+  };
+
+  const handleSort = (key: string) => {
+    setSortConfig(prev => {
+      if (prev?.key === key) {
+        return { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
+      }
+      return { key, direction: 'asc' };
+    });
+  };
+
+  const getSortedUsers = () => {
+    if (!sortConfig) return data.users;
+    
+    return [...data.users].sort((a, b) => {
+      let aValue: any = a[sortConfig.key as keyof typeof a];
+      let bValue: any = b[sortConfig.key as keyof typeof b];
+      
+      // Handle date sorting
+      if (sortConfig.key === 'last_login' || sortConfig.key === 'last_activity') {
+        aValue = aValue ? new Date(aValue).getTime() : 0;
+        bValue = bValue ? new Date(bValue).getTime() : 0;
+      }
+      
+      // Handle string sorting
+      if (typeof aValue === 'string') {
+        aValue = aValue.toLowerCase();
+        bValue = bValue.toLowerCase();
+      }
+      
+      if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  };
+
+  const tableColumns = [
+    { key: 'user', label: 'User', sortable: true },
+    { key: 'role', label: 'Role', sortable: true },
+    { key: 'status', label: 'Status', sortable: true },
+    { key: 'total_listings', label: 'Total Listings', sortable: true },
+    { key: 'today_listings', label: 'Today Listings', sortable: true },
+    { key: 'last_login', label: 'Last Login', sortable: true },
+    { key: 'last_activity', label: 'Last Activity', sortable: true },
+    { key: 'activity_status', label: 'Activity Status', sortable: true }
+  ];
+
+  const handleUserClick = (userId: string) => {
+    router.push(`/admin/buyer-activity/${userId}`);
   };
 
   if (loading) {
@@ -137,66 +192,96 @@ const UserActivityCard: React.FC<UserActivityCardProps> = ({ className = "" }) =
         </div>
       </div>
 
-      {/* User List */}
-      <div className="p-6">
-        <div className="space-y-4">
-          {data.users.map((user) => {
-            const activityStatus = getActivityStatus(user.last_activity, user.today_listings);
-            
-            return (
-              <div key={user.user_id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                <div className="flex items-center space-x-4">
-                  <div className="flex-shrink-0">
-                    <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                      <span className="text-sm font-medium text-gray-700">
-                        {user.username.charAt(0).toUpperCase()}
-                      </span>
+      {/* User Activity Table */}
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <TableHeader 
+            columns={tableColumns} 
+            onColumnSort={handleSort}
+          />
+          <tbody className="bg-white divide-y divide-gray-200">
+            {getSortedUsers().map((user) => {
+              const activityStatus = getActivityStatus(user.last_activity, user.today_listings);
+              
+              return (
+                <TableRow 
+                  key={user.user_id}
+                  onClick={() => handleUserClick(user.user_id)}
+                  className="cursor-pointer hover:bg-gray-50 transition-colors duration-200"
+                >
+                  {/* User */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0 h-10 w-10">
+                        <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                          <span className="text-sm font-medium text-gray-700">
+                            {user.username.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="ml-4">
+                        <div className="text-sm font-medium text-gray-900">{user.username}</div>
+                        <div className="text-sm text-gray-500">{user.email}</div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
+                  </td>
+                  
+                  {/* Role */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {getRoleBadge(user.role)}
+                  </td>
+                  
+                  {/* Status */}
+                  <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center space-x-2">
-                      <p className="text-sm font-medium text-gray-900 truncate">{user.username}</p>
-                      {getRoleBadge(user.role)}
-                      {!user.is_confirmed && (
+                      {user.is_confirmed ? (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          Confirmed
+                        </span>
+                      ) : (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                           Pending
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-6">
-                  <div className="text-center">
-                    <p className="text-sm font-medium text-gray-900">{user.total_listings}</p>
-                    <p className="text-xs text-gray-500">Total</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-sm font-medium text-gray-900">{user.today_listings}</p>
-                    <p className="text-xs text-gray-500">Today</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-xs text-gray-500">Last Login</p>
-                    <p className="text-sm text-gray-900">{formatDate(user.last_login)}</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-xs text-gray-500">Last Activity</p>
-                    <p className="text-sm text-gray-900">{formatDate(user.last_activity)}</p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className={`w-3 h-3 rounded-full ${activityStatus.bg}`}></div>
-                    <span className={`text-xs font-medium ${activityStatus.color}`}>
-                      {activityStatus.status === 'active' ? 'Active' :
-                       activityStatus.status === 'recent' ? 'Recent' :
-                       activityStatus.status === 'inactive' ? 'Inactive' : 'Dormant'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+                  </td>
+                  
+                  {/* Total Listings */}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {user.total_listings}
+                  </td>
+                  
+                  {/* Today Listings */}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {user.today_listings}
+                  </td>
+                  
+                  {/* Last Login */}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {formatDate(user.last_login)}
+                  </td>
+                  
+                  {/* Last Activity */}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {formatDate(user.last_activity)}
+                  </td>
+                  
+                  {/* Activity Status */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center space-x-2">
+                      <div className={`w-3 h-3 rounded-full ${activityStatus.bg}`}></div>
+                      <span className={`text-sm font-medium ${activityStatus.color}`}>
+                        {activityStatus.status === 'active' ? 'Active' :
+                         activityStatus.status === 'recent' ? 'Recent' :
+                         activityStatus.status === 'inactive' ? 'Inactive' : 'Dormant'}
+                      </span>
+                    </div>
+                  </td>
+                </TableRow>
+              );
+            })}
+          </tbody>
+        </table>
         
         {data.users.length === 0 && (
           <div className="text-center py-8">

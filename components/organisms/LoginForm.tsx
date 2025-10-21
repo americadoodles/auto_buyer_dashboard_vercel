@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../app/auth/useAuth';
 import { AuthFields } from '../molecules/AuthFields';
-import { ApiService } from '../../lib/services/api';
+import { ApiService, ApiError } from '../../lib/services/api';
 import { LogIn, Shield, Car, TrendingUp } from 'lucide-react';
 
 export const LoginForm: React.FC = () => {
@@ -18,10 +18,17 @@ export const LoginForm: React.FC = () => {
     setLoading(true);
     setMessage('');
     setError('');
+    
     try {
+      console.log('Attempting login for:', email);
       const user = await ApiService.login({ email, password });
+      console.log('Login successful, user:', user);
+      
       setMessage('Login successful! Redirecting...');
       login(user); // Persist user info and update global state
+      
+      // Small delay to show success message
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       // Route based on role
       if (user.role === 'admin') {
@@ -34,7 +41,12 @@ export const LoginForm: React.FC = () => {
         router.replace('/'); // Default to main dashboard
       }
     } catch (err: any) {
-      setError(err.message || 'Login failed');
+      console.error('Login error:', err);
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError(err.message || 'Login failed. Please check your credentials and try again.');
+      }
     } finally {
       setLoading(false);
     }

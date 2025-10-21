@@ -3,11 +3,12 @@ import { LucideIcon, TrendingUp, TrendingDown } from 'lucide-react';
 
 interface KpiCardProps {
   label: string;
-  value: string;
+  value: string | number;
   className?: string;
   icon?: LucideIcon;
   trend?: string;
   trendUp?: boolean;
+  change?: string;
   color?: 'blue' | 'green' | 'amber' | 'purple' | 'indigo' | 'emerald' | 'red';
 }
 
@@ -28,6 +29,7 @@ export const KpiCard: React.FC<KpiCardProps> = ({
   icon: Icon,
   trend,
   trendUp,
+  change,
   color = 'blue'
 }) => {
   return (
@@ -42,11 +44,11 @@ export const KpiCard: React.FC<KpiCardProps> = ({
             )}
             <div className="flex-1">
               <div className="text-sm font-medium text-gray-600 mb-1">{label}</div>
-              <div className="text-2xl font-bold text-gray-900">{value}</div>
+              <div className="text-2xl font-bold text-gray-900">{String(value)}</div>
             </div>
           </div>
           
-          {trend && (
+          {(trend || change) && (
             <div className="flex items-center space-x-1">
               {trendUp ? (
                 <TrendingUp className="w-4 h-4 text-green-500" />
@@ -54,7 +56,7 @@ export const KpiCard: React.FC<KpiCardProps> = ({
                 <TrendingDown className="w-4 h-4 text-red-500" />
               )}
               <span className={`text-sm font-medium ${trendUp ? 'text-green-600' : 'text-red-600'}`}>
-                {trend}
+                {change || trend}
               </span>
               <span className="text-xs text-gray-500">vs last month</span>
             </div>

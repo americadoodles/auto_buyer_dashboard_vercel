@@ -7,12 +7,18 @@ import { LISTINGS_TABLE_GRID_CLASS, LISTINGS_TABLE_GRID_STYLE, LISTINGS_TABLE_CO
 
 
 interface TableRowProps {
-  listing: Listing;
-  onNotify: (vin: string) => void;
+  // Legacy props for listings table
+  listing?: Listing;
+  onNotify?: (vin: string) => void;
   onNotifySlack?: (vin: string, customMessage?: string) => void;
   onTriggerWorkflow?: (vin: string, customMessage?: string) => void;
   isSelected?: boolean;
   onSelect?: (listingId: string, selected: boolean) => void;
+  
+  // New props for generic table usage
+  children?: React.ReactNode;
+  onClick?: () => void;
+  className?: string;
 }
 
 // Small helper to safely parse URLs and extract a clean host
@@ -27,7 +33,34 @@ function parseSourceUrl(src?: string) {
   }
 }
 
-export const TableRow: React.FC<TableRowProps> = ({ listing, onNotify, onNotifySlack, onTriggerWorkflow, isSelected = false, onSelect }) => {
+export const TableRow: React.FC<TableRowProps> = ({ 
+  listing, 
+  onNotify, 
+  onNotifySlack, 
+  onTriggerWorkflow, 
+  isSelected = false, 
+  onSelect,
+  children,
+  onClick,
+  className
+}) => {
+  // If children prop is provided, use generic table row
+  if (children) {
+    return (
+      <tr 
+        className={`${className || ''} ${onClick ? 'cursor-pointer hover:bg-gray-50' : ''}`}
+        onClick={onClick}
+      >
+        {children}
+      </tr>
+    );
+  }
+
+  // Legacy listings table row
+  if (!listing) {
+    return null;
+  }
+
   const parsedSource = parseSourceUrl(listing.source);
   
   // Helper function to get column configuration
@@ -181,7 +214,7 @@ export const TableRow: React.FC<TableRowProps> = ({ listing, onNotify, onNotifyS
       <div className={`col-span-${getColumnConfig('notify')?.colSpan} flex items-center justify-center`}>
         <button
           className="p-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          onClick={() => listing.vin && onNotify(listing.vin)}
+          onClick={() => listing.vin && onNotify?.(listing.vin)}
           disabled={!listing.vin}
           title={listing.vin ? "Notify about this listing" : "VIN not available"}
           aria-label={listing.vin ? "Notify about this listing" : "VIN not available"}
@@ -195,7 +228,7 @@ export const TableRow: React.FC<TableRowProps> = ({ listing, onNotify, onNotifyS
         {onNotifySlack ? (
           <button
             className="p-1.5 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            onClick={() => listing.vin && onNotifySlack(listing.vin)}
+            onClick={() => listing.vin && onNotifySlack?.(listing.vin)}
             disabled={!listing.vin}
             title={listing.vin ? "Send to Slack" : "VIN not available"}
             aria-label={listing.vin ? "Send to Slack" : "VIN not available"}
@@ -212,7 +245,7 @@ export const TableRow: React.FC<TableRowProps> = ({ listing, onNotify, onNotifyS
         {onTriggerWorkflow ? (
           <button
             className="p-1.5 text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            onClick={() => listing.vin && onTriggerWorkflow(listing.vin)}
+            onClick={() => listing.vin && onTriggerWorkflow?.(listing.vin)}
             disabled={!listing.vin}
             title={listing.vin ? "Trigger Slack Workflow" : "VIN not available"}
             aria-label={listing.vin ? "Trigger Slack Workflow" : "VIN not available"}

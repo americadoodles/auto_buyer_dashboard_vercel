@@ -40,6 +40,7 @@ export function useAuth() {
         setUser(userData);
       } catch (error) {
         // API call failed, likely due to expired token
+        console.error('Auth initialization failed:', error);
         localStorage.removeItem('user');
         localStorage.removeItem('auth.token');
         setUser(null);
@@ -48,11 +49,20 @@ export function useAuth() {
       }
     };
 
-    initializeAuth();
+    // Add timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      console.warn('Auth initialization timeout, setting loading to false');
+      setLoading(false);
+    }, 10000); // 10 second timeout
+
+    initializeAuth().finally(() => {
+      clearTimeout(timeoutId);
+    });
   }, []);
 
   const login = (user: User) => {
     setUser(user);
+    setLoading(false); // Ensure loading is set to false after login
     if (typeof window !== 'undefined') {
       localStorage.setItem('user', JSON.stringify(user));
     }

@@ -3,17 +3,17 @@ import React from 'react';
 interface PaginationProps {
   currentPage: number;
   totalPages: number;
-  rowsPerPage: number;
-  totalRows: number;
+  rowsPerPage?: number;
+  totalRows?: number;
   onPageChange: (page: number) => void;
-  onRowsPerPageChange: (rowsPerPage: number) => void;
+  onRowsPerPageChange?: (rowsPerPage: number) => void;
 }
 
 export const Pagination: React.FC<PaginationProps> = ({
   currentPage,
   totalPages,
-  rowsPerPage,
-  totalRows,
+  rowsPerPage = 10,
+  totalRows = 0,
   onPageChange,
   onRowsPerPageChange,
 }) => {
@@ -22,28 +22,36 @@ export const Pagination: React.FC<PaginationProps> = ({
 
   const handleRowsPerPageChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const newRowsPerPage = parseInt(event.target.value);
-    onRowsPerPageChange(newRowsPerPage);
+    onRowsPerPageChange?.(newRowsPerPage);
   };
 
   return (
     <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 bg-white">
-      <div className="flex items-center space-x-4">
-        <span className="text-sm text-slate-600">
-          Rows per page:
-        </span>
-        <select
-          value={rowsPerPage}
-          onChange={handleRowsPerPageChange}
-          className="border border-slate-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        >
-          <option value={10}>10</option>
-          <option value={25}>25</option>
-          <option value={50}>50</option>
-        </select>
-        <span className="text-sm text-slate-600">
-          {startRow}-{endRow} of {totalRows}
-        </span>
-      </div>
+      {rowsPerPage && totalRows && onRowsPerPageChange ? (
+        <div className="flex items-center space-x-4">
+          <span className="text-sm text-slate-600">
+            Rows per page:
+          </span>
+          <select
+            value={rowsPerPage}
+            onChange={handleRowsPerPageChange}
+            className="border border-slate-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value={10}>10</option>
+            <option value={25}>25</option>
+            <option value={50}>50</option>
+          </select>
+          <span className="text-sm text-slate-600">
+            {startRow}-{endRow} of {totalRows}
+          </span>
+        </div>
+      ) : (
+        <div className="flex items-center space-x-4">
+          <span className="text-sm text-slate-600">
+            Page {currentPage} of {totalPages}
+          </span>
+        </div>
+      )}
 
       <div className="flex items-center space-x-2">
         <button

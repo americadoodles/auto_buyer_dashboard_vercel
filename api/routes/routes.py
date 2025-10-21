@@ -9,6 +9,7 @@ from ..repositories.repositories import ingest_listings, list_listings, list_lis
 from ..core.auth import get_current_user
 from ..schemas.user import UserOut
 from ..services.services import score_listing, notify as do_notify
+from .activity_heatmap import activity_heatmap_router
 
 # Create routers for each endpoint group
 ingest_router = APIRouter(prefix="/ingest", tags=["ingest"])

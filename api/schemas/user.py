@@ -2,6 +2,7 @@
 from typing import Optional
 from pydantic import BaseModel, EmailStr, Field
 from uuid import UUID, uuid4
+from datetime import datetime
 
 
 class UserBase(BaseModel):
@@ -18,6 +19,7 @@ class UserOut(UserBase):
     id: UUID
     role: str  # Role name (e.g., "admin", "buyer", "analyst")
     is_confirmed: bool
+    last_login: Optional[datetime] = None
 
 
 class UserInDB(UserOut):

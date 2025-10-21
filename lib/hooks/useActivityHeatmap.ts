@@ -31,7 +31,7 @@ export const useActivityHeatmap = () => {
         
         const baseUrl = (process.env.NEXT_PUBLIC_BACKEND_URL ?? '/api').replace(/\/+$/, '');
         
-        const response = await fetch(`${baseUrl}/activity_heatmap/`, {
+        const response = await fetch(`${baseUrl}/activity_heatmap`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('auth.token')}`,
           },

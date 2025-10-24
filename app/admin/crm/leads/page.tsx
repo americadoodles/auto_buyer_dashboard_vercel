@@ -56,15 +56,15 @@ export default function LeadsPage() {
   // Transform leads data to match component expectations
   const transformedLeads = leads.map(lead => ({
     ...lead,
-    status: statuses.find(s => s.id === lead.lead_status_id) ? {
-      id: lead.lead_status_id,
+    status: {
+      id: lead.lead_status_id || 0,
       name: statuses.find(s => s.id === lead.lead_status_id)?.name || 'Unknown',
       color: statuses.find(s => s.id === lead.lead_status_id)?.color_code || 'gray'
-    } : undefined,
-    assigned_to: lead.assigned_to ? {
-      id: lead.assigned_to,
-      username: lead.assigned_to // This would need to be fetched from user data
-    } : undefined
+    },
+    assigned_to: {
+      id: lead.assigned_to || '',
+      username: lead.assigned_to || 'Unassigned' // This would need to be fetched from user data
+    }
   }));
 
   // Show loading state
@@ -131,10 +131,6 @@ export default function LeadsPage() {
           onLeadClick={handleLeadClick}
           onCreateLead={handleCreateLead}
           onExportLeads={handleExportLeads}
-          onSearch={handleSearch}
-          onStatusFilter={handleStatusFilter}
-          statuses={statuses}
-          loading={loading}
         />
       </div>
     </AdminLayout>

@@ -51,6 +51,7 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       setFormData({
+        vin: listing.vin || '',
         notes: listing.notes || '',
         condition_rating: listing.condition_rating || undefined,
         interior_color: listing.interior_color || '',
@@ -202,6 +203,18 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
               <h3 className="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2">
                 Vehicle Information
               </h3>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  VIN Number
+                </label>
+                <Input
+                  value={formData.vin || ''}
+                  onChange={(e) => handleFieldChange('vin', e.target.value)}
+                  placeholder="Enter VIN number"
+                  className="uppercase"
+                />
+              </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>

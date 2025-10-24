@@ -29,12 +29,24 @@ def update_listing_info(
 ):
     """Update listing information"""
     try:
-        updated_listing = update_listing(listing_id, update_data, current_user.id)
+        logging.info(f"Attempting to update listing {listing_id} with data: {update_data}")
+        logging.info(f"Update data model dump: {update_data.model_dump(exclude_unset=True)}")
+        logging.info(f"Current user ID: {current_user.id} (type: {type(current_user.id)})")
+        
+        updated_listing = update_listing(listing_id, update_data, str(current_user.id))
         if not updated_listing:
+            logging.error(f"update_listing returned None for listing {listing_id}")
             raise HTTPException(status_code=404, detail="Listing not found or update failed")
+        
+        logging.info(f"Successfully updated listing {listing_id}")
         return updated_listing
+    except HTTPException:
+        raise
     except Exception as e:
         logging.error(f"Error updating listing {listing_id}: {str(e)}")
+        logging.error(f"Exception type: {type(e)}")
+        import traceback
+        logging.error(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail="Failed to update listing")
 
 @listing_management_router.get("/{listing_id}", response_model=ListingOut)
@@ -51,6 +63,35 @@ def get_listing_details(
     except Exception as e:
         logging.error(f"Error getting listing {listing_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to retrieve listing")
+
+@listing_management_router.put("/{listing_id}/test")
+def test_update_listing(
+    listing_id: int = Path(..., description="ID of the listing to test update"),
+    current_user: UserOut = Depends(get_current_user)
+):
+    """Test endpoint for debugging listing updates"""
+    try:
+        from ..repositories.listing_management import update_listing
+        from ..schemas.listing import ListingUpdate
+        
+        # Create a simple test update
+        test_update = ListingUpdate(notes="Test update from debug endpoint")
+        
+        logging.info(f"Testing update for listing {listing_id}")
+        logging.info(f"User ID: {current_user.id}")
+        
+        result = update_listing(listing_id, test_update, str(current_user.id))
+        
+        if result:
+            return {"success": True, "message": "Update successful", "listing_id": listing_id}
+        else:
+            return {"success": False, "message": "Update failed", "listing_id": listing_id}
+            
+    except Exception as e:
+        logging.error(f"Test update error: {str(e)}")
+        import traceback
+        logging.error(f"Traceback: {traceback.format_exc()}")
+        return {"success": False, "error": str(e), "listing_id": listing_id}
 
 # ==============================================
 # CONTACT LINKING ENDPOINTS

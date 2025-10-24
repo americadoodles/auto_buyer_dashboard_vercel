@@ -57,6 +57,7 @@ export type BackendStatus = boolean | null;
 
 // New types for listing management
 export type ListingUpdate = {
+  vin?: string;
   notes?: string;
   condition_rating?: number;
   interior_color?: string;

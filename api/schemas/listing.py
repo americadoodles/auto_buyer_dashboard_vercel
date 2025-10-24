@@ -80,6 +80,7 @@ class ListingScoreIn(BaseModel):
 
 class ListingUpdate(BaseModel):
     """Schema for updating listing information"""
+    vin: Optional[str] = None
     notes: Optional[str] = None
     condition_rating: Optional[int] = Field(None, ge=1, le=5)
     interior_color: Optional[str] = None

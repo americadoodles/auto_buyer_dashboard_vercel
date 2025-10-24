@@ -14,6 +14,7 @@ import { Button } from "../../../components/atoms/Button";
 import { Input } from "../../../components/atoms/Input";
 import { useAuth } from "../../auth/useAuth";
 import { useToast } from "../../../hooks/useToast";
+import { ApiService } from "../../../lib/services/api";
 
 interface BuyerStats {
   total_listings: number;
@@ -175,24 +176,13 @@ export default function BuyerActivityPage() {
 
   const handleNotifySlack = async (vin: string, customMessage?: string) => {
     try {
-      const baseUrl = (process.env.NEXT_PUBLIC_BACKEND_URL ?? '/api').replace(/\/+$/, '');
       const listing = listings.find(l => l.vin === vin);
       if (!listing) {
         showWarning('Listing Not Found', 'The requested listing could not be found.');
         return;
       }
       
-      const response = await fetch(`${baseUrl}/slack/notify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          vehicle_key: listing.vehicle_key,
-          vin: vin,
-          custom_message: customMessage
-        })
-      });
-      
-      const result = await response.json();
+      const result = await ApiService.sendSlackNotification(listing.vehicle_key, vin, customMessage);
       if (result.sent) {
         showSuccess('Slack Notification Sent', `Slack notification sent to ${result.channel} for VIN ${vin}`);
       } else {
@@ -206,24 +196,13 @@ export default function BuyerActivityPage() {
 
   const handleTriggerWorkflow = async (vin: string, customMessage?: string) => {
     try {
-      const baseUrl = (process.env.NEXT_PUBLIC_BACKEND_URL ?? '/api').replace(/\/+$/, '');
       const listing = listings.find(l => l.vin === vin);
       if (!listing) {
         showWarning('Listing Not Found', 'The requested listing could not be found.');
         return;
       }
       
-      const response = await fetch(`${baseUrl}/slack/trigger-workflow`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          vehicle_key: listing.vehicle_key,
-          vin: vin,
-          custom_message: customMessage
-        })
-      });
-      
-      const result = await response.json();
+      const result = await ApiService.triggerSlackWorkflow(listing.vehicle_key, vin, customMessage);
       if (result.triggered) {
         showSuccess('Slack Workflow Triggered', `Slack workflow triggered for VIN ${vin}${result.workflow_id ? ` (ID: ${result.workflow_id})` : ''}`);
       } else {

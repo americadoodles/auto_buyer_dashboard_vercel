@@ -104,6 +104,21 @@ def _read_schema_file() -> Optional[str]:
         return None
 
 
+def _read_crm_schema_file() -> Optional[str]:
+    """Read the CRM schema file."""
+    p = pathlib.Path(__file__).parents[2] / "db" / "crm_schema.sql"
+
+    if not p.exists():
+        logger.error("CRM schema file not found at %s", p)
+        return None
+
+    try:
+        return p.read_text(encoding="utf-8")
+    except Exception as e:
+        logger.error("Failed reading CRM schema file %s: %s", p, e, exc_info=True)
+        return None
+
+
 def _exec_sql_script(cur: "psycopg.Cursor", script: str) -> None:
     """
     Execute a multi-statement SQL script safely enough for simple schemas.
@@ -128,6 +143,10 @@ def apply_schema_if_needed() -> None:
     if schema_content is None:
         return
 
+    crm_schema_content = _read_crm_schema_file()
+    if crm_schema_content is None:
+        logger.warning("CRM schema not found, skipping CRM tables")
+
     def _table_exists(cur, qualified: str) -> bool:
         # qualified like 'public.users' (defaults to search_path if no schema provided)
         cur.execute("SELECT to_regclass(%s)", (qualified,))
@@ -142,6 +161,12 @@ def apply_schema_if_needed() -> None:
                 logger.info("Applying schema...")
                 _exec_sql_script(cur, schema_content)
                 logger.info("Base schema applied.")
+
+                # Apply CRM schema if available
+                if crm_schema_content:
+                    logger.info("Applying CRM schema...")
+                    _exec_sql_script(cur, crm_schema_content)
+                    logger.info("CRM schema applied.")
 
                 # ----- listings table columns -----
                 if _table_exists(cur, "public.listings"):

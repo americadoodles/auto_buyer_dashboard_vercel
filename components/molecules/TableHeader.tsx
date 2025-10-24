@@ -92,11 +92,11 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
               col.priority === 'low' ? 'hidden lg:flex' : 
               col.priority === 'medium' ? 'hidden md:flex' : 'flex'
             }`}
-            onClick={() => !['notify', 'slack', 'workflow'].includes(col.key) && onSort?.(col.key as keyof Listing | 'decision_status' | 'decision_reasons')}
-            disabled={['notify', 'slack', 'workflow'].includes(col.key)}
+            onClick={() => !['notify', 'slack', 'workflow', 'edit', 'contacts'].includes(col.key) && onSort?.(col.key as keyof Listing | 'decision_status' | 'decision_reasons')}
+            disabled={['notify', 'slack', 'workflow', 'edit', 'contacts'].includes(col.key)}
           >
             <span className="truncate">{col.label}</span>
-            {!['notify', 'slack', 'workflow'].includes(col.key) && (
+            {!['notify', 'slack', 'workflow', 'edit', 'contacts'].includes(col.key) && (
               <ArrowUpDown className="h-3 w-3 flex-shrink-0" />
             )}
           </button>

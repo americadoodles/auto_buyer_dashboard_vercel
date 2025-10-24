@@ -1,5 +1,5 @@
 import React from "react";
-import { Gauge, DollarSign, Clock, ExternalLink, Bell, Send, Workflow } from "lucide-react";
+import { Gauge, DollarSign, Clock, ExternalLink, Bell, Send, Workflow, Edit, User, Phone, Mail, Building } from "lucide-react";
 import { Listing } from "../../lib/types/listing";
 import { Badge } from "../atoms/Badge";
 import { formatCurrency, formatNumber } from "../../lib/utils/formatters";
@@ -12,6 +12,7 @@ interface TableRowProps {
   onNotify?: (vin: string) => void;
   onNotifySlack?: (vin: string, customMessage?: string) => void;
   onTriggerWorkflow?: (vin: string, customMessage?: string) => void;
+  onEdit?: (listing: Listing) => void;
   isSelected?: boolean;
   onSelect?: (listingId: string, selected: boolean) => void;
   
@@ -37,7 +38,8 @@ export const TableRow: React.FC<TableRowProps> = ({
   listing, 
   onNotify, 
   onNotifySlack, 
-  onTriggerWorkflow, 
+  onTriggerWorkflow,
+  onEdit,
   isSelected = false, 
   onSelect,
   children,
@@ -254,6 +256,50 @@ export const TableRow: React.FC<TableRowProps> = ({
           </button>
         ) : (
           <span className="text-slate-400 text-xs">—</span>
+        )}
+      </div>
+      
+      {/* Edit Action */}
+      <div className={`col-span-${getColumnConfig('edit')?.colSpan} flex items-center justify-center`}>
+        {onEdit ? (
+          <button
+            className="p-1.5 text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded-full transition-colors border border-orange-200"
+            onClick={() => onEdit(listing)}
+            title="Edit listing"
+            aria-label="Edit listing"
+          >
+            <Edit className="h-3.5 w-3.5" />
+          </button>
+        ) : (
+          <span className="text-slate-400 text-xs">—</span>
+        )}
+      </div>
+      
+      {/* Contact Information */}
+      <div className={`col-span-${getColumnConfig('contacts')?.colSpan} hidden lg:flex flex-col gap-1 min-w-0`}>
+        {listing.primary_contact_first_name ? (
+          <div className="flex items-center gap-1 min-w-0">
+            <User className="h-3 w-3 flex-shrink-0 text-slate-500" />
+            <span className="truncate text-xs text-slate-700" title={`${listing.primary_contact_first_name} ${listing.primary_contact_last_name}`}>
+              {listing.primary_contact_first_name} {listing.primary_contact_last_name}
+            </span>
+          </div>
+        ) : listing.contacts_count && listing.contacts_count > 0 ? (
+          <div className="flex items-center gap-1">
+            <User className="h-3 w-3 text-slate-500" />
+            <span className="text-xs text-slate-600">{listing.contacts_count} contact{listing.contacts_count !== 1 ? 's' : ''}</span>
+          </div>
+        ) : (
+          <span className="text-slate-400 text-xs">—</span>
+        )}
+        
+        {listing.primary_contact_company && (
+          <div className="flex items-center gap-1 min-w-0">
+            <Building className="h-3 w-3 flex-shrink-0 text-slate-500" />
+            <span className="truncate text-xs text-slate-600" title={listing.primary_contact_company}>
+              {listing.primary_contact_company}
+            </span>
+          </div>
         )}
       </div>
     </div>

@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Listing } from '../../lib/types/listing';
 import { TableHeader } from '../molecules/TableHeader';
 import { TableRow } from '../molecules/TableRow';
 import { Pagination } from '../molecules/Pagination';
 import { Badge } from '../atoms/Badge';
+import { ListingEditModal } from './ListingEditModal';
 import { formatCurrency, formatNumber } from '../../lib/utils/formatters';
-import { Gauge, Clock, Bell, Send, Workflow } from 'lucide-react';
+import { Gauge, Clock, Bell, Send, Workflow, Edit } from 'lucide-react';
 
 interface ListingsTableProps {
   listings: Listing[];
@@ -46,8 +47,19 @@ export const ListingsTable: React.FC<ListingsTableProps> = ({
   isAllSelected = false,
   isIndeterminate = false
 }) => {
+  const [editingListing, setEditingListing] = useState<Listing | null>(null);
   const handleSort = (key: keyof Listing | 'decision_status' | 'decision_reasons') => {
     onSort(key);
+  };
+
+  const handleEditListing = (listing: Listing) => {
+    setEditingListing(listing);
+  };
+
+  const handleSaveListing = (updatedListing: Listing) => {
+    // You might want to emit an event or call a callback here to update the parent component
+    // For now, we'll just close the modal
+    setEditingListing(null);
   };
 
   return (
@@ -68,6 +80,7 @@ export const ListingsTable: React.FC<ListingsTableProps> = ({
             onNotify={onNotify}
             onNotifySlack={onNotifySlack}
             onTriggerWorkflow={onTriggerWorkflow}
+            onEdit={handleEditListing}
             isSelected={selectedListings.has(listing.id)}
             onSelect={onSelectListing}
           />
@@ -127,6 +140,15 @@ export const ListingsTable: React.FC<ListingsTableProps> = ({
                     <Workflow className="h-4 w-4" />
                   </button>
                 )}
+                
+                {/* Edit Button */}
+                <button
+                  className="p-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded-full transition-colors"
+                  onClick={() => handleEditListing(listing)}
+                  title="Edit listing"
+                >
+                  <Edit className="h-4 w-4" />
+                </button>
               </div>
             </div>
             
@@ -168,6 +190,16 @@ export const ListingsTable: React.FC<ListingsTableProps> = ({
         onPageChange={onPageChange}
         onRowsPerPageChange={onRowsPerPageChange}
       />
+      
+      {/* Edit Modal */}
+      {editingListing && (
+        <ListingEditModal
+          listing={editingListing}
+          isOpen={!!editingListing}
+          onClose={() => setEditingListing(null)}
+          onSave={handleSaveListing}
+        />
+      )}
     </div>
   );
 };

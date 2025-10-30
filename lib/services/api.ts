@@ -25,6 +25,15 @@ export class ApiService {
     try { return localStorage.getItem(ApiService.tokenKey); } catch { return null; }
   }
 
+  static async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const headers = this.authHeaders(options.headers as HeadersInit);
+    const response = await fetch(`${BACKEND_URL}${endpoint}`, {
+      ...options,
+      headers
+    });
+    return this.handleResponse<T>(response);
+  }
+
   private static isTokenExpired(token: string): boolean {
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));

@@ -35,7 +35,7 @@ def create_contact(contact_data: ContactCreate, created_by: UUID) -> ContactOut:
                 cur.execute("""
                     INSERT INTO contacts (
                         first_name, last_name, email, phone, company, job_title,
-                        contact_type_id, assigned_to, location, notes, is_active,
+                        contact_type_id, assigned_to, address, notes, is_active,
                         created_by, created_at, updated_at
                     ) VALUES (
                         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
@@ -43,7 +43,7 @@ def create_contact(contact_data: ContactCreate, created_by: UUID) -> ContactOut:
                 """, (
                     contact_data.first_name, contact_data.last_name, contact_data.email,
                     contact_data.phone, contact_data.company, contact_data.job_title,
-                    contact_data.contact_type_id, contact_data.assigned_to, contact_data.location,
+                    contact_data.contact_type_id, contact_data.assigned_to, contact_data.address,
                     contact_data.notes, contact_data.is_active, created_by, datetime.now(), datetime.now()
                 ))
                 
@@ -77,7 +77,7 @@ def get_contact(contact_id: UUID) -> Optional[ContactOut]:
             with conn.cursor() as cur:
                 cur.execute("""
                     SELECT id, first_name, last_name, email, phone, company, job_title,
-                           contact_type_id, assigned_to, location, notes, is_active,
+                           contact_type_id, assigned_to, address, notes, is_active,
                            created_by, created_at, updated_at
                     FROM contacts WHERE id = %s
                 """, (contact_id,))
@@ -87,7 +87,7 @@ def get_contact(contact_id: UUID) -> Optional[ContactOut]:
                     return ContactOut(
                         id=result[0], first_name=result[1], last_name=result[2],
                         email=result[3], phone=result[4], company=result[5], job_title=result[6],
-                        contact_type_id=result[7], assigned_to=result[8], location=result[9],
+                        contact_type_id=result[7], assigned_to=result[8], address=result[9],
                         notes=result[10], is_active=result[11], created_by=result[12],
                         created_at=result[13], updated_at=result[14]
                     )
@@ -128,7 +128,7 @@ def update_contact(contact_id: UUID, contact_update: ContactUpdate) -> Optional[
                     UPDATE contacts SET {', '.join(update_fields)}
                     WHERE id = %s
                     RETURNING id, first_name, last_name, email, phone, company, job_title,
-                             contact_type_id, assigned_to, location, notes, is_active,
+                             contact_type_id, assigned_to, address, notes, is_active,
                              created_by, created_at, updated_at
                 """, values)
                 
@@ -137,7 +137,7 @@ def update_contact(contact_id: UUID, contact_update: ContactUpdate) -> Optional[
                     return ContactOut(
                         id=result[0], first_name=result[1], last_name=result[2],
                         email=result[3], phone=result[4], company=result[5], job_title=result[6],
-                        contact_type_id=result[7], assigned_to=result[8], location=result[9],
+                        contact_type_id=result[7], assigned_to=result[8], address=result[9],
                         notes=result[10], is_active=result[11], created_by=result[12],
                         created_at=result[13], updated_at=result[14]
                     )
@@ -202,7 +202,7 @@ def list_contacts(skip: int = 0, limit: int = 100, contact_type_id: Optional[int
                 
                 cur.execute(f"""
                     SELECT id, first_name, last_name, email, phone, company, job_title,
-                           contact_type_id, assigned_to, location, notes, is_active,
+                           contact_type_id, assigned_to, address, notes, is_active,
                            created_by, created_at, updated_at
                     FROM contacts {where_clause}
                     ORDER BY created_at DESC
@@ -215,7 +215,7 @@ def list_contacts(skip: int = 0, limit: int = 100, contact_type_id: Optional[int
                     contacts.append(ContactOut(
                         id=result[0], first_name=result[1], last_name=result[2],
                         email=result[3], phone=result[4], company=result[5], job_title=result[6],
-                        contact_type_id=result[7], assigned_to=result[8], location=result[9],
+                        contact_type_id=result[7], assigned_to=result[8], address=result[9],
                         notes=result[10], is_active=result[11], created_by=result[12],
                         created_at=result[13], updated_at=result[14]
                     ))

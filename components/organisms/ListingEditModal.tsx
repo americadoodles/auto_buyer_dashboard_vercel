@@ -15,6 +15,7 @@ import {
   createContact
 } from '../../lib/services/listingManagementApi';
 import { X, Plus, User, Phone, Mail, Building, Edit, Trash2, Save } from 'lucide-react';
+import { LeadCreateModal } from './LeadCreateModal';
 
 interface ListingEditModalProps {
   listing: Listing;
@@ -37,6 +38,7 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
   const [showContactSearch, setShowContactSearch] = useState(false);
   const [contactSearchTerm, setContactSearchTerm] = useState('');
   const [showNewContactForm, setShowNewContactForm] = useState(false);
+  const [isLeadCreateOpen, setIsLeadCreateOpen] = useState(false);
   const [newContactData, setNewContactData] = useState({
     first_name: '',
     last_name: '',
@@ -403,15 +405,26 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
                 <h3 className="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2">
                   Contacts
                 </h3>
-                <Button
-                  onClick={() => setShowContactSearch(true)}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add Contact
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={() => setIsLeadCreateOpen(true)}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Create Lead
+                  </Button>
+                  <Button
+                    onClick={() => setShowContactSearch(true)}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Contact
+                  </Button>
+                </div>
               </div>
 
               {/* Linked Contacts */}
@@ -684,6 +697,14 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
           </Button>
         </div>
       </div>
+      <LeadCreateModal
+        isOpen={isLeadCreateOpen}
+        onClose={() => setIsLeadCreateOpen(false)}
+        listingId={parseInt(listing.id)}
+        onCreated={async () => {
+          await loadListingContacts();
+        }}
+      />
     </div>
   );
 };

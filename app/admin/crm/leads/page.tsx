@@ -4,12 +4,14 @@ import React, { useState } from 'react';
 import { LeadManagement } from '../../../../components/organisms/LeadManagement';
 import { AdminLayout } from '../../../../components/templates/AdminLayout';
 import { useLeads, useLeadStatuses } from '../../../../lib/hooks/useLeads';
+import { LeadCreateModal } from '../../../../components/organisms/LeadCreateModal';
 
 export default function LeadsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<number | undefined>(undefined);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   const { leads, loading, error, refreshLeads } = useLeads({
     skip: (currentPage - 1) * pageSize,
@@ -29,14 +31,7 @@ export default function LeadsPage() {
   };
 
   const handleCreateLead = async () => {
-    try {
-      // Here you would call the API to create a new lead
-      console.log('Create lead clicked');
-      // Refresh the leads list
-      await refreshLeads();
-    } catch (error) {
-      console.error('Error creating lead:', error);
-    }
+    setIsCreateOpen(true);
   };
 
   const handleExportLeads = () => {
@@ -131,6 +126,13 @@ export default function LeadsPage() {
           onLeadClick={handleLeadClick}
           onCreateLead={handleCreateLead}
           onExportLeads={handleExportLeads}
+        />
+        <LeadCreateModal
+          isOpen={isCreateOpen}
+          onClose={() => setIsCreateOpen(false)}
+          onCreated={async () => {
+            await refreshLeads();
+          }}
         />
       </div>
     </AdminLayout>

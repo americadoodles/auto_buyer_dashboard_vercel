@@ -15,7 +15,8 @@ import {
   TrendingUp,
   AlertCircle,
   Check,
-  Settings
+  Settings,
+  X
 } from 'lucide-react';
 
 interface IconProps {
@@ -41,7 +42,8 @@ const iconMap: Record<string, LucideIcon> = {
   'trending-up': TrendingUp,
   'alert-circle': AlertCircle,
   'check': Check,
-  'settings': Settings
+  'settings': Settings,
+  'x': X
 };
 
 export const Icon: React.FC<IconProps> = ({ 

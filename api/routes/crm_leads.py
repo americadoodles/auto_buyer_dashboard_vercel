@@ -24,7 +24,8 @@ lead_router = APIRouter(prefix="/crm/leads", tags=["crm-leads"])
 # LEAD MANAGEMENT ENDPOINTS
 # ==============================================
 
-@lead_router.post("/", response_model=LeadOut)
+@lead_router.post("", include_in_schema=False, response_model=LeadOut)  # /api/crm/leads
+@lead_router.post("/", response_model=LeadOut)  # /api/crm/leads/
 def create_new_lead(
     lead: LeadCreate,
     current_user: UserOut = Depends(get_current_user)

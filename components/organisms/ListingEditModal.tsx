@@ -15,6 +15,7 @@ import {
   createContact
 } from '../../lib/services/listingManagementApi';
 import { X, Plus, User, Phone, Mail, Building, Edit, Trash2, Save } from 'lucide-react';
+import { LeadCreateModal } from './LeadCreateModal';
 
 interface ListingEditModalProps {
   listing: Listing;
@@ -37,6 +38,7 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
   const [showContactSearch, setShowContactSearch] = useState(false);
   const [contactSearchTerm, setContactSearchTerm] = useState('');
   const [showNewContactForm, setShowNewContactForm] = useState(false);
+  const [isLeadCreateOpen, setIsLeadCreateOpen] = useState(false);
   const [newContactData, setNewContactData] = useState({
     first_name: '',
     last_name: '',
@@ -174,7 +176,7 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div>
@@ -196,7 +198,7 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+        <div className="p-6 flex-1 overflow-y-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Vehicle Information */}
             <div className="space-y-4">
@@ -403,15 +405,26 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
                 <h3 className="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2">
                   Contacts
                 </h3>
-                <Button
-                  onClick={() => setShowContactSearch(true)}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add Contact
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={() => setIsLeadCreateOpen(true)}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Create Lead
+                  </Button>
+                  <Button
+                    onClick={() => setShowContactSearch(true)}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Contact
+                  </Button>
+                </div>
               </div>
 
               {/* Linked Contacts */}
@@ -479,7 +492,7 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
               {/* Contact Search Modal */}
               {showContactSearch && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                  <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+                  <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col">
                     <div className="flex items-center justify-between p-4 border-b">
                       <h3 className="text-lg font-semibold">Add Contact to Listing</h3>
                       <Button onClick={() => setShowContactSearch(false)} variant="outline" size="sm">
@@ -487,7 +500,7 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
                       </Button>
                     </div>
                     
-                    <div className="p-4 space-y-4">
+                    <div className="p-4 space-y-4 flex-1 overflow-y-auto">
                       <div>
                         <Input
                           placeholder="Search contacts..."
@@ -540,7 +553,7 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
               {/* New Contact Form */}
               {showNewContactForm && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                  <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+                  <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col">
                     <div className="flex items-center justify-between p-4 border-b">
                       <h3 className="text-lg font-semibold">Create New Contact</h3>
                       <Button onClick={() => setShowNewContactForm(false)} variant="outline" size="sm">
@@ -548,7 +561,7 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
                       </Button>
                     </div>
                     
-                    <div className="p-4 space-y-4">
+                    <div className="p-4 space-y-4 flex-1 overflow-y-auto">
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -684,6 +697,14 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
           </Button>
         </div>
       </div>
+      <LeadCreateModal
+        isOpen={isLeadCreateOpen}
+        onClose={() => setIsLeadCreateOpen(false)}
+        listingId={parseInt(listing.id)}
+        onCreated={async () => {
+          await loadListingContacts();
+        }}
+      />
     </div>
   );
 };

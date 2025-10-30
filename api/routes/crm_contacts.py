@@ -21,7 +21,8 @@ contact_router = APIRouter(prefix="/crm/contacts", tags=["crm-contacts"])
 # CONTACT MANAGEMENT ENDPOINTS
 # ==============================================
 
-@contact_router.post("/", response_model=ContactOut)
+@contact_router.post("", include_in_schema=False, response_model=ContactOut)  # /api/crm/contacts
+@contact_router.post("/", response_model=ContactOut)  # /api/crm/contacts/
 def create_new_contact(
     contact: ContactCreate,
     current_user: UserOut = Depends(get_current_user)
@@ -33,7 +34,8 @@ def create_new_contact(
         logging.error(f"Error creating contact: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to create contact")
 
-@contact_router.get("/", response_model=List[ContactOut])
+@contact_router.get("", include_in_schema=False, response_model=List[ContactOut])  # /api/crm/contacts
+@contact_router.get("/", response_model=List[ContactOut])  # /api/crm/contacts/
 def get_all_contacts(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),

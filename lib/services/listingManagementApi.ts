@@ -1,6 +1,6 @@
 import { Listing, ListingUpdate, ListingContactLink, ListingActivity, Contact } from '../types/listing';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL ?? '/api';
 
 // Helper function to get auth headers
 const getAuthHeaders = () => {
@@ -25,7 +25,7 @@ const handleResponse = async (response: Response) => {
 // ==============================================
 
 export const updateListing = async (listingId: number, updateData: ListingUpdate): Promise<Listing> => {
-  const response = await fetch(`${API_BASE}/api/listings/${listingId}`, {
+  const response = await fetch(`${API_BASE}/listings/${listingId}`, {
     method: 'PUT',
     headers: getAuthHeaders(),
     body: JSON.stringify(updateData),
@@ -35,7 +35,7 @@ export const updateListing = async (listingId: number, updateData: ListingUpdate
 };
 
 export const getListingDetails = async (listingId: number): Promise<Listing> => {
-  const response = await fetch(`${API_BASE}/api/listings/${listingId}`, {
+  const response = await fetch(`${API_BASE}/listings/${listingId}`, {
     method: 'GET',
     headers: getAuthHeaders(),
   });
@@ -51,7 +51,7 @@ export const linkContactToListing = async (
   listingId: number, 
   contactLink: ListingContactLink
 ): Promise<{ message: string; listing_id: number; contact_id: string }> => {
-  const response = await fetch(`${API_BASE}/api/listings/${listingId}/contacts`, {
+  const response = await fetch(`${API_BASE}/listings/${listingId}/contacts`, {
     method: 'POST',
     headers: getAuthHeaders(),
     body: JSON.stringify(contactLink),
@@ -64,7 +64,7 @@ export const unlinkContactFromListing = async (
   listingId: number, 
   contactId: string
 ): Promise<{ message: string; listing_id: number; contact_id: string }> => {
-  const response = await fetch(`${API_BASE}/api/listings/${listingId}/contacts/${contactId}`, {
+  const response = await fetch(`${API_BASE}/listings/${listingId}/contacts/${contactId}`, {
     method: 'DELETE',
     headers: getAuthHeaders(),
   });
@@ -73,7 +73,7 @@ export const unlinkContactFromListing = async (
 };
 
 export const getListingContacts = async (listingId: number): Promise<Contact[]> => {
-  const response = await fetch(`${API_BASE}/api/listings/${listingId}/contacts`, {
+  const response = await fetch(`${API_BASE}/listings/${listingId}/contacts`, {
     method: 'GET',
     headers: getAuthHeaders(),
   });
@@ -89,7 +89,7 @@ export const getListingActivities = async (
   listingId: number, 
   limit: number = 50
 ): Promise<ListingActivity[]> => {
-  const response = await fetch(`${API_BASE}/api/listings/${listingId}/activities?limit=${limit}`, {
+  const response = await fetch(`${API_BASE}/listings/${listingId}/activities?limit=${limit}`, {
     method: 'GET',
     headers: getAuthHeaders(),
   });
@@ -118,7 +118,7 @@ export const getContacts = async (params?: {
   if (params?.search) searchParams.append('search', params.search);
   if (params?.is_active !== undefined) searchParams.append('is_active', params.is_active.toString());
   
-  const response = await fetch(`${API_BASE}/api/crm/contacts?${searchParams}`, {
+  const response = await fetch(`${API_BASE}/crm/contacts?${searchParams}`, {
     method: 'GET',
     headers: getAuthHeaders(),
   });
@@ -142,7 +142,7 @@ export const createContact = async (contactData: {
   notes?: string;
   is_active?: boolean;
 }): Promise<Contact> => {
-  const response = await fetch(`${API_BASE}/api/crm/contacts`, {
+  const response = await fetch(`${API_BASE}/crm/contacts`, {
     method: 'POST',
     headers: getAuthHeaders(),
     body: JSON.stringify(contactData),
@@ -152,7 +152,7 @@ export const createContact = async (contactData: {
 };
 
 export const updateContact = async (contactId: string, updateData: Partial<Contact>): Promise<Contact> => {
-  const response = await fetch(`${API_BASE}/api/crm/contacts/${contactId}`, {
+  const response = await fetch(`${API_BASE}/crm/contacts/${contactId}`, {
     method: 'PUT',
     headers: getAuthHeaders(),
     body: JSON.stringify(updateData),
@@ -162,7 +162,7 @@ export const updateContact = async (contactId: string, updateData: Partial<Conta
 };
 
 export const deleteContact = async (contactId: string): Promise<{ message: string }> => {
-  const response = await fetch(`${API_BASE}/api/crm/contacts/${contactId}`, {
+  const response = await fetch(`${API_BASE}/crm/contacts/${contactId}`, {
     method: 'DELETE',
     headers: getAuthHeaders(),
   });
@@ -175,7 +175,7 @@ export const deleteContact = async (contactId: string): Promise<{ message: strin
 // ==============================================
 
 export const getContactTypes = async (): Promise<Array<{ id: number; name: string; description?: string }>> => {
-  const response = await fetch(`${API_BASE}/api/crm/contacts/types`, {
+  const response = await fetch(`${API_BASE}/crm/contacts/types`, {
     method: 'GET',
     headers: getAuthHeaders(),
   });

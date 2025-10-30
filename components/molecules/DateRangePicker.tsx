@@ -1,17 +1,19 @@
 import React from 'react';
-import { Calendar, X } from 'lucide-react';
+import { Calendar, X, RefreshCw } from 'lucide-react';
 import { Button } from '../atoms/Button';
 
 interface DateRangePickerProps {
   startDate: Date | null;
   endDate: Date | null;
   onDateChange: (start: Date | null, end: Date | null) => void;
+  onRefreshToday?: () => void;
 }
 
 export const DateRangePicker: React.FC<DateRangePickerProps> = ({
   startDate,
   endDate,
-  onDateChange
+  onDateChange,
+  onRefreshToday
 }) => {
   const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const date = e.target.value ? new Date(e.target.value) : null;
@@ -97,6 +99,58 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
             size="sm"
             onClick={() => {
               const today = new Date();
+              const start = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
+              const end = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+              onDateChange(start, end);
+            }}
+          >
+            Today
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const now = new Date();
+              const day = now.getDay();
+              const diffToMonday = (day === 0 ? 6 : day - 1); // Monday start
+              const start = new Date(now);
+              start.setHours(0,0,0,0);
+              start.setDate(now.getDate() - diffToMonday);
+              const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23,59,59,999);
+              onDateChange(start, end);
+            }}
+          >
+            This Week
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const now = new Date();
+              const start = new Date(now.getFullYear(), now.getMonth(), 1, 0,0,0,0);
+              const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23,59,59,999);
+              onDateChange(start, end);
+            }}
+          >
+            This Month
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const now = new Date();
+              const start = new Date(now.getFullYear(), 0, 1, 0,0,0,0);
+              const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23,59,59,999);
+              onDateChange(start, end);
+            }}
+          >
+            This Year
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const today = new Date();
               const weekAgo = new Date(today);
               weekAgo.setDate(today.getDate() - 7);
               onDateChange(weekAgo, today);
@@ -110,7 +164,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
             onClick={() => {
               const today = new Date();
               const monthAgo = new Date(today);
-              monthAgo.setMonth(today.getMonth() - 1);
+              monthAgo.setDate(today.getDate() - 30);
               onDateChange(monthAgo, today);
             }}
           >
@@ -139,6 +193,24 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
             }}
           >
             Last Year
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            className="inline-flex items-center gap-2"
+            onClick={() => {
+              if (onRefreshToday) {
+                onRefreshToday();
+              } else {
+                const today = new Date();
+                const start = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
+                const end = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+                onDateChange(start, end);
+              }
+            }}
+          >
+            <RefreshCw className="h-4 w-4" />
+            Refresh Today
           </Button>
         </div>
       </div>

@@ -14,6 +14,8 @@ export const useListings = () => {
   const [backendOk, setBackendOk] = useState<boolean | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [rowsPerPage, setRowsPerPage] = useState<number>(10);
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
 
   const sortedRows = useMemo(() => {
     const dir = sort.dir === 'asc' ? 1 : -1;
@@ -62,11 +64,17 @@ export const useListings = () => {
         setBackendOk(isHealthy);
         
         if (isHealthy) {
+          // Default to today's listings on first load
+          const today = new Date();
+          const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
+          const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+          setStartDate(startOfToday);
+          setEndDate(endOfToday);
           // Use appropriate API call based on user role
           const listings = user?.role === 'admin' 
-            ? await ApiService.getListings()
+            ? await ApiService.getListings({ start_date: startOfToday.toISOString(), end_date: endOfToday.toISOString() })
             : user?.id 
-              ? await ApiService.getBuyerListings(user.id)
+              ? await ApiService.getBuyerListings(user.id, { start_date: startOfToday.toISOString(), end_date: endOfToday.toISOString() })
               : [];
           if (mounted && Array.isArray(listings) && listings.length > 0) {
             setData(listings);
@@ -126,9 +134,9 @@ export const useListings = () => {
       setLoading(true);
       // Use appropriate API call based on user role
       const listings = user?.role === 'admin' 
-        ? await ApiService.getListings()
+        ? await ApiService.getListings({ start_date: startDate?.toISOString(), end_date: endDate?.toISOString() })
         : user?.id 
-          ? await ApiService.getBuyerListings(user.id)
+          ? await ApiService.getBuyerListings(user.id, { start_date: startDate?.toISOString(), end_date: endDate?.toISOString() })
           : [];
       setData(Array.isArray(listings) && listings.length ? listings : data);
       setBackendOk(true);
@@ -137,6 +145,32 @@ export const useListings = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadWithDateRange = async (start: Date | null, end: Date | null) => {
+    try {
+      setLoading(true);
+      setStartDate(start);
+      setEndDate(end);
+      const listings = user?.role === 'admin'
+        ? await ApiService.getListings({ start_date: start?.toISOString() || undefined, end_date: end?.toISOString() || undefined })
+        : user?.id
+          ? await ApiService.getBuyerListings(user.id, { start_date: start?.toISOString() || undefined, end_date: end?.toISOString() || undefined })
+          : [];
+      setData(Array.isArray(listings) ? listings : []);
+      setBackendOk(true);
+    } catch (e: any) {
+      showError('Load Failed', 'Failed to load listings: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const refreshToday = async () => {
+    const today = new Date();
+    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
+    const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+    await loadWithDateRange(startOfToday, endOfToday);
   };
 
   const notify = async (vin: string) => {
@@ -220,6 +254,10 @@ export const useListings = () => {
     rescoreVisible,
     seedBackend,
     loadFromBackend,
+    loadWithDateRange,
+    refreshToday,
+    startDate,
+    endDate,
     notify,
     notifySlack,
     triggerWorkflow

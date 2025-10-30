@@ -1,89 +1,119 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { LeadManagement } from '../../../../components/organisms/LeadManagement';
 import { AdminLayout } from '../../../../components/templates/AdminLayout';
-
-// Mock data for leads
-const mockLeads = [
-  {
-    id: '1',
-    first_name: 'John',
-    last_name: 'Smith',
-    email: 'john.smith@email.com',
-    phone: '+1-555-0123',
-    company: 'Smith Industries',
-    lead_score: 85,
-    status: {
-      id: 1,
-      name: 'New',
-      color: 'blue'
-    },
-    assigned_to: {
-      id: '1',
-      username: 'sales_rep_1'
-    },
-    created_at: '2024-01-15T10:30:00Z',
-    updated_at: '2024-01-15T10:30:00Z'
-  },
-  {
-    id: '2',
-    first_name: 'Sarah',
-    last_name: 'Johnson',
-    email: 'sarah.j@email.com',
-    phone: '+1-555-0124',
-    company: 'Johnson Corp',
-    lead_score: 92,
-    status: {
-      id: 2,
-      name: 'Qualified',
-      color: 'green'
-    },
-    assigned_to: {
-      id: '2',
-      username: 'sales_rep_2'
-    },
-    created_at: '2024-01-14T14:20:00Z',
-    updated_at: '2024-01-15T09:15:00Z'
-  },
-  {
-    id: '3',
-    first_name: 'Mike',
-    last_name: 'Davis',
-    email: 'mike.davis@email.com',
-    phone: '+1-555-0125',
-    company: 'Davis Enterprises',
-    lead_score: 78,
-    status: {
-      id: 3,
-      name: 'Contacted',
-      color: 'yellow'
-    },
-    assigned_to: {
-      id: '1',
-      username: 'sales_rep_1'
-    },
-    created_at: '2024-01-13T16:45:00Z',
-    updated_at: '2024-01-14T11:30:00Z'
-  }
-];
+import { useLeads, useLeadStatuses } from '../../../../lib/hooks/useLeads';
 
 export default function LeadsPage() {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<number | undefined>(undefined);
+
+  const { leads, loading, error, refreshLeads } = useLeads({
+    skip: (currentPage - 1) * pageSize,
+    limit: pageSize,
+    search: searchTerm || undefined,
+    status_id: statusFilter
+  });
+
+  const { statuses } = useLeadStatuses();
+
   const handlePageChange = (page: number) => {
-    console.log('Page changed to:', page);
+    setCurrentPage(page);
   };
 
   const handleLeadClick = (leadId: string) => {
     console.log('Lead clicked:', leadId);
   };
 
-  const handleCreateLead = () => {
-    console.log('Create lead clicked');
+  const handleCreateLead = async () => {
+    try {
+      // Here you would call the API to create a new lead
+      console.log('Create lead clicked');
+      // Refresh the leads list
+      await refreshLeads();
+    } catch (error) {
+      console.error('Error creating lead:', error);
+    }
   };
 
   const handleExportLeads = () => {
     console.log('Export leads clicked');
   };
+
+  const handleSearch = (search: string) => {
+    setSearchTerm(search);
+    setCurrentPage(1); // Reset to first page when searching
+  };
+
+  const handleStatusFilter = (statusId: number | undefined) => {
+    setStatusFilter(statusId);
+    setCurrentPage(1); // Reset to first page when filtering
+  };
+
+  // Transform leads data to match component expectations
+  const transformedLeads = leads.map(lead => ({
+    ...lead,
+    status: {
+      id: lead.lead_status_id || 0,
+      name: statuses.find(s => s.id === lead.lead_status_id)?.name || 'Unknown',
+      color: statuses.find(s => s.id === lead.lead_status_id)?.color_code || 'gray'
+    },
+    assigned_to: {
+      id: lead.assigned_to || '',
+      username: lead.assigned_to || 'Unassigned' // This would need to be fetched from user data
+    }
+  }));
+
+  // Show loading state
+  if (loading && leads.length === 0) {
+    return (
+      <AdminLayout>
+        <div className="p-6">
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <AdminLayout>
+        <div className="p-6">
+          <div className="bg-red-50 border border-red-200 rounded-md p-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">
+                  Error loading leads
+                </h3>
+                <div className="mt-2 text-sm text-red-700">
+                  <p>{error}</p>
+                </div>
+                <div className="mt-4">
+                  <button
+                    onClick={refreshLeads}
+                    className="bg-red-100 px-3 py-2 rounded-md text-sm font-medium text-red-800 hover:bg-red-200"
+                  >
+                    Try again
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
@@ -93,10 +123,10 @@ export default function LeadsPage() {
           <p className="text-gray-600 mt-1">Manage and track your sales leads</p>
         </div>
         <LeadManagement 
-          leads={mockLeads}
-          totalLeads={mockLeads.length}
-          currentPage={1}
-          totalPages={1}
+          leads={transformedLeads}
+          totalLeads={leads.length}
+          currentPage={currentPage}
+          totalPages={Math.ceil(leads.length / pageSize)}
           onPageChange={handlePageChange}
           onLeadClick={handleLeadClick}
           onCreateLead={handleCreateLead}

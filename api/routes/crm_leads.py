@@ -36,7 +36,8 @@ def create_new_lead(
         logging.error(f"Error creating lead: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to create lead")
 
-@lead_router.get("/", response_model=List[LeadOut])
+@lead_router.get("", include_in_schema=False, response_model=List[LeadOut])  # /api/crm/leads
+@lead_router.get("/", response_model=List[LeadOut])  # /api/crm/leads/
 def get_all_leads(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
@@ -74,88 +75,6 @@ def get_lead_metrics(
     except Exception as e:
         logging.error(f"Error fetching lead metrics: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to fetch lead metrics")
-
-@lead_router.get("/{lead_id}", response_model=LeadOut)
-def get_lead_by_id(
-    lead_id: UUID,
-    current_user: UserOut = Depends(get_current_user)
-):
-    """Get a specific lead by ID"""
-    try:
-        lead = get_lead(lead_id)
-        if not lead:
-            raise HTTPException(status_code=404, detail="Lead not found")
-        return lead
-    except HTTPException:
-        raise
-    except Exception as e:
-        logging.error(f"Error fetching lead {lead_id}: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to fetch lead")
-
-@lead_router.put("/{lead_id}", response_model=LeadOut)
-def update_lead_by_id(
-    lead_id: UUID,
-    lead_update: LeadUpdate,
-    current_user: UserOut = Depends(get_current_user)
-):
-    """Update a specific lead"""
-    try:
-        updated_lead = update_lead(lead_id, lead_update)
-        if not updated_lead:
-            raise HTTPException(status_code=404, detail="Lead not found")
-        return updated_lead
-    except HTTPException:
-        raise
-    except Exception as e:
-        logging.error(f"Error updating lead {lead_id}: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to update lead")
-
-@lead_router.delete("/{lead_id}")
-def delete_lead_by_id(
-    lead_id: UUID,
-    current_user: UserOut = Depends(require_admin)
-):
-    """Delete a specific lead (admin only)"""
-    try:
-        success = delete_lead(lead_id)
-        if not success:
-            raise HTTPException(status_code=404, detail="Lead not found")
-        return {"message": "Lead deleted successfully"}
-    except HTTPException:
-        raise
-    except Exception as e:
-        logging.error(f"Error deleting lead {lead_id}: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to delete lead")
-
-# ==============================================
-# LEAD ACTIVITY ENDPOINTS
-# ==============================================
-
-@lead_router.post("/{lead_id}/activities", response_model=LeadActivityOut)
-def create_lead_activity(
-    lead_id: UUID,
-    activity: LeadActivityCreate,
-    current_user: UserOut = Depends(get_current_user)
-):
-    """Create a new activity for a lead"""
-    try:
-        activity.lead_id = lead_id
-        return create_lead_activity(activity, current_user.id)
-    except Exception as e:
-        logging.error(f"Error creating lead activity: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to create lead activity")
-
-@lead_router.get("/{lead_id}/activities", response_model=List[LeadActivityOut])
-def get_lead_activities_list(
-    lead_id: UUID,
-    current_user: UserOut = Depends(get_current_user)
-):
-    """Get all activities for a specific lead"""
-    try:
-        return get_lead_activities(lead_id)
-    except Exception as e:
-        logging.error(f"Error fetching lead activities: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to fetch lead activities")
 
 # ==============================================
 # LEAD SOURCE MANAGEMENT ENDPOINTS
@@ -280,3 +199,85 @@ def delete_lead_status_endpoint(
     except Exception as e:
         logging.error(f"Error deleting lead status: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to delete lead status")
+
+@lead_router.get("/{lead_id}", response_model=LeadOut)
+def get_lead_by_id(
+    lead_id: UUID,
+    current_user: UserOut = Depends(get_current_user)
+):
+    """Get a specific lead by ID"""
+    try:
+        lead = get_lead(lead_id)
+        if not lead:
+            raise HTTPException(status_code=404, detail="Lead not found")
+        return lead
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error fetching lead {lead_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to fetch lead")
+
+@lead_router.put("/{lead_id}", response_model=LeadOut)
+def update_lead_by_id(
+    lead_id: UUID,
+    lead_update: LeadUpdate,
+    current_user: UserOut = Depends(get_current_user)
+):
+    """Update a specific lead"""
+    try:
+        updated_lead = update_lead(lead_id, lead_update)
+        if not updated_lead:
+            raise HTTPException(status_code=404, detail="Lead not found")
+        return updated_lead
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error updating lead {lead_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to update lead")
+
+@lead_router.delete("/{lead_id}")
+def delete_lead_by_id(
+    lead_id: UUID,
+    current_user: UserOut = Depends(require_admin)
+):
+    """Delete a specific lead (admin only)"""
+    try:
+        success = delete_lead(lead_id)
+        if not success:
+            raise HTTPException(status_code=404, detail="Lead not found")
+        return {"message": "Lead deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error deleting lead {lead_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to delete lead")
+
+# ==============================================
+# LEAD ACTIVITY ENDPOINTS
+# ==============================================
+
+@lead_router.post("/{lead_id}/activities", response_model=LeadActivityOut)
+def create_lead_activity(
+    lead_id: UUID,
+    activity: LeadActivityCreate,
+    current_user: UserOut = Depends(get_current_user)
+):
+    """Create a new activity for a lead"""
+    try:
+        activity.lead_id = lead_id
+        return create_lead_activity(activity, current_user.id)
+    except Exception as e:
+        logging.error(f"Error creating lead activity: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to create lead activity")
+
+@lead_router.get("/{lead_id}/activities", response_model=List[LeadActivityOut])
+def get_lead_activities_list(
+    lead_id: UUID,
+    current_user: UserOut = Depends(get_current_user)
+):
+    """Get all activities for a specific lead"""
+    try:
+        return get_lead_activities(lead_id)
+    except Exception as e:
+        logging.error(f"Error fetching lead activities: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to fetch lead activities")

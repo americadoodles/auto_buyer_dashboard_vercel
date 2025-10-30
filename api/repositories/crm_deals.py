@@ -36,18 +36,18 @@ def create_deal(deal_data: DealCreate, created_by: UUID) -> DealOut:
             with conn.cursor() as cur:
                 cur.execute("""
                     INSERT INTO deals (
-                        title, description, contact_id, assigned_to, deal_stage_id,
+                        name, description, contact_id, assigned_to, deal_stage_id,
                         deal_category_id, expected_close_date, actual_close_date,
-                        deal_value, probability, notes, is_active, created_by, created_at, updated_at
+                        deal_value, probability, notes, is_won, is_lost, created_by, created_at, updated_at
                     ) VALUES (
-                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                     ) RETURNING id, created_at, updated_at
                 """, (
                     deal_data.title, deal_data.description, deal_data.contact_id,
                     deal_data.assigned_to, deal_data.deal_stage_id, deal_data.deal_category_id,
                     deal_data.expected_close_date, deal_data.actual_close_date,
                     deal_data.deal_value, deal_data.probability, deal_data.notes,
-                    deal_data.is_active, created_by, datetime.now(), datetime.now()
+                    deal_data.is_won or False, deal_data.is_lost or False, created_by, datetime.now(), datetime.now()
                 ))
                 
                 result = cur.fetchone()
@@ -79,9 +79,9 @@ def get_deal(deal_id: UUID) -> Optional[DealOut]:
         try:
             with conn.cursor() as cur:
                 cur.execute("""
-                    SELECT id, title, description, contact_id, assigned_to, deal_stage_id,
+                    SELECT id, name, description, contact_id, assigned_to, deal_stage_id,
                            deal_category_id, expected_close_date, actual_close_date,
-                           deal_value, probability, notes, is_active, created_by, created_at, updated_at
+                           deal_value, probability, notes, is_won, is_lost, created_by, created_at, updated_at
                     FROM deals WHERE id = %s
                 """, (deal_id,))
                 
@@ -92,7 +92,7 @@ def get_deal(deal_id: UUID) -> Optional[DealOut]:
                         assigned_to=result[4], deal_stage_id=result[5], deal_category_id=result[6],
                         expected_close_date=result[7], actual_close_date=result[8],
                         deal_value=result[9], probability=result[10], notes=result[11],
-                        is_active=result[12], created_by=result[13], created_at=result[14], updated_at=result[15]
+                        is_won=result[12], is_lost=result[13], created_by=result[14], created_at=result[15], updated_at=result[16]
                     )
                 return None
                 
@@ -117,7 +117,10 @@ def update_deal(deal_id: UUID, deal_update: DealUpdate) -> Optional[DealOut]:
                 
                 for field, value in deal_update.model_dump(exclude_unset=True).items():
                     if value is not None:
-                        update_fields.append(f"{field} = %s")
+                        if field == 'title':
+                            update_fields.append("name = %s")
+                        else:
+                            update_fields.append(f"{field} = %s")
                         values.append(value)
                 
                 if not update_fields:
@@ -130,9 +133,9 @@ def update_deal(deal_id: UUID, deal_update: DealUpdate) -> Optional[DealOut]:
                 cur.execute(f"""
                     UPDATE deals SET {', '.join(update_fields)}
                     WHERE id = %s
-                    RETURNING id, title, description, contact_id, assigned_to, deal_stage_id,
+                    RETURNING id, name, description, contact_id, assigned_to, deal_stage_id,
                              deal_category_id, expected_close_date, actual_close_date,
-                             deal_value, probability, notes, is_active, created_by, created_at, updated_at
+                             deal_value, probability, notes, is_won, is_lost, created_by, created_at, updated_at
                 """, values)
                 
                 result = cur.fetchone()
@@ -142,7 +145,7 @@ def update_deal(deal_id: UUID, deal_update: DealUpdate) -> Optional[DealOut]:
                         assigned_to=result[4], deal_stage_id=result[5], deal_category_id=result[6],
                         expected_close_date=result[7], actual_close_date=result[8],
                         deal_value=result[9], probability=result[10], notes=result[11],
-                        is_active=result[12], created_by=result[13], created_at=result[14], updated_at=result[15]
+                        is_won=result[12], is_lost=result[13], created_by=result[14], created_at=result[15], updated_at=result[16]
                     )
                 return None
                 
@@ -168,9 +171,10 @@ def delete_deal(deal_id: UUID) -> bool:
             logging.error(f"Error deleting deal: {str(e)}")
             return False
 
-def list_deals(skip: int = 0, limit: int = 100, deal_stage_id: Optional[int] = None,
-               deal_category_id: Optional[int] = None, assigned_to: Optional[UUID] = None,
-               search: Optional[str] = None, is_active: Optional[bool] = None) -> List[DealOut]:
+def list_deals(skip: int = 0, limit: int = 100, stage_id: Optional[int] = None,
+               category_id: Optional[int] = None, assigned_to: Optional[UUID] = None,
+               contact_id: Optional[UUID] = None, search: Optional[str] = None, 
+               is_won: Optional[bool] = None, is_lost: Optional[bool] = None) -> List[DealOut]:
     """List deals with optional filtering"""
     if not DB_ENABLED:
         return []
@@ -184,33 +188,39 @@ def list_deals(skip: int = 0, limit: int = 100, deal_stage_id: Optional[int] = N
                 where_conditions = []
                 params = []
                 
-                if deal_stage_id is not None:
+                if stage_id is not None:
                     where_conditions.append("deal_stage_id = %s")
-                    params.append(deal_stage_id)
+                    params.append(stage_id)
                 
-                if deal_category_id is not None:
+                if category_id is not None:
                     where_conditions.append("deal_category_id = %s")
-                    params.append(deal_category_id)
+                    params.append(category_id)
+                
+                if contact_id is not None:
+                    where_conditions.append("contact_id = %s")
+                    params.append(contact_id)
                 
                 if assigned_to is not None:
                     where_conditions.append("assigned_to = %s")
                     params.append(assigned_to)
                 
-                if is_active is not None:
-                    where_conditions.append("is_active = %s")
-                    params.append(is_active)
+                if is_won is not None:
+                    where_conditions.append("actual_close_date IS NOT NULL AND deal_value > 0")
+                
+                if is_lost is not None:
+                    where_conditions.append("actual_close_date IS NOT NULL AND deal_value = 0")
                 
                 if search:
-                    where_conditions.append("(title ILIKE %s OR description ILIKE %s)")
+                    where_conditions.append("(name ILIKE %s OR description ILIKE %s)")
                     search_param = f"%{search}%"
                     params.extend([search_param, search_param])
                 
                 where_clause = "WHERE " + " AND ".join(where_conditions) if where_conditions else ""
                 
                 cur.execute(f"""
-                    SELECT id, title, description, contact_id, assigned_to, deal_stage_id,
+                    SELECT id, name, description, contact_id, assigned_to, deal_stage_id,
                            deal_category_id, expected_close_date, actual_close_date,
-                           deal_value, probability, notes, is_active, created_by, created_at, updated_at
+                           deal_value, probability, notes, is_won, is_lost, created_by, created_at, updated_at
                     FROM deals {where_clause}
                     ORDER BY created_at DESC
                     LIMIT %s OFFSET %s
@@ -224,7 +234,7 @@ def list_deals(skip: int = 0, limit: int = 100, deal_stage_id: Optional[int] = N
                         assigned_to=result[4], deal_stage_id=result[5], deal_category_id=result[6],
                         expected_close_date=result[7], actual_close_date=result[8],
                         deal_value=result[9], probability=result[10], notes=result[11],
-                        is_active=result[12], created_by=result[13], created_at=result[14], updated_at=result[15]
+                        is_won=result[12], is_lost=result[13], created_by=result[14], created_at=result[15], updated_at=result[16]
                     ))
                 
                 return deals
@@ -578,7 +588,7 @@ def get_deal_pipeline() -> List[DealPipeline]:
                         COALESCE(SUM(d.deal_value), 0) as total_value,
                         COALESCE(AVG(d.probability), 0) as avg_probability
                     FROM deal_stages ds
-                    LEFT JOIN deals d ON ds.id = d.deal_stage_id AND d.is_active = true
+                    LEFT JOIN deals d ON ds.id = d.deal_stage_id AND d.is_won = false AND d.is_lost = false
                     WHERE ds.is_active = true
                     GROUP BY ds.id, ds.name, ds.color_code, ds.sort_order
                     ORDER BY ds.sort_order
@@ -618,11 +628,11 @@ def get_sales_performance_metrics() -> SalesPerformanceMetrics:
                 cur.execute("""
                     SELECT 
                         COUNT(*) as total_deals,
-                        COUNT(CASE WHEN is_active = true THEN 1 END) as active_deals,
+                        COUNT(CASE WHEN is_won = false AND is_lost = false THEN 1 END) as active_deals,
                         COUNT(CASE WHEN actual_close_date IS NOT NULL THEN 1 END) as closed_deals,
-                        COUNT(CASE WHEN actual_close_date IS NOT NULL AND deal_value > 0 THEN 1 END) as won_deals,
+                        COUNT(CASE WHEN is_won = true THEN 1 END) as won_deals,
                         COALESCE(SUM(deal_value), 0) as total_value,
-                        COALESCE(SUM(CASE WHEN actual_close_date IS NOT NULL THEN deal_value ELSE 0 END), 0) as won_value,
+                        COALESCE(SUM(CASE WHEN is_won = true THEN deal_value ELSE 0 END), 0) as won_value,
                         COALESCE(AVG(deal_value), 0) as avg_deal_size
                     FROM deals
                 """)

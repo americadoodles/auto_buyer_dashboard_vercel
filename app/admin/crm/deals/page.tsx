@@ -1,144 +1,152 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { DealPipeline } from '../../../../components/organisms/DealPipeline';
 import { AdminLayout } from '../../../../components/templates/AdminLayout';
-
-// Mock data for deals
-const mockDeals = [
-  {
-    id: '1',
-    name: '2023 Honda Civic Sale',
-    description: 'Sale of 2023 Honda Civic to John Smith',
-    contact: {
-      id: '1',
-      first_name: 'John',
-      last_name: 'Smith'
-    },
-    deal_value: 25000,
-    probability: 75,
-    expected_close_date: '2024-02-15',
-    deal_stage: {
-      id: 1,
-      name: 'Proposal',
-      color: 'blue'
-    },
-    deal_category: {
-      id: 1,
-      name: 'Vehicle Sale'
-    },
-    assigned_to: {
-      id: '1',
-      username: 'sales_rep_1'
-    },
-    is_won: false,
-    is_lost: false,
-    created_at: '2024-01-10T09:00:00Z',
-    updated_at: '2024-01-15T10:30:00Z'
-  },
-  {
-    id: '2',
-    name: '2022 Toyota Camry Sale',
-    description: 'Sale of 2022 Toyota Camry to Sarah Johnson',
-    contact: {
-      id: '2',
-      first_name: 'Sarah',
-      last_name: 'Johnson'
-    },
-    deal_value: 28000,
-    probability: 90,
-    expected_close_date: '2024-01-25',
-    deal_stage: {
-      id: 2,
-      name: 'Negotiation',
-      color: 'yellow'
-    },
-    deal_category: {
-      id: 1,
-      name: 'Vehicle Sale'
-    },
-    assigned_to: {
-      id: '2',
-      username: 'sales_rep_2'
-    },
-    is_won: false,
-    is_lost: false,
-    created_at: '2024-01-08T11:15:00Z',
-    updated_at: '2024-01-14T14:20:00Z'
-  },
-  {
-    id: '3',
-    name: '2023 BMW 3 Series Sale',
-    description: 'Sale of 2023 BMW 3 Series to Mike Davis',
-    contact: {
-      id: '3',
-      first_name: 'Mike',
-      last_name: 'Davis'
-    },
-    deal_value: 45000,
-    probability: 100,
-    expected_close_date: '2024-01-20',
-    deal_stage: {
-      id: 3,
-      name: 'Closed Won',
-      color: 'green'
-    },
-    deal_category: {
-      id: 1,
-      name: 'Vehicle Sale'
-    },
-    assigned_to: {
-      id: '1',
-      username: 'sales_rep_1'
-    },
-    is_won: true,
-    is_lost: false,
-    created_at: '2024-01-05T16:45:00Z',
-    updated_at: '2024-01-20T09:15:00Z'
-  }
-];
-
-// Mock data for deal stages
-const mockDealStages = [
-  {
-    id: 1,
-    name: 'Proposal',
-    count: 1,
-    value: 25000,
-    color: 'blue'
-  },
-  {
-    id: 2,
-    name: 'Negotiation',
-    count: 1,
-    value: 28000,
-    color: 'yellow'
-  },
-  {
-    id: 3,
-    name: 'Closed Won',
-    count: 1,
-    value: 45000,
-    color: 'green'
-  }
-];
+import { useDeals, useDealStages, useDealPipeline } from '../../../../lib/hooks/useDeals';
 
 export default function DealsPage() {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [stageFilter, setStageFilter] = useState<number | undefined>(undefined);
+  const [categoryFilter, setCategoryFilter] = useState<number | undefined>(undefined);
+
+  const { deals, loading, error, refreshDeals } = useDeals({
+    skip: (currentPage - 1) * pageSize,
+    limit: pageSize,
+    search: searchTerm || undefined,
+    stage_id: stageFilter,
+    category_id: categoryFilter
+  });
+
+  const { stages } = useDealStages();
+  const { pipeline } = useDealPipeline();
+
   const handlePageChange = (page: number) => {
-    console.log('Page changed to:', page);
+    setCurrentPage(page);
   };
 
   const handleDealClick = (dealId: string) => {
     console.log('Deal clicked:', dealId);
   };
 
-  const handleCreateDeal = () => {
-    console.log('Create deal clicked');
+  const handleCreateDeal = async () => {
+    try {
+      // Here you would call the API to create a new deal
+      console.log('Create deal clicked');
+      // Refresh the deals list
+      await refreshDeals();
+    } catch (error) {
+      console.error('Error creating deal:', error);
+    }
   };
 
   const handleExportDeals = () => {
     console.log('Export deals clicked');
   };
+
+  const handleSearch = (search: string) => {
+    setSearchTerm(search);
+    setCurrentPage(1); // Reset to first page when searching
+  };
+
+  const handleStageFilter = (stageId: number | undefined) => {
+    setStageFilter(stageId);
+    setCurrentPage(1); // Reset to first page when filtering
+  };
+
+  const handleCategoryFilter = (categoryId: number | undefined) => {
+    setCategoryFilter(categoryId);
+    setCurrentPage(1); // Reset to first page when filtering
+  };
+
+  // Transform deals data to match component expectations
+  const transformedDeals = deals.map(deal => ({
+    ...deal,
+    name: deal.title, // Map title to name for component compatibility
+    description: deal.description || '', // Ensure description is always a string
+    deal_value: deal.deal_value || 0, // Ensure deal_value is always a number
+    probability: deal.probability || 0, // Ensure probability is always a number
+    expected_close_date: deal.expected_close_date || new Date().toISOString(), // Ensure date is always a string
+    is_won: deal.is_won || false, // Ensure is_won is always a boolean
+    is_lost: deal.is_lost || false, // Ensure is_lost is always a boolean
+    contact: {
+      id: deal.contact_id || '',
+      first_name: 'Contact', // This would need to be fetched from contact data
+      last_name: 'Name'
+    },
+    deal_stage: {
+      id: deal.deal_stage_id || 0,
+      name: stages.find(s => s.id === deal.deal_stage_id)?.name || 'Unknown',
+      color: stages.find(s => s.id === deal.deal_stage_id)?.color_code || 'gray'
+    },
+    deal_category: {
+      id: deal.deal_category_id || 0,
+      name: 'Category' // This would need to be fetched from category data
+    },
+    assigned_to: {
+      id: deal.assigned_to || '',
+      username: deal.assigned_to || 'Unassigned' // This would need to be fetched from user data
+    }
+  }));
+
+  // Transform pipeline data to match component expectations
+  const transformedPipeline = pipeline.map(stage => ({
+    id: stage.stage_id,
+    name: stage.stage_name,
+    count: stage.deal_count,
+    value: stage.total_value,
+    color: stage.color_code
+  }));
+
+  // Show loading state
+  if (loading && deals.length === 0) {
+    return (
+      <AdminLayout>
+        <div className="p-6">
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <AdminLayout>
+        <div className="p-6">
+          <div className="bg-red-50 border border-red-200 rounded-md p-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">
+                  Error loading deals
+                </h3>
+                <div className="mt-2 text-sm text-red-700">
+                  <p>{error}</p>
+                </div>
+                <div className="mt-4">
+                  <button
+                    onClick={refreshDeals}
+                    className="bg-red-100 px-3 py-2 rounded-md text-sm font-medium text-red-800 hover:bg-red-200"
+                  >
+                    Try again
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
@@ -148,11 +156,11 @@ export default function DealsPage() {
           <p className="text-gray-600 mt-1">Track and manage your sales opportunities</p>
         </div>
         <DealPipeline 
-          deals={mockDeals}
-          dealStages={mockDealStages}
-          totalDeals={mockDeals.length}
-          currentPage={1}
-          totalPages={1}
+          deals={transformedDeals}
+          dealStages={transformedPipeline}
+          totalDeals={deals.length}
+          currentPage={currentPage}
+          totalPages={Math.ceil(deals.length / pageSize)}
           onPageChange={handlePageChange}
           onDealClick={handleDealClick}
           onCreateDeal={handleCreateDeal}

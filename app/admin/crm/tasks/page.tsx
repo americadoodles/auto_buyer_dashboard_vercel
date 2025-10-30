@@ -1,126 +1,167 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { TaskManagement } from '../../../../components/organisms/TaskManagement';
 import { AdminLayout } from '../../../../components/templates/AdminLayout';
-
-// Mock data for tasks
-const mockTasks = [
-  {
-    id: '1',
-    title: 'Follow up with John Smith',
-    description: 'Call to discuss Honda Civic pricing',
-    priority: {
-      id: 1,
-      name: 'High',
-      color: 'red'
-    },
-    status: {
-      id: 1,
-      name: 'Pending',
-      color: 'yellow'
-    },
-    assigned_to: {
-      id: '1',
-      username: 'sales_rep_1'
-    },
-    due_date: '2024-01-20',
-    completed_at: null,
-    related_lead: {
-      id: '1',
-      first_name: 'John',
-      last_name: 'Smith'
-    },
-    related_contact: null,
-    related_deal: null,
-    created_at: '2024-01-15T10:30:00Z',
-    updated_at: '2024-01-15T10:30:00Z'
-  },
-  {
-    id: '2',
-    title: 'Send proposal to Sarah Johnson',
-    description: 'Email detailed proposal for Toyota Camry',
-    priority: {
-      id: 2,
-      name: 'Medium',
-      color: 'yellow'
-    },
-    status: {
-      id: 2,
-      name: 'In Progress',
-      color: 'blue'
-    },
-    assigned_to: {
-      id: '2',
-      username: 'sales_rep_2'
-    },
-    due_date: '2024-01-18',
-    completed_at: null,
-    related_lead: null,
-    related_contact: {
-      id: '2',
-      first_name: 'Sarah',
-      last_name: 'Johnson'
-    },
-    related_deal: null,
-    created_at: '2024-01-14T14:20:00Z',
-    updated_at: '2024-01-14T14:20:00Z'
-  },
-  {
-    id: '3',
-    title: 'Schedule test drive',
-    description: 'Arrange BMW 3 Series test drive',
-    priority: {
-      id: 3,
-      name: 'Low',
-      color: 'green'
-    },
-    status: {
-      id: 3,
-      name: 'Completed',
-      color: 'green'
-    },
-    assigned_to: {
-      id: '1',
-      username: 'sales_rep_1'
-    },
-    due_date: '2024-01-16',
-    completed_at: '2024-01-16T14:30:00Z',
-    related_lead: null,
-    related_contact: {
-      id: '3',
-      first_name: 'Mike',
-      last_name: 'Davis'
-    },
-    related_deal: {
-      id: '3',
-      name: '2023 BMW 3 Series Sale'
-    },
-    created_at: '2024-01-13T16:45:00Z',
-    updated_at: '2024-01-16T14:30:00Z'
-  }
-];
+import { useTasks, useTaskPriorities, useTaskStatuses } from '../../../../lib/hooks/useTasks';
 
 export default function TasksPage() {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [priorityFilter, setPriorityFilter] = useState<number | undefined>(undefined);
+  const [statusFilter, setStatusFilter] = useState<number | undefined>(undefined);
+  const [assignedToFilter, setAssignedToFilter] = useState<string | undefined>(undefined);
+
+  const { tasks, loading, error, refreshTasks } = useTasks({
+    skip: (currentPage - 1) * pageSize,
+    limit: pageSize,
+    search: searchTerm || undefined,
+    priority_id: priorityFilter,
+    status_id: statusFilter,
+    assigned_to: assignedToFilter
+  });
+
+  const { priorities } = useTaskPriorities();
+  const { statuses } = useTaskStatuses();
+
   const handlePageChange = (page: number) => {
-    console.log('Page changed to:', page);
+    setCurrentPage(page);
   };
 
   const handleTaskClick = (taskId: string) => {
     console.log('Task clicked:', taskId);
   };
 
-  const handleCreateTask = () => {
-    console.log('Create task clicked');
+  const handleCreateTask = async () => {
+    try {
+      // Here you would call the API to create a new task
+      console.log('Create task clicked');
+      // Refresh the tasks list
+      await refreshTasks();
+    } catch (error) {
+      console.error('Error creating task:', error);
+    }
   };
 
   const handleExportTasks = () => {
     console.log('Export tasks clicked');
   };
 
-  const handleCompleteTask = (taskId: string) => {
-    console.log('Complete task clicked:', taskId);
+  const handleCompleteTask = async (taskId: string) => {
+    try {
+      // Here you would call the API to complete the task
+      console.log('Complete task clicked:', taskId);
+      // Refresh the tasks list
+      await refreshTasks();
+    } catch (error) {
+      console.error('Error completing task:', error);
+    }
   };
+
+  const handleSearch = (search: string) => {
+    setSearchTerm(search);
+    setCurrentPage(1); // Reset to first page when searching
+  };
+
+  const handlePriorityFilter = (priorityId: number | undefined) => {
+    setPriorityFilter(priorityId);
+    setCurrentPage(1); // Reset to first page when filtering
+  };
+
+  const handleStatusFilter = (statusId: number | undefined) => {
+    setStatusFilter(statusId);
+    setCurrentPage(1); // Reset to first page when filtering
+  };
+
+  const handleAssignedToFilter = (assignedTo: string | undefined) => {
+    setAssignedToFilter(assignedTo);
+    setCurrentPage(1); // Reset to first page when filtering
+  };
+
+  // Transform tasks data to match component expectations
+  const transformedTasks = tasks.map(task => ({
+    ...task,
+    description: task.description || '', // Ensure description is always a string
+    priority: {
+      id: task.priority_id || 0,
+      name: priorities.find(p => p.id === task.priority_id)?.name || 'Unknown',
+      color: priorities.find(p => p.id === task.priority_id)?.color_code || 'gray'
+    },
+    status: {
+      id: task.status_id || 0,
+      name: statuses.find(s => s.id === task.status_id)?.name || 'Unknown',
+      color: statuses.find(s => s.id === task.status_id)?.color_code || 'gray'
+    },
+    assigned_to: {
+      id: task.assigned_to || '',
+      username: task.assigned_to || 'Unassigned' // This would need to be fetched from user data
+    },
+    due_date: task.due_date || new Date().toISOString(), // Ensure due_date is always a string
+    completed_at: task.completed_at || null, // Keep as null if not completed
+    related_lead: task.related_lead_id ? {
+      id: task.related_lead_id,
+      first_name: 'Lead', // This would need to be fetched from lead data
+      last_name: 'Name'
+    } : null,
+    related_contact: task.related_contact_id ? {
+      id: task.related_contact_id,
+      first_name: 'Contact', // This would need to be fetched from contact data
+      last_name: 'Name'
+    } : null,
+    related_deal: task.related_deal_id ? {
+      id: task.related_deal_id,
+      name: 'Deal Name' // This would need to be fetched from deal data
+    } : null
+  }));
+
+  // Show loading state
+  if (loading && tasks.length === 0) {
+    return (
+      <AdminLayout>
+        <div className="p-6">
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <AdminLayout>
+        <div className="p-6">
+          <div className="bg-red-50 border border-red-200 rounded-md p-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">
+                  Error loading tasks
+                </h3>
+                <div className="mt-2 text-sm text-red-700">
+                  <p>{error}</p>
+                </div>
+                <div className="mt-4">
+                  <button
+                    onClick={refreshTasks}
+                    className="bg-red-100 px-3 py-2 rounded-md text-sm font-medium text-red-800 hover:bg-red-200"
+                  >
+                    Try again
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
@@ -130,10 +171,10 @@ export default function TasksPage() {
           <p className="text-gray-600 mt-1">Track and manage your sales tasks and activities</p>
         </div>
         <TaskManagement 
-          tasks={mockTasks}
-          totalTasks={mockTasks.length}
-          currentPage={1}
-          totalPages={1}
+          tasks={transformedTasks}
+          totalTasks={tasks.length}
+          currentPage={currentPage}
+          totalPages={Math.ceil(tasks.length / pageSize)}
           onPageChange={handlePageChange}
           onTaskClick={handleTaskClick}
           onCreateTask={handleCreateTask}

@@ -36,7 +36,8 @@ def create_new_deal(
         logging.error(f"Error creating deal: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to create deal")
 
-@deal_router.get("/", response_model=List[DealOut])
+@deal_router.get("", response_model=List[DealOut], include_in_schema=False)  # /api/crm/deals
+@deal_router.get("/", response_model=List[DealOut])  # /api/crm/deals/
 def get_all_deals(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
@@ -80,6 +81,130 @@ def get_sales_metrics(
     except Exception as e:
         logging.error(f"Error fetching sales metrics: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to fetch sales metrics")
+
+# ==============================================
+# DEAL STAGE MANAGEMENT ENDPOINTS (must come before /{deal_id})
+# ==============================================
+
+@deal_router.post("/stages", response_model=DealStageOut)
+def create_deal_stage_endpoint(
+    stage: DealStageCreate,
+    current_user: UserOut = Depends(require_admin)
+):
+    """Create a new deal stage (admin only)"""
+    try:
+        return create_deal_stage(stage)
+    except Exception as e:
+        logging.error(f"Error creating deal stage: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to create deal stage")
+
+@deal_router.get("/stages", response_model=List[DealStageOut])
+def get_deal_stages_list(
+    current_user: UserOut = Depends(get_current_user)
+):
+    """Get all deal stages"""
+    try:
+        return get_deal_stages()
+    except Exception as e:
+        logging.error(f"Error fetching deal stages: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to fetch deal stages")
+
+@deal_router.put("/stages/{stage_id}", response_model=DealStageOut)
+def update_deal_stage_endpoint(
+    stage_id: int,
+    stage: DealStageCreate,
+    current_user: UserOut = Depends(require_admin)
+):
+    """Update a deal stage (admin only)"""
+    try:
+        updated_stage = update_deal_stage(stage_id, stage)
+        if not updated_stage:
+            raise HTTPException(status_code=404, detail="Deal stage not found")
+        return updated_stage
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error updating deal stage: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to update deal stage")
+
+@deal_router.delete("/stages/{stage_id}")
+def delete_deal_stage_endpoint(
+    stage_id: int,
+    current_user: UserOut = Depends(require_admin)
+):
+    """Delete a deal stage (admin only)"""
+    try:
+        success = delete_deal_stage(stage_id)
+        if not success:
+            raise HTTPException(status_code=404, detail="Deal stage not found")
+        return {"message": "Deal stage deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error deleting deal stage: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to delete deal stage")
+
+# ==============================================
+# DEAL CATEGORY MANAGEMENT ENDPOINTS (must come before /{deal_id})
+# ==============================================
+
+@deal_router.post("/categories", response_model=DealCategoryOut)
+def create_deal_category_endpoint(
+    category: DealCategoryCreate,
+    current_user: UserOut = Depends(require_admin)
+):
+    """Create a new deal category (admin only)"""
+    try:
+        return create_deal_category(category)
+    except Exception as e:
+        logging.error(f"Error creating deal category: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to create deal category")
+
+@deal_router.get("/categories", response_model=List[DealCategoryOut])
+def get_deal_categories_list(
+    current_user: UserOut = Depends(get_current_user)
+):
+    """Get all deal categories"""
+    try:
+        return get_deal_categories()
+    except Exception as e:
+        logging.error(f"Error fetching deal categories: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to fetch deal categories")
+
+@deal_router.put("/categories/{category_id}", response_model=DealCategoryOut)
+def update_deal_category_endpoint(
+    category_id: int,
+    category: DealCategoryCreate,
+    current_user: UserOut = Depends(require_admin)
+):
+    """Update a deal category (admin only)"""
+    try:
+        updated_category = update_deal_category(category_id, category)
+        if not updated_category:
+            raise HTTPException(status_code=404, detail="Deal category not found")
+        return updated_category
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error updating deal category: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to update deal category")
+
+@deal_router.delete("/categories/{category_id}")
+def delete_deal_category_endpoint(
+    category_id: int,
+    current_user: UserOut = Depends(require_admin)
+):
+    """Delete a deal category (admin only)"""
+    try:
+        success = delete_deal_category(category_id)
+        if not success:
+            raise HTTPException(status_code=404, detail="Deal category not found")
+        return {"message": "Deal category deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error deleting deal category: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to delete deal category")
 
 @deal_router.get("/{deal_id}", response_model=DealOut)
 def get_deal_by_id(
@@ -163,126 +288,3 @@ def get_deal_activities_list(
         logging.error(f"Error fetching deal activities: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to fetch deal activities")
 
-# ==============================================
-# DEAL STAGE MANAGEMENT ENDPOINTS
-# ==============================================
-
-@deal_router.post("/stages", response_model=DealStageOut)
-def create_deal_stage_endpoint(
-    stage: DealStageCreate,
-    current_user: UserOut = Depends(require_admin)
-):
-    """Create a new deal stage (admin only)"""
-    try:
-        return create_deal_stage(stage)
-    except Exception as e:
-        logging.error(f"Error creating deal stage: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to create deal stage")
-
-@deal_router.get("/stages", response_model=List[DealStageOut])
-def get_deal_stages_list(
-    current_user: UserOut = Depends(get_current_user)
-):
-    """Get all deal stages"""
-    try:
-        return get_deal_stages()
-    except Exception as e:
-        logging.error(f"Error fetching deal stages: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to fetch deal stages")
-
-@deal_router.put("/stages/{stage_id}", response_model=DealStageOut)
-def update_deal_stage_endpoint(
-    stage_id: int,
-    stage: DealStageCreate,
-    current_user: UserOut = Depends(require_admin)
-):
-    """Update a deal stage (admin only)"""
-    try:
-        updated_stage = update_deal_stage(stage_id, stage)
-        if not updated_stage:
-            raise HTTPException(status_code=404, detail="Deal stage not found")
-        return updated_stage
-    except HTTPException:
-        raise
-    except Exception as e:
-        logging.error(f"Error updating deal stage: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to update deal stage")
-
-@deal_router.delete("/stages/{stage_id}")
-def delete_deal_stage_endpoint(
-    stage_id: int,
-    current_user: UserOut = Depends(require_admin)
-):
-    """Delete a deal stage (admin only)"""
-    try:
-        success = delete_deal_stage(stage_id)
-        if not success:
-            raise HTTPException(status_code=404, detail="Deal stage not found")
-        return {"message": "Deal stage deleted successfully"}
-    except HTTPException:
-        raise
-    except Exception as e:
-        logging.error(f"Error deleting deal stage: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to delete deal stage")
-
-# ==============================================
-# DEAL CATEGORY MANAGEMENT ENDPOINTS
-# ==============================================
-
-@deal_router.post("/categories", response_model=DealCategoryOut)
-def create_deal_category_endpoint(
-    category: DealCategoryCreate,
-    current_user: UserOut = Depends(require_admin)
-):
-    """Create a new deal category (admin only)"""
-    try:
-        return create_deal_category(category)
-    except Exception as e:
-        logging.error(f"Error creating deal category: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to create deal category")
-
-@deal_router.get("/categories", response_model=List[DealCategoryOut])
-def get_deal_categories_list(
-    current_user: UserOut = Depends(get_current_user)
-):
-    """Get all deal categories"""
-    try:
-        return get_deal_categories()
-    except Exception as e:
-        logging.error(f"Error fetching deal categories: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to fetch deal categories")
-
-@deal_router.put("/categories/{category_id}", response_model=DealCategoryOut)
-def update_deal_category_endpoint(
-    category_id: int,
-    category: DealCategoryCreate,
-    current_user: UserOut = Depends(require_admin)
-):
-    """Update a deal category (admin only)"""
-    try:
-        updated_category = update_deal_category(category_id, category)
-        if not updated_category:
-            raise HTTPException(status_code=404, detail="Deal category not found")
-        return updated_category
-    except HTTPException:
-        raise
-    except Exception as e:
-        logging.error(f"Error updating deal category: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to update deal category")
-
-@deal_router.delete("/categories/{category_id}")
-def delete_deal_category_endpoint(
-    category_id: int,
-    current_user: UserOut = Depends(require_admin)
-):
-    """Delete a deal category (admin only)"""
-    try:
-        success = delete_deal_category(category_id)
-        if not success:
-            raise HTTPException(status_code=404, detail="Deal category not found")
-        return {"message": "Deal category deleted successfully"}
-    except HTTPException:
-        raise
-    except Exception as e:
-        logging.error(f"Error deleting deal category: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to delete deal category")

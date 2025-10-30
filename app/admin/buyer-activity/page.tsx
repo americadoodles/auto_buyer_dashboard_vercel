@@ -74,15 +74,27 @@ export default function BuyerActivityPage() {
       const listingsResponse = await fetch(
         `${baseUrl}/listings/buyer/${buyerId}?${queryParams.toString()}`
       );
-      const listingsData = await listingsResponse.json();
-      setListings(listingsData || []);
+      if (!listingsResponse.ok) {
+        console.error('Failed to fetch listings:', listingsResponse.status, listingsResponse.statusText);
+        showError('Failed to load listings', `Error ${listingsResponse.status}`);
+        setListings([]);
+      } else {
+        const listingsData = await listingsResponse.json();
+        setListings(Array.isArray(listingsData) ? listingsData : []);
+      }
       
       // Fetch stats
       const statsResponse = await fetch(
         `${baseUrl}/listings/buyer/${buyerId}/stats?${queryParams.toString()}`
       );
-      const statsData = await statsResponse.json();
-      setBuyerStats(statsData || null);
+      if (!statsResponse.ok) {
+        console.error('Failed to fetch buyer stats:', statsResponse.status, statsResponse.statusText);
+        // Non-blocking: just clear stats
+        setBuyerStats(null);
+      } else {
+        const statsData = await statsResponse.json();
+        setBuyerStats(statsData || null);
+      }
     } catch (error) {
       console.error('Error fetching buyer data:', error);
       setListings([]);
@@ -99,7 +111,7 @@ export default function BuyerActivityPage() {
   }, [buyerId, dateRange]);
 
   // Filter listings based on search and filter criteria
-  const filteredListings = listings.filter((listing) => {
+  const filteredListings = (Array.isArray(listings) ? listings : []).filter((listing) => {
     const matchesSearch = searchTerm === "" || 
       listing.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
       listing.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -225,7 +237,7 @@ export default function BuyerActivityPage() {
   };
 
   // Get unique makes for filter dropdown
-  const uniqueMakes = Array.from(new Set(listings.map(l => l.make))).sort();
+  const uniqueMakes = Array.from(new Set((Array.isArray(listings) ? listings : []).map(l => l.make))).sort();
 
   // Reset filters
   const resetFilters = () => {

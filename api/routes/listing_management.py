@@ -121,7 +121,7 @@ def unlink_contact_from_listing_endpoint(
 ):
     """Unlink a contact from a listing"""
     try:
-        success = unlink_contact_from_listing(listing_id, contact_id, current_user.id)
+        success = unlink_contact_from_listing(listing_id, contact_id, str(current_user.id))
         if not success:
             raise HTTPException(status_code=400, detail="Failed to unlink contact from listing")
         return {"message": "Contact unlinked successfully", "listing_id": listing_id, "contact_id": str(contact_id)}

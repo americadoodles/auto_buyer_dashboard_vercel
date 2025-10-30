@@ -28,8 +28,12 @@ def ingest(listings: List[ListingIn], current_user: UserOut = Depends(get_curren
 # Listings routes
 @listings_router.get("", include_in_schema=False, response_model=List[ListingOut])  # /api/listings
 @listings_router.get("/", response_model=List[ListingOut])  # /api/listings/
-def list_(limit: Optional[int] = Query(None, ge=1, description="Number of records to fetch (default: all)")):
-    return list_listings(limit=limit)
+def list_(
+    limit: Optional[int] = Query(None, ge=1, description="Number of records to fetch (default: all)"),
+    start_date: Optional[datetime] = Query(None, description="Start date for filtering (ISO format)"),
+    end_date: Optional[datetime] = Query(None, description="End date for filtering (ISO format)")
+):
+    return list_listings(limit=limit, start_date=start_date, end_date=end_date)
 
 @listings_router.get("/buyer/{buyer_id}", response_model=List[ListingOut])
 def list_by_buyer(

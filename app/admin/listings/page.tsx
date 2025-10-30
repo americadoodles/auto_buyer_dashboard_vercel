@@ -7,6 +7,7 @@ import { Header } from "../../../components/organisms/Header";
 import { ListingsTable } from "../../../components/organisms/ListingsTable";
 import { KpiGrid } from "../../../components/organisms/KpiGrid";
 import { ExportButton } from "../../../components/molecules/ExportButton";
+import { DateRangePicker } from "../../../components/molecules/DateRangePicker";
 import { Listing } from "../../../lib/types/listing";
 import { AdminLayout } from "../../../components/templates/AdminLayout";
 import { Car, TrendingUp, AlertTriangle, Filter, Search } from "lucide-react";
@@ -31,6 +32,10 @@ export default function AdminListingsPage() {
     rescoreVisible,
     seedBackend,
     loadFromBackend,
+    loadWithDateRange,
+    refreshToday,
+    startDate,
+    endDate,
     notify,
     notifySlack,
     triggerWorkflow,
@@ -175,11 +180,12 @@ export default function AdminListingsPage() {
           </div>
         )}
 
-        {/* Search and Filter Controls */}
+        {/* Search, Filters, and Date Controls */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+          {/* Top Row: Search + Actions */}
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             {/* Search Bar */}
-            <div className="flex-1 max-w-md">
+            <div className="w-full md:max-w-xl">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
@@ -192,13 +198,13 @@ export default function AdminListingsPage() {
               </div>
             </div>
 
-            {/* Filter Controls */}
-            <div className="flex items-center space-x-3">
+            {/* Action Buttons */}
+            <div className="w-full md:w-auto flex flex-wrap items-center gap-2">
               <Button
                 onClick={() => setShowFilters(!showFilters)}
                 variant="outline"
                 size="sm"
-                className="flex items-center space-x-2"
+                className="flex items-center gap-2"
               >
                 <Filter className="w-4 h-4" />
                 <span>Filters</span>
@@ -236,9 +242,21 @@ export default function AdminListingsPage() {
             </div>
           </div>
 
+          {/* Bottom Row: Date Range Picker */}
+          <div className="mt-6">
+            <div className="w-full">
+              <DateRangePicker
+                startDate={startDate}
+                endDate={endDate}
+                onDateChange={(start, end) => loadWithDateRange(start, end)}
+                onRefreshToday={refreshToday}
+              />
+            </div>
+          </div>
+
           {/* Advanced Filters */}
           {showFilters && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="mt-6 pt-6 border-t border-gray-200">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">

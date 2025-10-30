@@ -271,8 +271,12 @@ export class ApiService {
     return this.handleResponse<any>(response);
   }
 
-  static async getListings(): Promise<Listing[]> {
-    const fullUrl = `${BACKEND_URL}/listings`;
+  static async getListings(params?: { start_date?: string; end_date?: string; limit?: number }): Promise<Listing[]> {
+    const query = new URLSearchParams();
+    if (params?.start_date) query.append('start_date', params.start_date);
+    if (params?.end_date) query.append('end_date', params.end_date);
+    if (params?.limit !== undefined) query.append('limit', String(params.limit));
+    const fullUrl = `${BACKEND_URL}/listings${query.toString() ? `?${query.toString()}` : ''}`;
     console.log(`[API] getListings - Base URL: ${BACKEND_URL}`);
     console.log(`[API] getListings - Full endpoint URL: ${fullUrl}`);
     
@@ -298,8 +302,12 @@ export class ApiService {
     }
   }
 
-  static async getBuyerListings(buyerId: string): Promise<Listing[]> {
-    const fullUrl = `${BACKEND_URL}/listings/buyer/${buyerId}`;
+  static async getBuyerListings(buyerId: string, params?: { start_date?: string; end_date?: string; limit?: number }): Promise<Listing[]> {
+    const query = new URLSearchParams();
+    if (params?.start_date) query.append('start_date', params.start_date);
+    if (params?.end_date) query.append('end_date', params.end_date);
+    if (params?.limit !== undefined) query.append('limit', String(params.limit));
+    const fullUrl = `${BACKEND_URL}/listings/buyer/${buyerId}${query.toString() ? `?${query.toString()}` : ''}`;
     console.log(`[API] getBuyerListings - Base URL: ${BACKEND_URL}`);
     console.log(`[API] getBuyerListings - Full endpoint URL: ${fullUrl}`);
     

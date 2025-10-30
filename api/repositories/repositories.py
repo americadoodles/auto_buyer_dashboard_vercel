@@ -141,7 +141,11 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
         out.append(obj)
     return out
 
-def list_listings(limit: Optional[int] = None) -> list[ListingOut]:
+def list_listings(
+    limit: Optional[int] = None,
+    start_date: Optional[datetime.datetime] = None,
+    end_date: Optional[datetime.datetime] = None,
+) -> list[ListingOut]:
     if DB_ENABLED:
         with get_db_connection() as conn:
             if not conn:
@@ -173,14 +177,24 @@ def list_listings(limit: Optional[int] = None) -> list[ListingOut]:
                     ORDER BY vin, created_at DESC
                   ) s ON s.vin = l.vin
                   LEFT JOIN users u ON u.id::text = l.buyer_id
-                  ORDER BY l.vehicle_key, l.created_at DESC
+                  WHERE 1=1
                 """
-                    
+
+                    params: list = []
+                    if start_date:
+                        query += " AND l.created_at >= %s"
+                        params.append(start_date)
+                    if end_date:
+                        query += " AND l.created_at <= %s"
+                        params.append(end_date)
+
+                    query += " ORDER BY l.vehicle_key, l.created_at DESC"
+
                     if limit is not None:
                         query += " LIMIT %s"
-                        cur.execute(query, (limit,))
-                    else:
-                        cur.execute(query)
+                        params.append(limit)
+
+                    cur.execute(query, tuple(params))
                     out: list[ListingOut] = []
                     for rid, vehicle_key, vin, year, make, model, trim, miles, price, dom, source, location, buyer_id, buyer_username, score, buy_max, reason_codes, payload in cur.fetchall():
                         # Extract decision data from payload if available

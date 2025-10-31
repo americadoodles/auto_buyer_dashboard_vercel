@@ -370,7 +370,9 @@ def get_lead_sources() -> List[LeadSourceOut]:
             with conn.cursor() as cur:
                 cur.execute("""
                     SELECT id, name, description, is_active, created_at
-                    FROM lead_sources ORDER BY name
+                    FROM lead_sources
+                    WHERE is_active = true
+                    ORDER BY name
                 """)
                 
                 results = cur.fetchall()
@@ -488,7 +490,9 @@ def get_lead_statuses() -> List[LeadStatusOut]:
             with conn.cursor() as cur:
                 cur.execute("""
                     SELECT id, name, description, color_code, is_active, sort_order, created_at
-                    FROM lead_statuses ORDER BY sort_order, name
+                    FROM lead_statuses
+                    WHERE is_active = true
+                    ORDER BY sort_order, name
                 """)
                 
                 results = cur.fetchall()

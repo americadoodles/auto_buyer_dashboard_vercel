@@ -379,7 +379,9 @@ def get_deal_stages() -> List[DealStageOut]:
             with conn.cursor() as cur:
                 cur.execute("""
                     SELECT id, name, description, color_code, is_active, sort_order, created_at
-                    FROM deal_stages ORDER BY sort_order, name
+                    FROM deal_stages
+                    WHERE is_active = true
+                    ORDER BY sort_order, name
                 """)
                 
                 results = cur.fetchall()
@@ -500,7 +502,9 @@ def get_deal_categories() -> List[DealCategoryOut]:
             with conn.cursor() as cur:
                 cur.execute("""
                     SELECT id, name, description, is_active, created_at
-                    FROM deal_categories ORDER BY name
+                    FROM deal_categories
+                    WHERE is_active = true
+                    ORDER BY name
                 """)
                 
                 results = cur.fetchall()

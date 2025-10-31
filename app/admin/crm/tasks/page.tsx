@@ -83,20 +83,20 @@ export default function TasksPage() {
   const transformedTasks = tasks.map(task => ({
     ...task,
     description: task.description || '', // Ensure description is always a string
-    priority: {
-      id: task.priority_id || 0,
+    priority: priorities.find(p => p.id === task.priority_id) ? {
+      id: task.priority_id,
       name: priorities.find(p => p.id === task.priority_id)?.name || 'Unknown',
       color: priorities.find(p => p.id === task.priority_id)?.color_code || 'gray'
-    },
-    status: {
-      id: task.status_id || 0,
+    } : undefined,
+    status: statuses.find(s => s.id === task.status_id) ? {
+      id: task.status_id,
       name: statuses.find(s => s.id === task.status_id)?.name || 'Unknown',
       color: statuses.find(s => s.id === task.status_id)?.color_code || 'gray'
-    },
-    assigned_to: {
-      id: task.assigned_to || '',
-      username: task.assigned_to || 'Unassigned' // This would need to be fetched from user data
-    },
+    } : undefined,
+    assigned_to: task.assigned_to ? {
+      id: task.assigned_to,
+      username: task.assigned_to // This would need to be fetched from user data
+    } : undefined,
     due_date: task.due_date || new Date().toISOString(), // Ensure due_date is always a string
     completed_at: task.completed_at || null, // Keep as null if not completed
     related_lead: task.related_lead_id ? {
@@ -180,6 +180,13 @@ export default function TasksPage() {
           onCreateTask={handleCreateTask}
           onCompleteTask={handleCompleteTask}
           onExportTasks={handleExportTasks}
+          onSearch={handleSearch}
+          onPriorityFilter={handlePriorityFilter}
+          onStatusFilter={handleStatusFilter}
+          onAssignedToFilter={handleAssignedToFilter}
+          priorities={priorities}
+          statuses={statuses}
+          loading={loading}
         />
       </div>
     </AdminLayout>

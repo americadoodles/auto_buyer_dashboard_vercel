@@ -71,24 +71,24 @@ export default function DealsPage() {
     expected_close_date: deal.expected_close_date || new Date().toISOString(), // Ensure date is always a string
     is_won: deal.is_won || false, // Ensure is_won is always a boolean
     is_lost: deal.is_lost || false, // Ensure is_lost is always a boolean
-    contact: {
-      id: deal.contact_id || '',
+    contact: deal.contact_id ? {
+      id: deal.contact_id,
       first_name: 'Contact', // This would need to be fetched from contact data
       last_name: 'Name'
-    },
-    deal_stage: {
-      id: deal.deal_stage_id || 0,
+    } : undefined,
+    deal_stage: stages.find(s => s.id === deal.deal_stage_id) ? {
+      id: deal.deal_stage_id,
       name: stages.find(s => s.id === deal.deal_stage_id)?.name || 'Unknown',
       color: stages.find(s => s.id === deal.deal_stage_id)?.color_code || 'gray'
-    },
-    deal_category: {
-      id: deal.deal_category_id || 0,
+    } : undefined,
+    deal_category: deal.deal_category_id ? {
+      id: deal.deal_category_id,
       name: 'Category' // This would need to be fetched from category data
-    },
-    assigned_to: {
-      id: deal.assigned_to || '',
-      username: deal.assigned_to || 'Unassigned' // This would need to be fetched from user data
-    }
+    } : undefined,
+    assigned_to: deal.assigned_to ? {
+      id: deal.assigned_to,
+      username: deal.assigned_to // This would need to be fetched from user data
+    } : undefined
   }));
 
   // Transform pipeline data to match component expectations
@@ -165,6 +165,11 @@ export default function DealsPage() {
           onDealClick={handleDealClick}
           onCreateDeal={handleCreateDeal}
           onExportDeals={handleExportDeals}
+          onSearch={handleSearch}
+          onStageFilter={handleStageFilter}
+          onCategoryFilter={handleCategoryFilter}
+          stages={stages}
+          loading={loading}
         />
       </div>
     </AdminLayout>

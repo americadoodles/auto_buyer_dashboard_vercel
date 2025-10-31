@@ -49,18 +49,28 @@ export default function LeadsPage() {
   };
 
   // Transform leads data to match component expectations
-  const transformedLeads = leads.map(lead => ({
-    ...lead,
-    status: {
-      id: lead.lead_status_id || 0,
-      name: statuses.find(s => s.id === lead.lead_status_id)?.name || 'Unknown',
-      color: statuses.find(s => s.id === lead.lead_status_id)?.color_code || 'gray'
-    },
-    assigned_to: {
-      id: lead.assigned_to || '',
-      username: lead.assigned_to || 'Unassigned' // This would need to be fetched from user data
-    }
-  }));
+  const transformedLeads = leads.map(lead => {
+    const foundStatus = statuses.find(s => s.id === lead.lead_status_id);
+    return {
+      ...lead,
+      status: foundStatus ? {
+        id: foundStatus.id,
+        name: foundStatus.name,
+        color: foundStatus.color_code
+      } : {
+        id: lead.lead_status_id ?? 0,
+        name: 'Unknown',
+        color: 'gray'
+      },
+      assigned_to: lead.assigned_to ? {
+        id: lead.assigned_to,
+        username: lead.assigned_to // This would need to be fetched from user data
+      } : {
+        id: '',
+        username: 'Unassigned'
+      }
+    };
+  });
 
   // Show loading state
   if (loading && leads.length === 0) {
@@ -126,6 +136,17 @@ export default function LeadsPage() {
           onLeadClick={handleLeadClick}
           onCreateLead={handleCreateLead}
           onExportLeads={handleExportLeads}
+          onSearch={handleSearch}
+          onStatusFilter={handleStatusFilter}
+          statuses={statuses}
+          loading={loading}
+        />
+        <LeadCreateModal
+          isOpen={isCreateOpen}
+          onClose={() => setIsCreateOpen(false)}
+          onCreated={async () => {
+            await refreshLeads();
+          }}
         />
         <LeadCreateModal
           isOpen={isCreateOpen}

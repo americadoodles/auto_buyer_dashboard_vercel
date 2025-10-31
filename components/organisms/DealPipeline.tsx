@@ -14,7 +14,7 @@ interface Deal {
   id: string;
   name: string;
   description: string;
-  contact: {
+  contact?: {
     id: string;
     first_name: string;
     last_name: string;
@@ -22,16 +22,16 @@ interface Deal {
   deal_value: number;
   probability: number;
   expected_close_date: string;
-  deal_stage: {
+  deal_stage?: {
     id: number;
     name: string;
     color: string;
   };
-  deal_category: {
+  deal_category?: {
     id: number;
     name: string;
   };
-  assigned_to: {
+  assigned_to?: {
     id: string;
     username: string;
   };
@@ -59,6 +59,11 @@ interface DealPipelineProps {
   onDealClick: (dealId: string) => void;
   onCreateDeal: () => void;
   onExportDeals: () => void;
+  onSearch?: (search: string) => void;
+  onStageFilter?: (stageId: number | undefined) => void;
+  onCategoryFilter?: (categoryId: number | undefined) => void;
+  stages?: Array<{ id: number; name: string; color_code?: string }>;
+  loading?: boolean;
 }
 
 export const DealPipeline: React.FC<DealPipelineProps> = ({
@@ -278,15 +283,19 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {deal.contact.first_name} {deal.contact.last_name}
+                    {deal.contact ? `${deal.contact.first_name} ${deal.contact.last_name}` : 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {formatCurrency(deal.deal_value)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge color={getStageColor(deal.deal_stage.name)}>
-                      {deal.deal_stage.name}
-                    </Badge>
+                    {deal.deal_stage ? (
+                      <Badge color={getStageColor(deal.deal_stage.name)}>
+                        {deal.deal_stage.name}
+                      </Badge>
+                    ) : (
+                      <span className="text-sm text-gray-500">N/A</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
@@ -303,7 +312,7 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
                     {formatDate(deal.expected_close_date)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {deal.assigned_to.username}
+                    {deal.assigned_to?.username || 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">

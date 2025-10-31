@@ -40,6 +40,10 @@ interface LeadManagementProps {
   onLeadClick: (leadId: string) => void;
   onCreateLead: () => void;
   onExportLeads: () => void;
+  onSearch?: (search: string) => void;
+  onStatusFilter?: (statusId: number | undefined) => void;
+  statuses?: Array<{ id: number; name: string; color_code?: string }>;
+  loading?: boolean;
 }
 
 export const LeadManagement: React.FC<LeadManagementProps> = ({
@@ -50,12 +54,31 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
   onPageChange,
   onLeadClick,
   onCreateLead,
-  onExportLeads
+  onExportLeads,
+  onSearch,
+  onStatusFilter,
+  statuses,
+  loading
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
   const [assignedFilter, setAssignedFilter] = useState('all');
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    if (onSearch) {
+      onSearch(value);
+    }
+  };
+
+  const handleStatusFilterChange = (value: string) => {
+    setStatusFilter(value);
+    if (onStatusFilter) {
+      const statusId = value === 'all' ? undefined : parseInt(value, 10);
+      onStatusFilter(statusId);
+    }
+  };
 
   const getScoreColor = (score: number) => {
     if (score >= 90) return 'green';
@@ -108,7 +131,7 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
               type="text"
               placeholder="Search leads..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               className="w-full"
             />
           </div>
@@ -118,15 +141,26 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
             </label>
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => handleStatusFilterChange(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={loading}
             >
               <option value="all">All Status</option>
-              <option value="new">New</option>
-              <option value="contacted">Contacted</option>
-              <option value="qualified">Qualified</option>
-              <option value="converted">Converted</option>
-              <option value="lost">Lost</option>
+              {statuses ? (
+                statuses.map((status) => (
+                  <option key={status.id} value={status.id.toString()}>
+                    {status.name}
+                  </option>
+                ))
+              ) : (
+                <>
+                  <option value="new">New</option>
+                  <option value="contacted">Contacted</option>
+                  <option value="qualified">Qualified</option>
+                  <option value="converted">Converted</option>
+                  <option value="lost">Lost</option>
+                </>
+              )}
             </select>
           </div>
           <div>

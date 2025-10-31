@@ -58,6 +58,13 @@ interface TaskManagementProps {
   onCreateTask: () => void;
   onCompleteTask: (taskId: string) => void;
   onExportTasks: () => void;
+  onSearch?: (search: string) => void;
+  onPriorityFilter?: (priorityId: number | undefined) => void;
+  onStatusFilter?: (statusId: number | undefined) => void;
+  onAssignedToFilter?: (assignedTo: string | undefined) => void;
+  priorities?: Array<{ id: number; name: string; color_code?: string }>;
+  statuses?: Array<{ id: number; name: string; color_code?: string }>;
+  loading?: boolean;
 }
 
 export const TaskManagement: React.FC<TaskManagementProps> = ({
@@ -69,13 +76,51 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
   onTaskClick,
   onCreateTask,
   onCompleteTask,
-  onExportTasks
+  onExportTasks,
+  onSearch,
+  onPriorityFilter,
+  onStatusFilter,
+  onAssignedToFilter,
+  priorities,
+  statuses,
+  loading
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [assignedFilter, setAssignedFilter] = useState('all');
   const [showOverdue, setShowOverdue] = useState(false);
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    if (onSearch) {
+      onSearch(value);
+    }
+  };
+
+  const handlePriorityFilterChange = (value: string) => {
+    setPriorityFilter(value);
+    if (onPriorityFilter) {
+      const priorityId = value === 'all' ? undefined : parseInt(value, 10);
+      onPriorityFilter(priorityId);
+    }
+  };
+
+  const handleStatusFilterChange = (value: string) => {
+    setStatusFilter(value);
+    if (onStatusFilter) {
+      const statusId = value === 'all' ? undefined : parseInt(value, 10);
+      onStatusFilter(statusId);
+    }
+  };
+
+  const handleAssignedToFilterChange = (value: string) => {
+    setAssignedFilter(value);
+    if (onAssignedToFilter) {
+      const assignedTo = value === 'all' ? undefined : value;
+      onAssignedToFilter(assignedTo);
+    }
+  };
 
   const getPriorityColor = (priority: string) => {
     switch (priority.toLowerCase()) {
@@ -214,7 +259,7 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
               type="text"
               placeholder="Search tasks..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               className="w-full"
             />
           </div>
@@ -224,14 +269,25 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
             </label>
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => handleStatusFilterChange(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={loading}
             >
               <option value="all">All Status</option>
-              <option value="not_started">Not Started</option>
-              <option value="in_progress">In Progress</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
+              {statuses ? (
+                statuses.map((status) => (
+                  <option key={status.id} value={status.id.toString()}>
+                    {status.name}
+                  </option>
+                ))
+              ) : (
+                <>
+                  <option value="not_started">Not Started</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                </>
+              )}
             </select>
           </div>
           <div>
@@ -240,14 +296,25 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
             </label>
             <select
               value={priorityFilter}
-              onChange={(e) => setPriorityFilter(e.target.value)}
+              onChange={(e) => handlePriorityFilterChange(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={loading}
             >
               <option value="all">All Priorities</option>
-              <option value="urgent">Urgent</option>
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
-              <option value="low">Low</option>
+              {priorities ? (
+                priorities.map((priority) => (
+                  <option key={priority.id} value={priority.id.toString()}>
+                    {priority.name}
+                  </option>
+                ))
+              ) : (
+                <>
+                  <option value="urgent">Urgent</option>
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </>
+              )}
             </select>
           </div>
           <div>
@@ -256,8 +323,9 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
             </label>
             <select
               value={assignedFilter}
-              onChange={(e) => setAssignedFilter(e.target.value)}
+              onChange={(e) => handleAssignedToFilterChange(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={loading}
             >
               <option value="all">All Users</option>
               <option value="me">Me</option>

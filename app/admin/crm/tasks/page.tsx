@@ -80,40 +80,56 @@ export default function TasksPage() {
   };
 
   // Transform tasks data to match component expectations
-  const transformedTasks = tasks.map(task => ({
-    ...task,
-    description: task.description || '', // Ensure description is always a string
-    priority: priorities.find(p => p.id === task.priority_id) ? {
-      id: task.priority_id,
-      name: priorities.find(p => p.id === task.priority_id)?.name || 'Unknown',
-      color: priorities.find(p => p.id === task.priority_id)?.color_code || 'gray'
-    } : undefined,
-    status: statuses.find(s => s.id === task.status_id) ? {
-      id: task.status_id,
-      name: statuses.find(s => s.id === task.status_id)?.name || 'Unknown',
-      color: statuses.find(s => s.id === task.status_id)?.color_code || 'gray'
-    } : undefined,
-    assigned_to: task.assigned_to ? {
-      id: task.assigned_to,
-      username: task.assigned_to // This would need to be fetched from user data
-    } : undefined,
-    due_date: task.due_date || new Date().toISOString(), // Ensure due_date is always a string
-    completed_at: task.completed_at || null, // Keep as null if not completed
-    related_lead: task.related_lead_id ? {
-      id: task.related_lead_id,
-      first_name: 'Lead', // This would need to be fetched from lead data
-      last_name: 'Name'
-    } : null,
-    related_contact: task.related_contact_id ? {
-      id: task.related_contact_id,
-      first_name: 'Contact', // This would need to be fetched from contact data
-      last_name: 'Name'
-    } : null,
-    related_deal: task.related_deal_id ? {
-      id: task.related_deal_id,
-      name: 'Deal Name' // This would need to be fetched from deal data
-    } : null
-  }));
+  const transformedTasks = tasks.map(task => {
+    const foundPriority = priorities.find(p => p.id === task.priority_id);
+    const foundStatus = statuses.find(s => s.id === task.status_id);
+    
+    return {
+      ...task,
+      description: task.description || '', // Ensure description is always a string
+      priority: foundPriority ? {
+        id: foundPriority.id,
+        name: foundPriority.name,
+        color: foundPriority.color_code
+      } : {
+        id: task.priority_id ?? 0,
+        name: 'Unknown',
+        color: 'gray'
+      },
+      status: foundStatus ? {
+        id: foundStatus.id,
+        name: foundStatus.name,
+        color: foundStatus.color_code
+      } : {
+        id: task.status_id ?? 0,
+        name: 'Unknown',
+        color: 'gray'
+      },
+      assigned_to: task.assigned_to ? {
+        id: task.assigned_to,
+        username: task.assigned_to // This would need to be fetched from user data
+      } : {
+        id: '',
+        username: 'Unassigned'
+      },
+      due_date: task.due_date || new Date().toISOString(), // Ensure due_date is always a string
+      completed_at: task.completed_at || null, // Keep as null if not completed
+      related_lead: task.related_lead_id ? {
+        id: task.related_lead_id,
+        first_name: 'Lead', // This would need to be fetched from lead data
+        last_name: 'Name'
+      } : null,
+      related_contact: task.related_contact_id ? {
+        id: task.related_contact_id,
+        first_name: 'Contact', // This would need to be fetched from contact data
+        last_name: 'Name'
+      } : null,
+      related_deal: task.related_deal_id ? {
+        id: task.related_deal_id,
+        name: 'Deal Name' // This would need to be fetched from deal data
+      } : null
+    };
+  });
 
   // Show loading state
   if (loading && tasks.length === 0) {

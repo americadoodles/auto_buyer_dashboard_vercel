@@ -16,7 +16,7 @@ import {
 } from '../../lib/services/listingManagementApi';
 import { X, Plus, User, Phone, Mail, Building, Edit, Trash2, Save } from 'lucide-react';
 import { LeadCreateModal } from './LeadCreateModal';
-
+import { ImagePreviewModal } from './ImagePreviewModal';
 interface ListingEditModalProps {
   listing: Listing;
   isOpen: boolean;
@@ -36,6 +36,7 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [availableContacts, setAvailableContacts] = useState<Contact[]>([]);
   const [showContactSearch, setShowContactSearch] = useState(false);
+  const [showImagePreview, setShowImagePreview] = useState(false);
   const [contactSearchTerm, setContactSearchTerm] = useState('');
   const [showNewContactForm, setShowNewContactForm] = useState(false);
   const [isLeadCreateOpen, setIsLeadCreateOpen] = useState(false);
@@ -135,6 +136,7 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
       await linkContactToListing(parseInt(listing.id), contactLink);
       await loadListingContacts(); // Refresh contacts
       setShowContactSearch(false);
+      setShowImagePreview(false);
       setContactSearchTerm('');
       setAvailableContacts([]);
     } catch (error) {
@@ -414,6 +416,15 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
                   >
                     <Plus className="h-4 w-4" />
                     Create Lead
+                  </Button>
+                  <Button
+                    onClick={() => setShowImagePreview(true)}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                     {/* <Plus className="h-4 w-4" /> */}
+                    Preview Images
                   </Button>
                   <Button
                     onClick={() => setShowContactSearch(true)}
@@ -704,6 +715,11 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
         onCreated={async () => {
           await loadListingContacts();
         }}
+      />
+      <ImagePreviewModal
+        isOpen={showImagePreview}
+        onClose={() => setShowImagePreview(false)}
+        images={listing.images || []}
       />
     </div>
   );

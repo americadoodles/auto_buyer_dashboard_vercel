@@ -175,6 +175,7 @@ def apply_schema_if_needed() -> None:
                     # ADD COLUMN IF NOT EXISTS is valid on PG >= 9.6
                     cur.execute("ALTER TABLE public.listings ADD COLUMN IF NOT EXISTS location text")
                     cur.execute("ALTER TABLE public.listings ADD COLUMN IF NOT EXISTS buyer_id text")
+                    cur.execute("ALTER TABLE public.listings ADD COLUMN IF NOT EXISTS images text[]")
 
                     # Backfill buyer_id from legacy 'buyer' if present
                     cur.execute("""

@@ -154,7 +154,24 @@ def list_listings(
                 
             try:
                 with conn.cursor() as cur:
-                    # Fixed query to prevent duplicates by using DISTINCT ON and proper JOINs
+                    # Build date filter conditions first
+                    date_conditions = []
+                    params: list = []
+                    if start_date:
+                        date_conditions.append("created_at >= %s")
+                        params.append(start_date)
+                        logging.info(f"Filtering listings with start_date: {start_date} (type: {type(start_date)})")
+                    if end_date:
+                        date_conditions.append("created_at <= %s")
+                        params.append(end_date)
+                        logging.info(f"Filtering listings with end_date: {end_date} (type: {type(end_date)})")
+                    
+                    # Build WHERE clause for subquery
+                    where_clause = ""
+                    if date_conditions:
+                        where_clause = "WHERE " + " AND ".join(date_conditions)
+                    
+                    # Fixed query to prevent duplicates by using DISTINCT ON with date-filtered subquery
                     query = """
                   SELECT DISTINCT ON (l.vehicle_key) 
                     l.id, l.vehicle_key, 
@@ -165,13 +182,15 @@ def list_listings(
                     v.trim,
                     l.miles, l.price, l.dom, l.source, 
                     l.location, l.buyer_id,
-                    l.images,
+                    COALESCE(l.images, ARRAY[]::text[]) as images,
                     u.username as buyer_username,
                     COALESCE(s.score, 0) as score, 
                     s.buy_max, 
                     COALESCE(s.reason_codes, ARRAY[]::text[]) as reason_codes,
                     l.payload
-                  FROM listings l
+                  FROM (
+                    SELECT * FROM listings """ + where_clause + """
+                  ) l
                   LEFT JOIN vehicles v ON v.vehicle_key = l.vehicle_key
                   LEFT JOIN (
                     SELECT DISTINCT ON (vin) vin, score, buy_max, reason_codes
@@ -179,26 +198,20 @@ def list_listings(
                     ORDER BY vin, created_at DESC
                   ) s ON s.vin = l.vin
                   LEFT JOIN users u ON u.id::text = l.buyer_id
-                  WHERE 1=1
+                  ORDER BY l.vehicle_key, l.created_at DESC
                 """
-
-                    params: list = []
-                    if start_date:
-                        query += " AND l.created_at >= %s"
-                        params.append(start_date)
-                    if end_date:
-                        query += " AND l.created_at <= %s"
-                        params.append(end_date)
-
-                    query += " ORDER BY l.vehicle_key, l.created_at DESC"
+                    
+                    logging.info(f"Query will execute with {len(params)} date parameters")
 
                     if limit is not None:
                         query += " LIMIT %s"
                         params.append(limit)
 
                     cur.execute(query, tuple(params))
+                    results = cur.fetchall()
+                    logging.info(f"Query returned {len(results)} raw results")
                     out: list[ListingOut] = []
-                    for rid, vehicle_key, vin, year, make, model, trim, miles, price, dom, source, location, buyer_id, images, buyer_username, score, buy_max, reason_codes, payload in cur.fetchall():
+                    for rid, vehicle_key, vin, year, make, model, trim, miles, price, dom, source, location, buyer_id, images, buyer_username, score, buy_max, reason_codes, payload in results:
                         # Extract decision data from payload if available
                         decision = None
                         status = ""
@@ -215,9 +228,12 @@ def list_listings(
                             buyMax=float(buy_max) if buy_max is not None else None,
                             status=status, score=int(score) if score is not None else None, decision=decision, images=images or []
                         ))
+                    logging.info(f"Returning {len(out)} processed listings")
                     return out
             except Exception as e:
                 logging.error(f"Error in list_listings: {str(e)}")
+                import traceback
+                logging.error(f"Traceback: {traceback.format_exc()}")
                 return []
     return list(_BY_ID.values())
 
@@ -246,7 +262,7 @@ def list_listings_by_buyer(
                             v.trim,
                             l.miles, l.price, l.dom, l.source, 
                             l.location, l.buyer_id,
-                            l.images,
+                            COALESCE(l.images, ARRAY[]::text[]) AS images,
                             u.username AS buyer_username,
                             COALESCE(s.score, 0) AS score, 
                             s.buy_max, 
@@ -269,10 +285,14 @@ def list_listings_by_buyer(
                     if start_date:
                         base_query += " AND l.created_at >= %s"
                         params.append(start_date)
+                        logging.info(f"Filtering listings by buyer with start_date: {start_date} (type: {type(start_date)})")
                     
                     if end_date:
                         base_query += " AND l.created_at <= %s"
                         params.append(end_date)
+                        logging.info(f"Filtering listings by buyer with end_date: {end_date} (type: {type(end_date)})")
+                    
+                    logging.info(f"Query will execute with {len(params)} parameters (buyer_id + date params)")
                     
                     base_query += " ORDER BY l.created_at DESC"
                     
@@ -281,13 +301,15 @@ def list_listings_by_buyer(
                         params.append(limit)
                     
                     cur.execute(base_query, params)
+                    results = cur.fetchall()
+                    logging.info(f"Query for buyer {buyer_id} returned {len(results)} raw results")
 
                     out: list[ListingOut] = []
                     for (
                         rid, vehicle_key, vin, year, make, model, trim, miles, price, dom,
                         source, location, buyer_id, images, buyer_username, score, buy_max,
                         reason_codes, created_at, payload
-                    ) in cur.fetchall():
+                    ) in results:
                         
                         # Extract decision data from payload if available
                         decision = None
@@ -320,9 +342,12 @@ def list_listings_by_buyer(
                             decision=decision,
                             images=images or []
                         ))
+                    logging.info(f"Returning {len(out)} processed listings for buyer {buyer_id}")
                     return out
             except Exception as e:
-                logging.error(f"Database error: {e}")
+                logging.error(f"Error in list_listings_by_buyer: {str(e)}")
+                import traceback
+                logging.error(f"Traceback: {traceback.format_exc()}")
                 return []
 
     # Fallback to in-memory filtering

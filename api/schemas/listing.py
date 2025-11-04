@@ -27,6 +27,7 @@ class ListingIn(BaseModel):
     buyer_id: Optional[str] = None
     decision: Optional[Decision] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    images: List[str] = []
 
 class ListingOut(BaseModel):
     id: str
@@ -61,6 +62,7 @@ class ListingOut(BaseModel):
     body_style: Optional[str] = None
     updated_at: Optional[datetime] = None
     updated_by: Optional[str] = None
+    images: Optional[List[str]] = None
     # Contact information
     primary_contact_id: Optional[UUID] = None
     primary_contact_first_name: Optional[str] = None
@@ -93,6 +95,7 @@ class ListingUpdate(BaseModel):
     price: Optional[float] = None
     miles: Optional[int] = None
     location: Optional[str] = None
+    images: Optional[List[str]] = None
 
 class ListingContactLink(BaseModel):
     """Schema for linking a contact to a listing"""

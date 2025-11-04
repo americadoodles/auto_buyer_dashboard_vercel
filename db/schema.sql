@@ -18,6 +18,7 @@ create table if not exists listings (
   location text,
   buyer_id text,
   payload jsonb,
+  images text[],
   created_at timestamptz default now()
 );
 

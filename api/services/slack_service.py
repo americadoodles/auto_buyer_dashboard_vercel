@@ -58,7 +58,7 @@ class SlackService:
             clean_autocheck="Unknown",  # Not available in current data
             mmr_price=listing.buyMax if listing.buyMax else None,
             distance=listing.location or "Unknown",
-            image_url=None  # Not available in current data
+            image_url=None,  # Not available in current data
         )
         
         # Create Slack message blocks - split into multiple sections to avoid field limit
@@ -156,7 +156,23 @@ class SlackService:
                     "text": f"*Additional Notes:*\n{custom_message}"
                 }
             })
-        
+        # Add image URLs
+        print('len ', listing)
+        if len(listing.images) > 0:
+            blocks.append({
+                "type": "header",
+                "text": {
+                    "type": "plain_text",
+                    "text": "📸 Vehicle Images"
+                }
+            })
+            for i, image_url in enumerate(listing.images):
+                blocks.append({
+                    "type": "image",
+                    "image_url": image_url,
+                    "alt_text": f"Vehicle Image {i+1} for {lead_data.vehicle_year_make_model}"
+                })
+
         return {
             "channel": self.channel,
             "blocks": blocks,

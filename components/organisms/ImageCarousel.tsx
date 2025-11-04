@@ -54,7 +54,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
 
       {/* Thumbnails */}
       {images.length > 0 && (
-        <div className="p-2 bg-gray-50 flex flex-wrap justify-center gap-2 overflow-x-auto border-t border-gray-200">
+        <div className="p-2 bg-gray-50 flex flex-nowrap justify-start gap-2 overflow-x-auto border-t border-gray-200">
           {images.map((image, index) => (
             <img
               key={index}

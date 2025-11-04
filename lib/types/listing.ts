@@ -38,6 +38,7 @@ export type Listing = {
   body_style?: string;
   updated_at?: string;
   updated_by?: string;
+  images?: string[];
   // Contact information
   primary_contact_id?: string;
   primary_contact_first_name?: string;
@@ -70,6 +71,7 @@ export type ListingUpdate = {
   price?: number;
   miles?: number;
   location?: string;
+  images?: string[];
 };
 
 export type ListingContactLink = {

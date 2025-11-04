@@ -165,7 +165,7 @@ def list_listings(
                     v.trim,
                     l.miles, l.price, l.dom, l.source, 
                     l.location, l.buyer_id,
-                    l.images,
+                    COALESCE(l.images, ARRAY[]::text[]) as images,
                     u.username as buyer_username,
                     COALESCE(s.score, 0) as score, 
                     s.buy_max, 
@@ -218,6 +218,8 @@ def list_listings(
                     return out
             except Exception as e:
                 logging.error(f"Error in list_listings: {str(e)}")
+                import traceback
+                logging.error(f"Traceback: {traceback.format_exc()}")
                 return []
     return list(_BY_ID.values())
 
@@ -246,7 +248,7 @@ def list_listings_by_buyer(
                             v.trim,
                             l.miles, l.price, l.dom, l.source, 
                             l.location, l.buyer_id,
-                            l.images,
+                            COALESCE(l.images, ARRAY[]::text[]) AS images,
                             u.username AS buyer_username,
                             COALESCE(s.score, 0) AS score, 
                             s.buy_max, 
@@ -322,7 +324,9 @@ def list_listings_by_buyer(
                         ))
                     return out
             except Exception as e:
-                logging.error(f"Database error: {e}")
+                logging.error(f"Error in list_listings_by_buyer: {str(e)}")
+                import traceback
+                logging.error(f"Traceback: {traceback.format_exc()}")
                 return []
 
     # Fallback to in-memory filtering

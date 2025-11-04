@@ -127,9 +127,10 @@ def _exec_sql_script(cur: "psycopg.Cursor", script: str) -> None:
     embedded semicolons, use a proper migrator (Alembic/Dbmate/etc).
     """
     # Cheap normalization; avoids empty statements on stray semicolons/newlines
-    statements = [stmt.strip() for stmt in script.split(";") if stmt.strip()]
-    for stmt in statements:
-        cur.execute(stmt)
+    # statements = [stmt.strip() for stmt in script.split(";") if stmt.strip()]
+    # for stmt in statements:
+    #     cur.execute(stmt)
+    cur.execute(script)
 
 
 def apply_schema_if_needed() -> None:
@@ -165,7 +166,8 @@ def apply_schema_if_needed() -> None:
                 # Apply CRM schema if available
                 if crm_schema_content:
                     logger.info("Applying CRM schema...")
-                    _exec_sql_script(cur, crm_schema_content)
+                    full_crm_script = f"BEGIN;\n{crm_schema_content}\nCOMMIT;"
+                    _exec_sql_script(cur, full_crm_script)
                     logger.info("CRM schema applied.")
 
                 # ----- listings table columns -----

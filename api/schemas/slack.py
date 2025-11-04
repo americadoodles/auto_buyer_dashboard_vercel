@@ -17,6 +17,7 @@ class SlackLeadData(BaseModel):
     mmr_price: Optional[float] = None
     distance: Optional[str] = None
     image_url: Optional[str] = None
+    images: List[str] = []
 
 class SlackNotificationRequest(BaseModel):
     """Request schema for sending Slack notifications"""

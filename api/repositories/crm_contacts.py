@@ -361,7 +361,9 @@ def get_contact_types() -> List[ContactTypeOut]:
             with conn.cursor() as cur:
                 cur.execute("""
                     SELECT id, name, description, is_active, created_at
-                    FROM contact_types ORDER BY name
+                    FROM contact_types
+                    WHERE is_active = true
+                    ORDER BY name
                 """)
                 
                 results = cur.fetchall()

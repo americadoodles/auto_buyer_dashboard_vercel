@@ -32,6 +32,7 @@ def create_decision_from_data(data: dict) -> Optional[Decision]:
 
 def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> List[ListingOut]:
     out: list[ListingOut] = []
+    print('-----------------', rows)
     if DB_ENABLED:
         with get_db_connection() as conn:
             if not conn:
@@ -90,10 +91,10 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                         # Prefer writing to buyer_id column;
                         try:
                             cur.execute("""
-                              insert into listings (vehicle_key, vin, source, price, miles, dom, location, buyer_id, payload)
-                              values (%s,%s,%s,%s,%s,%s,%s,%s,%s) returning id
-                            """, (vehicle_key, vin, norm["source"], norm["price"], norm["miles"], norm["dom"], 
-                                  norm.get("location"), buyer_from_id, json.dumps(payload_data)))
+                              insert into listings (vehicle_key, vin, source, price, miles, dom, location, buyer_id, payload, images)
+                              values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) returning id
+                            """, (vehicle_key, vin, norm["source"], norm["price"], norm["miles"], norm["dom"],
+                                  norm.get("location"), buyer_from_id, json.dumps(payload_data), norm.get("images", [])))
                             new_id = str(cur.fetchone()[0])
                         except Exception as log_exc:
                             logging.error(f"Failed to insert listing into database: {log_exc}")
@@ -133,7 +134,7 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
             id=lid, vin=vin, year=item.year, make=item.make.strip(), model=item.model.strip(),
             trim=item.trim.strip() if item.trim else None, miles=item.miles, price=item.price,
             dom=item.dom, source=item.source, location=norm.get("location"), buyer_id=buyer_id or item.buyer_id,
-            radius=item.radius or 25, reasonCodes=reason_codes, buyMax=buy_max, status=status, decision=decision
+            radius=item.radius or 25, reasonCodes=reason_codes, buyMax=buy_max, status=status, decision=decision, images=norm.get("images", [])
         )
         _BY_ID[lid] = obj
         if vin:
@@ -164,6 +165,7 @@ def list_listings(
                     v.trim,
                     l.miles, l.price, l.dom, l.source, 
                     l.location, l.buyer_id,
+                    l.images,
                     u.username as buyer_username,
                     COALESCE(s.score, 0) as score, 
                     s.buy_max, 
@@ -196,7 +198,7 @@ def list_listings(
 
                     cur.execute(query, tuple(params))
                     out: list[ListingOut] = []
-                    for rid, vehicle_key, vin, year, make, model, trim, miles, price, dom, source, location, buyer_id, buyer_username, score, buy_max, reason_codes, payload in cur.fetchall():
+                    for rid, vehicle_key, vin, year, make, model, trim, miles, price, dom, source, location, buyer_id, images, buyer_username, score, buy_max, reason_codes, payload in cur.fetchall():
                         # Extract decision data from payload if available
                         decision = None
                         status = ""
@@ -211,7 +213,7 @@ def list_listings(
                             location=location, buyer_id=buyer_id, buyer_username=buyer_username,
                             radius=25, reasonCodes=reason_codes or [],
                             buyMax=float(buy_max) if buy_max is not None else None,
-                            status=status, score=int(score) if score is not None else None, decision=decision
+                            status=status, score=int(score) if score is not None else None, decision=decision, images=images or []
                         ))
                     return out
             except Exception as e:
@@ -244,6 +246,7 @@ def list_listings_by_buyer(
                             v.trim,
                             l.miles, l.price, l.dom, l.source, 
                             l.location, l.buyer_id,
+                            l.images,
                             u.username AS buyer_username,
                             COALESCE(s.score, 0) AS score, 
                             s.buy_max, 
@@ -282,7 +285,7 @@ def list_listings_by_buyer(
                     out: list[ListingOut] = []
                     for (
                         rid, vehicle_key, vin, year, make, model, trim, miles, price, dom,
-                        source, location, buyer_id, buyer_username, score, buy_max,
+                        source, location, buyer_id, images, buyer_username, score, buy_max,
                         reason_codes, created_at, payload
                     ) in cur.fetchall():
                         
@@ -314,7 +317,8 @@ def list_listings_by_buyer(
                             buyMax=float(buy_max) if buy_max is not None else None,
                             status=status,
                             score=int(score) if score is not None else None,
-                            decision=decision
+                            decision=decision,
+                            images=images or []
                         ))
                     return out
             except Exception as e:

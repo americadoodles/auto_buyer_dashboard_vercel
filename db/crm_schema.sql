@@ -394,74 +394,204 @@ LEFT JOIN users u ON t.assigned_to = u.id;
 -- INITIAL DATA SEEDING
 -- ==============================================
 
--- Insert default lead sources
-INSERT INTO lead_sources (name, description) VALUES
-('Website', 'Lead generated from website'),
-('Referral', 'Lead from customer referral'),
-('Cold Call', 'Lead from cold calling'),
-('Email Campaign', 'Lead from email marketing'),
-('Social Media', 'Lead from social media'),
-('Trade Show', 'Lead from trade show/event'),
-('Vehicle Listing', 'Lead from vehicle listing interest')
-ON CONFLICT DO NOTHING;
+-- Clean up any existing duplicates before creating unique indexes
+-- This handles cases where data was inserted before unique constraints existed
+DO $$
+BEGIN
+    -- Remove duplicate lead_sources (keep lowest ID)
+    DELETE FROM lead_sources
+    WHERE id IN (
+        SELECT id FROM (
+            SELECT id, ROW_NUMBER() OVER (PARTITION BY LOWER(name) ORDER BY id) as rn
+            FROM lead_sources
+        ) t WHERE rn > 1
+    );
+    
+    -- Remove duplicate lead_statuses
+    DELETE FROM lead_statuses
+    WHERE id IN (
+        SELECT id FROM (
+            SELECT id, ROW_NUMBER() OVER (PARTITION BY LOWER(name) ORDER BY id) as rn
+            FROM lead_statuses
+        ) t WHERE rn > 1
+    );
+    
+    -- Remove duplicate contact_types
+    DELETE FROM contact_types
+    WHERE id IN (
+        SELECT id FROM (
+            SELECT id, ROW_NUMBER() OVER (PARTITION BY LOWER(name) ORDER BY id) as rn
+            FROM contact_types
+        ) t WHERE rn > 1
+    );
+    
+    -- Remove duplicate deal_stages
+    DELETE FROM deal_stages
+    WHERE id IN (
+        SELECT id FROM (
+            SELECT id, ROW_NUMBER() OVER (PARTITION BY LOWER(name) ORDER BY id) as rn
+            FROM deal_stages
+        ) t WHERE rn > 1
+    );
+    
+    -- Remove duplicate deal_categories
+    DELETE FROM deal_categories
+    WHERE id IN (
+        SELECT id FROM (
+            SELECT id, ROW_NUMBER() OVER (PARTITION BY LOWER(name) ORDER BY id) as rn
+            FROM deal_categories
+        ) t WHERE rn > 1
+    );
+    
+    -- Remove duplicate task_priorities
+    DELETE FROM task_priorities
+    WHERE id IN (
+        SELECT id FROM (
+            SELECT id, ROW_NUMBER() OVER (PARTITION BY LOWER(name) ORDER BY id) as rn
+            FROM task_priorities
+        ) t WHERE rn > 1
+    );
+    
+    -- Remove duplicate task_statuses
+    DELETE FROM task_statuses
+    WHERE id IN (
+        SELECT id FROM (
+            SELECT id, ROW_NUMBER() OVER (PARTITION BY LOWER(name) ORDER BY id) as rn
+            FROM task_statuses
+        ) t WHERE rn > 1
+    );
+    
+    -- Remove duplicate kpi_definitions
+    DELETE FROM kpi_definitions
+    WHERE id IN (
+        SELECT id FROM (
+            SELECT id, ROW_NUMBER() OVER (PARTITION BY LOWER(name) ORDER BY id) as rn
+            FROM kpi_definitions
+        ) t WHERE rn > 1
+    );
+END $$;
+
+-- Drop existing indexes if they exist (in case of partial/failed creation)
+DROP INDEX IF EXISTS ux_lead_sources_name_ci;
+DROP INDEX IF EXISTS ux_lead_statuses_name_ci;
+DROP INDEX IF EXISTS ux_contact_types_name_ci;
+DROP INDEX IF EXISTS ux_deal_stages_name_ci;
+DROP INDEX IF EXISTS ux_deal_categories_name_ci;
+DROP INDEX IF EXISTS ux_task_priorities_name_ci;
+DROP INDEX IF EXISTS ux_task_statuses_name_ci;
+DROP INDEX IF EXISTS ux_kpi_definitions_name_ci;
+
+-- Ensure unique names for lookup tables (case-insensitive)
+-- These indexes make seed inserts idempotent and prevent duplicate options
+CREATE UNIQUE INDEX ux_lead_sources_name_ci ON lead_sources (LOWER(name));
+CREATE UNIQUE INDEX ux_lead_statuses_name_ci ON lead_statuses (LOWER(name));
+CREATE UNIQUE INDEX ux_contact_types_name_ci ON contact_types (LOWER(name));
+CREATE UNIQUE INDEX ux_deal_stages_name_ci ON deal_stages (LOWER(name));
+CREATE UNIQUE INDEX ux_deal_categories_name_ci ON deal_categories (LOWER(name));
+CREATE UNIQUE INDEX ux_task_priorities_name_ci ON task_priorities (LOWER(name));
+CREATE UNIQUE INDEX ux_task_statuses_name_ci ON task_statuses (LOWER(name));
+CREATE UNIQUE INDEX ux_kpi_definitions_name_ci ON kpi_definitions (LOWER(name));
+
+-- Insert default lead sources (using WHERE NOT EXISTS to handle unique index)
+INSERT INTO lead_sources (name, description)
+SELECT * FROM (VALUES
+    ('Website', 'Lead generated from website'),
+    ('Referral', 'Lead from customer referral'),
+    ('Cold Call', 'Lead from cold calling'),
+    ('Email Campaign', 'Lead from email marketing'),
+    ('Social Media', 'Lead from social media'),
+    ('Trade Show', 'Lead from trade show/event'),
+    ('Vehicle Listing', 'Lead from vehicle listing interest')
+) AS v(name, description)
+WHERE NOT EXISTS (
+    SELECT 1 FROM lead_sources WHERE LOWER(lead_sources.name) = LOWER(v.name)
+);
 
 -- Insert default lead statuses
-INSERT INTO lead_statuses (name, description, color_code, sort_order) VALUES
-('New', 'Newly created lead', '#3B82F6', 1),
-('Contacted', 'Initial contact made', '#10B981', 2),
-('Qualified', 'Lead qualified for sales', '#F59E0B', 3),
-('Converted', 'Lead converted to customer', '#059669', 4),
-('Lost', 'Lead lost or disqualified', '#EF4444', 5)
-ON CONFLICT DO NOTHING;
+INSERT INTO lead_statuses (name, description, color_code, sort_order)
+SELECT * FROM (VALUES
+    ('New', 'Newly created lead', '#3B82F6', 1),
+    ('Contacted', 'Initial contact made', '#10B981', 2),
+    ('Qualified', 'Lead qualified for sales', '#F59E0B', 3),
+    ('Converted', 'Lead converted to customer', '#059669', 4),
+    ('Lost', 'Lead lost or disqualified', '#EF4444', 5)
+) AS v(name, description, color_code, sort_order)
+WHERE NOT EXISTS (
+    SELECT 1 FROM lead_statuses WHERE LOWER(lead_statuses.name) = LOWER(v.name)
+);
 
 -- Insert default contact types
-INSERT INTO contact_types (name, description) VALUES
-('Customer', 'Existing customer'),
-('Prospect', 'Potential customer'),
-('Vendor', 'Vendor or supplier'),
-('Partner', 'Business partner')
-ON CONFLICT DO NOTHING;
+INSERT INTO contact_types (name, description)
+SELECT * FROM (VALUES
+    ('Customer', 'Existing customer'),
+    ('Prospect', 'Potential customer'),
+    ('Vendor', 'Vendor or supplier'),
+    ('Partner', 'Business partner')
+) AS v(name, description)
+WHERE NOT EXISTS (
+    SELECT 1 FROM contact_types WHERE LOWER(contact_types.name) = LOWER(v.name)
+);
 
 -- Insert default deal stages
-INSERT INTO deal_stages (name, description, probability, color_code, sort_order) VALUES
-('Prospecting', 'Initial prospecting phase', 10, '#3B82F6', 1),
-('Qualification', 'Qualifying the opportunity', 25, '#10B981', 2),
-('Proposal', 'Proposal sent to customer', 50, '#F59E0B', 3),
-('Negotiation', 'Negotiating terms', 75, '#8B5CF6', 4),
-('Closed Won', 'Deal successfully closed', 100, '#059669', 5),
-('Closed Lost', 'Deal lost', 0, '#EF4444', 6)
-ON CONFLICT DO NOTHING;
+INSERT INTO deal_stages (name, description, probability, color_code, sort_order)
+SELECT * FROM (VALUES
+    ('Prospecting', 'Initial prospecting phase', 10, '#3B82F6', 1),
+    ('Qualification', 'Qualifying the opportunity', 25, '#10B981', 2),
+    ('Proposal', 'Proposal sent to customer', 50, '#F59E0B', 3),
+    ('Negotiation', 'Negotiating terms', 75, '#8B5CF6', 4),
+    ('Closed Won', 'Deal successfully closed', 100, '#059669', 5),
+    ('Closed Lost', 'Deal lost', 0, '#EF4444', 6)
+) AS v(name, description, probability, color_code, sort_order)
+WHERE NOT EXISTS (
+    SELECT 1 FROM deal_stages WHERE LOWER(deal_stages.name) = LOWER(v.name)
+);
 
 -- Insert default deal categories
-INSERT INTO deal_categories (name, description) VALUES
-('New Vehicle Sale', 'Sale of new vehicle'),
-('Used Vehicle Sale', 'Sale of used vehicle'),
-('Trade-In', 'Vehicle trade-in transaction'),
-('Financing', 'Vehicle financing deal'),
-('Service', 'Vehicle service agreement')
-ON CONFLICT DO NOTHING;
+INSERT INTO deal_categories (name, description)
+SELECT * FROM (VALUES
+    ('New Vehicle Sale', 'Sale of new vehicle'),
+    ('Used Vehicle Sale', 'Sale of used vehicle'),
+    ('Trade-In', 'Vehicle trade-in transaction'),
+    ('Financing', 'Vehicle financing deal'),
+    ('Service', 'Vehicle service agreement')
+) AS v(name, description)
+WHERE NOT EXISTS (
+    SELECT 1 FROM deal_categories WHERE LOWER(deal_categories.name) = LOWER(v.name)
+);
 
 -- Insert default task priorities
-INSERT INTO task_priorities (name, description, color_code, sort_order) VALUES
-('Low', 'Low priority task', '#6B7280', 1),
-('Medium', 'Medium priority task', '#F59E0B', 2),
-('High', 'High priority task', '#EF4444', 3),
-('Urgent', 'Urgent task', '#DC2626', 4)
-ON CONFLICT DO NOTHING;
+INSERT INTO task_priorities (name, description, color_code, sort_order)
+SELECT * FROM (VALUES
+    ('Low', 'Low priority task', '#6B7280', 1),
+    ('Medium', 'Medium priority task', '#F59E0B', 2),
+    ('High', 'High priority task', '#EF4444', 3),
+    ('Urgent', 'Urgent task', '#DC2626', 4)
+) AS v(name, description, color_code, sort_order)
+WHERE NOT EXISTS (
+    SELECT 1 FROM task_priorities WHERE LOWER(task_priorities.name) = LOWER(v.name)
+);
 
 -- Insert default task statuses
-INSERT INTO task_statuses (name, description, color_code, sort_order) VALUES
-('Not Started', 'Task not started', '#6B7280', 1),
-('In Progress', 'Task in progress', '#3B82F6', 2),
-('Completed', 'Task completed', '#059669', 3),
-('Cancelled', 'Task cancelled', '#EF4444', 4)
-ON CONFLICT DO NOTHING;
+INSERT INTO task_statuses (name, description, color_code, sort_order)
+SELECT * FROM (VALUES
+    ('Not Started', 'Task not started', '#6B7280', 1),
+    ('In Progress', 'Task in progress', '#3B82F6', 2),
+    ('Completed', 'Task completed', '#059669', 3),
+    ('Cancelled', 'Task cancelled', '#EF4444', 4)
+) AS v(name, description, color_code, sort_order)
+WHERE NOT EXISTS (
+    SELECT 1 FROM task_statuses WHERE LOWER(task_statuses.name) = LOWER(v.name)
+);
 
 -- Insert default KPI definitions
-INSERT INTO kpi_definitions (name, description, calculation_method, target_value, unit) VALUES
-('Leads Generated', 'Number of new leads created', 'COUNT', 50, 'count'),
-('Lead Conversion Rate', 'Percentage of leads converted to customers', 'PERCENTAGE', 15, 'percentage'),
-('Deals Closed', 'Number of deals closed', 'COUNT', 20, 'count'),
-('Revenue Generated', 'Total revenue from closed deals', 'SUM', 500000, 'currency'),
-('Average Deal Size', 'Average value of closed deals', 'AVERAGE', 25000, 'currency')
-ON CONFLICT DO NOTHING;
+INSERT INTO kpi_definitions (name, description, calculation_method, target_value, unit)
+SELECT * FROM (VALUES
+    ('Leads Generated', 'Number of new leads created', 'COUNT', 50, 'count'),
+    ('Lead Conversion Rate', 'Percentage of leads converted to customers', 'PERCENTAGE', 15, 'percentage'),
+    ('Deals Closed', 'Number of deals closed', 'COUNT', 20, 'count'),
+    ('Revenue Generated', 'Total revenue from closed deals', 'SUM', 500000, 'currency'),
+    ('Average Deal Size', 'Average value of closed deals', 'AVERAGE', 25000, 'currency')
+) AS v(name, description, calculation_method, target_value, unit)
+WHERE NOT EXISTS (
+    SELECT 1 FROM kpi_definitions WHERE LOWER(kpi_definitions.name) = LOWER(v.name)
+);

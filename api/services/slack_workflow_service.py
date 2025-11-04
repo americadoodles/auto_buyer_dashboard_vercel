@@ -78,6 +78,7 @@ class SlackWorkflowService:
         
         # For Slack workflow webhooks, we need to send data in a specific format
         # that matches the workflow's expected input variables
+
         return {
             "text": f"New Vehicle Lead: {self._format_vehicle_info(listing)}",
             "attachments": [
@@ -121,7 +122,9 @@ class SlackWorkflowService:
             "score": str(listing.score),
             "dom": str(listing.dom),
             "radius": str(listing.radius),
-            "status": str(listing.status or "pending")
+            "status": str(listing.status or "pending"),
+            # Add image URLs for workflow variables, limiting to 6 images
+            "image_url": "\n".join(str(url) for url in listing.images[:5])
         }
     
     def trigger_workflow(self, listing: ListingOut, custom_message: Optional[str] = None) -> SlackWorkflowTriggerResponse:
@@ -141,7 +144,8 @@ class SlackWorkflowService:
             # Method 1: Use workflow webhook if configured (preferred for Slack workflows)
             if self.workflow_webhook_url:
                 payload = self._create_workflow_webhook_payload(listing, custom_message)
-                
+                print('method1')
+                print('worflow: ', payload)
                 # Log payload for debugging (remove in production)
                 logger.debug(f"Slack workflow webhook payload: {json.dumps(payload, indent=2)}")
                 
@@ -152,6 +156,7 @@ class SlackWorkflowService:
                     timeout=10
                 )
             else:
+                print('method2')
                 # Method 2: Use Slack Web API to send a message with structured data
                 headers = {
                     "Authorization": f"Bearer {self.bot_token}",
@@ -228,6 +233,21 @@ class SlackWorkflowService:
                             "text": f"*Custom Notes:* {custom_message}"
                         }
                     })
+                      # Add image URLs
+                if len(listing.images) > 0:
+                    message_blocks.append({
+                        "type": "header",
+                        "text": {
+                            "type": "plain_text",
+                            "text": "📸 Vehicle Images"
+                        }
+                    })
+                    for i, image_url in enumerate(listing.images):
+                        message_blocks.append({
+                            "type": "image",
+                            "image_url": image_url,
+                            "alt_text": f"Vehicle Image {i+1} for {listing.vehicle_year_make_model}"
+                        })
                 
                 # Send to Slack channel
                 response = requests.post(

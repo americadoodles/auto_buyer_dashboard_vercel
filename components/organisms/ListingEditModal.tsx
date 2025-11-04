@@ -16,7 +16,7 @@ import {
 } from '../../lib/services/listingManagementApi';
 import { X, Plus, User, Phone, Mail, Building, Edit, Trash2, Save } from 'lucide-react';
 import { LeadCreateModal } from './LeadCreateModal';
-
+import { ImageCarousel } from './ImageCarousel';
 interface ListingEditModalProps {
   listing: Listing;
   isOpen: boolean;
@@ -173,6 +173,13 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
   };
 
   if (!isOpen) return null;
+
+  const handleScrollToImages = () => {
+    const imagesSection = document.getElementById('images-section');
+    if (imagesSection) {
+      imagesSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -415,6 +422,16 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
                     <Plus className="h-4 w-4" />
                     Create Lead
                   </Button>
+                  {listing.images && listing.images.length > 0 && (
+                    <Button
+                      onClick={handleScrollToImages}
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-2"
+                    >
+                      Preview Images
+                    </Button>
+                  )}
                   <Button
                     onClick={() => setShowContactSearch(true)}
                     variant="outline"
@@ -667,6 +684,14 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
               )}
             </div>
           </div>
+
+          {/* Image Carousel at the bottom of the modal */}
+          {listing.images && listing.images.length > 0 && (
+            <div id="images-section" className="p-6 border-t border-gray-200 mt-4">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Vehicle Images</h3>
+              <ImageCarousel images={listing.images} />
+            </div>
+          )}
         </div>
 
         {/* Footer */}

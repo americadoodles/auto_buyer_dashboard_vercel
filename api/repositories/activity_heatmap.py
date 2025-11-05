@@ -27,8 +27,14 @@ def get_activity_heatmap_data() -> ActivityHeatmapResponse:
         try:
             with conn.cursor() as cur:
                 # Get data for the last year
-                one_year_ago = date.today() - timedelta(days=365)
-                today = date.today()
+                one_year_ago_date = date.today() - timedelta(days=365)
+                today_date = date.today()
+                
+                # Convert to datetime for proper range comparison
+                # Start of one_year_ago (beginning of day)
+                one_year_ago = datetime.combine(one_year_ago_date, datetime.min.time()).replace(tzinfo=timezone.utc)
+                # End of today (end of day) to include all of today's activities
+                today = datetime.combine(today_date, datetime.max.time()).replace(tzinfo=timezone.utc)
                 
                 # Query to get daily activity counts
                 cur.execute("""
@@ -53,9 +59,9 @@ def get_activity_heatmap_data() -> ActivityHeatmapResponse:
                 
                 # Generate data for all days in the range
                 data = []
-                current_date = one_year_ago
+                current_date = one_year_ago_date
                 
-                while current_date <= today:
+                while current_date <= today_date:
                     date_str = current_date.isoformat()
                     count = activity_map.get(date_str, 0)
                     

@@ -422,16 +422,6 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
                     <Plus className="h-4 w-4" />
                     Create Lead
                   </Button>
-                  {listing.images && listing.images.length > 0 && (
-                    <Button
-                      onClick={handleScrollToImages}
-                      variant="outline"
-                      size="sm"
-                      className="flex items-center gap-2"
-                    >
-                      Preview Images
-                    </Button>
-                  )}
                   <Button
                     onClick={() => setShowContactSearch(true)}
                     variant="outline"
@@ -686,12 +676,12 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
           </div>
 
           {/* Image Carousel at the bottom of the modal */}
-          {listing.images && listing.images.length > 0 && (
             <div id="images-section" className="p-6 border-t border-gray-200 mt-4">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Vehicle Images</h3>
-              <ImageCarousel images={listing.images} />
+              {listing.images && listing.images.length > 0 && (
+                <ImageCarousel images={listing.images} />
+              )}
             </div>
-          )}
         </div>
 
         {/* Footer */}

@@ -422,16 +422,6 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
                     <Plus className="h-4 w-4" />
                     Create Lead
                   </Button>
-                  {listing.images && listing.images.length > 0 && (
-                    <Button
-                      onClick={handleScrollToImages}
-                      variant="outline"
-                      size="sm"
-                      className="flex items-center gap-2"
-                    >
-                      Preview Images
-                    </Button>
-                  )}
                   <Button
                     onClick={() => setShowContactSearch(true)}
                     variant="outline"

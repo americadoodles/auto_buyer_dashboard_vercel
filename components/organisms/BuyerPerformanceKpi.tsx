@@ -17,6 +17,18 @@ interface BuyerPerformanceKpiProps {
 }
 
 export const BuyerPerformanceKpi: React.FC<BuyerPerformanceKpiProps> = ({ stats }) => {
+  // Provide default values for all stats properties
+  const safeStats = {
+    total_listings: stats?.total_listings ?? 0,
+    scored_listings: stats?.scored_listings ?? 0,
+    avg_score: stats?.avg_score ?? 0,
+    avg_price: stats?.avg_price ?? 0,
+    first_listing: stats?.first_listing ?? null,
+    last_listing: stats?.last_listing ?? null,
+    unique_sources: stats?.unique_sources ?? 0,
+    scoring_rate: stats?.scoring_rate ?? 0,
+  };
+
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString();
@@ -46,7 +58,7 @@ export const BuyerPerformanceKpi: React.FC<BuyerPerformanceKpiProps> = ({ stats 
   const kpiCards = [
     {
       title: 'Total Listings',
-      value: stats.total_listings.toLocaleString(),
+      value: safeStats.total_listings.toLocaleString(),
       description: 'Vehicles sourced',
       icon: BarChart3,
       color: 'bg-blue-500',
@@ -54,25 +66,25 @@ export const BuyerPerformanceKpi: React.FC<BuyerPerformanceKpiProps> = ({ stats 
     },
     {
       title: 'Scoring Rate',
-      value: `${stats.scoring_rate.toFixed(1)}%`,
+      value: `${safeStats.scoring_rate.toFixed(1)}%`,
       description: 'Listings with scores',
       icon: Target,
       color: 'bg-green-500',
       trend: null,
-      valueColor: getScoringRateColor(stats.scoring_rate)
+      valueColor: getScoringRateColor(safeStats.scoring_rate)
     },
     {
       title: 'Average Score',
-      value: stats.avg_score.toFixed(1),
+      value: safeStats.avg_score.toFixed(1),
       description: 'Quality rating',
       icon: Star,
       color: 'bg-yellow-500',
       trend: null,
-      valueColor: getScoreColor(stats.avg_score)
+      valueColor: getScoreColor(safeStats.avg_score)
     },
     {
       title: 'Average Price',
-      value: formatCurrency(stats.avg_price),
+      value: formatCurrency(safeStats.avg_price),
       description: 'Per vehicle',
       icon: DollarSign,
       color: 'bg-purple-500',
@@ -80,7 +92,7 @@ export const BuyerPerformanceKpi: React.FC<BuyerPerformanceKpiProps> = ({ stats 
     },
     {
       title: 'Unique Sources',
-      value: stats.unique_sources.toString(),
+      value: safeStats.unique_sources.toString(),
       description: 'Data sources used',
       icon: TrendingUp,
       color: 'bg-indigo-500',
@@ -88,7 +100,7 @@ export const BuyerPerformanceKpi: React.FC<BuyerPerformanceKpiProps> = ({ stats 
     },
     {
       title: 'First Listing',
-      value: formatDate(stats.first_listing),
+      value: formatDate(safeStats.first_listing),
       description: 'Activity started',
       icon: Calendar,
       color: 'bg-gray-500',
@@ -143,7 +155,7 @@ export const BuyerPerformanceKpi: React.FC<BuyerPerformanceKpiProps> = ({ stats 
               <div>
                 <p className="text-sm font-medium text-blue-700">Last Activity</p>
                 <p className="text-lg font-semibold text-blue-900">
-                  {formatDate(stats.last_listing)}
+                  {formatDate(safeStats.last_listing)}
                 </p>
               </div>
             </div>
@@ -157,7 +169,7 @@ export const BuyerPerformanceKpi: React.FC<BuyerPerformanceKpiProps> = ({ stats 
               <div>
                 <p className="text-sm font-medium text-green-700">Scored Listings</p>
                 <p className="text-lg font-semibold text-green-900">
-                  {stats.scored_listings.toLocaleString()} / {stats.total_listings.toLocaleString()}
+                  {safeStats.scored_listings.toLocaleString()} / {safeStats.total_listings.toLocaleString()}
                 </p>
               </div>
             </div>

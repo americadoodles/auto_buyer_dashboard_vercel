@@ -8,8 +8,14 @@ try {
     python --version | Out-Null
     Write-Host "✅ Python found" -ForegroundColor Green
 } catch {
-    Write-Host "❌ Python not found. Please install Python 3.8+" -ForegroundColor Red
-    exit 1
+    try {
+        python3 --version | Out-Null
+        Write-Host "✅ Python3 found" -ForegroundColor Green
+    } catch {
+        Write-Host "❌ Python not found. Please install Python 3.11+" -ForegroundColor Red
+        Write-Host "Make sure Python is in your PATH or install from Microsoft Store" -ForegroundColor Yellow
+        exit 1
+    }
 }
 
 # Check if Node.js is installed
@@ -33,10 +39,23 @@ try {
 # Install Python dependencies if requirements.txt exists
 if (Test-Path "requirements.txt") {
     Write-Host "📦 Installing Python dependencies..." -ForegroundColor Yellow
-    pip install -r requirements.txt
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "❌ Failed to install Python dependencies" -ForegroundColor Red
-        exit 1
+    
+    # Try pip first, then pip3
+    try {
+        pip install -r requirements.txt
+        if ($LASTEXITCODE -ne 0) {
+            throw "pip failed"
+        }
+    } catch {
+        try {
+            pip3 install -r requirements.txt
+            if ($LASTEXITCODE -ne 0) {
+                throw "pip3 failed"
+            }
+        } catch {
+            Write-Host "❌ Failed to install Python dependencies with both pip and pip3" -ForegroundColor Red
+            exit 1
+        }
     }
     Write-Host "✅ Python dependencies installed" -ForegroundColor Green
 }

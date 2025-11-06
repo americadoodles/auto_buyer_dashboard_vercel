@@ -1,6 +1,6 @@
  
 import { Listing } from '../types/listing';
-import { User, UserSignupRequest, UserLoginRequest, UserConfirmRequest, UserRemoveRequest, TokenResponse } from '../types/user';
+import { User, UserSignupRequest, UserLoginRequest, UserConfirmRequest, UserRemoveRequest, TokenResponse, UserUpdateRequest, UserUpdatePasswordRequest } from '../types/user';
 import { Role, RoleCreate, RoleEdit } from '../types/role';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? '/api';
@@ -25,6 +25,40 @@ export class ApiService {
     try { return localStorage.getItem(ApiService.tokenKey); } catch { return null; }
   }
 
+  static async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const headers = this.authHeaders(options.headers as HeadersInit);
+    const response = await fetch(`${BACKEND_URL}${endpoint}`, {
+      ...options,
+      headers
+    });
+    return this.handleResponse<T>(response);
+  }
+
+  private static isTokenExpired(token: string): boolean {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const exp = payload.exp;
+      if (!exp) return true;
+      return Date.now() >= exp * 1000;
+    } catch {
+      return true;
+    }
+  }
+
+  private static validateToken(): boolean {
+    const token = ApiService.getToken();
+    if (!token) return false;
+    
+    if (ApiService.isTokenExpired(token)) {
+      ApiService.logout();
+      if (typeof window !== 'undefined') {
+        window.location.href = '/auth';
+      }
+      return false;
+    }
+    return true;
+  }
+
   private static setToken(token: string | null) {
     if (typeof window === 'undefined') return;
     try {
@@ -38,6 +72,11 @@ export class ApiService {
   }
 
   private static authHeaders(extra?: HeadersInit): HeadersInit {
+    // Validate token before making request
+    if (!ApiService.validateToken()) {
+      return { ...(extra as any) };
+    }
+    
     const token = ApiService.getToken();
     const base: Record<string, string> = {};
     if (token) base['Authorization'] = `Bearer ${token}`;
@@ -46,6 +85,15 @@ export class ApiService {
 
   private static async handleResponse<T>(response: Response): Promise<T> {
     if (!response.ok) {
+      // Handle token expiration (401 Unauthorized)
+      if (response.status === 401) {
+        ApiService.logout();
+        // Redirect to auth page if we're in the browser
+        if (typeof window !== 'undefined') {
+          window.location.href = '/auth';
+        }
+      }
+      
       let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
       try {
         const errorData = await response.json();
@@ -55,18 +103,24 @@ export class ApiService {
       }
       throw new ApiError(errorMessage, response.status);
     }
-    return await response.json();
+    
+    try {
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to parse JSON response:', error);
+      throw new ApiError('Invalid response format from server', response.status);
+    }
   }
 
   static async getRoles(): Promise<Role[]> {
-    const response = await fetch(`${BACKEND_URL}/roles`, {
+    const response = await fetch(`${BACKEND_URL}/roles/`, {
       headers: this.authHeaders(),
     });
     return this.handleResponse<Role[]>(response);
   }
 
   static async createRole(role: RoleCreate): Promise<Role> {
-    const response = await fetch(`${BACKEND_URL}/roles`, {
+    const response = await fetch(`${BACKEND_URL}/roles/`, {
       method: 'POST',
       headers: this.authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(role)
@@ -75,7 +129,7 @@ export class ApiService {
   }
 
   static async updateRole(role: RoleEdit): Promise<boolean> {
-    const response = await fetch(`${BACKEND_URL}/roles`, {
+    const response = await fetch(`${BACKEND_URL}/roles/`, {
       method: 'PUT',
       headers: this.authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(role)
@@ -110,21 +164,36 @@ export class ApiService {
   }
 
   static async login(request: UserLoginRequest): Promise<User> {
-    const response = await fetch(`${BACKEND_URL}/users/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(request)
-    });
-    const data = await this.handleResponse<TokenResponse>(response);
-    this.setToken(data.access_token);
-    return data.user;
+    try {
+      const response = await fetch(`${BACKEND_URL}/users/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(request)
+      });
+      
+      const data = await this.handleResponse<TokenResponse>(response);
+      this.setToken(data.access_token);
+      return data.user;
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new ApiError('Login request timed out. Please try again.', 408);
+      }
+      throw error;
+    }
   }
 
   static async me(): Promise<User> {
-    const response = await fetch(`${BACKEND_URL}/users/me`, {
-      headers: this.authHeaders(),
-    });
-    return this.handleResponse<User>(response);
+    try {
+      const response = await fetch(`${BACKEND_URL}/users/me`, {
+        headers: this.authHeaders()
+      });
+      return this.handleResponse<User>(response);
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new ApiError('Authentication check timed out. Please try again.', 408);
+      }
+      throw error;
+    }
   }
 
   static async getSignupRequests(): Promise<UserSignupRequest[]> {
@@ -135,7 +204,7 @@ export class ApiService {
   }
 
   static async getUsers(): Promise<User[]> {
-    const response = await fetch(`${BACKEND_URL}/users`, {
+    const response = await fetch(`${BACKEND_URL}/users/`, {
       headers: this.authHeaders(),
     });
     return this.handleResponse<User[]>(response);
@@ -159,12 +228,109 @@ export class ApiService {
     return this.handleResponse<any>(response);
   }
 
-  static async getListings(): Promise<Listing[]> {
-    const response = await fetch(`${BACKEND_URL}/listings`, {
+  static async getUser(userId: string): Promise<User> {
+    const response = await fetch(`${BACKEND_URL}/users/${userId}`, {
       headers: this.authHeaders(),
     });
-    const data = await this.handleResponse<any>(response);
-    return Array.isArray(data) ? data : [];
+    return this.handleResponse<User>(response);
+  }
+
+  static async updateUser(userId: string, request: UserUpdateRequest): Promise<User> {
+    const response = await fetch(`${BACKEND_URL}/users/${userId}`, {
+      method: 'PUT',
+      headers: this.authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify(request)
+    });
+    return this.handleResponse<User>(response);
+  }
+
+  static async updateUserPassword(userId: string, request: UserUpdatePasswordRequest): Promise<any> {
+    const response = await fetch(`${BACKEND_URL}/users/${userId}/password`, {
+      method: 'PUT',
+      headers: this.authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify(request)
+    });
+    return this.handleResponse<any>(response);
+  }
+
+  static async updateMyProfile(request: UserUpdateRequest): Promise<User> {
+    const response = await fetch(`${BACKEND_URL}/users/me`, {
+      method: 'PUT',
+      headers: this.authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify(request)
+    });
+    return this.handleResponse<User>(response);
+  }
+
+  static async updateMyPassword(request: UserUpdatePasswordRequest): Promise<any> {
+    const response = await fetch(`${BACKEND_URL}/users/me/password`, {
+      method: 'PUT',
+      headers: this.authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify(request)
+    });
+    return this.handleResponse<any>(response);
+  }
+
+  static async getListings(params?: { start_date?: string; end_date?: string; limit?: number }): Promise<Listing[]> {
+    const query = new URLSearchParams();
+    if (params?.start_date) query.append('start_date', params.start_date);
+    if (params?.end_date) query.append('end_date', params.end_date);
+    if (params?.limit !== undefined) query.append('limit', String(params.limit));
+    const fullUrl = `${BACKEND_URL}/listings${query.toString() ? `?${query.toString()}` : ''}`;
+    console.log(`[API] getListings - Base URL: ${BACKEND_URL}`);
+    console.log(`[API] getListings - Full endpoint URL: ${fullUrl}`);
+    
+    try {
+      const response = await fetch(fullUrl, {
+        headers: this.authHeaders(),
+      });
+      
+      console.log(`[API] getListings - Response status: ${response.status} ${response.statusText}`);
+      
+      const data = await this.handleResponse<any>(response);
+      console.log(`[API] getListings - Success: received ${Array.isArray(data) ? data.length : 'non-array'} items`);
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      console.error(`[API] getListings - Error occurred:`, {
+        baseUrl: BACKEND_URL,
+        fullUrl: fullUrl,
+        error: error instanceof Error ? error.message : String(error),
+        errorType: error instanceof Error ? error.constructor.name : typeof error,
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      throw error;
+    }
+  }
+
+  static async getBuyerListings(buyerId: string, params?: { start_date?: string; end_date?: string; limit?: number }): Promise<Listing[]> {
+    const query = new URLSearchParams();
+    if (params?.start_date) query.append('start_date', params.start_date);
+    if (params?.end_date) query.append('end_date', params.end_date);
+    if (params?.limit !== undefined) query.append('limit', String(params.limit));
+    const fullUrl = `${BACKEND_URL}/listings/buyer/${buyerId}${query.toString() ? `?${query.toString()}` : ''}`;
+    console.log(`[API] getBuyerListings - Base URL: ${BACKEND_URL}`);
+    console.log(`[API] getBuyerListings - Full endpoint URL: ${fullUrl}`);
+    
+    try {
+      const response = await fetch(fullUrl, {
+        headers: this.authHeaders(),
+      });
+      
+      console.log(`[API] getBuyerListings - Response status: ${response.status} ${response.statusText}`);
+      
+      const data = await this.handleResponse<any>(response);
+      console.log(`[API] getBuyerListings - Success: received ${Array.isArray(data) ? data.length : 'non-array'} items`);
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      console.error(`[API] getBuyerListings - Error occurred:`, {
+        baseUrl: BACKEND_URL,
+        fullUrl: fullUrl,
+        error: error instanceof Error ? error.message : String(error),
+        errorType: error instanceof Error ? error.constructor.name : typeof error,
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      throw error;
+    }
   }
 
   static async scoreListings(listings: Listing[]): Promise<Array<{
@@ -216,5 +382,129 @@ export class ApiService {
     });
 
     return this.handleResponse<any>(response);
+  }
+
+  static async sendSlackNotification(vehicle_key: string, vin: string, custom_message?: string): Promise<{
+    vehicle_key: string;
+    vin: string;
+    sent: boolean;
+    channel: string;
+    message: string;
+    error?: string;
+  }> {
+    const response = await fetch(`${BACKEND_URL}/slack/notify`, {
+      method: 'POST',
+      headers: this.authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ 
+        vehicle_key, 
+        vin, 
+        custom_message 
+      })
+    });
+
+    return this.handleResponse<{
+      vehicle_key: string;
+      vin: string;
+      sent: boolean;
+      channel: string;
+      message: string;
+      error?: string;
+    }>(response);
+  }
+
+  static async getSlackStatus(): Promise<{
+    notifications: {
+      enabled: boolean;
+      webhook_configured: boolean;
+      channel: string;
+    };
+    workflows: {
+      enabled: boolean;
+      bot_token_configured: boolean;
+      workflow_webhook_configured: boolean;
+    };
+  }> {
+    const response = await fetch(`${BACKEND_URL}/slack/status`, {
+      headers: this.authHeaders(),
+    });
+
+    return this.handleResponse<{
+      notifications: {
+        enabled: boolean;
+        webhook_configured: boolean;
+        channel: string;
+      };
+      workflows: {
+        enabled: boolean;
+        bot_token_configured: boolean;
+        workflow_webhook_configured: boolean;
+      };
+    }>(response);
+  }
+
+  static async triggerSlackWorkflow(vehicle_key: string, vin: string, custom_message?: string): Promise<{
+    vehicle_key: string;
+    vin: string;
+    triggered: boolean;
+    workflow_id?: string;
+    message: string;
+    error?: string;
+  }> {
+    const response = await fetch(`${BACKEND_URL}/slack/trigger-workflow`, {
+      method: 'POST',
+      headers: this.authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ 
+        vehicle_key, 
+        vin, 
+        custom_message 
+      })
+    });
+
+    return this.handleResponse<{
+      vehicle_key: string;
+      vin: string;
+      triggered: boolean;
+      workflow_id?: string;
+      message: string;
+      error?: string;
+    }>(response);
+  }
+
+  static async getKpiMetrics(): Promise<{
+    metrics: {
+      average_profit_per_unit: number;
+      lead_to_purchase_time: number;
+      aged_inventory: number;
+      total_listings: number;
+      active_buyers: number;
+      conversion_rate: number;
+      average_price: number;
+      total_value: number;
+      scoring_rate: number;
+      average_score: number;
+    };
+    success: boolean;
+    message?: string;
+  }> {
+    const response = await fetch(`${BACKEND_URL}/kpi`, {
+      headers: this.authHeaders(),
+    });
+
+    return this.handleResponse<{
+      metrics: {
+        average_profit_per_unit: number;
+        lead_to_purchase_time: number;
+        aged_inventory: number;
+        total_listings: number;
+        active_buyers: number;
+        conversion_rate: number;
+        average_price: number;
+        total_value: number;
+        scoring_rate: number;
+        average_score: number;
+      };
+      success: boolean;
+      message?: string;
+    }>(response);
   }
 }

@@ -4,13 +4,18 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ApiService } from "../../lib/services/api";
 import { User, UserRemoveRequest } from "../../lib/types/user";
-import { Users, Trash2, CheckCircle, XCircle, Activity } from "lucide-react";
+import { Role } from "../../lib/types/role";
+import { Users, Trash2, CheckCircle, XCircle, Activity, Edit } from "lucide-react";
+import UserEditModal from "./UserEditModal";
 
 const CurrentUsersTable: React.FC = () => {
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -24,8 +29,18 @@ const CurrentUsersTable: React.FC = () => {
     }
   };
 
+  const fetchRoles = async () => {
+    try {
+      const data = await ApiService.getRoles();
+      setRoles(data);
+    } catch (err: any) {
+      console.error("Failed to fetch roles:", err);
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
+    fetchRoles();
   }, []);
 
   const handleRemove = async (user_id: string) => {
@@ -41,6 +56,22 @@ const CurrentUsersTable: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEdit = (user: User) => {
+    setEditingUser(user);
+    setIsEditModalOpen(true);
+  };
+
+  const handleUserUpdated = (updatedUser: User) => {
+    setUsers(users.map(user => user.id === updatedUser.id ? updatedUser : user));
+    setIsEditModalOpen(false);
+    setEditingUser(null);
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setEditingUser(null);
   };
 
   const getRoleBadge = (role: string) => {
@@ -142,6 +173,13 @@ const CurrentUsersTable: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center space-x-2">
                         <button
+                          onClick={() => handleEdit(user)}
+                          className="inline-flex items-center px-3 py-1.5 border border-green-300 text-xs font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                        >
+                          <Edit className="w-3 h-3 mr-1" />
+                          Edit
+                        </button>
+                        <button
                           onClick={() => router.push(`/admin/buyer-activity/${user.id}`)}
                           className="inline-flex items-center px-3 py-1.5 border border-blue-300 text-xs font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                         >
@@ -173,6 +211,17 @@ const CurrentUsersTable: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Edit Modal */}
+      {editingUser && (
+        <UserEditModal
+          user={editingUser}
+          roles={roles}
+          isOpen={isEditModalOpen}
+          onClose={handleCloseEditModal}
+          onUserUpdated={handleUserUpdated}
+        />
+      )}
     </div>
   );
 };

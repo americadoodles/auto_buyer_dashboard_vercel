@@ -2,20 +2,39 @@ import { useState, useEffect, useMemo } from 'react';
 import { Listing, SortConfig } from '../types/listing';
 import { MOCK_DATA } from '../data/mockData';
 import { ApiService } from '../services/api';
+import { useAuth } from '../../app/auth/useAuth';
+import { useToast } from '../../hooks/useToast';
 
 export const useListings = () => {
+  const { user } = useAuth();
+  const { showSuccess, showError, showWarning } = useToast();
   const [data, setData] = useState<Listing[]>([]);
   const [sort, setSort] = useState<SortConfig>({ key: 'score', dir: 'desc' });
   const [loading, setLoading] = useState<boolean>(false);
   const [backendOk, setBackendOk] = useState<boolean | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [rowsPerPage, setRowsPerPage] = useState<number>(10);
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
 
   const sortedRows = useMemo(() => {
     const dir = sort.dir === 'asc' ? 1 : -1;
     return [...data].sort((a, b) => {
-      const av = a[sort.key] as any;
-      const bv = b[sort.key] as any;
+      let av: any;
+      let bv: any;
+      
+      // Handle nested decision fields
+      if (sort.key === 'decision_status') {
+        av = a.decision?.status;
+        bv = b.decision?.status;
+      } else if (sort.key === 'decision_reasons') {
+        av = a.decision?.reasons?.join(', ') || '';
+        bv = b.decision?.reasons?.join(', ') || '';
+      } else {
+        av = a[sort.key as keyof Listing];
+        bv = b[sort.key as keyof Listing];
+      }
+      
       if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
       return String(av).localeCompare(String(bv)) * dir;
     });
@@ -45,7 +64,18 @@ export const useListings = () => {
         setBackendOk(isHealthy);
         
         if (isHealthy) {
-          const listings = await ApiService.getListings();
+          // Default to today's listings on first load
+          const today = new Date();
+          const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
+          const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+          setStartDate(startOfToday);
+          setEndDate(endOfToday);
+          // Use appropriate API call based on user role
+          const listings = user?.role === 'admin' 
+            ? await ApiService.getListings({ start_date: startOfToday.toISOString(), end_date: endOfToday.toISOString() })
+            : user?.id 
+              ? await ApiService.getBuyerListings(user.id, { start_date: startOfToday.toISOString(), end_date: endOfToday.toISOString() })
+              : [];
           if (mounted && Array.isArray(listings) && listings.length > 0) {
             setData(listings);
           }
@@ -64,7 +94,7 @@ export const useListings = () => {
     checkBackend();
     
     return () => { mounted = false; };
-  }, []);
+  }, [user]);
 
   const rescoreVisible = async () => {
     try {
@@ -76,10 +106,10 @@ export const useListings = () => {
         byVin[s.vin] = { score: s.score, buyMax: s.buyMax, reasonCodes: s.reasonCodes };
       }
       
-      setData(d => d.map(x => byVin[x.vin] ? { ...x, ...byVin[x.vin] } : x));
-      alert(`Re-scored ${scores.length} listings.`);
+      setData(d => d.map(x => x.vin && byVin[x.vin] ? { ...x, ...byVin[x.vin] } : x));
+      showSuccess('Re-scoring Complete', `Re-scored ${scores.length} listings.`);
     } catch (e: any) {
-      alert('Failed to score: ' + e.message);
+      showError('Re-scoring Failed', 'Failed to score: ' + e.message);
     } finally {
       setLoading(false);
     }
@@ -91,9 +121,9 @@ export const useListings = () => {
       const seeded = await ApiService.ingestListings(MOCK_DATA);
       setData(seeded);
       setBackendOk(true);
-      alert(`Seeded ${seeded.length} listings to backend.`);
+      showSuccess('Backend Seeded', `Seeded ${seeded.length} listings to backend.`);
     } catch (e: any) {
-      alert('Failed to seed backend: ' + e.message);
+      showError('Seeding Failed', 'Failed to seed backend: ' + e.message);
     } finally {
       setLoading(false);
     }
@@ -102,14 +132,45 @@ export const useListings = () => {
   const loadFromBackend = async () => {
     try {
       setLoading(true);
-      const listings = await ApiService.getListings();
+      // Use appropriate API call based on user role
+      const listings = user?.role === 'admin' 
+        ? await ApiService.getListings({ start_date: startDate?.toISOString(), end_date: endDate?.toISOString() })
+        : user?.id 
+          ? await ApiService.getBuyerListings(user.id, { start_date: startDate?.toISOString(), end_date: endDate?.toISOString() })
+          : [];
       setData(Array.isArray(listings) && listings.length ? listings : data);
       setBackendOk(true);
     } catch (e: any) {
-      alert('Failed to load from backend: ' + e.message);
+      showError('Load Failed', 'Failed to load from backend: ' + e.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadWithDateRange = async (start: Date | null, end: Date | null) => {
+    try {
+      setLoading(true);
+      setStartDate(start);
+      setEndDate(end);
+      const listings = user?.role === 'admin'
+        ? await ApiService.getListings({ start_date: start?.toISOString() || undefined, end_date: end?.toISOString() || undefined })
+        : user?.id
+          ? await ApiService.getBuyerListings(user.id, { start_date: start?.toISOString() || undefined, end_date: end?.toISOString() || undefined })
+          : [];
+      setData(Array.isArray(listings) ? listings : []);
+      setBackendOk(true);
+    } catch (e: any) {
+      showError('Load Failed', 'Failed to load listings: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const refreshToday = async () => {
+    const today = new Date();
+    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
+    const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+    await loadWithDateRange(startOfToday, endOfToday);
   };
 
   const notify = async (vin: string) => {
@@ -118,14 +179,60 @@ export const useListings = () => {
       // Find the listing to get the vehicle_key
       const listing = data.find(l => l.vin === vin);
       if (!listing) {
-        alert('Listing not found');
+        showWarning('Listing Not Found', 'The requested listing could not be found.');
         return;
       }
       
       const res = await ApiService.notifyListing(listing.vehicle_key, vin);
-      alert(`Notified for VIN ${vin}: ${res?.[0]?.channel ?? 'ok'}`);
+      showSuccess('Notification Sent', `Notified for VIN ${vin}: ${res?.[0]?.channel ?? 'ok'}`);
     } catch (e: any) {
-      alert('Failed to notify: ' + e.message);
+      showError('Notification Failed', 'Failed to notify: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const notifySlack = async (vin: string, customMessage?: string) => {
+    try {
+      setLoading(true);
+      // Find the listing to get the vehicle_key
+      const listing = data.find(l => l.vin === vin);
+      if (!listing) {
+        showWarning('Listing Not Found', 'The requested listing could not be found.');
+        return;
+      }
+      
+      const res = await ApiService.sendSlackNotification(listing.vehicle_key, vin, customMessage);
+      if (res.sent) {
+        showSuccess('Slack Notification Sent', `Slack notification sent to ${res.channel} for VIN ${vin}`);
+      } else {
+        showError('Slack Notification Failed', `Failed to send Slack notification: ${res.error || res.message}`);
+      }
+    } catch (e: any) {
+      showError('Slack Notification Failed', 'Failed to send Slack notification: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const triggerWorkflow = async (vin: string, customMessage?: string) => {
+    try {
+      setLoading(true);
+      // Find the listing to get the vehicle_key
+      const listing = data.find(l => l.vin === vin);
+      if (!listing) {
+        showWarning('Listing Not Found', 'The requested listing could not be found.');
+        return;
+      }
+      
+      const res = await ApiService.triggerSlackWorkflow(listing.vehicle_key, vin, customMessage);
+      if (res.triggered) {
+        showSuccess('Slack Workflow Triggered', `Slack workflow triggered for VIN ${vin}${res.workflow_id ? ` (ID: ${res.workflow_id})` : ''}`);
+      } else {
+        showError('Slack Workflow Failed', `Failed to trigger Slack workflow: ${res.error || res.message}`);
+      }
+    } catch (e: any) {
+      showError('Slack Workflow Failed', 'Failed to trigger Slack workflow: ' + e.message);
     } finally {
       setLoading(false);
     }
@@ -147,6 +254,12 @@ export const useListings = () => {
     rescoreVisible,
     seedBackend,
     loadFromBackend,
-    notify
+    loadWithDateRange,
+    refreshToday,
+    startDate,
+    endDate,
+    notify,
+    notifySlack,
+    triggerWorkflow
   };
 };

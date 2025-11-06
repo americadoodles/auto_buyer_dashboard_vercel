@@ -1,15 +1,63 @@
-import { LucideIcon } from 'lucide-react';
+import { 
+  LucideIcon,
+  Download,
+  Plus,
+  Users,
+  UserCheck,
+  UserPlus,
+  Activity,
+  Eye,
+  Edit,
+  Phone,
+  Mail,
+  CheckCircle,
+  Clock,
+  TrendingUp,
+  AlertCircle,
+  Check,
+  Settings,
+  X
+} from 'lucide-react';
 
 interface IconProps {
-  icon: LucideIcon;
+  icon?: LucideIcon;
+  name?: string;
   className?: string;
   size?: number;
 }
 
+const iconMap: Record<string, LucideIcon> = {
+  'download': Download,
+  'plus': Plus,
+  'users': Users,
+  'user-check': UserCheck,
+  'user-plus': UserPlus,
+  'activity': Activity,
+  'eye': Eye,
+  'edit': Edit,
+  'phone': Phone,
+  'mail': Mail,
+  'check-circle': CheckCircle,
+  'clock': Clock,
+  'trending-up': TrendingUp,
+  'alert-circle': AlertCircle,
+  'check': Check,
+  'settings': Settings,
+  'x': X
+};
+
 export const Icon: React.FC<IconProps> = ({ 
   icon: IconComponent, 
+  name,
   className = '', 
   size = 24 
 }) => {
-  return <IconComponent className={className} size={size} />;
+  const IconToRender = name ? iconMap[name] : IconComponent;
+  
+  if (!IconToRender) {
+    console.warn(`Icon with name "${name}" not found`);
+    return null;
+  }
+  
+  return <IconToRender className={className} size={size} />;
 };

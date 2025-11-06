@@ -1,13 +1,57 @@
 import json
 import logging
-from typing import List, Optional
-from ..core.db import get_conn, DB_ENABLED
-from ..schemas.listing import ListingIn, ListingOut
 import datetime
+from typing import List, Optional
+from datetime import timezone
+from ..core.db import DB_ENABLED
+from ..core.db_helpers import get_db_connection
+from ..schemas.listing import ListingIn, ListingOut
+from ..schemas.listing import Decision
 
 # In-memory fallback for listings
 _BY_ID: dict[str, ListingOut] = {}
 _IDS_BY_VIN: dict[str, list[str]] = {}
+
+# ============================================================================
+# HELPER FUNCTIONS
+# ============================================================================
+
+def create_decision_from_data(data: dict) -> Optional[Decision]:
+    """Create a Decision object from data if status, reasonCodes, or buyMax are present."""
+    if data.get("status") or data.get("reasonCodes") or data.get("buyMax"):
+        return Decision(
+            status=data.get("status", ""),
+            reasons=data.get("reasonCodes", []),
+            buyMax=float(data.get("buyMax", 0)) if data.get("buyMax") is not None else 0
+        )
+    return None
+
+def images_equal(incoming, existing):
+    logging.debug(f"Comparing images: incoming={incoming}, existing={existing}")
+    if not incoming and not existing:
+        return True
+    if not incoming:
+        incoming = []
+    if not existing:
+        existing = []
+
+    if isinstance(incoming, str):
+        try:
+            incoming = json.loads(incoming)
+        except json.JSONDecodeError:
+            incoming = [incoming]
+    if isinstance(existing, str):
+        try:
+            existing = json.loads(existing)
+        except json.JSONDecodeError:
+            existing = [existing]
+
+    incoming = [str(x) for x in incoming]
+    existing = [str(x) for x in existing]
+
+    result = sorted(incoming) == sorted(existing)
+    logging.debug(f"Comparison result={result}")
+    return result
 
 # ============================================================================
 # LISTINGS REPOSITORY
@@ -16,73 +60,227 @@ _IDS_BY_VIN: dict[str, list[str]] = {}
 def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> List[ListingOut]:
     out: list[ListingOut] = []
     if DB_ENABLED:
-        conn = get_conn(); assert conn is not None
-        try:
-            with conn, conn.cursor() as cur:
-                for item in rows:
-                    norm = item.model_dump()
-                    vin_raw = norm.get("vin")
-                    vin = vin_raw.strip().upper() if vin_raw and vin_raw.strip() else None
+        with get_db_connection() as conn:
+            if not conn:
+                return out
+            # Check for existing listings by vin or by source
+            vin_to_row = {}
+            no_vin_rows = []
+            for item in rows:
+                norm = item.model_dump()
+                vin_raw = norm.get("vin")
+                vin = vin_raw.strip().upper() if vin_raw and vin_raw.strip() else None
+                if vin:
+                    vin_to_row[vin] = norm
+                else:
+                    no_vin_rows.append(norm)
+            
+            # Build WHERE clause/params for all vins
+            vins = list(vin_to_row.keys())
+            source_rows_map = {}  # (source, created_at) mapping for missing VINs
+            
+            for n in no_vin_rows:
+                src = (n.get("source") or "unknown").strip().lower()
+                # We'll key by (source, created_at) since source alone is not unique
+                # created_at could be None, so fallback to year/make/model in worst case
+                created = n.get("created_at")
+                if isinstance(created, datetime.datetime):
+                    created_str = created.isoformat(timespec='seconds')
+                elif created:
+                    created_str = str(created)
+                else:
+                    # fallback to something sufficiently unique
+                    created_str = f"{n.get('year','')}-{n.get('make','')}-{n.get('model','')}"
+                source_rows_map[(src, created_str)] = n
 
-                    def make_vehicle_key(n):
-                        if vin:
-                            return vin
-                        # unique by timestamp when VIN missing; include source to be extra safe
-                        created = (n.get("created_at") or datetime.utcnow())
-                        src = (n.get("source") or "unknown").strip().lower()
-                        return f"{src}#{created.isoformat(timespec='milliseconds')}"
+            # Query all matching listings by vin
+            found_by_vin = {}
+            if vins:
+                cur = conn.cursor()
+                vin_placeholders = ','.join(['%s'] * len(vins))
+                cur.execute(f"SELECT id, vin, images, source, created_at FROM listings WHERE vin IN ({vin_placeholders})", vins)
+                for record in cur.fetchall():
+                    found_by_vin[record[1].strip().upper()] = record
 
-                    vehicle_key = make_vehicle_key(norm)
-                    make = norm["make"].strip()
-                    model = norm["model"].strip()
-                    trim = (norm["trim"] or None)
+            # Query all matching listings by source and created_at for non-vin rows
+            found_by_src = {}
+            if source_rows_map:
+                # Only query records where the source and created_at match
+                # For better performance, use a window if many possible rows
+                query = """
+                    SELECT id, vin, images, source, created_at
+                    FROM listings
+                    WHERE vin IS NULL AND source = %s AND created_at::text = %s
+                """
+                for (src, created_str), n in source_rows_map.items():
+                    cur = conn.cursor()
+                    cur.execute(query, (src, created_str))
+                    for record in cur.fetchall():
+                        found_by_src[(src, created_str)] = record
 
-                    # vehicles
-                    cur.execute("""
-                         insert into vehicles (vehicle_key, vin, year, make, model, trim)
-                         values (%s,%s,%s,%s,%s,%s)
-                         on conflict (vehicle_key) do update set vin=excluded.vin, year=excluded.year, make=excluded.make, model=excluded.model, trim=excluded.trim
-                     """, (vehicle_key, vin, norm["year"], make, model, trim))
-                    # listings
-                    # Convert datetime objects to ISO format strings for JSON serialization
-                    payload_data = norm.copy()
-                    if "created_at" in payload_data and payload_data["created_at"]:
-                        if isinstance(payload_data["created_at"], datetime.datetime):
-                            payload_data["created_at"] = payload_data["created_at"].isoformat()
+            # Now filter incoming rows: skip insert if exists & images are identical; else, update if images differ
+            rows_to_create = []
+            updates_to_perform = []
 
-                    # Use buyer_id from authenticated context when provided; fallback to incoming buyer_id
-                    buyer_from_id = buyer_id or norm.get("buyer_id") or None
 
-                    # Prefer writing to buyer_id column;
-                    try:
+            for item in rows:
+                norm = item.model_dump()
+                vin_raw = norm.get("vin")
+                vin = vin_raw.strip().upper() if vin_raw and vin_raw.strip() else None
+                images_incoming = norm.get('images') or []
+                if vin and vin in found_by_vin:
+                    existing_row = found_by_vin[vin]
+                    existing_images = existing_row[2]
+                    if images_equal(images_incoming, existing_images):
+                        logging.debug(f"Skipping update for VIN {vin}: images are identical.")
+                        continue
+                    else:
+                        logging.debug(f"Updating images for VIN {vin}: images differ. Existing: {existing_images}, Incoming: {images_incoming}")
+                        updates_to_perform.append({
+                            "id": existing_row[0],
+                            "images": images_incoming
+                        })
+                        continue
+                else:
+                    # Handle non-vin case: match (source, created_at)
+                    src = (norm.get("source") or "unknown").strip().lower()
+                    created = norm.get("created_at")
+                    if isinstance(created, datetime.datetime):
+                        created_str = created.isoformat(timespec='seconds')
+                    elif created:
+                        created_str = str(created)
+                    else:
+                        created_str = f"{norm.get('year','')}-{norm.get('make','')}-{norm.get('model','')}"
+                    candidate = found_by_src.get((src, created_str))
+                    if candidate:
+                        existing_images = candidate[2]
+                        if images_equal(images_incoming, existing_images):
+                            logging.debug(f"Skipping update for (src, created_at) {src, created_str}: images are identical.")
+                            continue
+                        else:
+                            logging.debug(f"Updating images for (src, created_at) {src, created_str}: images differ. Existing: {existing_images}, Incoming: {images_incoming}")
+                            updates_to_perform.append({
+                                "id": candidate[0],
+                                "images": images_incoming
+                            })
+                            continue
+                    else:
+                        # No match, add to create
+                        logging.debug(f"No match found for {vin or (src, created_str)}, adding to create list.")
+                        rows_to_create.append(item)
+                        continue
+
+            # Perform all image updates, if any
+            for update in updates_to_perform:
+                try:
+                    cur = conn.cursor()
+                    cur.execute(
+                        "UPDATE listings SET images=%s WHERE id=%s",
+                        (update["images"], update["id"])
+                    )
+                    conn.commit()
+                except Exception as update_exc:
+                    logging.error(f"Failed to update images for listing {update['id']}: {update_exc}")
+
+            # Only process create for rows_to_create from here
+            rows = rows_to_create
+            try:
+                with conn.cursor() as cur:
+                    for item in rows:
+                        norm = item.model_dump()
+                        vin_raw = norm.get("vin")
+                        vin = vin_raw.strip().upper() if vin_raw and vin_raw.strip() else None
+
+                        def make_vehicle_key(n):
+                            if vin:
+                                return vin
+                            # unique by timestamp when VIN missing; include source to be extra safe
+                            created = (n.get("created_at") or datetime.datetime.now(timezone.utc))
+                            src = (n.get("source") or "unknown").strip().lower()
+                            return f"{src}#{created.isoformat(timespec='milliseconds')}"
+
+                        vehicle_key = make_vehicle_key(norm)
+                        make = norm["make"].strip()
+                        model = norm["model"].strip()
+                        trim = (norm["trim"] or None)
+
+                        # Handle external API data: map status, reasonCodes, buyMax to Decision object
+                        decision = create_decision_from_data(norm)
+
+                        # vehicles
                         cur.execute("""
-                          insert into listings (vehicle_key, vin, source, price, miles, dom, location, buyer_id, payload)
-                          values (%s,%s,%s,%s,%s,%s,%s,%s,%s) returning id
-                        """, (vehicle_key, vin, norm["source"], norm["price"], norm["miles"], norm["dom"], 
-                              norm.get("location"), buyer_from_id, json.dumps(payload_data)))
-                    except Exception as log_exc:
-                        logging.error(f"Failed to insert listing into database: {log_exc}")
-                    new_id = str(cur.fetchone()[0])
-                    out.append(ListingOut(
-                        id=new_id, vehicle_key=vehicle_key, vin=vin, year=norm["year"], make=make, model=model,
-                        trim=trim, miles=norm["miles"], price=norm["price"], dom=norm["dom"],
-                        source=norm["source"], location=norm.get("location"), buyer_id=buyer_from_id,
-                        radius=norm.get("radius", 25), reasonCodes=[],
-                        buyMax=None, score=None
-                    ))
-        finally:
-            conn.close()
+                             insert into vehicles (vehicle_key, vin, year, make, model, trim)
+                             values (%s,%s,%s,%s,%s,%s)
+                             on conflict (vehicle_key) do update set vin=excluded.vin, year=excluded.year, make=excluded.make, model=excluded.model, trim=excluded.trim
+                         """, (vehicle_key, vin, norm["year"], make, model, trim))
+                        
+                        # Store decision data in scores table if provided
+                        if decision and vin:
+                            try:
+                                cur.execute("""
+                                    insert into scores (vehicle_key, vin, score, buy_max, reason_codes)
+                                    values (%s, %s, %s, %s, %s)
+                                """, (vehicle_key, vin, 0, decision.buyMax, decision.reasons))
+                            except Exception as log_exc:
+                                logging.error(f"Failed to insert score data: {log_exc}")
+                        
+                        # listings
+                        # Convert datetime objects to ISO format strings for JSON serialization
+                        payload_data = norm.copy()
+                        if "created_at" in payload_data and payload_data["created_at"]:
+                            if isinstance(payload_data["created_at"], datetime.datetime):
+                                payload_data["created_at"] = payload_data["created_at"].isoformat()
+
+                        # Use buyer_id from authenticated context when provided; fallback to incoming buyer_id
+                        buyer_from_id = buyer_id or norm.get("buyer_id") or None
+
+                        # Prefer writing to buyer_id column;
+                        try:
+                            cur.execute("""
+                              insert into listings (vehicle_key, vin, source, price, miles, dom, location, buyer_id, payload, images)
+                              values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) returning id
+                            """, (vehicle_key, vin, norm["source"], norm["price"], norm["miles"], norm["dom"],
+                                  norm.get("location"), buyer_from_id, json.dumps(payload_data), norm.get("images", [])))
+                            new_id = str(cur.fetchone()[0])
+                        except Exception as log_exc:
+                            logging.error(f"Failed to insert listing into database: {log_exc}")
+                            new_id = f"error-{len(out)+1}"
+                        
+                        # Extract reasonCodes, buyMax, and status for ListingOut
+                        reason_codes = norm.get("reasonCodes", [])
+                        buy_max = float(norm.get("buyMax", 0)) if norm.get("buyMax") is not None else None
+                        status = norm.get("status", "")
+                        
+                        out.append(ListingOut(
+                            id=new_id, vehicle_key=vehicle_key, vin=vin, year=norm["year"], make=make, model=model,
+                            trim=trim, miles=norm["miles"], price=norm["price"], dom=norm["dom"],
+                            source=norm["source"], location=norm.get("location"), buyer_id=buyer_from_id,
+                            radius=norm.get("radius", 25), reasonCodes=reason_codes,
+                            buyMax=buy_max, status=status, score=None, decision=decision
+                        ))
+            except Exception as e:
+                logging.error(f"Database error in ingest_listings: {e}")
+                return out
         return out
 
     # in-memory fallback
     for item in rows:
+        norm = item.model_dump()
         vin = item.vin.strip().upper() if item.vin and item.vin.strip() else None
+        
+        # Handle external API data: map status, reasonCodes, buyMax to Decision object
+        decision = create_decision_from_data(norm)
+        
         lid = item.id or f"mem-{len(_BY_ID)+1}"
+        reason_codes = norm.get("reasonCodes", [])
+        buy_max = float(norm.get("buyMax", 0)) if norm.get("buyMax") is not None else None
+        status = norm.get("status", "")
+        
         obj = ListingOut(
             id=lid, vin=vin, year=item.year, make=item.make.strip(), model=item.model.strip(),
             trim=item.trim.strip() if item.trim else None, miles=item.miles, price=item.price,
-            dom=item.dom, source=item.source, location=None, buyer_id=buyer_id or item.buyer_id,
-            radius=item.radius or 25, reasonCodes=[], buyMax=None
+            dom=item.dom, source=item.source, location=norm.get("location"), buyer_id=buyer_id or item.buyer_id,
+            radius=item.radius or 25, reasonCodes=reason_codes, buyMax=buy_max, status=status, decision=decision, images=norm.get("images", [])
         )
         _BY_ID[lid] = obj
         if vin:
@@ -90,13 +288,37 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
         out.append(obj)
     return out
 
-def list_listings(limit: int = 500) -> list[ListingOut]:
+def list_listings(
+    limit: Optional[int] = None,
+    start_date: Optional[datetime.datetime] = None,
+    end_date: Optional[datetime.datetime] = None,
+) -> list[ListingOut]:
     if DB_ENABLED:
-        conn = get_conn(); assert conn is not None
-        try:
-            with conn, conn.cursor() as cur:
-                # Fixed query to prevent duplicates by using DISTINCT ON and proper JOINs
-                cur.execute("""
+        with get_db_connection() as conn:
+            if not conn:
+                return []
+                
+            try:
+                with conn.cursor() as cur:
+                    # Build date filter conditions first
+                    date_conditions = []
+                    params: list = []
+                    if start_date:
+                        date_conditions.append("created_at >= %s")
+                        params.append(start_date)
+                        logging.info(f"Filtering listings with start_date: {start_date} (type: {type(start_date)})")
+                    if end_date:
+                        date_conditions.append("created_at <= %s")
+                        params.append(end_date)
+                        logging.info(f"Filtering listings with end_date: {end_date} (type: {type(end_date)})")
+                    
+                    # Build WHERE clause for subquery
+                    where_clause = ""
+                    if date_conditions:
+                        where_clause = "WHERE " + " AND ".join(date_conditions)
+                    
+                    # Fixed query to prevent duplicates by using DISTINCT ON with date-filtered subquery
+                    query = """
                   SELECT DISTINCT ON (l.vehicle_key) 
                     l.id, l.vehicle_key, 
                     COALESCE(l.vin, '') AS vin, 
@@ -105,154 +327,284 @@ def list_listings(limit: int = 500) -> list[ListingOut]:
                     COALESCE(v.model, '') as model, 
                     v.trim,
                     l.miles, l.price, l.dom, l.source, 
-                    l.location, COALESCE(l.buyer_id, l.buyer) as buyer_id,
-                    u.username as buyer_username,
-                    COALESCE(s.score, 0) as score, 
-                    s.buy_max, 
-                    COALESCE(s.reason_codes, ARRAY[]::text[]) as reason_codes
-                  FROM listings l
-                  LEFT JOIN vehicles v ON v.vehicle_key = l.vehicle_key
-                  LEFT JOIN (
-                    SELECT DISTINCT ON (vin) vin, score, buy_max, reason_codes
-                    FROM scores
-                    ORDER BY vin, created_at DESC
-                  ) s ON s.vin = l.vin
-                  LEFT JOIN users u ON u.id::text = COALESCE(l.buyer_id, l.buyer)
-                  ORDER BY l.vehicle_key, l.created_at DESC
-                  LIMIT %s
-                """, (limit,))
-                out: list[ListingOut] = []
-                for rid, vehicle_key, vin, year, make, model, trim, miles, price, dom, source, location, buyer_id, buyer_username, score, buy_max, reason_codes in cur.fetchall():
-                    out.append(ListingOut(
-                        id=str(rid), vehicle_key=vehicle_key, vin=vin or "", year=int(year), make=make, model=model, trim=trim,
-                        miles=int(miles), price=float(price), dom=int(dom), source=source,
-                        location=location, buyer_id=buyer_id, buyer_username=buyer_username,
-                        radius=25, reasonCodes=reason_codes or [],
-                        buyMax=float(buy_max) if buy_max is not None else None,
-                        score=int(score) if score is not None else None
-                    ))
-                return out
-        finally:
-            conn.close()
-    return list(_BY_ID.values())
-
-def list_listings_by_buyer(buyer_id: str, start_date: Optional[datetime.datetime] = None, end_date: Optional[datetime.datetime] = None, limit: int = 500) -> list[ListingOut]:
-    """Get listings for a specific buyer with optional date filtering"""
-    if DB_ENABLED:
-        conn = get_conn(); assert conn is not None
-        try:
-            with conn, conn.cursor() as cur:
-                # Build query with optional date filtering
-                base_query = """
-                  SELECT 
-                    l.id, l.vehicle_key, 
-                    COALESCE(l.vin, '') AS vin, 
-                    COALESCE(v.year, 0) as year, 
-                    COALESCE(v.make, '') as make, 
-                    COALESCE(v.model, '') as model, 
-                    v.trim,
-                    l.miles, l.price, l.dom, l.source, 
-                    l.location, COALESCE(l.buyer_id, l.buyer) as buyer_id,
+                    l.location, l.buyer_id,
+                    COALESCE(l.images, ARRAY[]::text[]) as images,
                     u.username as buyer_username,
                     COALESCE(s.score, 0) as score, 
                     s.buy_max, 
                     COALESCE(s.reason_codes, ARRAY[]::text[]) as reason_codes,
-                    l.created_at
-                  FROM listings l
+                    l.payload
+                  FROM (
+                    SELECT * FROM listings """ + where_clause + """
+                  ) l
                   LEFT JOIN vehicles v ON v.vehicle_key = l.vehicle_key
                   LEFT JOIN (
                     SELECT DISTINCT ON (vin) vin, score, buy_max, reason_codes
                     FROM scores
                     ORDER BY vin, created_at DESC
                   ) s ON s.vin = l.vin
-                  LEFT JOIN users u ON u.id::text = COALESCE(l.buyer_id, l.buyer)
-                  WHERE COALESCE(l.buyer_id, l.buyer) = %s
+                  LEFT JOIN users u ON u.id::text = l.buyer_id
+                  ORDER BY l.vehicle_key, l.created_at DESC
                 """
+                    
+                    logging.info(f"Query will execute with {len(params)} date parameters")
+
+                    if limit is not None:
+                        query += " LIMIT %s"
+                        params.append(limit)
+
+                    cur.execute(query, tuple(params))
+                    results = cur.fetchall()
+                    logging.info(f"Query returned {len(results)} raw results")
+                    out: list[ListingOut] = []
+                    for rid, vehicle_key, vin, year, make, model, trim, miles, price, dom, source, location, buyer_id, images, buyer_username, score, buy_max, reason_codes, payload in results:
+                        # Extract decision data from payload if available
+                        decision = None
+                        status = ""
+                        if payload:
+                            payload_data = json.loads(payload) if isinstance(payload, str) else payload
+                            decision = create_decision_from_data(payload_data)
+                            status = payload_data.get("status", "")
+                        
+                        out.append(ListingOut(
+                            id=str(rid), vehicle_key=vehicle_key, vin=vin or "", year=int(year), make=make, model=model, trim=trim,
+                            miles=int(miles), price=float(price), dom=int(dom), source=source,
+                            location=location, buyer_id=buyer_id, buyer_username=buyer_username,
+                            radius=25, reasonCodes=reason_codes or [],
+                            buyMax=float(buy_max) if buy_max is not None else None,
+                            status=status, score=int(score) if score is not None else None, decision=decision, images=images or []
+                        ))
+                    logging.info(f"Returning {len(out)} processed listings")
+                    return out
+            except Exception as e:
+                logging.error(f"Error in list_listings: {str(e)}")
+                import traceback
+                logging.error(f"Traceback: {traceback.format_exc()}")
+                return []
+    return list(_BY_ID.values())
+
+def list_listings_by_buyer(
+    buyer_id: str,
+    start_date: Optional[datetime.datetime] = None,
+    end_date: Optional[datetime.datetime] = None,
+    limit: Optional[int] = None
+) -> list[ListingOut]:
+    """Get listings for a specific buyer with optional date filtering"""
+    if DB_ENABLED:
+        with get_db_connection() as conn:
+            if not conn:
+                return []
                 
-                params = [buyer_id]
-                
-                if start_date:
-                    base_query += " AND l.created_at >= %s"
-                    params.append(start_date)
-                
-                if end_date:
-                    base_query += " AND l.created_at <= %s"
-                    params.append(end_date)
-                
-                base_query += " ORDER BY l.created_at DESC LIMIT %s"
-                params.append(limit)
-                
-                cur.execute(base_query, params)
-                out: list[ListingOut] = []
-                for rid, vehicle_key, vin, year, make, model, trim, miles, price, dom, source, location, buyer_id, buyer_username, score, buy_max, reason_codes, created_at in cur.fetchall():
-                    out.append(ListingOut(
-                        id=str(rid), vehicle_key=vehicle_key, vin=vin or "", year=int(year), make=make, model=model, trim=trim,
-                        miles=int(miles), price=float(price), dom=int(dom), source=source,
-                        location=location, buyer_id=buyer_id, buyer_username=buyer_username,
-                        radius=25, reasonCodes=reason_codes or [],
-                        buyMax=float(buy_max) if buy_max is not None else None,
-                        score=int(score) if score is not None else None
-                    ))
-                return out
-        finally:
-            conn.close()
+            try:
+                with conn.cursor() as cur:
+                    # Build query with optional date filtering
+                    base_query = """
+                        SELECT 
+                            l.id, l.vehicle_key, 
+                            COALESCE(l.vin, '') AS vin, 
+                            COALESCE(v.year, 0) AS year, 
+                            COALESCE(v.make, '') AS make, 
+                            COALESCE(v.model, '') AS model, 
+                            v.trim,
+                            l.miles, l.price, l.dom, l.source, 
+                            l.location, l.buyer_id,
+                            COALESCE(l.images, ARRAY[]::text[]) AS images,
+                            u.username AS buyer_username,
+                            COALESCE(s.score, 0) AS score, 
+                            s.buy_max, 
+                            COALESCE(s.reason_codes, ARRAY[]::text[]) AS reason_codes,
+                            l.created_at,
+                            l.payload
+                        FROM listings l
+                        LEFT JOIN vehicles v ON v.vehicle_key = l.vehicle_key
+                        LEFT JOIN (
+                            SELECT DISTINCT ON (vin) vin, score, buy_max, reason_codes
+                            FROM scores
+                            ORDER BY vin, created_at DESC
+                        ) s ON s.vin = l.vin
+                        LEFT JOIN users u ON u.id::text = l.buyer_id
+                        WHERE l.buyer_id = %s
+                    """
+                    
+                    params = [buyer_id]
+                    
+                    if start_date:
+                        base_query += " AND l.created_at >= %s"
+                        params.append(start_date)
+                        logging.info(f"Filtering listings by buyer with start_date: {start_date} (type: {type(start_date)})")
+                    
+                    if end_date:
+                        base_query += " AND l.created_at <= %s"
+                        params.append(end_date)
+                        logging.info(f"Filtering listings by buyer with end_date: {end_date} (type: {type(end_date)})")
+                    
+                    logging.info(f"Query will execute with {len(params)} parameters (buyer_id + date params)")
+                    
+                    base_query += " ORDER BY l.created_at DESC"
+                    
+                    if limit is not None:
+                        base_query += " LIMIT %s"
+                        params.append(limit)
+                    
+                    cur.execute(base_query, params)
+                    results = cur.fetchall()
+                    logging.info(f"Query for buyer {buyer_id} returned {len(results)} raw results")
+
+                    out: list[ListingOut] = []
+                    for (
+                        rid, vehicle_key, vin, year, make, model, trim, miles, price, dom,
+                        source, location, buyer_id, images, buyer_username, score, buy_max,
+                        reason_codes, created_at, payload
+                    ) in results:
+                        
+                        # Extract decision data from payload if available
+                        decision = None
+                        status = ""
+                        if payload:
+                            payload_data = json.loads(payload) if isinstance(payload, str) else payload
+                            decision = create_decision_from_data(payload_data)
+                            status = payload_data.get("status", "")
+                        
+                        out.append(ListingOut(
+                            id=str(rid),
+                            vehicle_key=vehicle_key,
+                            vin=vin or "",
+                            year=int(year),
+                            make=make,
+                            model=model,
+                            trim=trim,
+                            miles=int(miles),
+                            price=float(price),
+                            dom=int(dom),
+                            source=source,
+                            location=location,
+                            buyer_id=buyer_id,
+                            buyer_username=buyer_username,
+                            radius=25,
+                            reasonCodes=reason_codes or [],
+                            buyMax=float(buy_max) if buy_max is not None else None,
+                            status=status,
+                            score=int(score) if score is not None else None,
+                            decision=decision,
+                            images=images or []
+                        ))
+                    logging.info(f"Returning {len(out)} processed listings for buyer {buyer_id}")
+                    return out
+            except Exception as e:
+                logging.error(f"Error in list_listings_by_buyer: {str(e)}")
+                import traceback
+                logging.error(f"Traceback: {traceback.format_exc()}")
+                return []
+
     # Fallback to in-memory filtering
     return [listing for listing in _BY_ID.values() if listing.buyer_id == buyer_id]
 
+
 def get_buyer_stats(buyer_id: str, start_date: Optional[datetime.datetime] = None, end_date: Optional[datetime.datetime] = None) -> dict:
     """Get performance statistics for a specific buyer"""
-    if DB_ENABLED:
-        conn = get_conn(); assert conn is not None
-        try:
-            with conn, conn.cursor() as cur:
-                # Base query for buyer stats
-                base_query = """
-                  SELECT 
-                    COUNT(*) as total_listings,
-                    COUNT(CASE WHEN s.score IS NOT NULL THEN 1 END) as scored_listings,
-                    AVG(CASE WHEN s.score IS NOT NULL THEN s.score ELSE NULL END) as avg_score,
-                    AVG(l.price) as avg_price,
-                    MIN(l.created_at) as first_listing,
-                    MAX(l.created_at) as last_listing,
-                    COUNT(DISTINCT l.source) as unique_sources
-                  FROM listings l
-                  LEFT JOIN (
-                    SELECT DISTINCT ON (vin) vin, score, buy_max, reason_codes
-                    FROM scores
-                    ORDER BY vin, created_at DESC
-                  ) s ON s.vin = l.vin
-                  WHERE COALESCE(l.buyer_id, l.buyer) = %s
-                """
-                
-                params = [buyer_id]
-                
-                if start_date:
-                    base_query += " AND l.created_at >= %s"
-                    params.append(start_date)
-                
-                if end_date:
-                    base_query += " AND l.created_at <= %s"
-                    params.append(end_date)
-                
-                cur.execute(base_query, params)
-                result = cur.fetchone()
-                
-                if result:
-                    total_listings, scored_listings, avg_score, avg_price, first_listing, last_listing, unique_sources = result
-                    return {
-                        "total_listings": total_listings or 0,
-                        "scored_listings": scored_listings or 0,
-                        "avg_score": float(avg_score) if avg_score else 0,
-                        "avg_price": float(avg_price) if avg_price else 0,
-                        "first_listing": first_listing.isoformat() if first_listing else None,
-                        "last_listing": last_listing.isoformat() if last_listing else None,
-                        "unique_sources": unique_sources or 0,
-                        "scoring_rate": (scored_listings / total_listings * 100) if total_listings > 0 else 0
-                    }
-                return {}
-        finally:
-            conn.close()
-    return {}
+    try:
+        if DB_ENABLED:
+            with get_db_connection() as conn:
+                if not conn:
+                    return {}
+                    
+                try:
+                    with conn.cursor() as cur:
+                        # Simple query without complex joins first
+                        base_query = """
+                      SELECT 
+                        COUNT(*) as total_listings,
+                        AVG(l.price) as avg_price,
+                        MIN(l.created_at) as first_listing,
+                        MAX(l.created_at) as last_listing,
+                        COUNT(DISTINCT l.source) as unique_sources
+                      FROM listings l
+                      WHERE l.buyer_id = %s
+                    """
+                        
+                        params = [buyer_id]
+                        
+                        if start_date:
+                            base_query += " AND l.created_at >= %s"
+                            params.append(start_date)
+                        
+                        if end_date:
+                            base_query += " AND l.created_at <= %s"
+                            params.append(end_date)
+                        
+                        cur.execute(base_query, params)
+                        result = cur.fetchone()
+                        
+                        if result:
+                            total_listings, avg_price, first_listing, last_listing, unique_sources = result
+                            
+                            # Get scored listings count separately
+                            scored_query = """
+                            SELECT COUNT(*) as scored_listings, AVG(s.score) as avg_score
+                            FROM listings l
+                            JOIN v_latest_scores s ON s.vin = l.vin
+                            WHERE l.buyer_id = %s
+                            """
+                            scored_params = [buyer_id]
+                            
+                            if start_date:
+                                scored_query += " AND l.created_at >= %s"
+                                scored_params.append(start_date)
+                            
+                            if end_date:
+                                scored_query += " AND l.created_at <= %s"
+                                scored_params.append(end_date)
+                            
+                            cur.execute(scored_query, scored_params)
+                            scored_result = cur.fetchone()
+                            
+                            scored_listings = scored_result[0] if scored_result else 0
+                            avg_score = scored_result[1] if scored_result and scored_result[1] else 0
+                            
+                            return {
+                                "total_listings": total_listings or 0,
+                                "scored_listings": scored_listings or 0,
+                                "avg_score": float(avg_score) if avg_score else 0,
+                                "avg_price": float(avg_price) if avg_price else 0,
+                                "first_listing": first_listing.isoformat() if first_listing else None,
+                                "last_listing": last_listing.isoformat() if last_listing else None,
+                                "unique_sources": unique_sources or 0,
+                                "scoring_rate": (scored_listings / total_listings * 100) if total_listings > 0 else 0
+                            }
+                        return {}
+                except Exception as e:
+                    logging.error(f"Database error: {e}")
+                    return {}
+        
+        # Fallback to in-memory calculation
+        buyer_listings = [listing for listing in _BY_ID.values() if listing.buyer_id == buyer_id]
+        
+        if not buyer_listings:
+            return {}
+        
+        # Calculate stats from in-memory data
+        total_listings = len(buyer_listings)
+        scored_listings = len([l for l in buyer_listings if l.score is not None])
+        avg_score = sum(l.score for l in buyer_listings if l.score is not None) / scored_listings if scored_listings > 0 else 0
+        avg_price = sum(l.price for l in buyer_listings) / total_listings if total_listings > 0 else 0
+        first_listing = min(buyer_listings, key=lambda x: x.created_at).created_at if buyer_listings else None
+        last_listing = max(buyer_listings, key=lambda x: x.created_at).created_at if buyer_listings else None
+        unique_sources = len(set(l.source for l in buyer_listings))
+        scoring_rate = (scored_listings / total_listings * 100) if total_listings > 0 else 0
+        
+        return {
+            "total_listings": total_listings,
+            "scored_listings": scored_listings,
+            "avg_score": float(avg_score),
+            "avg_price": float(avg_price),
+            "first_listing": first_listing.isoformat() if first_listing else None,
+            "last_listing": last_listing.isoformat() if last_listing else None,
+            "unique_sources": unique_sources,
+            "scoring_rate": scoring_rate
+        }
+    except Exception as e:
+        logging.error(f"Unexpected error in get_buyer_stats: {e}")
+        return {}
 
 def update_cached_score(vin: str, score: int, buy_max: float, reasons: list[str]):
     # for in-memory cache parity; DB is handled in scores repo
@@ -272,29 +624,276 @@ def update_cached_score(vin: str, score: int, buy_max: float, reasons: list[str]
 def insert_score(vehicle_key: str, vin: str, score: int, buy_max: float, reasons: list[str]):
     if not DB_ENABLED:
         return
-    conn = get_conn(); assert conn is not None
-    try:
-        with conn, conn.cursor() as cur:
-            cur.execute("""
-              insert into scores (vehicle_key, vin, score, buy_max, reason_codes)
-              values (%s,%s,%s,%s,%s)
-            """, (vehicle_key, vin, score, buy_max, reasons or ["Heuristic"]))
-    finally:
-        conn.close()
+    with get_db_connection() as conn:
+        if not conn:
+            return
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                insert into scores (vehicle_key, vin, score, buy_max, reason_codes)
+                values (%s, %s, %s, %s, %s)
+                """,
+                (vehicle_key, vin, score, buy_max, reasons or ["Heuristic"]),
+            )
+
 
 # ============================================================================
 # VEHICLES REPOSITORY
 # ============================================================================
 
 def upsert_vehicle(vehicle_key: str, vin: str, year: int, make: str, model: str, trim: str | None):
-    if not DB_ENABLED: return
-    conn = get_conn(); assert conn is not None
-    try:
-        with conn, conn.cursor() as cur:
+    if not DB_ENABLED:
+        return
+    with get_db_connection() as conn:
+        if not conn:
+            return
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                insert into vehicles (vehicle_key, vin, year, make, model, trim)
+                values (%s,%s,%s,%s,%s,%s)
+                on conflict (vehicle_key) do update
+                set vin = excluded.vin,
+                    year = excluded.year,
+                    make = excluded.make,
+                    model = excluded.model,
+                    trim = excluded.trim
+                """,
+                (vehicle_key, vin, year, make, model, trim),
+            )
+
+
+# ============================================================================
+# TRENDS REPOSITORY
+# ============================================================================
+
+def get_trends_data(days_back: int = 30) -> dict:
+    """Get trend data comparing current period vs previous period"""
+    if not DB_ENABLED:
+        return {
+            "total_listings": {"current": 0, "previous": 0, "trend": 0, "trend_up": False},
+            "average_price": {"current": 0, "previous": 0, "trend": 0, "trend_up": False},
+            "conversion_rate": {"current": 0, "previous": 0, "trend": 0, "trend_up": False},
+            "active_buyers": {"current": 0, "previous": 0, "trend": 0, "trend_up": False},
+            "average_profit": {"current": 0, "previous": 0, "trend": 0, "trend_up": False},
+            "aged_inventory": {"current": 0, "previous": 0, "trend": 0, "trend_up": False},
+        }
+    
+    with get_db_connection() as conn:
+        if not conn:
+            return {
+                "total_listings": {"current": 0, "previous": 0, "trend": 0, "trend_up": False},
+                "average_price": {"current": 0, "previous": 0, "trend": 0, "trend_up": False},
+                "conversion_rate": {"current": 0, "previous": 0, "trend": 0, "trend_up": False},
+                "active_buyers": {"current": 0, "previous": 0, "trend": 0, "trend_up": False},
+                "average_profit": {"current": 0, "previous": 0, "trend": 0, "trend_up": False},
+                "aged_inventory": {"current": 0, "previous": 0, "trend": 0, "trend_up": False},
+            }
+        
+        with conn.cursor() as cur:
+            # Calculate date ranges
+            cur.execute("SELECT NOW() as now")
+            now = cur.fetchone()[0]
+            
+            # Current period: last N days
+            current_start = now - datetime.timedelta(days=days_back)
+            # Previous period: N days before that
+            previous_start = now - datetime.timedelta(days=days_back * 2)
+            previous_end = current_start
+            
+            # Query for current period metrics
             cur.execute("""
-            insert into vehicles (vehicle_key, vin, year, make, model, trim)
-            values (%s,%s,%s,%s,%s,%s)
-            on conflict (vehicle_key) do update set vin=excluded.vin, year=excluded.year, make=excluded.make, model=excluded.model, trim=excluded.trim
-            """, (vehicle_key, vin, year, make, model, trim))
-    finally:
-        conn.close()
+                SELECT 
+                    COUNT(*) as total_listings,
+                    AVG(l.price) as avg_price,
+                    COUNT(DISTINCT l.buyer_id) as active_buyers,
+                    COUNT(CASE WHEN s.score IS NOT NULL THEN 1 END) as scored_listings,
+                    COUNT(CASE WHEN l.created_at < %s THEN 1 END) as aged_inventory
+                FROM listings l
+                LEFT JOIN (
+                    SELECT DISTINCT ON (vin) vin, score
+                    FROM scores
+                    ORDER BY vin, created_at DESC
+                ) s ON s.vin = l.vin
+                WHERE l.created_at >= %s
+            """, (now - datetime.timedelta(days=30), current_start))
+            
+            current_result = cur.fetchone()
+            current_total, current_avg_price, current_buyers, current_scored, current_aged = current_result or (0, 0, 0, 0, 0)
+            current_conversion = (current_scored / current_total * 100) if current_total > 0 else 0
+            current_profit = float(current_avg_price) * 0.15 if current_avg_price else 0
+            
+            # Query for previous period metrics
+            cur.execute("""
+                SELECT 
+                    COUNT(*) as total_listings,
+                    AVG(l.price) as avg_price,
+                    COUNT(DISTINCT l.buyer_id) as active_buyers,
+                    COUNT(CASE WHEN s.score IS NOT NULL THEN 1 END) as scored_listings,
+                    COUNT(CASE WHEN l.created_at < %s THEN 1 END) as aged_inventory
+                FROM listings l
+                LEFT JOIN (
+                    SELECT DISTINCT ON (vin) vin, score
+                    FROM scores
+                    ORDER BY vin, created_at DESC
+                ) s ON s.vin = l.vin
+                WHERE l.created_at >= %s AND l.created_at < %s
+            """, (now - datetime.timedelta(days=30), previous_start, previous_end))
+            
+            previous_result = cur.fetchone()
+            previous_total, previous_avg_price, previous_buyers, previous_scored, previous_aged = previous_result or (0, 0, 0, 0, 0)
+            previous_conversion = (previous_scored / previous_total * 100) if previous_total > 0 else 0
+            previous_profit = float(previous_avg_price) * 0.15 if previous_avg_price else 0
+            
+            def calculate_trend(current: float, previous: float) -> tuple[float, bool]:
+                if previous == 0:
+                    return (100.0 if current > 0 else 0.0, current > 0)
+                change = ((current - previous) / previous) * 100
+                return (abs(change), change > 0)
+            
+            # Calculate trends for each metric
+            total_trend, total_up = calculate_trend(current_total, previous_total)
+            price_trend, price_up = calculate_trend(current_avg_price or 0, previous_avg_price or 0)
+            conversion_trend, conversion_up = calculate_trend(current_conversion, previous_conversion)
+            buyers_trend, buyers_up = calculate_trend(current_buyers, previous_buyers)
+            profit_trend, profit_up = calculate_trend(current_profit, previous_profit)
+            aged_trend, aged_up = calculate_trend(current_aged, previous_aged)
+            
+            return {
+                "total_listings": {
+                    "current": int(current_total),
+                    "previous": int(previous_total),
+                    "trend": round(total_trend, 1),
+                    "trend_up": total_up
+                },
+                "average_price": {
+                    "current": round(float(current_avg_price or 0), 2),
+                    "previous": round(float(previous_avg_price or 0), 2),
+                    "trend": round(price_trend, 1),
+                    "trend_up": price_up
+                },
+                "conversion_rate": {
+                    "current": round(current_conversion, 1),
+                    "previous": round(previous_conversion, 1),
+                    "trend": round(conversion_trend, 1),
+                    "trend_up": conversion_up
+                },
+                "active_buyers": {
+                    "current": int(current_buyers),
+                    "previous": int(previous_buyers),
+                    "trend": round(buyers_trend, 1),
+                    "trend_up": buyers_up
+                },
+                "average_profit": {
+                    "current": round(current_profit, 2),
+                    "previous": round(previous_profit, 2),
+                    "trend": round(profit_trend, 1),
+                    "trend_up": profit_up
+                },
+                "aged_inventory": {
+                    "current": int(current_aged),
+                    "previous": int(previous_aged),
+                    "trend": round(aged_trend, 1),
+                    "trend_up": aged_up
+                }
+            }
+
+
+# ============================================================================
+# KPI REPOSITORY
+# ============================================================================
+
+def get_kpi_metrics() -> dict:
+    """Get comprehensive KPI metrics for the dashboard"""
+    if not DB_ENABLED:
+        return {
+            "average_profit_per_unit": 0.0,
+            "lead_to_purchase_time": 0.0,
+            "aged_inventory": 0,
+            "total_listings": 0,
+            "active_buyers": 0,
+            "conversion_rate": 0.0,
+            "average_price": 0.0,
+            "total_value": 0.0,
+            "scoring_rate": 0.0,
+            "average_score": 0.0
+        }
+    
+    with get_db_connection() as conn:
+        if not conn:
+            return {
+                "average_profit_per_unit": 0.0,
+                "lead_to_purchase_time": 0.0,
+                "aged_inventory": 0,
+                "total_listings": 0,
+                "active_buyers": 0,
+                "conversion_rate": 0.0,
+                "average_price": 0.0,
+                "total_value": 0.0,
+                "scoring_rate": 0.0,
+                "average_score": 0.0
+            }
+        
+        with conn.cursor() as cur:
+            # Get current timestamp for calculations
+            cur.execute("SELECT NOW() as now")
+            now = cur.fetchone()[0]
+            
+            # Calculate 30 days ago for aged inventory
+            thirty_days_ago = now - datetime.timedelta(days=30)
+            
+            # Main metrics query
+            cur.execute("""
+                SELECT 
+                    COUNT(*) as total_listings,
+                    COALESCE(AVG(l.price), 0) as average_price,
+                    COALESCE(SUM(l.price), 0) as total_value,
+                    COUNT(DISTINCT l.buyer_id) as active_buyers,
+                    COUNT(CASE WHEN s.score IS NOT NULL THEN 1 END) as scored_listings,
+                    COALESCE(AVG(CASE WHEN s.score IS NOT NULL THEN s.score ELSE NULL END), 0) as average_score,
+                    COUNT(CASE WHEN l.created_at < %s THEN 1 END) as aged_inventory,
+                    COALESCE(AVG(EXTRACT(EPOCH FROM (NOW() - l.created_at)) / 86400), 0) as avg_days_since_creation
+                FROM listings l
+                LEFT JOIN (
+                    SELECT DISTINCT ON (vin) vin, score
+                    FROM scores
+                    ORDER BY vin, created_at DESC
+                ) s ON s.vin = l.vin
+            """, (thirty_days_ago,))
+            
+            result = cur.fetchone()
+            if not result:
+                return {
+                    "average_profit_per_unit": 0.0,
+                    "lead_to_purchase_time": 0.0,
+                    "aged_inventory": 0,
+                    "total_listings": 0,
+                    "active_buyers": 0,
+                    "conversion_rate": 0.0,
+                    "average_price": 0.0,
+                    "total_value": 0.0,
+                    "scoring_rate": 0.0,
+                    "average_score": 0.0
+                }
+            
+            (total_listings, average_price, total_value, active_buyers, 
+             scored_listings, average_score, aged_inventory, avg_days_since_creation) = result
+            
+            # Calculate derived metrics
+            average_profit_per_unit = float(average_price) * 0.15  # 15% margin
+            lead_to_purchase_time = float(avg_days_since_creation) if avg_days_since_creation else 0.0
+            conversion_rate = (scored_listings / total_listings * 100) if total_listings > 0 else 0.0
+            scoring_rate = (scored_listings / total_listings * 100) if total_listings > 0 else 0.0
+            
+            return {
+                "average_profit_per_unit": round(float(average_profit_per_unit), 2),
+                "lead_to_purchase_time": round(float(lead_to_purchase_time), 1),
+                "aged_inventory": int(aged_inventory),
+                "total_listings": int(total_listings),
+                "active_buyers": int(active_buyers),
+                "conversion_rate": round(float(conversion_rate), 1),
+                "average_price": round(float(average_price), 2),
+                "total_value": round(float(total_value), 2),
+                "scoring_rate": round(float(scoring_rate), 1),
+                "average_score": round(float(average_score), 1)
+            }

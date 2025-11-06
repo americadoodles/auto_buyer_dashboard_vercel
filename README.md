@@ -199,3 +199,6 @@ If upgrading from a previous version:
 1. Run `db/migrate_users.sql` to update existing user tables
 2. Ensure all environment variables are set
 3. Restart both frontend and backend services
+
+If using the already existing schema
+ALTER TABLE listings ADD COLUMN images TEXT[];

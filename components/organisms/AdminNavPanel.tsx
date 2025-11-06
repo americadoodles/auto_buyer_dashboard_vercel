@@ -13,7 +13,12 @@ import {
   Settings,
   BarChart3,
   Car,
-  List
+  List,
+  User,
+  Target,
+  Phone,
+  Handshake,
+  CheckSquare
 } from 'lucide-react';
 
 interface NavItem {
@@ -37,6 +42,36 @@ const navItems: NavItem[] = [
     description: 'View and manage vehicle listings'
   },
   {
+    href: '/admin/crm',
+    label: 'CRM Dashboard',
+    icon: BarChart3,
+    description: 'CRM overview and analytics'
+  },
+  {
+    href: '/admin/crm/leads',
+    label: 'Leads',
+    icon: Target,
+    description: 'Manage sales leads'
+  },
+  {
+    href: '/admin/crm/contacts',
+    label: 'Contacts',
+    icon: Phone,
+    description: 'Customer contact management'
+  },
+  {
+    href: '/admin/crm/deals',
+    label: 'Deals',
+    icon: Handshake,
+    description: 'Sales pipeline and deals'
+  },
+  {
+    href: '/admin/crm/tasks',
+    label: 'Tasks',
+    icon: CheckSquare,
+    description: 'Task and activity management'
+  },
+  {
     href: '/admin/user-management/signup-requests',
     label: 'Signup Requests',
     icon: UserPlus,
@@ -53,6 +88,12 @@ const navItems: NavItem[] = [
     label: 'Role Management',
     icon: Shield,
     description: 'Configure user roles and permissions'
+  },
+  {
+    href: '/admin/profile',
+    label: 'My Profile',
+    icon: User,
+    description: 'Manage your profile and settings'
   }
 ];
 
@@ -67,6 +108,9 @@ export const AdminNavPanel = () => {
   const isActiveRoute = (href: string) => {
     if (href === '/admin') {
       return pathname === '/admin';
+    }
+    if (href === '/admin/profile') {
+      return pathname === '/admin/profile';
     }
     return pathname.startsWith(href);
   };

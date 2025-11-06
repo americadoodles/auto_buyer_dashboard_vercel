@@ -2,6 +2,7 @@
 from typing import Optional
 from pydantic import BaseModel, EmailStr, Field
 from uuid import UUID, uuid4
+from datetime import datetime
 
 
 class UserBase(BaseModel):
@@ -18,6 +19,7 @@ class UserOut(UserBase):
     id: UUID
     role: str  # Role name (e.g., "admin", "buyer", "analyst")
     is_confirmed: bool
+    last_login: Optional[datetime] = None
 
 
 class UserInDB(UserOut):
@@ -49,3 +51,13 @@ class UserConfirmRequest(BaseModel):
 
 class UserRemoveRequest(BaseModel):
     user_id: UUID
+
+class UserUpdateRequest(BaseModel):
+    email: Optional[EmailStr] = None
+    username: Optional[str] = None
+    role_id: Optional[int] = None
+    is_confirmed: Optional[bool] = None
+
+class UserUpdatePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str

@@ -6,10 +6,15 @@ import { AdminLayout } from "../../../../components/templates/AdminLayout";
 import { ListingsTable } from "../../../../components/organisms/ListingsTable";
 import { BuyerPerformanceKpi } from "../../../../components/organisms/BuyerPerformanceKpi";
 import { DateRangePicker } from "../../../../components/molecules/DateRangePicker";
+import { ExportButton } from "../../../../components/molecules/ExportButton";
 import { Listing } from "../../../../lib/types/listing";
 import { SortConfig } from "../../../../lib/types/listing";
-import { Car, ArrowLeft, Calendar, TrendingUp, User } from "lucide-react";
+import { Car, ArrowLeft, Calendar, TrendingUp, User, Search, Filter } from "lucide-react";
 import { Button } from "../../../../components/atoms/Button";
+import { Input } from "../../../../components/atoms/Input";
+import { useAuth } from "../../../auth/useAuth";
+import { useToast } from "../../../../hooks/useToast";
+import { ApiService } from "../../../../lib/services/api";
 
 interface BuyerStats {
   total_listings: number;
@@ -26,6 +31,8 @@ export default function BuyerActivityPage() {
   const params = useParams();
   const router = useRouter();
   const buyerId = params.buyerId as string;
+  const { user } = useAuth();
+  const { showSuccess, showError, showWarning } = useToast();
   
   const [listings, setListings] = useState<Listing[]>([]);
   const [buyerStats, setBuyerStats] = useState<BuyerStats | null>(null);
@@ -38,12 +45,22 @@ export default function BuyerActivityPage() {
     start: null,
     end: null
   });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [makeFilter, setMakeFilter] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  
+  // Get user role from auth context
+  const userRole = user?.role || "admin";
+  
+  // Selection state
+  const [selectedListings, setSelectedListings] = useState<Set<string>>(new Set());
 
   // Fetch buyer listings and stats
   const fetchBuyerData = async () => {
     setLoading(true);
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8001';
+      const baseUrl = (process.env.NEXT_PUBLIC_BACKEND_URL ?? '/api').replace(/\/+$/, '');
       
       // Build query parameters
       const queryParams = new URLSearchParams();
@@ -95,10 +112,42 @@ export default function BuyerActivityPage() {
     }
   }, [buyerId, dateRange]);
 
+  // Filter listings based on search and filter criteria
+  const filteredListings = (Array.isArray(listings) ? listings : []).filter((listing) => {
+    const matchesSearch = searchTerm === "" || 
+      listing.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      listing.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      listing.vin?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      listing.location?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === "" || 
+      (statusFilter === "scored" && listing.score !== undefined) ||
+      (statusFilter === "pending" && listing.score === undefined) ||
+      (statusFilter === "decided" && listing.decision?.status) ||
+      (statusFilter === "undecided" && !listing.decision?.status);
+    
+    const matchesMake = makeFilter === "" || 
+      listing.make.toLowerCase() === makeFilter.toLowerCase();
+    
+    return matchesSearch && matchesStatus && matchesMake;
+  });
+
   // Sort listings
-  const sortedListings = [...(Array.isArray(listings) ? listings : [])].sort((a, b) => {
-    const aVal = a[sort.key];
-    const bVal = b[sort.key];
+  const sortedListings = [...filteredListings].sort((a, b) => {
+    let aVal: any;
+    let bVal: any;
+    
+    // Handle nested decision fields
+    if (sort.key === 'decision_status') {
+      aVal = a.decision?.status;
+      bVal = b.decision?.status;
+    } else if (sort.key === 'decision_reasons') {
+      aVal = a.decision?.reasons?.join(', ') || '';
+      bVal = b.decision?.reasons?.join(', ') || '';
+    } else {
+      aVal = a[sort.key as keyof Listing];
+      bVal = b[sort.key as keyof Listing];
+    }
     
     if (aVal === undefined || aVal === null) return 1;
     if (bVal === undefined || bVal === null) return -1;
@@ -119,7 +168,7 @@ export default function BuyerActivityPage() {
   const startIndex = (currentPage - 1) * rowsPerPage;
   const paginatedListings = sortedListings.slice(startIndex, startIndex + rowsPerPage);
 
-  const handleSort = (key: keyof Listing) => {
+  const handleSort = (key: keyof Listing | 'decision_status' | 'decision_reasons') => {
     setSort((prev) => ({
       key,
       dir: prev.key === key && prev.dir === "asc" ? "desc" : "asc",
@@ -128,7 +177,7 @@ export default function BuyerActivityPage() {
 
   const handleNotify = async (vin: string) => {
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8001';
+      const baseUrl = (process.env.NEXT_PUBLIC_BACKEND_URL ?? '/api').replace(/\/+$/, '');
       await fetch(`${baseUrl}/notify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -136,6 +185,46 @@ export default function BuyerActivityPage() {
       });
     } catch (error) {
       console.error('Error sending notification:', error);
+    }
+  };
+
+  const handleNotifySlack = async (vin: string, customMessage?: string) => {
+    try {
+      const listing = listings.find(l => l.vin === vin);
+      if (!listing) {
+        showWarning('Listing Not Found', 'The requested listing could not be found.');
+        return;
+      }
+      
+      const result = await ApiService.sendSlackNotification(listing.vehicle_key, vin, customMessage);
+      if (result.sent) {
+        showSuccess('Slack Notification Sent', `Slack notification sent to ${result.channel} for VIN ${vin}`);
+      } else {
+        showError('Slack Notification Failed', `Failed to send Slack notification: ${result.error || result.message}`);
+      }
+    } catch (error) {
+      console.error('Error sending Slack notification:', error);
+      showError('Slack Notification Failed', 'Failed to send Slack notification: ' + error);
+    }
+  };
+
+  const handleTriggerWorkflow = async (vin: string, customMessage?: string) => {
+    try {
+      const listing = listings.find(l => l.vin === vin);
+      if (!listing) {
+        showWarning('Listing Not Found', 'The requested listing could not be found.');
+        return;
+      }
+      
+      const result = await ApiService.triggerSlackWorkflow(listing.vehicle_key, vin, customMessage);
+      if (result.triggered) {
+        showSuccess('Slack Workflow Triggered', `Slack workflow triggered for VIN ${vin}${result.workflow_id ? ` (ID: ${result.workflow_id})` : ''}`);
+      } else {
+        showError('Slack Workflow Failed', `Failed to trigger Slack workflow: ${result.error || result.message}`);
+      }
+    } catch (error) {
+      console.error('Error triggering Slack workflow:', error);
+      showError('Slack Workflow Failed', 'Failed to trigger Slack workflow: ' + error);
     }
   };
 
@@ -148,6 +237,42 @@ export default function BuyerActivityPage() {
     setDateRange({ start: null, end: null });
     setCurrentPage(1);
   };
+
+  // Get unique makes for filter dropdown
+  const uniqueMakes = Array.from(new Set((Array.isArray(listings) ? listings : []).map(l => l.make))).sort();
+
+  // Reset filters
+  const resetFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("");
+    setMakeFilter("");
+  };
+
+  // Selection handlers
+  const handleSelectListing = (listingId: string, selected: boolean) => {
+    setSelectedListings(prev => {
+      const newSet = new Set(prev);
+      if (selected) {
+        newSet.add(listingId);
+      } else {
+        newSet.delete(listingId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = (selected: boolean) => {
+    if (selected) {
+      const allIds = new Set(sortedListings.map(listing => listing.id));
+      setSelectedListings(allIds);
+    } else {
+      setSelectedListings(new Set());
+    }
+  };
+
+  // Calculate selection state for header checkbox
+  const isAllSelected = sortedListings.length > 0 && sortedListings.every(listing => selectedListings.has(listing.id));
+  const isIndeterminate = selectedListings.size > 0 && selectedListings.size < sortedListings.length;
 
   return (
     <AdminLayout>
@@ -174,6 +299,16 @@ export default function BuyerActivityPage() {
                   Vehicle listings and performance for buyer ID: {buyerId}
                 </p>
               </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              <ExportButton
+                exportType="listings"
+                userRole={userRole}
+                variant="success"
+                size="sm"
+                buyerId={buyerId}
+                selectedListings={selectedListings}
+              />
             </div>
           </div>
         </div>
@@ -228,6 +363,102 @@ export default function BuyerActivityPage() {
           <BuyerPerformanceKpi stats={buyerStats} />
         )}
 
+        {/* Search and Filter Controls */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+            {/* Search Bar */}
+            <div className="flex-1 max-w-md">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  type="text"
+                  placeholder="Search by make, model, VIN, or location..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            {/* Filter Controls */}
+            <div className="flex items-center space-x-3">
+              <Button
+                onClick={() => setShowFilters(!showFilters)}
+                variant="outline"
+                size="sm"
+                className="flex items-center space-x-2"
+              >
+                <Filter className="w-4 h-4" />
+                <span>Filters</span>
+              </Button>
+
+              {selectedListings.size > 0 && (
+                <Button
+                  onClick={() => setSelectedListings(new Set())}
+                  variant="outline"
+                  size="sm"
+                  className="text-blue-600 hover:text-blue-700"
+                >
+                  Clear Selection ({selectedListings.size})
+                </Button>
+              )}
+
+              {(searchTerm || statusFilter || makeFilter) && (
+                <Button
+                  onClick={resetFilters}
+                  variant="outline"
+                  size="sm"
+                  className="text-red-600 hover:text-red-700"
+                >
+                  Clear Filters
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Advanced Filters */}
+          {showFilters && (
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Status
+                  </label>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">All Status</option>
+                    <option value="scored">Scored</option>
+                    <option value="pending">Pending Score</option>
+                    <option value="decided">Decided</option>
+                    <option value="undecided">Undecided</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Make
+                  </label>
+                  <select
+                    value={makeFilter}
+                    onChange={(e) => setMakeFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">All Makes</option>
+                    {uniqueMakes.map((make) => (
+                      <option key={make} value={make}>
+                        {make}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Listings Table */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
           <div className="px-6 py-4 border-b border-gray-200">
@@ -235,10 +466,20 @@ export default function BuyerActivityPage() {
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">Vehicle Listings</h2>
                 <p className="text-sm text-gray-600">
-                  {sortedListings.length} total listings • {paginatedListings.length} showing
+                  {sortedListings.length} filtered listings • {paginatedListings.length} showing
+                  {selectedListings.size > 0 && (
+                    <span className="ml-2 text-blue-600 font-medium">
+                      • {selectedListings.size} selected
+                    </span>
+                  )}
                   {(dateRange.start || dateRange.end) && (
                     <span className="ml-2 text-blue-600">
                       (filtered by date range)
+                    </span>
+                  )}
+                  {(searchTerm || statusFilter || makeFilter) && (
+                    <span className="ml-2 text-green-600">
+                      (filtered by search/filters)
                     </span>
                   )}
                 </p>
@@ -276,12 +517,19 @@ export default function BuyerActivityPage() {
                 sort={sort}
                 onSort={handleSort}
                 onNotify={handleNotify}
+                onNotifySlack={handleNotifySlack}
+                onTriggerWorkflow={handleTriggerWorkflow}
                 currentPage={currentPage}
                 totalPages={totalPages}
                 rowsPerPage={rowsPerPage}
                 totalRows={sortedListings.length}
                 onPageChange={setCurrentPage}
                 onRowsPerPageChange={setRowsPerPage}
+                selectedListings={selectedListings}
+                onSelectListing={handleSelectListing}
+                onSelectAll={handleSelectAll}
+                isAllSelected={isAllSelected}
+                isIndeterminate={isIndeterminate}
               />
             )}
           </div>

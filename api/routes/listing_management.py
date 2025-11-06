@@ -1,5 +1,5 @@
 # Listing Management API Routes
-from fastapi import APIRouter, HTTPException, Depends, Path, Query
+from fastapi import APIRouter, HTTPException, Depends, Path, Query, UploadFile, File
 from typing import List, Optional
 from uuid import UUID
 from ..schemas.listing import (
@@ -14,6 +14,11 @@ from ..repositories.listing_management import (
     unlink_contact_from_listing, get_listing_contacts, get_listing_activities
 )
 import logging
+import os
+import uuid
+from pathlib import Path
+from datetime import datetime
+import requests
 
 listing_management_router = APIRouter(prefix="/listings", tags=["listing-management"])
 
@@ -159,3 +164,96 @@ def get_listing_activities_endpoint(
     except Exception as e:
         logging.error(f"Error getting activities for listing {listing_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to retrieve activities")
+
+# ==============================================
+# IMAGE UPLOAD ENDPOINTS
+# ==============================================
+
+@listing_management_router.post("/{listing_id}/images/upload")
+async def upload_listing_image(
+    listing_id: int = Path(..., description="ID of the listing"),
+    file: UploadFile = File(..., description="Image file to upload"),
+    current_user: UserOut = Depends(get_current_user)
+):
+    """Upload an image for a listing using Vercel Blob storage"""
+    try:
+        # Validate file type
+        if not file.content_type or not file.content_type.startswith('image/'):
+            raise HTTPException(status_code=400, detail="File must be an image")
+        
+        # Validate file size (max 10MB)
+        file_content = await file.read()
+        if len(file_content) > 10 * 1024 * 1024:  # 10MB
+            raise HTTPException(status_code=400, detail="File size must be less than 10MB")
+        
+        # Get Vercel Blob token from environment
+        blob_token = os.getenv("BLOB_READ_WRITE_TOKEN")
+        if not blob_token:
+            raise HTTPException(status_code=500, detail="Vercel Blob token not configured")
+        
+        # Generate unique filename
+        file_extension = Path(file.filename).suffix if file.filename else '.jpg'
+        unique_filename = f"{uuid.uuid4()}{file_extension}"
+        
+        # Create folder structure: listings/{listing_id}/{filename}
+        # This organizes images by vehicle/listing
+        blob_path = f"listings/{listing_id}/{unique_filename}"
+        
+        # Upload to Vercel Blob using REST API
+        # Vercel Blob API endpoint - using POST with multipart form data
+        blob_api_url = "https://blob.vercel-storage.com"
+        
+        # Prepare multipart form data
+        files = {
+            'file': (unique_filename, file_content, file.content_type or "image/jpeg")
+        }
+        
+        data = {
+            'pathname': blob_path,
+            'access': 'public'
+        }
+        
+        headers = {
+            "Authorization": f"Bearer {blob_token}",
+        }
+        
+        # Upload to Vercel Blob
+        response = requests.post(
+            blob_api_url,
+            headers=headers,
+            files=files,
+            data=data,
+            timeout=30
+        )
+        
+        if response.status_code not in [200, 201]:
+            logging.error(f"Vercel Blob upload failed: {response.status_code} - {response.text}")
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Failed to upload to Vercel Blob: {response.status_code} - {response.text}"
+            )
+        
+        # Get the URL from response
+        blob_data = response.json()
+        image_url = blob_data.get("url")
+        
+        if not image_url:
+            logging.error(f"Vercel Blob response missing URL: {blob_data}")
+            raise HTTPException(status_code=500, detail="Failed to get image URL from Vercel Blob")
+        
+        logging.info(f"Image uploaded successfully for listing {listing_id}: {image_url}")
+        
+        return {
+            "url": image_url,
+            "filename": unique_filename,
+            "path": blob_path,
+            "listing_id": listing_id
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error uploading image for listing {listing_id}: {str(e)}")
+        import traceback
+        logging.error(f"Traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Failed to upload image: {str(e)}")

@@ -769,10 +769,6 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
               ) : (
                 <ImageCarousel images={[]} />
               )}
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Vehicle Images</h3>
-              {listing.images && listing.images.length > 0 && (
-                <ImageCarousel images={listing.images} />
-              )}
             </div>
         </div>
 

@@ -38,6 +38,10 @@ class Settings(BaseSettings):
     DB_POOL_RECYCLE_SECONDS: int = int(os.getenv("DB_POOL_RECYCLE_SECONDS", "3600"))  # 1 hour
     DB_POOL_TIMEOUT_SECONDS: int = int(os.getenv("DB_POOL_TIMEOUT_SECONDS", "30"))
 
+    # Vercel Blob storage settings
+    BLOB_READ_WRITE_TOKEN: str = os.getenv("BLOB_READ_WRITE_TOKEN", "")
+    BLOB_STORE_URL: str = os.getenv("BLOB_STORE_URL", "")  
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 

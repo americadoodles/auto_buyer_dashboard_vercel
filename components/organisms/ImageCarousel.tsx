@@ -2,16 +2,30 @@
 
 import React, { useState } from 'react';
 import { Button } from '../atoms/Button';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Image as ImageIcon } from 'lucide-react';
 
 interface ImageCarouselProps {
   images: string[];
+  showPlaceholder?: boolean;
 }
 
-export const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
+export const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, showPlaceholder = true }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  if (images.length === 0) return null;
+  if (images.length === 0) {
+    if (!showPlaceholder) return null;
+    
+    return (
+      <div className="w-full bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="relative h-64 md:h-96 flex items-center justify-center bg-gray-100">
+          <div className="flex flex-col items-center justify-center text-gray-400">
+            <ImageIcon className="h-16 w-16 mb-4" />
+            <p className="text-lg font-medium text-gray-500">No images Available</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const goToNext = () => {
     setCurrentIndex((prevIndex) => (prevIndex === images.length - 1 ? 0 : prevIndex + 1));

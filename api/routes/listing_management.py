@@ -130,7 +130,7 @@ def link_contact_to_listing_endpoint(
 ):
     """Link a contact to a listing"""
     try:
-        success = link_contact_to_listing(listing_id, contact_link, current_user.id)
+        success = link_contact_to_listing(listing_id, contact_link, str(current_user.id))
         if not success:
             raise HTTPException(status_code=400, detail="Failed to link contact to listing")
         return {"message": "Contact linked successfully", "listing_id": listing_id, "contact_id": str(contact_link.contact_id)}

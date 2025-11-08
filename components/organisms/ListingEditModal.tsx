@@ -14,7 +14,7 @@ import {
   getContacts,
   createContact
 } from '../../lib/services/listingManagementApi';
-import { X, Plus, User, Phone, Mail, Building, Edit, Trash2, Save } from 'lucide-react';
+import { X, Plus, User, Phone, Mail, Building, Edit, Trash2, Save, Upload } from 'lucide-react';
 import { LeadCreateModal } from './LeadCreateModal';
 import { ImageCarousel } from './ImageCarousel';
 interface ListingEditModalProps {
@@ -48,6 +48,8 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
     job_title: '',
     notes: ''
   });
+  const [images, setImages] = useState<string[]>([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
 
   // Initialize form data when modal opens
   useEffect(() => {
@@ -67,6 +69,7 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
         miles: listing.miles,
         location: listing.location || ''
       });
+      setImages(listing.images || []);
       loadListingContacts();
     }
   }, [isOpen, listing]);
@@ -107,11 +110,59 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
     }));
   };
 
+  // Handle image file upload
+  const handleImageUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+
+    setUploadingImages(true);
+    try {
+      const uploadPromises = Array.from(files).map(async (file) => {
+        // Create a FormData object
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('listing_id', listing.id);
+
+        // Upload the file
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || '/api'}/listings/${listing.id}/images/upload`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('auth.token')}`,
+          },
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to upload image: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data.url;
+      });
+
+      const uploadedUrls = await Promise.all(uploadPromises);
+      setImages(prev => [...prev, ...uploadedUrls]);
+    } catch (error) {
+      console.error('Error uploading images:', error);
+      alert('Failed to upload images. Please try again.');
+    } finally {
+      setUploadingImages(false);
+    }
+  };
+
+  // Remove an image
+  const handleRemoveImage = (index: number) => {
+    setImages(prev => prev.filter((_, i) => i !== index));
+  };
+
   // Save listing updates
   const handleSave = async () => {
     try {
       setSaving(true);
-      const updatedListing = await updateListing(parseInt(listing.id), formData);
+      const updateData: ListingUpdate = {
+        ...formData,
+        images: images  // Always include images array (even if empty) to allow clearing images
+      };
+      const updatedListing = await updateListing(parseInt(listing.id), updateData);
       onSave(updatedListing);
       onClose();
     } catch (error) {
@@ -677,6 +728,47 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
 
           {/* Image Carousel at the bottom of the modal */}
             <div id="images-section" className="p-6 border-t border-gray-200 mt-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Vehicle Images</h3>
+                <label className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer transition-colors">
+                  <Upload className="h-4 w-4" />
+                  {uploadingImages ? 'Uploading...' : 'Upload Images'}
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => handleImageUpload(e.target.files)}
+                    disabled={uploadingImages}
+                  />
+                </label>
+              </div>
+              
+              {images.length > 0 ? (
+                <div className="space-y-4">
+                  <ImageCarousel images={images} />
+                  <div className="grid grid-cols-4 gap-2 mt-4">
+                    {images.map((image, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={image}
+                          alt={`Vehicle image ${index + 1}`}
+                          className="w-full h-24 object-cover rounded-md border-2 border-gray-200"
+                        />
+                        <button
+                          onClick={() => handleRemoveImage(index)}
+                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          title="Remove image"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <ImageCarousel images={[]} />
+              )}
               <h3 className="text-lg font-medium text-gray-900 mb-4">Vehicle Images</h3>
               {listing.images && listing.images.length > 0 && (
                 <ImageCarousel images={listing.images} />

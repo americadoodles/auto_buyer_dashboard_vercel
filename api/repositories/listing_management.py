@@ -72,7 +72,13 @@ def update_listing(listing_id: int, update_data: ListingUpdate, updated_by: str)
                     except Exception as log_error:
                         logging.warning(f"Failed to log activity for listing {listing_id}: {str(log_error)}")
                     
-                    # Return a properly mapped response
+                    # Fetch the complete listing data after update (similar to get_listing_by_id)
+                    listing = get_listing_by_id(listing_id)
+                    if listing:
+                        return listing
+                    
+                    # Fallback: Return basic data if get_listing_by_id fails
+                    # Note: This is a simplified version - ideally get_listing_by_id should work
                     return ListingOut(
                         id=str(result[0]),  # id
                         vehicle_key=result[1] if result[1] else "",  # vehicle_key
@@ -97,7 +103,8 @@ def update_listing(listing_id: int, update_data: ListingUpdate, updated_by: str)
                         engine_size=result[21] if len(result) > 21 else None,  # engine_size
                         body_style=result[22] if len(result) > 22 else None,  # body_style
                         updated_at=result[12] if len(result) > 12 else None,  # updated_at
-                        updated_by=result[13] if len(result) > 13 else None  # updated_by
+                        updated_by=result[13] if len(result) > 13 else None,  # updated_by
+                        images=result[11] if len(result) > 11 and result[11] else []  # images
                     )
                 else:
                     logging.warning(f"No result returned for listing {listing_id}")

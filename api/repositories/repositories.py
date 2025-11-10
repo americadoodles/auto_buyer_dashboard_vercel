@@ -319,33 +319,51 @@ def list_listings(
                     
                     # Fixed query to prevent duplicates by using DISTINCT ON with date-filtered subquery
                     query = """
-                  SELECT DISTINCT ON (l.vehicle_key) 
-                    l.id, l.vehicle_key, 
-                    COALESCE(l.vin, '') AS vin, 
-                    COALESCE(v.year, 0) as year, 
-                    COALESCE(v.make, '') as make, 
-                    COALESCE(v.model, '') as model, 
-                    v.trim,
-                    l.miles, l.price, l.dom, l.source, 
-                    l.location, l.buyer_id,
-                    COALESCE(l.images, ARRAY[]::text[]) as images,
-                    u.username as buyer_username,
-                    COALESCE(s.score, 0) as score, 
-                    s.buy_max, 
-                    COALESCE(s.reason_codes, ARRAY[]::text[]) as reason_codes,
-                    l.payload
-                  FROM (
-                    SELECT * FROM listings """ + where_clause + """
-                  ) l
-                  LEFT JOIN vehicles v ON v.vehicle_key = l.vehicle_key
-                  LEFT JOIN (
-                    SELECT DISTINCT ON (vin) vin, score, buy_max, reason_codes
-                    FROM scores
-                    ORDER BY vin, created_at DESC
-                  ) s ON s.vin = l.vin
-                  LEFT JOIN users u ON u.id::text = l.buyer_id
-                  ORDER BY l.vehicle_key, l.created_at DESC
-                """
+                    SELECT DISTINCT ON (
+                        CASE
+                            WHEN POSITION('?' IN l.vehicle_key) > 0 THEN SPLIT_PART(l.vehicle_key, '?', 1)
+                            WHEN POSITION('#' IN l.vehicle_key) > 0 THEN SPLIT_PART(l.vehicle_key, '#', 1)
+                            ELSE l.vehicle_key
+                        END
+                        )
+                        l.id,
+                        l.vehicle_key,
+                        COALESCE(l.vin, '') AS vin,
+                        COALESCE(v.year, 0) AS year,
+                        COALESCE(v.make, '') AS make,
+                        COALESCE(v.model, '') AS model,
+                        v.trim,
+                        l.miles,
+                        l.price,
+                        l.dom,
+                        l.source,
+                        l.location,
+                        l.buyer_id,
+                        COALESCE(l.images, ARRAY[]::text[]) AS images,
+                        u.username AS buyer_username,
+                        COALESCE(s.score, 0) AS score,
+                        s.buy_max,
+                        COALESCE(s.reason_codes, ARRAY[]::text[]) AS reason_codes,
+                        l.payload
+                        FROM (
+                        SELECT * FROM listings """ + where_clause + """
+                        ) l
+                        LEFT JOIN vehicles v ON v.vehicle_key = l.vehicle_key
+                        LEFT JOIN (
+                        SELECT DISTINCT ON (vin) vin, score, buy_max, reason_codes
+                        FROM scores
+                        ORDER BY vin, created_at DESC
+                        ) s ON s.vin = l.vin
+                        LEFT JOIN users u ON u.id::text = l.buyer_id
+                        ORDER BY
+                        CASE
+                            WHEN POSITION('?' IN l.vehicle_key) > 0 THEN SPLIT_PART(l.vehicle_key, '?', 1)
+                            WHEN POSITION('#' IN l.vehicle_key) > 0 THEN SPLIT_PART(l.vehicle_key, '#', 1)
+                            ELSE l.vehicle_key
+                        END,
+                        l.created_at DESC;
+
+                    """
                     
                     logging.info(f"Query will execute with {len(params)} date parameters")
 

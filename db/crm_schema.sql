@@ -26,28 +26,20 @@ CREATE TABLE IF NOT EXISTS lead_statuses (
 );
 
 -- Main leads table
+-- Leads represent potential customers interested in specific listings, linked to contacts
 CREATE TABLE IF NOT EXISTS leads (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    first_name TEXT NOT NULL,
-    last_name TEXT NOT NULL,
-    email TEXT,
-    phone TEXT,
-    company TEXT,
-    job_title TEXT,
-    lead_source_id INTEGER REFERENCES lead_sources(id),
-    lead_status_id INTEGER REFERENCES lead_statuses(id),
+    listing_id INTEGER REFERENCES listings(id),
+    contact_id UUID REFERENCES contacts(id),
+    status_id INTEGER REFERENCES lead_statuses(id),
+    source_id INTEGER REFERENCES lead_sources(id),
     assigned_to UUID REFERENCES users(id),
     vehicle_interest JSONB, -- Store vehicle preferences
     budget_range JSONB, -- Min/max budget
-    location TEXT,
     notes TEXT,
-    lead_score INTEGER DEFAULT 0 CHECK (lead_score BETWEEN 0 AND 100),
-    is_qualified BOOLEAN DEFAULT false,
     qualified_at TIMESTAMPTZ,
     converted_at TIMESTAMPTZ,
-    created_by UUID REFERENCES users(id),
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
+    created_by UUID REFERENCES users(id)
 );
 
 -- Lead activities (calls, emails, meetings)
@@ -303,11 +295,11 @@ CREATE TABLE IF NOT EXISTS kpi_measurements (
 -- ==============================================
 
 -- Lead indexes
-CREATE INDEX IF NOT EXISTS idx_leads_email ON leads(email);
-CREATE INDEX IF NOT EXISTS idx_leads_phone ON leads(phone);
+CREATE INDEX IF NOT EXISTS idx_leads_listing_id ON leads(listing_id);
+CREATE INDEX IF NOT EXISTS idx_leads_contact_id ON leads(contact_id);
 CREATE INDEX IF NOT EXISTS idx_leads_assigned_to ON leads(assigned_to);
-CREATE INDEX IF NOT EXISTS idx_leads_status ON leads(lead_status_id);
-CREATE INDEX IF NOT EXISTS idx_leads_created_at ON leads(created_at);
+CREATE INDEX IF NOT EXISTS idx_leads_status_id ON leads(status_id);
+CREATE INDEX IF NOT EXISTS idx_leads_source_id ON leads(source_id);
 
 -- Contact indexes
 CREATE INDEX IF NOT EXISTS idx_contacts_email ON contacts(email);
@@ -340,19 +332,26 @@ CREATE INDEX IF NOT EXISTS idx_deal_activities_deal ON deal_activities(deal_id);
 CREATE OR REPLACE VIEW v_lead_summary AS
 SELECT 
     l.id,
-    l.first_name,
-    l.last_name,
-    l.email,
-    l.phone,
-    l.lead_score,
+    l.listing_id,
+    l.contact_id,
+    c.first_name || ' ' || c.last_name as contact_name,
+    c.email as contact_email,
+    c.phone as contact_phone,
     ls.name as status_name,
     ls.color_code as status_color,
+    lsrc.name as source_name,
     u.username as assigned_to_name,
-    l.created_at,
-    l.updated_at
+    l.vehicle_interest,
+    l.budget_range,
+    l.notes,
+    l.qualified_at,
+    l.converted_at
 FROM leads l
-LEFT JOIN lead_statuses ls ON l.lead_status_id = ls.id
-LEFT JOIN users u ON l.assigned_to = u.id;
+LEFT JOIN lead_statuses ls ON l.status_id = ls.id
+LEFT JOIN lead_sources lsrc ON l.source_id = lsrc.id
+LEFT JOIN contacts c ON l.contact_id = c.id
+LEFT JOIN users u ON l.assigned_to = u.id
+LEFT JOIN listings lst ON l.listing_id = lst.id;
 
 -- Deal pipeline view
 CREATE OR REPLACE VIEW v_deal_pipeline AS

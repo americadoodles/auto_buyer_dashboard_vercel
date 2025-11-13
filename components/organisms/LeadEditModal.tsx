@@ -7,65 +7,8 @@ import { Badge } from '../atoms/Badge';
 import { X, Save } from 'lucide-react';
 import { leadsApi, LeadStatus, LeadSource } from '../../lib/services/leadsApi';
 import { updateContact } from '../../lib/services/listingManagementApi';
+import { Lead } from '../../lib/types/lead';
 
-interface Lead {
-  contact: any;
-  // Core lead fields
-  id: string;
-  listing_id?: number;
-  contact_id?: string;
-  status_id?: number;
-  source_id?: number;
-  assigned_to_id?: string;
-  lead_score: number;
-  vehicle_interest?: Record<string, any>;
-  budget_range?: {
-    min?: number;
-    max?: number;
-  };
-  notes?: string;
-  qualified_at?: string;
-  converted_at?: string;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-  
-  // Joined from contacts table
-  first_name?: string;
-  last_name?: string;
-  email?: string;
-  phone?: string;
-  company?: string;
-  
-  // Joined from lead_statuses table
-  status: {
-    id: number;
-    name: string;
-    color: string;
-  };
-  
-  // Joined from lead_sources table
-  source_name?: string;
-  
-  // Joined from users table (assigned_to)
-  assigned_to: {
-    id: string;
-    username: string;
-  };
-  
-  // Joined from listings table
-  listing?: {
-    id: number;
-    vin?: string;
-    vehicle_key?: string;
-    make?: string;
-    model?: string;
-    trim?: string;
-    year?: number;
-    miles?: number;
-    price?: number;
-  };
-}
 
 interface LeadEditModalProps {
   lead: Lead;
@@ -377,7 +320,7 @@ export const LeadEditModal: React.FC<LeadEditModalProps> = ({
                     Assigned To
                   </label>
                   <div className="text-sm text-gray-900">
-                    {lead.assigned_to?.username || 'Unassigned'}
+                    {lead.assigned_to_user?.username || 'Unassigned'}
                   </div>
                 </div>
 

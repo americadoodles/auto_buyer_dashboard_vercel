@@ -64,27 +64,29 @@ export const ListingsTable: React.FC<ListingsTableProps> = ({
 
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      {/* Desktop/Tablet Table View */}
-      <div className="hidden md:block">
-        <TableHeader 
-          sort={sort} 
-          onSort={handleSort}
-          onSelectAll={onSelectAll}
-          isAllSelected={isAllSelected}
-          isIndeterminate={isIndeterminate}
-        />
-        {listings.map(listing => (
-          <TableRow
-            key={listing.id}
-            listing={listing}
-            onNotify={onNotify}
-            onNotifySlack={onNotifySlack}
-            onTriggerWorkflow={onTriggerWorkflow}
-            onEdit={handleEditListing}
-            isSelected={selectedListings.has(listing.id)}
-            onSelect={onSelectListing}
+      {/* Desktop/Tablet Table View with Horizontal Scroll */}
+      <div className="hidden md:block overflow-x-auto">
+        <div className="min-w-max">
+          <TableHeader 
+            sort={sort} 
+            onSort={handleSort}
+            onSelectAll={onSelectAll}
+            isAllSelected={isAllSelected}
+            isIndeterminate={isIndeterminate}
           />
-        ))}
+          {listings.map(listing => (
+            <TableRow
+              key={listing.id}
+              listing={listing}
+              onNotify={onNotify}
+              onNotifySlack={onNotifySlack}
+              onTriggerWorkflow={onTriggerWorkflow}
+              onEdit={handleEditListing}
+              isSelected={selectedListings.has(listing.id)}
+              onSelect={onSelectListing}
+            />
+          ))}
+        </div>
       </div>
       
       {/* Mobile Card View */}
@@ -182,6 +184,7 @@ export const ListingsTable: React.FC<ListingsTableProps> = ({
         ))}
       </div>
       
+      {/* Pagination - Outside scrollable area */}
       <Pagination
         currentPage={currentPage}
         totalPages={totalPages}

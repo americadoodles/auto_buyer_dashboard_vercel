@@ -1,6 +1,6 @@
 // Leads API Service
 import { ApiService } from './api';
-import {
+import type {
   Lead,
   LeadStatus,
   LeadSource,
@@ -8,16 +8,6 @@ import {
   LeadSummary,
   LeadConversionMetrics
 } from '../types/lead';
-
-// Re-export types for backward compatibility
-export type {
-  Lead,
-  LeadStatus,
-  LeadSource,
-  LeadActivity,
-  LeadSummary,
-  LeadConversionMetrics
-};
 
 // Helper function to build query parameters
 const buildQueryParams = (params: Record<string, any>): string => {

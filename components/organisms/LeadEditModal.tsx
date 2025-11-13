@@ -5,9 +5,9 @@ import { Button } from '../atoms/Button';
 import { Input } from '../atoms/Input';
 import { Badge } from '../atoms/Badge';
 import { X, Save } from 'lucide-react';
-import { leadsApi, LeadStatus, LeadSource } from '../../lib/services/leadsApi';
+import { leadsApi } from '../../lib/services/leadsApi';
+import { Lead, LeadStatus, LeadSource } from '../../lib/types/lead';
 import { updateContact } from '../../lib/services/listingManagementApi';
-import { Lead } from '../../lib/types/lead';
 
 
 interface LeadEditModalProps {

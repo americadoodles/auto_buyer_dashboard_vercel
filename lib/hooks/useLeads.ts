@@ -1,6 +1,7 @@
 // Custom hook for Leads data
 import { useState, useEffect } from 'react';
-import { leadsApi, Lead, LeadStatus, LeadSource, LeadSummary, LeadConversionMetrics } from '../services/leadsApi';
+import { leadsApi } from '../services/leadsApi';
+import type { Lead, LeadStatus, LeadSource, LeadSummary, LeadConversionMetrics } from '../types/lead';
 
 interface UseLeadsParams {
   skip?: number;

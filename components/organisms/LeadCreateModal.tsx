@@ -4,9 +4,10 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Button } from '../atoms/Button';
 import { Input } from '../atoms/Input';
 import { Icon } from '../atoms/Icon';
-import { leadsApi, LeadSource, LeadStatus } from '../../lib/services/leadsApi';
+import { leadsApi } from '../../lib/services/leadsApi';
+import { LeadSource, LeadStatus } from '../../lib/types/lead';
 import { createContact } from '../../lib/services/listingManagementApi';
-import {useAuth} from '../../app/auth/useAuth';
+import { useAuth } from '../../app/auth/useAuth';
 type LeadCreateModalProps = {
   isOpen: boolean;
   onClose: () => void;

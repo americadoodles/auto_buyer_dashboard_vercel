@@ -37,9 +37,12 @@ CREATE TABLE IF NOT EXISTS leads (
     vehicle_interest JSONB, -- Store vehicle preferences
     budget_range JSONB, -- Min/max budget
     notes TEXT,
+    lead_score INTEGER DEFAULT 0 CHECK (lead_score BETWEEN 0 AND 100),
     qualified_at TIMESTAMPTZ,
     converted_at TIMESTAMPTZ,
-    created_by UUID REFERENCES users(id)
+    created_by UUID REFERENCES users(id),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Lead activities (calls, emails, meetings)
@@ -344,6 +347,7 @@ SELECT
     l.vehicle_interest,
     l.budget_range,
     l.notes,
+    l.lead_score,
     l.qualified_at,
     l.converted_at
 FROM leads l

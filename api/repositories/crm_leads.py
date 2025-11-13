@@ -3,6 +3,7 @@ import logging
 from typing import List, Optional
 from uuid import UUID
 from datetime import datetime
+from psycopg.types.json import Json
 from ..core.db import DB_ENABLED
 from ..core.db_helpers import get_db_connection
 from ..schemas.crm import (
@@ -23,9 +24,7 @@ def create_lead(lead_data: LeadCreate, created_by: UUID) -> LeadOut:
         return LeadOut(
             id=lead_id,
             **lead_data.model_dump(),
-            created_by=created_by,
-            created_at=datetime.now(),
-            updated_at=datetime.now()
+            created_by=created_by
         )
     
     with get_db_connection() as conn:
@@ -36,28 +35,28 @@ def create_lead(lead_data: LeadCreate, created_by: UUID) -> LeadOut:
             with conn.cursor() as cur:
                 cur.execute("""
                     INSERT INTO leads (
-                        first_name, last_name, email, phone, company, job_title,
-                        lead_source_id, lead_status_id, assigned_to, vehicle_interest,
-                        budget_range, location, notes, lead_score, is_qualified,
-                        created_by, created_at, updated_at
+                        listing_id, contact_id, status_id, source_id, assigned_to,
+                        vehicle_interest, budget_range, notes, lead_score, created_by,
+                        created_at, updated_at
                     ) VALUES (
-                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
-                    ) RETURNING id, created_at, updated_at
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW()
+                    ) RETURNING id, qualified_at, converted_at, created_at, updated_at
                 """, (
-                    lead_data.first_name, lead_data.last_name, lead_data.email,
-                    lead_data.phone, lead_data.company, lead_data.job_title,
-                    lead_data.lead_source_id, lead_data.lead_status_id, lead_data.assigned_to,
-                    lead_data.vehicle_interest, lead_data.budget_range, lead_data.location,
-                    lead_data.notes, lead_data.lead_score, lead_data.is_qualified,
-                    created_by, datetime.now(), datetime.now()
+                    lead_data.listing_id, lead_data.contact_id, lead_data.status_id,
+                    lead_data.source_id, lead_data.assigned_to, 
+                    Json(lead_data.vehicle_interest) if lead_data.vehicle_interest else None,
+                    Json(lead_data.budget_range) if lead_data.budget_range else None,
+                    lead_data.notes, lead_data.lead_score, created_by
                 ))
                 
                 result = cur.fetchone()
                 if result:
-                    lead_id, created_at, updated_at = result
+                    lead_id, qualified_at, converted_at, created_at, updated_at = result
                     return LeadOut(
                         id=lead_id,
                         **lead_data.model_dump(),
+                        qualified_at=qualified_at,
+                        converted_at=converted_at,
                         created_by=created_by,
                         created_at=created_at,
                         updated_at=updated_at
@@ -81,9 +80,8 @@ def get_lead(lead_id: UUID) -> Optional[LeadOut]:
         try:
             with conn.cursor() as cur:
                 cur.execute("""
-                    SELECT id, first_name, last_name, email, phone, company, job_title,
-                           lead_source_id, lead_status_id, assigned_to, vehicle_interest,
-                           budget_range, location, notes, lead_score, is_qualified,
+                    SELECT id, listing_id, contact_id, status_id, source_id, assigned_to,
+                           vehicle_interest, budget_range, notes, lead_score,
                            qualified_at, converted_at, created_by, created_at, updated_at
                     FROM leads WHERE id = %s
                 """, (lead_id,))
@@ -91,13 +89,11 @@ def get_lead(lead_id: UUID) -> Optional[LeadOut]:
                 result = cur.fetchone()
                 if result:
                     return LeadOut(
-                        id=result[0], first_name=result[1], last_name=result[2],
-                        email=result[3], phone=result[4], company=result[5], job_title=result[6],
-                        lead_source_id=result[7], lead_status_id=result[8], assigned_to=result[9],
-                        vehicle_interest=result[10], budget_range=result[11], location=result[12],
-                        notes=result[13], lead_score=result[14], is_qualified=result[15],
-                        qualified_at=result[16], converted_at=result[17], created_by=result[18],
-                        created_at=result[19], updated_at=result[20]
+                        id=result[0], listing_id=result[1], contact_id=result[2],
+                        status_id=result[3], source_id=result[4], assigned_to=result[5],
+                        vehicle_interest=result[6], budget_range=result[7], notes=result[8],
+                        lead_score=result[9], qualified_at=result[10], converted_at=result[11],
+                        created_by=result[12], created_at=result[13], updated_at=result[14]
                     )
                 return None
                 
@@ -123,34 +119,34 @@ def update_lead(lead_id: UUID, lead_update: LeadUpdate) -> Optional[LeadOut]:
                 for field, value in lead_update.model_dump(exclude_unset=True).items():
                     if value is not None:
                         update_fields.append(f"{field} = %s")
-                        values.append(value)
+                        # Wrap JSONB fields with Json() for psycopg3
+                        if field in ('vehicle_interest', 'budget_range'):
+                            values.append(Json(value))
+                        else:
+                            values.append(value)
                 
                 if not update_fields:
                     return get_lead(lead_id)
                 
-                update_fields.append("updated_at = %s")
-                values.append(datetime.now())
+                update_fields.append("updated_at = NOW()")
                 values.append(lead_id)
                 
                 cur.execute(f"""
                     UPDATE leads SET {', '.join(update_fields)}
                     WHERE id = %s
-                    RETURNING id, first_name, last_name, email, phone, company, job_title,
-                             lead_source_id, lead_status_id, assigned_to, vehicle_interest,
-                             budget_range, location, notes, lead_score, is_qualified,
+                    RETURNING id, listing_id, contact_id, status_id, source_id, assigned_to,
+                             vehicle_interest, budget_range, notes, lead_score,
                              qualified_at, converted_at, created_by, created_at, updated_at
                 """, values)
                 
                 result = cur.fetchone()
                 if result:
                     return LeadOut(
-                        id=result[0], first_name=result[1], last_name=result[2],
-                        email=result[3], phone=result[4], company=result[5], job_title=result[6],
-                        lead_source_id=result[7], lead_status_id=result[8], assigned_to=result[9],
-                        vehicle_interest=result[10], budget_range=result[11], location=result[12],
-                        notes=result[13], lead_score=result[14], is_qualified=result[15],
-                        qualified_at=result[16], converted_at=result[17], created_by=result[18],
-                        created_at=result[19], updated_at=result[20]
+                        id=result[0], listing_id=result[1], contact_id=result[2],
+                        status_id=result[3], source_id=result[4], assigned_to=result[5],
+                        vehicle_interest=result[6], budget_range=result[7], notes=result[8],
+                        lead_score=result[9], qualified_at=result[10], converted_at=result[11],
+                        created_by=result[12], created_at=result[13], updated_at=result[14]
                     )
                 return None
                 
@@ -192,27 +188,29 @@ def list_leads(skip: int = 0, limit: int = 100, status_id: Optional[int] = None,
                 params = []
                 
                 if status_id is not None:
-                    where_conditions.append("lead_status_id = %s")
+                    where_conditions.append("l.status_id = %s")
                     params.append(status_id)
                 
                 if assigned_to is not None:
-                    where_conditions.append("assigned_to = %s")
+                    where_conditions.append("l.assigned_to = %s")
                     params.append(assigned_to)
                 
                 if search:
-                    where_conditions.append("(first_name ILIKE %s OR last_name ILIKE %s OR email ILIKE %s OR company ILIKE %s)")
+                    where_conditions.append("(c.first_name ILIKE %s OR c.last_name ILIKE %s OR c.email ILIKE %s OR c.company ILIKE %s)")
                     search_param = f"%{search}%"
                     params.extend([search_param, search_param, search_param, search_param])
                 
                 where_clause = "WHERE " + " AND ".join(where_conditions) if where_conditions else ""
                 
                 cur.execute(f"""
-                    SELECT id, first_name, last_name, email, phone, company, job_title,
-                           lead_source_id, lead_status_id, assigned_to, vehicle_interest,
-                           budget_range, location, notes, lead_score, is_qualified,
-                           qualified_at, converted_at, created_by, created_at, updated_at
-                    FROM leads {where_clause}
-                    ORDER BY created_at DESC
+                    SELECT l.id, l.listing_id, l.contact_id, l.status_id, l.source_id,
+                           l.assigned_to, l.vehicle_interest, l.budget_range, l.notes,
+                           l.lead_score, l.qualified_at, l.converted_at, l.created_by,
+                           l.created_at, l.updated_at
+                    FROM leads l
+                    LEFT JOIN contacts c ON l.contact_id = c.id
+                    {where_clause}
+                    ORDER BY l.created_at DESC
                     LIMIT %s OFFSET %s
                 """, params + [limit, skip])
                 
@@ -220,13 +218,11 @@ def list_leads(skip: int = 0, limit: int = 100, status_id: Optional[int] = None,
                 leads = []
                 for result in results:
                     leads.append(LeadOut(
-                        id=result[0], first_name=result[1], last_name=result[2],
-                        email=result[3], phone=result[4], company=result[5], job_title=result[6],
-                        lead_source_id=result[7], lead_status_id=result[8], assigned_to=result[9],
-                        vehicle_interest=result[10], budget_range=result[11], location=result[12],
-                        notes=result[13], lead_score=result[14], is_qualified=result[15],
-                        qualified_at=result[16], converted_at=result[17], created_by=result[18],
-                        created_at=result[19], updated_at=result[20]
+                        id=result[0], listing_id=result[1], contact_id=result[2],
+                        status_id=result[3], source_id=result[4], assigned_to=result[5],
+                        vehicle_interest=result[6], budget_range=result[7], notes=result[8],
+                        lead_score=result[9], qualified_at=result[10], converted_at=result[11],
+                        created_by=result[12], created_at=result[13], updated_at=result[14]
                     ))
                 
                 return leads
@@ -565,7 +561,7 @@ def delete_lead_status(status_id: int) -> bool:
 # ==============================================
 
 def get_lead_summary() -> List[LeadSummary]:
-    """Get lead summary for dashboard"""
+    """Get lead summary from v_lead_summary view"""
     if not DB_ENABLED:
         return []
     
@@ -577,23 +573,25 @@ def get_lead_summary() -> List[LeadSummary]:
             with conn.cursor() as cur:
                 cur.execute("""
                     SELECT 
-                        ls.name as status_name,
-                        COUNT(l.id) as lead_count,
-                        AVG(l.lead_score) as avg_score
-                    FROM lead_statuses ls
-                    LEFT JOIN leads l ON ls.id = l.lead_status_id
-                    WHERE ls.is_active = true
-                    GROUP BY ls.id, ls.name, ls.sort_order
-                    ORDER BY ls.sort_order
+                        id, listing_id, contact_id, contact_name, contact_email, contact_phone,
+                        status_name, status_color, source_name, assigned_to_name,
+                        vehicle_interest, budget_range, notes, lead_score,
+                        qualified_at, converted_at
+                    FROM v_lead_summary
+                    ORDER BY COALESCE(converted_at, qualified_at, NOW()) DESC
+                    LIMIT 100
                 """)
                 
                 results = cur.fetchall()
                 summaries = []
                 for result in results:
                     summaries.append(LeadSummary(
-                        status_name=result[0],
-                        lead_count=result[1] or 0,
-                        avg_score=float(result[2]) if result[2] else 0.0
+                        id=result[0], listing_id=result[1], contact_id=result[2],
+                        contact_name=result[3], contact_email=result[4], contact_phone=result[5],
+                        status_name=result[6], status_color=result[7], source_name=result[8],
+                        assigned_to_name=result[9], vehicle_interest=result[10],
+                        budget_range=result[11], notes=result[12], lead_score=result[13],
+                        qualified_at=result[14], converted_at=result[15]
                     ))
                 
                 return summaries
@@ -606,15 +604,15 @@ def get_lead_conversion_metrics() -> LeadConversionMetrics:
     """Get lead conversion metrics"""
     if not DB_ENABLED:
         return LeadConversionMetrics(
-            total_leads=0, qualified_leads=0, converted_leads=0,
-            conversion_rate=0.0, qualification_rate=0.0
+            total_leads=0, converted_leads=0,
+            conversion_rate=0.0, avg_score=0.0
         )
     
     with get_db_connection() as conn:
         if not conn:
             return LeadConversionMetrics(
-                total_leads=0, qualified_leads=0, converted_leads=0,
-                conversion_rate=0.0, qualification_rate=0.0
+                total_leads=0, converted_leads=0,
+                conversion_rate=0.0, avg_score=0.0
             )
         
         try:
@@ -622,33 +620,31 @@ def get_lead_conversion_metrics() -> LeadConversionMetrics:
                 cur.execute("""
                     SELECT 
                         COUNT(*) as total_leads,
-                        COUNT(CASE WHEN is_qualified = true THEN 1 END) as qualified_leads,
-                        COUNT(CASE WHEN converted_at IS NOT NULL THEN 1 END) as converted_leads
+                        COUNT(CASE WHEN converted_at IS NOT NULL THEN 1 END) as converted_leads,
+                        AVG(lead_score) as avg_score
                     FROM leads
                 """)
                 
                 result = cur.fetchone()
                 if result:
-                    total_leads, qualified_leads, converted_leads = result
+                    total_leads, converted_leads, avg_score = result
                     conversion_rate = (converted_leads / total_leads * 100) if total_leads > 0 else 0.0
-                    qualification_rate = (qualified_leads / total_leads * 100) if total_leads > 0 else 0.0
                     
                     return LeadConversionMetrics(
                         total_leads=total_leads,
-                        qualified_leads=qualified_leads,
                         converted_leads=converted_leads,
                         conversion_rate=conversion_rate,
-                        qualification_rate=qualification_rate
+                        avg_score=float(avg_score) if avg_score else 0.0
                     )
                 
                 return LeadConversionMetrics(
-                    total_leads=0, qualified_leads=0, converted_leads=0,
-                    conversion_rate=0.0, qualification_rate=0.0
+                    total_leads=0, converted_leads=0,
+                    conversion_rate=0.0, avg_score=0.0
                 )
                 
         except Exception as e:
             logging.error(f"Error fetching lead conversion metrics: {str(e)}")
             return LeadConversionMetrics(
-                total_leads=0, qualified_leads=0, converted_leads=0,
-                conversion_rate=0.0, qualification_rate=0.0
+                total_leads=0, converted_leads=0,
+                conversion_rate=0.0, avg_score=0.0
             )

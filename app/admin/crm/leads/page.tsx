@@ -50,7 +50,7 @@ export default function LeadsPage() {
 
   // Transform leads data to match component expectations
   const transformedLeads = leads.map(lead => {
-    const foundStatus = statuses.find(s => s.id === lead.lead_status_id);
+    const foundStatus = statuses.find(s => s.id === lead.status_id);
     return {
       ...lead,
       status: foundStatus ? {
@@ -58,7 +58,7 @@ export default function LeadsPage() {
         name: foundStatus.name,
         color: foundStatus.color_code
       } : {
-        id: lead.lead_status_id ?? 0,
+        id: lead.status_id ?? 0,
         name: 'Unknown',
         color: 'gray'
       },
@@ -128,7 +128,7 @@ export default function LeadsPage() {
           <p className="text-gray-600 mt-1">Manage and track your sales leads</p>
         </div>
         <LeadManagement 
-          leads={transformedLeads}
+          leads={transformedLeads as any}
           totalLeads={leads.length}
           currentPage={currentPage}
           totalPages={Math.ceil(leads.length / pageSize)}
@@ -140,13 +140,6 @@ export default function LeadsPage() {
           onStatusFilter={handleStatusFilter}
           statuses={statuses}
           loading={loading}
-        />
-        <LeadCreateModal
-          isOpen={isCreateOpen}
-          onClose={() => setIsCreateOpen(false)}
-          onCreated={async () => {
-            await refreshLeads();
-          }}
         />
         <LeadCreateModal
           isOpen={isCreateOpen}

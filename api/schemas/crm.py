@@ -36,41 +36,29 @@ class LeadStatusOut(LeadStatusBase):
     created_at: datetime
 
 class LeadBase(BaseModel):
-    first_name: str
-    last_name: str
-    email: Optional[EmailStr] = None
-    phone: Optional[str] = None
-    company: Optional[str] = None
-    job_title: Optional[str] = None
-    lead_source_id: Optional[int] = None
-    lead_status_id: Optional[int] = None
+    listing_id: Optional[int] = None
+    contact_id: Optional[UUID] = None
+    status_id: Optional[int] = None
+    source_id: Optional[int] = None
     assigned_to: Optional[UUID] = None
     vehicle_interest: Optional[Dict[str, Any]] = None
     budget_range: Optional[Dict[str, Any]] = None
-    location: Optional[str] = None
     notes: Optional[str] = None
     lead_score: int = Field(default=0, ge=0, le=100)
-    is_qualified: bool = False
 
 class LeadCreate(LeadBase):
     pass
 
 class LeadUpdate(BaseModel):
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    email: Optional[EmailStr] = None
-    phone: Optional[str] = None
-    company: Optional[str] = None
-    job_title: Optional[str] = None
-    lead_source_id: Optional[int] = None
-    lead_status_id: Optional[int] = None
+    listing_id: Optional[int] = None
+    contact_id: Optional[UUID] = None
+    status_id: Optional[int] = None
+    source_id: Optional[int] = None
     assigned_to: Optional[UUID] = None
     vehicle_interest: Optional[Dict[str, Any]] = None
     budget_range: Optional[Dict[str, Any]] = None
-    location: Optional[str] = None
     notes: Optional[str] = None
     lead_score: Optional[int] = Field(None, ge=0, le=100)
-    is_qualified: Optional[bool] = None
 
 class LeadOut(LeadBase):
     id: UUID
@@ -411,16 +399,21 @@ class KPIMeasurementOut(KPIMeasurementBase):
 
 class LeadSummary(BaseModel):
     id: UUID
-    first_name: str
-    last_name: str
-    email: Optional[str] = None
-    phone: Optional[str] = None
-    lead_score: int
+    listing_id: Optional[int] = None
+    contact_id: Optional[UUID] = None
+    contact_name: Optional[str] = None
+    contact_email: Optional[str] = None
+    contact_phone: Optional[str] = None
     status_name: Optional[str] = None
     status_color: Optional[str] = None
+    source_name: Optional[str] = None
     assigned_to_name: Optional[str] = None
-    created_at: datetime
-    updated_at: datetime
+    vehicle_interest: Optional[Dict[str, Any]] = None
+    budget_range: Optional[Dict[str, Any]] = None
+    notes: Optional[str] = None
+    lead_score: int
+    qualified_at: Optional[datetime] = None
+    converted_at: Optional[datetime] = None
 
 class DealPipeline(BaseModel):
     id: UUID
@@ -448,7 +441,6 @@ class TaskDashboard(BaseModel):
 
 class CRMStats(BaseModel):
     total_leads: int
-    qualified_leads: int
     total_contacts: int
     active_deals: int
     won_deals: int
@@ -458,14 +450,10 @@ class CRMStats(BaseModel):
     overdue_tasks: int
 
 class LeadConversionMetrics(BaseModel):
-    leads_created: int
-    leads_contacted: int
-    leads_qualified: int
-    leads_converted: int
+    total_leads: int
+    converted_leads: int
     conversion_rate: float
-    avg_time_to_contact: Optional[float] = None
-    avg_time_to_qualify: Optional[float] = None
-    avg_time_to_convert: Optional[float] = None
+    avg_score: Optional[float] = None
 
 class SalesPerformanceMetrics(BaseModel):
     deals_created: int

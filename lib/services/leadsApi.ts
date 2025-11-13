@@ -4,21 +4,18 @@ import { ApiService } from './api';
 // Types for Lead data
 export interface Lead {
   id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone: string;
-  company: string;
-  job_title?: string;
-  lead_source_id?: number;
-  lead_status_id?: number;
+  listing_id?: number;
+  contact_id?: string;
+  status_id?: number;
+  source_id?: number;
   assigned_to?: string;
-  vehicle_interest?: string;
-  budget_range?: string;
-  location?: string;
+  vehicle_interest?: Record<string, any>;
+  budget_range?: {
+    min?: number;
+    max?: number;
+  };
   notes?: string;
   lead_score: number;
-  is_qualified: boolean;
   qualified_at?: string;
   converted_at?: string;
   created_by: string;
@@ -63,10 +60,8 @@ export interface LeadSummary {
 
 export interface LeadConversionMetrics {
   total_leads: number;
-  qualified_leads: number;
   converted_leads: number;
   conversion_rate: number;
-  qualification_rate: number;
 }
 
 // Helper function to build query parameters

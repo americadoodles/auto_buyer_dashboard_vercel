@@ -11,24 +11,59 @@ import { Icon } from '../atoms/Icon';
 import { Pagination } from '../molecules/Pagination';
 
 interface Lead {
+  // Core lead fields
   id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone: string;
-  company: string;
+  listing_id?: number;
+  contact_id?: string;
+  status_id?: number;
+  source_id?: number;
+  assigned_to_id?: string;
   lead_score: number;
+  vehicle_interest?: Record<string, any>;
+  budget_range?: {
+    min?: number;
+    max?: number;
+  };
+  notes?: string;
+  qualified_at?: string;
+  converted_at?: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  
+  // Joined from contacts table
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  phone?: string;
+  company?: string;
+  
+  // Joined from lead_statuses table
   status: {
     id: number;
     name: string;
     color: string;
   };
+  
+  // Joined from lead_sources table
+  source_name?: string;
+  
+  // Joined from users table (assigned_to)
   assigned_to: {
     id: string;
     username: string;
   };
-  created_at: string;
-  updated_at: string;
+  
+  // Joined from listings table
+  listing?: {
+    id: number;
+    vin?: string;
+    vehicle_key?: string;
+    make?: string;
+    model?: string;
+    year?: number;
+    price?: number;
+  };
 }
 
 interface LeadManagementProps {
@@ -290,25 +325,25 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
                       <div className="flex-shrink-0 h-10 w-10">
                         <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
                           <span className="text-sm font-medium text-gray-700">
-                            {lead.first_name[0]}{lead.last_name[0]}
+                            {lead.first_name?.[0] || '?'}{lead.last_name?.[0] || '?'}
                           </span>
                         </div>
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900">
-                          {lead.first_name} {lead.last_name}
+                          {lead.first_name || 'Unknown'} {lead.last_name || ''}
                         </div>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {lead.email}
+                    {lead.email || 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {lead.phone}
+                    {lead.phone || 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {lead.company}
+                    {lead.company || 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Badge color={getScoreColor(lead.lead_score)}>

@@ -46,10 +46,16 @@ ALTER TABLE leads DROP COLUMN IF EXISTS phone;
 ALTER TABLE leads DROP COLUMN IF EXISTS company;
 ALTER TABLE leads DROP COLUMN IF EXISTS job_title;
 ALTER TABLE leads DROP COLUMN IF EXISTS location;
-ALTER TABLE leads DROP COLUMN IF EXISTS lead_score;
 ALTER TABLE leads DROP COLUMN IF EXISTS is_qualified;
-ALTER TABLE leads DROP COLUMN IF EXISTS created_at;
-ALTER TABLE leads DROP COLUMN IF EXISTS updated_at;
+
+-- Step 6b: Add/ensure lead_score column exists with proper constraints
+-- Drop it first to ensure clean state, then add it back
+ALTER TABLE leads DROP COLUMN IF EXISTS lead_score;
+ALTER TABLE leads ADD COLUMN lead_score INTEGER DEFAULT 0 CHECK (lead_score BETWEEN 0 AND 100);
+
+-- Step 6c: Ensure timestamp columns exist
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
 
 -- Step 7: Create indexes for new foreign keys
 CREATE INDEX IF NOT EXISTS idx_leads_listing_id ON leads(listing_id);
@@ -73,6 +79,7 @@ SELECT
     l.vehicle_interest,
     l.budget_range,
     l.notes,
+    l.lead_score,
     l.qualified_at,
     l.converted_at
 FROM leads l
@@ -92,7 +99,10 @@ COMMENT ON COLUMN leads.assigned_to IS 'User responsible for following up on thi
 COMMENT ON COLUMN leads.vehicle_interest IS 'JSONB field storing vehicle preferences and interests';
 COMMENT ON COLUMN leads.budget_range IS 'JSONB field storing min/max budget information';
 COMMENT ON COLUMN leads.notes IS 'Additional notes about the lead';
+COMMENT ON COLUMN leads.lead_score IS 'Score representing the quality/potential of the lead (0-100)';
 COMMENT ON COLUMN leads.qualified_at IS 'Timestamp when the lead was qualified';
 COMMENT ON COLUMN leads.converted_at IS 'Timestamp when the lead was converted to a customer';
 COMMENT ON COLUMN leads.created_by IS 'User who created this lead record';
+COMMENT ON COLUMN leads.created_at IS 'Timestamp when the lead record was created';
+COMMENT ON COLUMN leads.updated_at IS 'Timestamp when the lead record was last updated';
 

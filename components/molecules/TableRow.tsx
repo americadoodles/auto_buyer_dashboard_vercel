@@ -276,7 +276,7 @@ export const TableRow: React.FC<TableRowProps> = ({
       </div>
       
       {/* Contact Information */}
-      <div className={`col-span-${getColumnConfig('contacts')?.colSpan} hidden lg:flex flex-col gap-1 min-w-0`}>
+      <div className={`col-span-${getColumnConfig('contacts')?.colSpan} hidden lg:flex flex-col gap-1 min-w-0 items-center justify-center`}>
         {listing.primary_contact_first_name ? (
           <div className="flex items-center gap-1 min-w-0">
             <User className="h-3 w-3 flex-shrink-0 text-slate-500" />

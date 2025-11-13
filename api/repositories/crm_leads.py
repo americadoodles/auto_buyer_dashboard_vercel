@@ -13,6 +13,115 @@ from ..schemas.crm import (
 )
 
 # ==============================================
+# HELPER FUNCTIONS
+# ==============================================
+
+def _build_lead_from_row(result: tuple) -> LeadOut:
+    """Build a LeadOut object from a joined query result"""
+    from ..schemas.user import UserOut
+    from ..schemas.crm import ContactOut, LeadStatusOut, LeadSourceOut
+    
+    # Unpack the result tuple
+    # Lead fields (0-14)
+    lead_id, listing_id, contact_id, status_id, source_id, assigned_to = result[0:6]
+    vehicle_interest, budget_range, notes, lead_score = result[6:10]
+    qualified_at, converted_at, created_by, created_at, updated_at = result[10:15]
+    
+    # Contact fields (15-32)
+    contact = None
+    if result[15]:  # contact.id
+        contact = ContactOut(
+            id=result[15], first_name=result[16], last_name=result[17],
+            email=result[18], phone=result[19], mobile=result[20], company=result[21],
+            job_title=result[22], contact_type_id=result[23], assigned_to=result[24],
+            address=result[25], social_profiles=result[26], preferences=result[27],
+            notes=result[28], is_active=result[29], created_by=result[30],
+            created_at=result[31], updated_at=result[32]
+        )
+    
+    # Status fields (33-39)
+    status = None
+    if result[33]:  # status.id
+        status = LeadStatusOut(
+            id=result[33], name=result[34], description=result[35],
+            color_code=result[36], is_active=result[37], sort_order=result[38],
+            created_at=result[39]
+        )
+    
+    # Source fields (40-44)
+    source = None
+    if result[40]:  # source.id
+        source = LeadSourceOut(
+            id=result[40], name=result[41], description=result[42],
+            is_active=result[43], created_at=result[44]
+        )
+    
+    # Assigned to user fields (45-50)
+    assigned_to_user = None
+    if result[45]:  # assigned_to user.id
+        assigned_to_user = UserOut(
+            id=result[45], email=result[46], username=result[47],
+            role_id=result[48], role=result[49] or "Unknown", is_confirmed=result[50]
+        )
+    
+    # Created by user fields (51-56)
+    created_by_user = None
+    if result[51]:  # created_by user.id
+        created_by_user = UserOut(
+            id=result[51], email=result[52], username=result[53],
+            role_id=result[54], role=result[55] or "Unknown", is_confirmed=result[56]
+        )
+    
+    # Listing fields (57-68)
+    listing = None
+    if result[57]:  # listing.id
+        listing = {
+            "id": str(result[57]),
+            "vehicle_key": result[58],
+            "vin": result[59],
+            "price": float(result[60]) if result[60] else 0,
+            "miles": result[61] or 0,
+            "dom": result[62] or 0,
+            "source": result[63],
+            "location": result[64],
+            "year": result[65] or 0,
+            "make": result[66] or "",
+            "model": result[67] or "",
+            "trim": result[68],
+            "score": 0,
+            "buyMax": 0,
+            "reasonCodes": [],
+            "radius": 25,
+            "buyer_id": "",
+            "status": None
+        }
+    
+    return LeadOut(
+        id=lead_id,
+        listing_id=listing_id,
+        contact_id=contact_id,
+        status_id=status_id,
+        source_id=source_id,
+        assigned_to=assigned_to,
+        vehicle_interest=vehicle_interest,
+        budget_range=budget_range,
+        notes=notes,
+        lead_score=lead_score,
+        qualified_at=qualified_at,
+        converted_at=converted_at,
+        created_by=created_by,
+        created_at=created_at,
+        updated_at=updated_at,
+        # Nested objects
+        listing=listing,
+        contact=contact,
+        status=status,
+        source=source,
+        assigned_to_user=assigned_to_user,
+        created_by_user=created_by_user
+    )
+
+# ==============================================
 # LEAD MANAGEMENT FUNCTIONS
 # ==============================================
 
@@ -69,7 +178,7 @@ def create_lead(lead_data: LeadCreate, created_by: UUID) -> LeadOut:
             raise
 
 def get_lead(lead_id: UUID) -> Optional[LeadOut]:
-    """Get a lead by ID"""
+    """Get a lead by ID with all nested objects"""
     if not DB_ENABLED:
         return None
     
@@ -80,21 +189,41 @@ def get_lead(lead_id: UUID) -> Optional[LeadOut]:
         try:
             with conn.cursor() as cur:
                 cur.execute("""
-                    SELECT id, listing_id, contact_id, status_id, source_id, assigned_to,
-                           vehicle_interest, budget_range, notes, lead_score,
-                           qualified_at, converted_at, created_by, created_at, updated_at
-                    FROM leads WHERE id = %s
+                    SELECT 
+                        l.id, l.listing_id, l.contact_id, l.status_id, l.source_id, l.assigned_to,
+                        l.vehicle_interest, l.budget_range, l.notes, l.lead_score,
+                        l.qualified_at, l.converted_at, l.created_by, l.created_at, l.updated_at,
+                        -- Contact fields
+                        c.id, c.first_name, c.last_name, c.email, c.phone, c.mobile, c.company,
+                        c.job_title, c.contact_type_id, c.assigned_to, c.address, c.social_profiles,
+                        c.preferences, c.notes, c.is_active, c.created_by, c.created_at, c.updated_at,
+                        -- Status fields
+                        ls.id, ls.name, ls.description, ls.color_code, ls.is_active, ls.sort_order, ls.created_at,
+                        -- Source fields
+                        lsrc.id, lsrc.name, lsrc.description, lsrc.is_active, lsrc.created_at,
+                        -- Assigned to user fields
+                        u_assigned.id, u_assigned.email, u_assigned.username, u_assigned.role_id, r_assigned.name, u_assigned.is_confirmed,
+                        -- Created by user fields
+                        u_created.id, u_created.email, u_created.username, u_created.role_id, r_created.name, u_created.is_confirmed,
+                        -- Listing fields (basic for now)
+                        lst.id, lst.vehicle_key, lst.vin, lst.price, lst.miles, lst.dom, lst.source, lst.location,
+                        v.year, v.make, v.model, v.trim
+                    FROM leads l
+                    LEFT JOIN contacts c ON l.contact_id = c.id
+                    LEFT JOIN lead_statuses ls ON l.status_id = ls.id
+                    LEFT JOIN lead_sources lsrc ON l.source_id = lsrc.id
+                    LEFT JOIN users u_assigned ON l.assigned_to = u_assigned.id
+                    LEFT JOIN roles r_assigned ON u_assigned.role_id = r_assigned.id
+                    LEFT JOIN users u_created ON l.created_by = u_created.id
+                    LEFT JOIN roles r_created ON u_created.role_id = r_created.id
+                    LEFT JOIN listings lst ON l.listing_id = lst.id
+                    LEFT JOIN vehicles v ON lst.vehicle_key = v.vehicle_key
+                    WHERE l.id = %s
                 """, (lead_id,))
                 
                 result = cur.fetchone()
                 if result:
-                    return LeadOut(
-                        id=result[0], listing_id=result[1], contact_id=result[2],
-                        status_id=result[3], source_id=result[4], assigned_to=result[5],
-                        vehicle_interest=result[6], budget_range=result[7], notes=result[8],
-                        lead_score=result[9], qualified_at=result[10], converted_at=result[11],
-                        created_by=result[12], created_at=result[13], updated_at=result[14]
-                    )
+                    return _build_lead_from_row(result)
                 return None
                 
         except Exception as e:
@@ -174,7 +303,7 @@ def delete_lead(lead_id: UUID) -> bool:
 
 def list_leads(skip: int = 0, limit: int = 100, status_id: Optional[int] = None,
                assigned_to: Optional[UUID] = None, search: Optional[str] = None) -> List[LeadOut]:
-    """List leads with optional filtering"""
+    """List leads with optional filtering and all nested objects"""
     if not DB_ENABLED:
         return []
     
@@ -203,12 +332,35 @@ def list_leads(skip: int = 0, limit: int = 100, status_id: Optional[int] = None,
                 where_clause = "WHERE " + " AND ".join(where_conditions) if where_conditions else ""
                 
                 cur.execute(f"""
-                    SELECT l.id, l.listing_id, l.contact_id, l.status_id, l.source_id,
-                           l.assigned_to, l.vehicle_interest, l.budget_range, l.notes,
-                           l.lead_score, l.qualified_at, l.converted_at, l.created_by,
-                           l.created_at, l.updated_at
+                    SELECT 
+                        l.id, l.listing_id, l.contact_id, l.status_id, l.source_id, l.assigned_to,
+                        l.vehicle_interest, l.budget_range, l.notes, l.lead_score,
+                        l.qualified_at, l.converted_at, l.created_by, l.created_at, l.updated_at,
+                        -- Contact fields
+                        c.id, c.first_name, c.last_name, c.email, c.phone, c.mobile, c.company,
+                        c.job_title, c.contact_type_id, c.assigned_to, c.address, c.social_profiles,
+                        c.preferences, c.notes, c.is_active, c.created_by, c.created_at, c.updated_at,
+                        -- Status fields
+                        ls.id, ls.name, ls.description, ls.color_code, ls.is_active, ls.sort_order, ls.created_at,
+                        -- Source fields
+                        lsrc.id, lsrc.name, lsrc.description, lsrc.is_active, lsrc.created_at,
+                        -- Assigned to user fields
+                        u_assigned.id, u_assigned.email, u_assigned.username, u_assigned.role_id, r_assigned.name, u_assigned.is_confirmed,
+                        -- Created by user fields
+                        u_created.id, u_created.email, u_created.username, u_created.role_id, r_created.name, u_created.is_confirmed,
+                        -- Listing fields
+                        lst.id, lst.vehicle_key, lst.vin, lst.price, lst.miles, lst.dom, lst.source, lst.location,
+                        v.year, v.make, v.model, v.trim
                     FROM leads l
                     LEFT JOIN contacts c ON l.contact_id = c.id
+                    LEFT JOIN lead_statuses ls ON l.status_id = ls.id
+                    LEFT JOIN lead_sources lsrc ON l.source_id = lsrc.id
+                    LEFT JOIN users u_assigned ON l.assigned_to = u_assigned.id
+                    LEFT JOIN roles r_assigned ON u_assigned.role_id = r_assigned.id
+                    LEFT JOIN users u_created ON l.created_by = u_created.id
+                    LEFT JOIN roles r_created ON u_created.role_id = r_created.id
+                    LEFT JOIN listings lst ON l.listing_id = lst.id
+                    LEFT JOIN vehicles v ON lst.vehicle_key = v.vehicle_key
                     {where_clause}
                     ORDER BY l.created_at DESC
                     LIMIT %s OFFSET %s
@@ -217,18 +369,13 @@ def list_leads(skip: int = 0, limit: int = 100, status_id: Optional[int] = None,
                 results = cur.fetchall()
                 leads = []
                 for result in results:
-                    leads.append(LeadOut(
-                        id=result[0], listing_id=result[1], contact_id=result[2],
-                        status_id=result[3], source_id=result[4], assigned_to=result[5],
-                        vehicle_interest=result[6], budget_range=result[7], notes=result[8],
-                        lead_score=result[9], qualified_at=result[10], converted_at=result[11],
-                        created_by=result[12], created_at=result[13], updated_at=result[14]
-                    ))
+                    leads.append(_build_lead_from_row(result))
                 
                 return leads
                 
         except Exception as e:
             logging.error(f"Error listing leads: {str(e)}")
+            logging.error(f"SQL Error details: {e}")
             return []
 
 # ==============================================

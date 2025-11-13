@@ -1,14 +1,26 @@
 // Leads API Service
 import { ApiService } from './api';
+import { Listing, Contact } from '../types/listing';
+import { User } from '../types/user';
 
 // Types for Lead data
 export interface Lead {
   id: string;
+  // Foreign key IDs (for updates and relationships)
   listing_id?: number;
   contact_id?: string;
   status_id?: number;
   source_id?: number;
   assigned_to?: string;
+  created_by: string;
+  // Nested objects (populated from joins)
+  listing?: Listing;
+  contact?: Contact;
+  status?: LeadStatus;
+  source?: LeadSource;
+  assigned_to_user?: User;
+  created_by_user?: User;
+  // Lead-specific fields
   vehicle_interest?: Record<string, any>;
   budget_range?: {
     min?: number;
@@ -18,7 +30,6 @@ export interface Lead {
   lead_score: number;
   qualified_at?: string;
   converted_at?: string;
-  created_by: string;
   created_at: string;
   updated_at: string;
 }

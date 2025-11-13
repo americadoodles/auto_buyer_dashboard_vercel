@@ -11,6 +11,7 @@ import { Icon } from '../atoms/Icon';
 import { Pagination } from '../molecules/Pagination';
 
 interface Lead {
+  contact: any;
   // Core lead fields
   id: string;
   listing_id?: number;
@@ -61,7 +62,9 @@ interface Lead {
     vehicle_key?: string;
     make?: string;
     model?: string;
+    trim?: string;
     year?: number;
+    miles?: number;
     price?: number;
   };
 }
@@ -99,7 +102,7 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
   const [statusFilter, setStatusFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
   const [assignedFilter, setAssignedFilter] = useState('all');
-
+  console.log('leads: ', leads)
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
     if (onSearch) {
@@ -309,12 +312,15 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
                 { key: 'name', label: 'Name', sortable: true },
                 { key: 'email', label: 'Email', sortable: true },
                 { key: 'phone', label: 'Phone', sortable: true },
-                { key: 'company', label: 'Company', sortable: true },
+                { key: 'vin', label: 'VIN', sortable: true },
+                { key: 'year', label: 'Year', sortable: true },
+                { key: 'make', label: 'Make', sortable: true },
+                { key: 'model', label: 'Model', sortable: true },
+                { key: 'trim', label: 'Trim', sortable: true },
+                { key: 'miles', label: 'Miles', sortable: true },
                 { key: 'score', label: 'Score', sortable: true },
                 { key: 'status', label: 'Status', sortable: true },
-                { key: 'assigned', label: 'Assigned To', sortable: true },
-                { key: 'created', label: 'Created', sortable: true },
-                { key: 'actions', label: 'Actions', sortable: false }
+                { key: 'created', label: 'Created', sortable: true }
               ]}
             />
             <tbody className="bg-white divide-y divide-gray-200">
@@ -325,25 +331,40 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
                       <div className="flex-shrink-0 h-10 w-10">
                         <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
                           <span className="text-sm font-medium text-gray-700">
-                            {lead.first_name?.[0] || '?'}{lead.last_name?.[0] || '?'}
+                            {lead.contact?.first_name?.[0] || '?'}{lead.contact?.last_name?.[0] || '?'}
                           </span>
                         </div>
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900">
-                          {lead.first_name || 'Unknown'} {lead.last_name || ''}
+                          {lead.contact?.first_name || 'Unknown'} {lead.contact?.last_name || ''}
                         </div>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {lead.email || 'N/A'}
+                    {lead.contact?.email || 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {lead.phone || 'N/A'}
+                    {lead.contact?.phone || 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {lead.company || 'N/A'}
+                    {lead.listing?.vin || 'N/A'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {lead.listing?.year || 'N/A'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {lead.listing?.make || 'N/A'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {lead.listing?.model || 'N/A'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {lead.listing?.trim || 'N/A'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {lead.listing?.miles?.toLocaleString() || 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Badge color={getScoreColor(lead.lead_score)}>
@@ -355,24 +376,8 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
                       {lead.status.name}
                     </Badge>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {lead.assigned_to.username}
-                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {formatDate(lead.created_at)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
-                      <Button variant="ghost" size="sm">
-                        <Icon name="eye" className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Icon name="edit" className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Icon name="phone" className="w-4 h-4" />
-                      </Button>
-                    </div>
                   </td>
                 </TableRow>
               ))}

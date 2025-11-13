@@ -67,6 +67,13 @@ class LeadOut(LeadBase):
     created_by: UUID
     created_at: datetime
     updated_at: datetime
+    # Nested objects (populated from joins)
+    listing: Optional[Any] = None  # Will be ListingOut
+    contact: Optional['ContactOut'] = None
+    status: Optional['LeadStatusOut'] = None
+    source: Optional['LeadSourceOut'] = None
+    assigned_to_user: Optional[Any] = None  # Will be UserOut
+    created_by_user: Optional[Any] = None  # Will be UserOut
 
 class LeadActivityBase(BaseModel):
     activity_type: str  # 'call', 'email', 'meeting', 'note'

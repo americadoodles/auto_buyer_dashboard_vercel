@@ -9,6 +9,8 @@ import { Button } from '../atoms/Button';
 import { Input } from '../atoms/Input';
 import { Icon } from '../atoms/Icon';
 import { Pagination } from '../molecules/Pagination';
+import { LeadEditModal } from './LeadEditModal';
+import { LeadStatus, LeadSource } from '../../lib/services/leadsApi';
 
 interface Lead {
   contact: any;
@@ -81,7 +83,9 @@ interface LeadManagementProps {
   onSearch?: (search: string) => void;
   onStatusFilter?: (statusId: number | undefined) => void;
   statuses?: Array<{ id: number; name: string; color_code?: string }>;
+  sources?: LeadSource[];
   loading?: boolean;
+  onLeadUpdated?: () => void;
 }
 
 export const LeadManagement: React.FC<LeadManagementProps> = ({
@@ -96,12 +100,15 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
   onSearch,
   onStatusFilter,
   statuses,
-  loading
+  sources,
+  loading,
+  onLeadUpdated
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
   const [assignedFilter, setAssignedFilter] = useState('all');
+  const [editingLead, setEditingLead] = useState<Lead | null>(null);
   console.log('leads: ', leads)
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
@@ -115,6 +122,18 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
     if (onStatusFilter) {
       const statusId = value === 'all' ? undefined : parseInt(value, 10);
       onStatusFilter(statusId);
+    }
+  };
+
+  const handleEditLead = (lead: Lead) => {
+    setEditingLead(lead);
+  };
+
+  const handleSaveLead = (updatedLead: Lead) => {
+    setEditingLead(null);
+    // Call the parent callback to refresh leads
+    if (onLeadUpdated) {
+      onLeadUpdated();
     }
   };
 
@@ -325,7 +344,7 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
             />
             <tbody className="bg-white divide-y divide-gray-200">
               {leads.map((lead) => (
-                <TableRow key={lead.id} onClick={() => onLeadClick(lead.id)} className="cursor-pointer hover:bg-gray-50">
+                <TableRow key={lead.id} onClick={() => handleEditLead(lead)} className="cursor-pointer hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10">
@@ -394,6 +413,18 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
           />
         </div>
       </Card>
+
+      {/* Edit Lead Modal */}
+      {editingLead && (
+        <LeadEditModal
+          lead={editingLead}
+          isOpen={!!editingLead}
+          onClose={() => setEditingLead(null)}
+          onSave={handleSaveLead}
+          statuses={statuses as LeadStatus[] | undefined}
+          sources={sources}
+        />
+      )}
     </div>
   );
 };

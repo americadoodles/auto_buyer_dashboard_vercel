@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { LeadManagement } from '../../../../components/organisms/LeadManagement';
 import { AdminLayout } from '../../../../components/templates/AdminLayout';
-import { useLeads, useLeadStatuses } from '../../../../lib/hooks/useLeads';
+import { useLeads, useLeadStatuses, useLeadSources } from '../../../../lib/hooks/useLeads';
 import { LeadCreateModal } from '../../../../components/organisms/LeadCreateModal';
 
 export default function LeadsPage() {
@@ -21,6 +21,7 @@ export default function LeadsPage() {
   });
 
   const { statuses } = useLeadStatuses();
+  const { sources } = useLeadSources();
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -139,7 +140,9 @@ export default function LeadsPage() {
           onSearch={handleSearch}
           onStatusFilter={handleStatusFilter}
           statuses={statuses}
+          sources={sources}
           loading={loading}
+          onLeadUpdated={refreshLeads}
         />
         <LeadCreateModal
           isOpen={isCreateOpen}

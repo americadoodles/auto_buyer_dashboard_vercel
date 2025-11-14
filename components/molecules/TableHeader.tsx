@@ -64,7 +64,7 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
   
   return (
     <div 
-      className={`grid ${LISTINGS_TABLE_GRID_CLASS} bg-slate-50 px-4 py-2 text-xs font-medium uppercase tracking-wide text-slate-600`}
+      className={`grid ${LISTINGS_TABLE_GRID_CLASS} gap-2 bg-slate-50 px-4 py-2 text-xs font-medium uppercase tracking-wide text-slate-600`}
       style={LISTINGS_TABLE_GRID_STYLE}
     >
       {listingsColumns.map(col => {
@@ -85,7 +85,7 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
           );
         }
         
-        const isActionColumn = ['notify', 'slack', 'workflow', 'edit', 'contacts'].includes(col.key);
+        const isActionColumn = ['notify', 'slack', 'workflow', 'edit'].includes(col.key);
         
         return (
           <button

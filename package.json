@@ -25,6 +25,8 @@
     "@types/node": "20.12.12",
     "@types/react": "18.2.73",
     "@types/react-dom": "18.2.23",
+    "eslint": "9.39.1",
+    "eslint-config-next": "16.0.3",
     "postcss-cli": "10.1.0",
     "typescript": "5.5.2"
   }

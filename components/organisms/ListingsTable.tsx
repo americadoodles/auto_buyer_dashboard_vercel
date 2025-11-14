@@ -26,7 +26,7 @@ interface ListingsTableProps {
   onSelectAll?: (selected: boolean) => void;
   isAllSelected?: boolean;
   isIndeterminate?: boolean;
-  onListingUpdated?: () => void;
+  onListingUpdated?: (updatedListing: Listing) => void;
 }
 
 export const ListingsTable: React.FC<ListingsTableProps> = ({
@@ -59,9 +59,9 @@ export const ListingsTable: React.FC<ListingsTableProps> = ({
   };
 
   const handleSaveListing = (updatedListing: Listing) => {
-    // Notify parent component to refresh the listings
+    // Update the listing in parent state (no refetch needed)
     if (onListingUpdated) {
-      onListingUpdated();
+      onListingUpdated(updatedListing);
     }
   };
 

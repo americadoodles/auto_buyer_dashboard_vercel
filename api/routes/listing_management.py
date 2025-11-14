@@ -1,18 +1,15 @@
 # Listing Management API Routes
 from fastapi import APIRouter, HTTPException, Depends, Path, Query, UploadFile, File
 from typing import List, Optional
-from uuid import UUID
 from ..schemas.listing import (
-    ListingUpdate, ListingContactLink, ListingContactUnlink, 
+    ListingUpdate, 
     ListingActivityOut, ListingOut
 )
-from ..schemas.crm import ContactOut
 from ..schemas.user import UserOut
 from ..core.auth import get_current_user
 from ..core.config import settings
 from ..repositories.listing_management import (
-    update_listing, get_listing_by_id, link_contact_to_listing, 
-    unlink_contact_from_listing, get_listing_contacts, get_listing_activities
+    update_listing, get_listing_by_id, get_listing_activities
 )
 from ..core.db import DB_ENABLED
 from ..core.db_helpers import get_db_connection
@@ -117,55 +114,6 @@ def test_update_listing(
         logging.error(f"Test update error: {str(e)}")
         logging.error(f"Traceback: {traceback.format_exc()}")
         return {"success": False, "error": str(e), "listing_id": listing_id}
-
-# ==============================================
-# CONTACT LINKING ENDPOINTS
-# ==============================================
-
-@listing_management_router.post("/{listing_id}/contacts", response_model=dict)
-def link_contact_to_listing_endpoint(
-    listing_id: int = Path(..., description="ID of the listing"),
-    contact_link: ListingContactLink = ...,
-    current_user: UserOut = Depends(get_current_user)
-):
-    """Link a contact to a listing"""
-    try:
-        success = link_contact_to_listing(listing_id, contact_link, str(current_user.id))
-        if not success:
-            raise HTTPException(status_code=400, detail="Failed to link contact to listing")
-        return {"message": "Contact linked successfully", "listing_id": listing_id, "contact_id": str(contact_link.contact_id)}
-    except Exception as e:
-        logging.error(f"Error linking contact to listing {listing_id}: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to link contact")
-
-@listing_management_router.delete("/{listing_id}/contacts/{contact_id}", response_model=dict)
-def unlink_contact_from_listing_endpoint(
-    listing_id: int = Path(..., description="ID of the listing"),
-    contact_id: UUID = Path(..., description="ID of the contact to unlink"),
-    current_user: UserOut = Depends(get_current_user)
-):
-    """Unlink a contact from a listing"""
-    try:
-        success = unlink_contact_from_listing(listing_id, contact_id, str(current_user.id))
-        if not success:
-            raise HTTPException(status_code=400, detail="Failed to unlink contact from listing")
-        return {"message": "Contact unlinked successfully", "listing_id": listing_id, "contact_id": str(contact_id)}
-    except Exception as e:
-        logging.error(f"Error unlinking contact from listing {listing_id}: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to unlink contact")
-
-@listing_management_router.get("/{listing_id}/contacts", response_model=List[ContactOut])
-def get_listing_contacts_endpoint(
-    listing_id: int = Path(..., description="ID of the listing"),
-    current_user: UserOut = Depends(get_current_user)
-):
-    """Get all contacts linked to a listing"""
-    try:
-        contacts = get_listing_contacts(listing_id)
-        return contacts
-    except Exception as e:
-        logging.error(f"Error getting contacts for listing {listing_id}: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to retrieve contacts")
 
 # ==============================================
 # ACTIVITY HISTORY ENDPOINTS

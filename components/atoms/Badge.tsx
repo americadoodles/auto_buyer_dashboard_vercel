@@ -34,12 +34,18 @@ export const Badge: React.FC<BadgeProps> = ({
     yellow: 'bg-yellow-100 text-yellow-800'
   };
   
+  // Check if color is a hex code (starts with #)
+  const isHexColor = color?.startsWith('#');
+  
   // Use color if provided, otherwise use variant
-  const styleClasses = color ? (colorClasses[color as keyof typeof colorClasses] || colorClasses.gray) : variantClasses[variant];
-  const classes = `${baseClasses} ${styleClasses} ${className}`;
+  const styleClasses = color && !isHexColor ? (colorClasses[color as keyof typeof colorClasses] || colorClasses.gray) : variantClasses[variant];
+  const classes = `${baseClasses} ${isHexColor ? 'text-white' : styleClasses} ${className}`;
   
   return (
-    <span className={classes}>
+    <span 
+      className={classes}
+      style={isHexColor ? { backgroundColor: color } : undefined}
+    >
       {children}
     </span>
   );

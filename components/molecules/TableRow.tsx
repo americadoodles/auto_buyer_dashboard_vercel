@@ -72,7 +72,7 @@ export const TableRow: React.FC<TableRowProps> = ({
   
   return (
     <div 
-      className={`grid ${LISTINGS_TABLE_GRID_CLASS} items-center border-t px-4 py-3 text-sm hover:bg-slate-50 transition-colors`}
+      className={`grid ${LISTINGS_TABLE_GRID_CLASS} gap-2 items-center border-t px-4 py-3 text-sm hover:bg-slate-50 transition-colors`}
       style={LISTINGS_TABLE_GRID_STYLE}
     >
       {/* Select checkbox */}
@@ -272,34 +272,6 @@ export const TableRow: React.FC<TableRowProps> = ({
           </button>
         ) : (
           <span className="text-slate-400 text-xs">—</span>
-        )}
-      </div>
-      
-      {/* Contact Information */}
-      <div className={`col-span-${getColumnConfig('contacts')?.colSpan} hidden lg:flex flex-col gap-1 min-w-0`}>
-        {listing.primary_contact_first_name ? (
-          <div className="flex items-center gap-1 min-w-0">
-            <User className="h-3 w-3 flex-shrink-0 text-slate-500" />
-            <span className="truncate text-xs text-slate-700" title={`${listing.primary_contact_first_name} ${listing.primary_contact_last_name}`}>
-              {listing.primary_contact_first_name} {listing.primary_contact_last_name}
-            </span>
-          </div>
-        ) : listing.contacts_count && listing.contacts_count > 0 ? (
-          <div className="flex items-center gap-1">
-            <User className="h-3 w-3 text-slate-500" />
-            <span className="text-xs text-slate-600">{listing.contacts_count} contact{listing.contacts_count !== 1 ? 's' : ''}</span>
-          </div>
-        ) : (
-          <span className="text-slate-400 text-xs">—</span>
-        )}
-        
-        {listing.primary_contact_company && (
-          <div className="flex items-center gap-1 min-w-0">
-            <Building className="h-3 w-3 flex-shrink-0 text-slate-500" />
-            <span className="truncate text-xs text-slate-600" title={listing.primary_contact_company}>
-              {listing.primary_contact_company}
-            </span>
-          </div>
         )}
       </div>
     </div>

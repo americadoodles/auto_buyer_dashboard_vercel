@@ -340,6 +340,7 @@ export default function AdminListingsPage() {
               onSelectAll={handleSelectAll}
               isAllSelected={isAllSelected}
               isIndeterminate={isIndeterminate}
+              onListingUpdated={loadFromBackend}
             />
           </div>
         </div>

@@ -26,6 +26,7 @@ interface ListingsTableProps {
   onSelectAll?: (selected: boolean) => void;
   isAllSelected?: boolean;
   isIndeterminate?: boolean;
+  onListingUpdated?: () => void;
 }
 
 export const ListingsTable: React.FC<ListingsTableProps> = ({
@@ -45,7 +46,8 @@ export const ListingsTable: React.FC<ListingsTableProps> = ({
   onSelectListing,
   onSelectAll,
   isAllSelected = false,
-  isIndeterminate = false
+  isIndeterminate = false,
+  onListingUpdated
 }) => {
   const [editingListing, setEditingListing] = useState<Listing | null>(null);
   const handleSort = (key: keyof Listing | 'decision_status' | 'decision_reasons') => {
@@ -57,9 +59,10 @@ export const ListingsTable: React.FC<ListingsTableProps> = ({
   };
 
   const handleSaveListing = (updatedListing: Listing) => {
-    // You might want to emit an event or call a callback here to update the parent component
-    // For now, we'll just close the modal
-    setEditingListing(null);
+    // Notify parent component to refresh the listings
+    if (onListingUpdated) {
+      onListingUpdated();
+    }
   };
 
   return (

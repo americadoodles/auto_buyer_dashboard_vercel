@@ -29,7 +29,6 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
   const [formData, setFormData] = useState<ListingUpdate>({});
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
   const [isLeadCreateOpen, setIsLeadCreateOpen] = useState(false);
   const [isCreateContactOpen, setIsCreateContactOpen] = useState(false);
   const [images, setImages] = useState<string[]>([]);
@@ -65,7 +64,6 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
         location: listing.location || ''
       });
       setImages(listing.images || []);
-      setSaveSuccess(false); // Reset success message when modal opens
     }
   }, [isOpen, listing]);
 
@@ -177,34 +175,11 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
       
       console.log('Listing updated successfully:', updatedListing);
       
-      // Update the form data with the server response to reflect any server-side changes
-      setFormData({
-        vin: updatedListing.vin || '',
-        notes: updatedListing.notes || '',
-        condition_rating: updatedListing.condition_rating || undefined,
-        interior_color: updatedListing.interior_color || '',
-        exterior_color: updatedListing.exterior_color || '',
-        transmission: updatedListing.transmission || '',
-        fuel_type: updatedListing.fuel_type || '',
-        drivetrain: updatedListing.drivetrain || '',
-        engine_size: updatedListing.engine_size || '',
-        body_style: updatedListing.body_style || '',
-        price: updatedListing.price,
-        miles: updatedListing.miles,
-        location: updatedListing.location || ''
-      });
-      setImages(updatedListing.images || []);
-      
-      // Notify parent component of the update
+      // Notify parent component of the update (this triggers the refresh)
       onSave(updatedListing);
       
-      // Show success message
-      setSaveSuccess(true);
-      
-      // Auto-hide success message after 3 seconds
-      setTimeout(() => {
-        setSaveSuccess(false);
-      }, 3000);
+      // Close the modal
+      onClose();
     } catch (error) {
       console.error('Error updating listing:', error);
       alert(`Failed to save changes: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
@@ -274,20 +249,6 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
             <X className="h-4 w-4" />
           </Button>
         </div>
-
-        {/* Success Message */}
-        {saveSuccess && (
-          <div className="mx-6 mt-4 p-3 bg-green-50 border border-green-200 rounded-md flex items-center gap-2">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <p className="text-sm font-medium text-green-800">
-              Changes saved successfully!
-            </p>
-          </div>
-        )}
 
         {/* Content */}
         <div className="p-6 flex-1 overflow-y-auto">

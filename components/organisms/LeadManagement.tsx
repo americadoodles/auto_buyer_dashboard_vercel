@@ -299,6 +299,7 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
                   { key: "name", label: "Name", sortable: true },
                   { key: "email", label: "Email", sortable: true },
                   { key: "phone", label: "Phone", sortable: true },
+                  { key: "status", label: "Status", sortable: true },
                   { key: "vin", label: "VIN", sortable: true },
                   { key: "year", label: "Year", sortable: true },
                   { key: "make", label: "Make", sortable: true },
@@ -306,7 +307,6 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
                   { key: "trim", label: "Trim", sortable: true },
                   { key: "miles", label: "Miles", sortable: true },
                   { key: "score", label: "Score", sortable: true },
-                  { key: "status", label: "Status", sortable: true },
                   { key: "created", label: "Created", sortable: true },
                 ]}
               />
@@ -341,6 +341,11 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {lead.contact?.phone || "N/A"}
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Badge color={lead.status.color}>
+                        {lead.status.name}
+                      </Badge>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {lead.listing?.vin || "N/A"}
                     </td>
@@ -362,11 +367,6 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
                     <td className="px-6 py-4 whitespace-nowrap">
                       <Badge color={getScoreColor(lead.lead_score)}>
                         {lead.lead_score}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge color={lead.status.color}>
-                        {lead.status.name}
                       </Badge>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

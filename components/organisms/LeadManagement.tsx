@@ -315,20 +315,20 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
                   <TableRow
                     key={lead.id}
                     onClick={() => handleEditLead(lead)}
-                    className="cursor-pointer hover:bg-gray-50"
+                    className="cursor-pointer group transition-colors duration-150"
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
-                          <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                            <span className="text-sm font-medium text-gray-700">
+                          <div className="h-10 w-10 rounded-full bg-gray-300 group-hover:bg-blue-500 transition-colors duration-150 flex items-center justify-center">
+                            <span className="text-sm font-medium text-gray-700 group-hover:text-white transition-colors duration-150">
                               {lead.contact?.first_name?.[0] || "?"}
                               {lead.contact?.last_name?.[0] || "?"}
                             </span>
                           </div>
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
+                          <div className="text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors duration-150">
                             {lead.contact?.first_name || "Unknown"}{" "}
                             {lead.contact?.last_name || ""}
                           </div>

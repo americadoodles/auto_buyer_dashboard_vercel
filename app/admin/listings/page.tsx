@@ -79,6 +79,7 @@ export default function AdminListingsPage() {
     
     return matchesSearch && matchesStatus && matchesMake;
   });
+  console.log('listings: ', sortedRows)
 
   // Get unique makes for filter dropdown
   const uniqueMakes = Array.from(new Set(data.map(l => l.make))).sort();

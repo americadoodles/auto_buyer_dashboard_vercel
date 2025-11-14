@@ -64,7 +64,7 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
   
   return (
     <div 
-      className={`grid ${LISTINGS_TABLE_GRID_CLASS} bg-slate-50 px-4 py-2 text-xs font-medium uppercase tracking-wide text-slate-600`}
+      className={`grid ${LISTINGS_TABLE_GRID_CLASS} gap-2 bg-slate-50 px-4 py-2 text-xs font-medium uppercase tracking-wide text-slate-600`}
       style={LISTINGS_TABLE_GRID_STYLE}
     >
       {listingsColumns.map(col => {
@@ -85,18 +85,22 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
           );
         }
         
+        const isActionColumn = ['notify', 'slack', 'workflow', 'edit'].includes(col.key);
+        
         return (
           <button
             key={col.key}
             className={`col-span-${col.colSpan} flex items-center gap-1 hover:text-slate-800 transition-colors ${
+              isActionColumn ? 'justify-center' : ''
+            } ${
               col.priority === 'low' ? 'hidden lg:flex' : 
               col.priority === 'medium' ? 'hidden md:flex' : 'flex'
             }`}
-            onClick={() => !['notify', 'slack', 'workflow', 'edit', 'contacts'].includes(col.key) && onSort?.(col.key as keyof Listing | 'decision_status' | 'decision_reasons')}
-            disabled={['notify', 'slack', 'workflow', 'edit', 'contacts'].includes(col.key)}
+            onClick={() => !isActionColumn && onSort?.(col.key as keyof Listing | 'decision_status' | 'decision_reasons')}
+            disabled={isActionColumn}
           >
             <span className="truncate">{col.label}</span>
-            {!['notify', 'slack', 'workflow', 'edit', 'contacts'].includes(col.key) && (
+            {!isActionColumn && (
               <ArrowUpDown className="h-3 w-3 flex-shrink-0" />
             )}
           </button>

@@ -39,14 +39,6 @@ export type Listing = {
   updated_at?: string;
   updated_by?: string;
   images?: string[];
-  // Contact information
-  primary_contact_id?: string;
-  primary_contact_first_name?: string;
-  primary_contact_last_name?: string;
-  primary_contact_email?: string;
-  primary_contact_phone?: string;
-  primary_contact_company?: string;
-  contacts_count?: number;
 };
 
 export type SortConfig = {
@@ -72,13 +64,6 @@ export type ListingUpdate = {
   miles?: number;
   location?: string;
   images?: string[];
-};
-
-export type ListingContactLink = {
-  contact_id: string;
-  relationship_type: 'seller' | 'dealer' | 'contact' | 'other';
-  is_primary: boolean;
-  notes?: string;
 };
 
 export type ListingActivity = {

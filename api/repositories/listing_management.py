@@ -6,10 +6,9 @@ from datetime import datetime
 from ..core.db import DB_ENABLED
 from ..core.db_helpers import get_db_connection
 from ..schemas.listing import (
-    ListingUpdate, ListingContactLink, ListingContactUnlink, 
+    ListingUpdate, 
     ListingActivityOut, ListingOut
 )
-from ..schemas.crm import ContactOut
 
 # ==============================================
 # LISTING UPDATE FUNCTIONS
@@ -140,16 +139,7 @@ def get_listing_by_id(listing_id: int) -> Optional[ListingOut]:
                         COALESCE(l.images, ARRAY[]::text[]) as images,
                         v.year, v.make, v.model, v.trim,
                         u.username as buyer_username,
-                        s.score, s.buy_max, s.reason_codes,
-                        -- Primary contact information
-                        pc.id as primary_contact_id,
-                        pc.first_name as primary_contact_first_name,
-                        pc.last_name as primary_contact_last_name,
-                        pc.email as primary_contact_email,
-                        pc.phone as primary_contact_phone,
-                        pc.company as primary_contact_company,
-                        -- All contacts count
-                        (SELECT COUNT(*) FROM listing_contacts lc WHERE lc.listing_id = l.id) as contacts_count
+                        s.score, s.buy_max, s.reason_codes
                     FROM listings l
                     LEFT JOIN vehicles v ON v.vehicle_key = l.vehicle_key
                     LEFT JOIN users u ON u.id::text = l.buyer_id
@@ -158,8 +148,6 @@ def get_listing_by_id(listing_id: int) -> Optional[ListingOut]:
                         FROM scores
                         ORDER BY vin, created_at DESC
                     ) s ON s.vin = l.vin
-                    LEFT JOIN listing_contacts lc_primary ON lc_primary.listing_id = l.id AND lc_primary.is_primary = true
-                    LEFT JOIN contacts pc ON pc.id = lc_primary.contact_id
                     WHERE l.id = %s
                 """
                 
@@ -197,14 +185,7 @@ def get_listing_by_id(listing_id: int) -> Optional[ListingOut]:
                         buyer_username=result[27],
                         score=result[28],
                         buyMax=result[29],
-                        reasonCodes=result[30] or [],
-                        primary_contact_id=result[31],
-                        primary_contact_first_name=result[32],
-                        primary_contact_last_name=result[33],
-                        primary_contact_email=result[34],
-                        primary_contact_phone=result[35],
-                        primary_contact_company=result[36],
-                        contacts_count=result[37] or 0
+                        reasonCodes=result[30] or []
                     )
                 
         except Exception as e:
@@ -213,146 +194,6 @@ def get_listing_by_id(listing_id: int) -> Optional[ListingOut]:
             return None
     
     return None
-
-# ==============================================
-# CONTACT LINKING FUNCTIONS
-# ==============================================
-
-def link_contact_to_listing(listing_id: int, contact_link: ListingContactLink, created_by: str) -> bool:
-    """Link a contact to a listing"""
-    if not DB_ENABLED:
-        return False
-    
-    with get_db_connection() as conn:
-        if not conn:
-            return False
-            
-        try:
-            with conn.cursor() as cur:
-                # If setting as primary, unset other primary contacts for this listing
-                if contact_link.is_primary:
-                    cur.execute("""
-                        UPDATE listing_contacts 
-                        SET is_primary = false 
-                        WHERE listing_id = %s
-                    """, (listing_id,))
-                
-                # Insert the new contact link
-                cur.execute("""
-                    INSERT INTO listing_contacts (listing_id, contact_id, relationship_type, is_primary, notes, created_by)
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                    ON CONFLICT (listing_id, contact_id, relationship_type) 
-                    DO UPDATE SET is_primary = EXCLUDED.is_primary, notes = EXCLUDED.notes
-                """, (
-                    listing_id, 
-                    contact_link.contact_id, 
-                    contact_link.relationship_type,
-                    contact_link.is_primary,
-                    contact_link.notes,
-                    created_by
-                ))
-                
-                # Log the activity
-                log_listing_activity(
-                    listing_id=listing_id,
-                    activity_type="contact_added",
-                    created_by=created_by,
-                    description=f"Contact linked to listing"
-                )
-                
-                return True
-                
-        except Exception as e:
-            logging.error(f"Error linking contact to listing {listing_id}: {str(e)}")
-            return False
-    
-    return False
-
-def unlink_contact_from_listing(listing_id: int, contact_id: UUID, created_by: str) -> bool:
-    """Unlink a contact from a listing"""
-    if not DB_ENABLED:
-        return False
-    
-    with get_db_connection() as conn:
-        if not conn:
-            return False
-            
-        try:
-            with conn.cursor() as cur:
-                cur.execute("""
-                    DELETE FROM listing_contacts 
-                    WHERE listing_id = %s AND contact_id = %s
-                """, (listing_id, contact_id))
-                
-                # Log the activity
-                log_listing_activity(
-                    listing_id=listing_id,
-                    activity_type="contact_removed",
-                    created_by=created_by,
-                    description=f"Contact unlinked from listing"
-                )
-                
-                return True
-                
-        except Exception as e:
-            logging.error(f"Error unlinking contact from listing {listing_id}: {str(e)}")
-            return False
-    
-    return False
-
-def get_listing_contacts(listing_id: int) -> List[ContactOut]:
-    """Get all contacts linked to a listing"""
-    if not DB_ENABLED:
-        return []
-    
-    with get_db_connection() as conn:
-        if not conn:
-            return []
-            
-        try:
-            with conn.cursor() as cur:
-                query = """
-                    SELECT c.*, lc.relationship_type, lc.is_primary, lc.notes as link_notes
-                    FROM contacts c
-                    JOIN listing_contacts lc ON lc.contact_id = c.id
-                    WHERE lc.listing_id = %s
-                    ORDER BY lc.is_primary DESC, c.first_name, c.last_name
-                """
-                
-                cur.execute(query, (listing_id,))
-                results = cur.fetchall()
-                
-                contacts = []
-                for result in results:
-                    contact = ContactOut(
-                        id=result[0],
-                        first_name=result[1],
-                        last_name=result[2],
-                        email=result[3],
-                        phone=result[4],
-                        mobile=result[5],
-                        company=result[6],
-                        job_title=result[7],
-                        contact_type_id=result[8],
-                        assigned_to=result[9],
-                        address=result[10],
-                        social_profiles=result[11],
-                        preferences=result[12],
-                        notes=result[13],
-                        is_active=result[14],
-                        created_by=result[15],
-                        created_at=result[16],
-                        updated_at=result[17]
-                    )
-                    contacts.append(contact)
-                
-                return contacts
-                
-        except Exception as e:
-            logging.error(f"Error getting contacts for listing {listing_id}: {str(e)}")
-            return []
-    
-    return []
 
 # ==============================================
 # ACTIVITY LOGGING FUNCTIONS

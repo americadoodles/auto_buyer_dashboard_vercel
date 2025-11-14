@@ -63,14 +63,6 @@ class ListingOut(BaseModel):
     updated_at: Optional[datetime] = None
     updated_by: Optional[str] = None
     images: Optional[List[str]] = None
-    # Contact information
-    primary_contact_id: Optional[UUID] = None
-    primary_contact_first_name: Optional[str] = None
-    primary_contact_last_name: Optional[str] = None
-    primary_contact_email: Optional[str] = None
-    primary_contact_phone: Optional[str] = None
-    primary_contact_company: Optional[str] = None
-    contacts_count: Optional[int] = 0
 
 class ListingScoreIn(BaseModel):
     vehicle_key: str
@@ -96,17 +88,6 @@ class ListingUpdate(BaseModel):
     miles: Optional[int] = None
     location: Optional[str] = None
     images: Optional[List[str]] = None
-
-class ListingContactLink(BaseModel):
-    """Schema for linking a contact to a listing"""
-    contact_id: UUID
-    relationship_type: str = "seller"  # 'seller', 'dealer', 'contact', 'other'
-    is_primary: bool = False
-    notes: Optional[str] = None
-
-class ListingContactUnlink(BaseModel):
-    """Schema for unlinking a contact from a listing"""
-    contact_id: UUID
 
 class ListingActivityOut(BaseModel):
     """Schema for listing activity history"""

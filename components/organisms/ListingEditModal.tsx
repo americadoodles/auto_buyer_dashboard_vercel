@@ -29,6 +29,7 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
   const [formData, setFormData] = useState<ListingUpdate>({});
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const [isLeadCreateOpen, setIsLeadCreateOpen] = useState(false);
   const [isCreateContactOpen, setIsCreateContactOpen] = useState(false);
   const [images, setImages] = useState<string[]>([]);
@@ -64,6 +65,7 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
         location: listing.location || ''
       });
       setImages(listing.images || []);
+      setSaveSuccess(false); // Reset success message when modal opens
     }
   }, [isOpen, listing]);
 
@@ -142,16 +144,70 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
   const handleSave = async () => {
     try {
       setSaving(true);
+      
+      // Clean up the form data to remove NaN values and empty strings for numbers
+      const cleanedFormData: ListingUpdate = { ...formData };
+      
+      // Handle price - convert to number or undefined
+      if (formData.price !== undefined) {
+        const priceNum = typeof formData.price === 'string' ? parseFloat(formData.price) : formData.price;
+        cleanedFormData.price = isNaN(priceNum) ? undefined : priceNum;
+      }
+      
+      // Handle miles - convert to number or undefined
+      if (formData.miles !== undefined) {
+        const milesNum = typeof formData.miles === 'string' ? parseInt(formData.miles) : formData.miles;
+        cleanedFormData.miles = isNaN(milesNum) ? undefined : milesNum;
+      }
+      
+      // Handle condition_rating - convert to number or undefined
+      if (formData.condition_rating !== undefined) {
+        const ratingNum = typeof formData.condition_rating === 'string' ? parseInt(formData.condition_rating) : formData.condition_rating;
+        cleanedFormData.condition_rating = isNaN(ratingNum) ? undefined : ratingNum;
+      }
+      
       const updateData: ListingUpdate = {
-        ...formData,
+        ...cleanedFormData,
         images: images  // Always include images array (even if empty) to allow clearing images
       };
+      
+      console.log('Saving listing with data:', updateData);
+      
       const updatedListing = await updateListing(parseInt(listing.id), updateData);
+      
+      console.log('Listing updated successfully:', updatedListing);
+      
+      // Update the form data with the server response to reflect any server-side changes
+      setFormData({
+        vin: updatedListing.vin || '',
+        notes: updatedListing.notes || '',
+        condition_rating: updatedListing.condition_rating || undefined,
+        interior_color: updatedListing.interior_color || '',
+        exterior_color: updatedListing.exterior_color || '',
+        transmission: updatedListing.transmission || '',
+        fuel_type: updatedListing.fuel_type || '',
+        drivetrain: updatedListing.drivetrain || '',
+        engine_size: updatedListing.engine_size || '',
+        body_style: updatedListing.body_style || '',
+        price: updatedListing.price,
+        miles: updatedListing.miles,
+        location: updatedListing.location || ''
+      });
+      setImages(updatedListing.images || []);
+      
+      // Notify parent component of the update
       onSave(updatedListing);
-      onClose();
+      
+      // Show success message
+      setSaveSuccess(true);
+      
+      // Auto-hide success message after 3 seconds
+      setTimeout(() => {
+        setSaveSuccess(false);
+      }, 3000);
     } catch (error) {
       console.error('Error updating listing:', error);
-      // You might want to show a toast notification here
+      alert(`Failed to save changes: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
     } finally {
       setSaving(false);
     }
@@ -219,6 +275,20 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
           </Button>
         </div>
 
+        {/* Success Message */}
+        {saveSuccess && (
+          <div className="mx-6 mt-4 p-3 bg-green-50 border border-green-200 rounded-md flex items-center gap-2">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <p className="text-sm font-medium text-green-800">
+              Changes saved successfully!
+            </p>
+          </div>
+        )}
+
         {/* Content */}
         <div className="p-6 flex-1 overflow-y-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -248,7 +318,10 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
                   <Input
                     type="number"
                     value={formData.price || ''}
-                    onChange={(e) => handleFieldChange('price', parseFloat(e.target.value))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      handleFieldChange('price', value === '' ? undefined : parseFloat(value));
+                    }}
                     placeholder="Enter price"
                   />
                 </div>
@@ -260,7 +333,10 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
                   <Input
                     type="number"
                     value={formData.miles || ''}
-                    onChange={(e) => handleFieldChange('miles', parseInt(e.target.value))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      handleFieldChange('miles', value === '' ? undefined : parseInt(value));
+                    }}
                     placeholder="Enter miles"
                   />
                 </div>
@@ -395,7 +471,10 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
                 </label>
                 <select
                   value={formData.condition_rating || ''}
-                  onChange={(e) => handleFieldChange('condition_rating', parseInt(e.target.value))}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    handleFieldChange('condition_rating', value === '' ? undefined : parseInt(value));
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select condition</option>

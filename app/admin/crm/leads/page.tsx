@@ -5,6 +5,7 @@ import { LeadManagement } from '../../../../components/organisms/LeadManagement'
 import { AdminLayout } from '../../../../components/templates/AdminLayout';
 import { useLeads, useLeadStatuses, useLeadSources } from '../../../../lib/hooks/useLeads';
 import { LeadCreateModal } from '../../../../components/organisms/LeadCreateModal';
+import { exportApi } from '../../../../lib/services/exportApi';
 
 export default function LeadsPage() {
   const [currentPage, setCurrentPage] = useState(1);
@@ -40,8 +41,23 @@ export default function LeadsPage() {
     setIsCreateOpen(true);
   };
 
-  const handleExportLeads = () => {
-    // Handle export leads
+  const handleExportLeads = async () => {
+    try {
+      const blob = await exportApi.exportLeads(
+        statusFilter,
+        sourceFilter,
+        assignedToFilter,
+        searchTerm || undefined
+      );
+      
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+      const filename = `leads_export_${timestamp}.csv`;
+      
+      exportApi.downloadBlob(blob, filename);
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
 
   const handleSearch = (search: string) => {

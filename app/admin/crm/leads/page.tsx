@@ -11,13 +11,18 @@ export default function LeadsPage() {
   const [pageSize] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<number | undefined>(undefined);
+  const [sourceFilter, setSourceFilter] = useState<number | undefined>(undefined);
+  const [assignedToFilter, setAssignedToFilter] = useState<string | undefined>(undefined);
+  const [locationFilter, setLocationFilter] = useState<string | undefined>(undefined);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   const { leads, loading, error, refreshLeads } = useLeads({
     skip: (currentPage - 1) * pageSize,
     limit: pageSize,
     search: searchTerm || undefined,
-    status_id: statusFilter
+    status_id: statusFilter,
+    source_id: sourceFilter,
+    assigned_to: assignedToFilter
   });
 
   const { statuses } = useLeadStatuses();
@@ -49,9 +54,51 @@ export default function LeadsPage() {
     setCurrentPage(1); // Reset to first page when filtering
   };
 
+  const handleSourceFilter = (sourceId: number | undefined) => {
+    setSourceFilter(sourceId);
+    setCurrentPage(1);
+  };
+
+  const handleAssignedToFilter = (assignedTo: string | undefined) => {
+    setAssignedToFilter(assignedTo);
+    setCurrentPage(1);
+  };
+
+  const handleLocationFilter = (location: string | undefined) => {
+    setLocationFilter(location);
+    setCurrentPage(1);
+  };
+
+  // Extract unique locations from leads
+  const uniqueLocations = Array.from(
+    new Set(
+      leads
+        .map(lead => lead.listing?.location)
+        .filter((location): location is string => Boolean(location))
+    )
+  ).sort();
+
+  // Extract unique assigned users from leads
+  const assignedToUsers = Array.from(
+    new Map(
+      leads
+        .map(lead => lead.assigned_to_user)
+        .filter((user): user is NonNullable<typeof user> => 
+          Boolean(user && user.id && user.username)
+        )
+        .map(user => [user.id, { id: user.id, username: user.username }])
+    ).values()
+  ).sort((a, b) => a.username.localeCompare(b.username));
+
+  // Apply location filter client-side (since API doesn't support it yet)
+  const filteredLeads = locationFilter
+    ? leads.filter(lead => lead.listing?.location === locationFilter)
+    : leads;
+
   // Transform leads data to match component expectations
-  const transformedLeads = leads.map(lead => {
+  const transformedLeads = filteredLeads.map(lead => {
     const foundStatus = statuses.find(s => s.id === lead.status_id);
+    const foundSource = sources.find(s => s.id === lead.source_id);
     return {
       ...lead,
       status: foundStatus ? {
@@ -63,9 +110,13 @@ export default function LeadsPage() {
         name: 'Unknown',
         color: 'gray'
       },
-      assigned_to: lead.assigned_to ? {
-        id: lead.assigned_to,
-        username: lead.assigned_to // This would need to be fetched from user data
+      source: foundSource ? {
+        id: foundSource.id,
+        name: foundSource.name
+      } : undefined,
+      assigned_to: lead.assigned_to_user ? {
+        id: lead.assigned_to_user.id,
+        username: lead.assigned_to_user.username
       } : {
         id: '',
         username: 'Unassigned'
@@ -130,18 +181,26 @@ export default function LeadsPage() {
         </div>
         <LeadManagement 
           leads={transformedLeads as any}
-          totalLeads={leads.length}
+          totalLeads={filteredLeads.length}
           currentPage={currentPage}
-          totalPages={Math.ceil(leads.length / pageSize)}
+          totalPages={Math.ceil(filteredLeads.length / pageSize)}
           onPageChange={handlePageChange}
           onLeadClick={handleLeadClick}
           onCreateLead={handleCreateLead}
           onExportLeads={handleExportLeads}
           onSearch={handleSearch}
           onStatusFilter={handleStatusFilter}
+          onSourceFilter={handleSourceFilter}
+          onAssignedToFilter={handleAssignedToFilter}
+          onLocationFilter={handleLocationFilter}
           currentStatusFilter={statusFilter}
+          currentSourceFilter={sourceFilter}
+          currentAssignedToFilter={assignedToFilter}
+          currentLocationFilter={locationFilter}
           statuses={statuses}
           sources={sources}
+          assignedToUsers={assignedToUsers}
+          locations={uniqueLocations}
           loading={loading}
           onLeadUpdated={refreshLeads}
         />

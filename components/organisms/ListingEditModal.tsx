@@ -1,17 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Listing, ListingUpdate, Contact, ListingContactLink } from '../../lib/types/listing';
+import { Listing, ListingUpdate } from '../../lib/types/listing';
 import { Button } from '../atoms/Button';
 import { Input } from '../atoms/Input';
 import { Badge } from '../atoms/Badge';
 import { Icon } from '../atoms/Icon';
 import { 
-  updateListing, 
-  getListingContacts, 
-  linkContactToListing, 
-  unlinkContactFromListing,
-  getContacts,
+  updateListing,
   createContact
 } from '../../lib/services/listingManagementApi';
 import { X, Plus, User, Phone, Mail, Building, Edit, Trash2, Save, Upload } from 'lucide-react';
@@ -33,23 +29,21 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
   const [formData, setFormData] = useState<ListingUpdate>({});
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [contacts, setContacts] = useState<Contact[]>([]);
-  const [availableContacts, setAvailableContacts] = useState<Contact[]>([]);
-  const [showContactSearch, setShowContactSearch] = useState(false);
-  const [contactSearchTerm, setContactSearchTerm] = useState('');
-  const [showNewContactForm, setShowNewContactForm] = useState(false);
   const [isLeadCreateOpen, setIsLeadCreateOpen] = useState(false);
+  const [isCreateContactOpen, setIsCreateContactOpen] = useState(false);
+  const [images, setImages] = useState<string[]>([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
   const [newContactData, setNewContactData] = useState({
     first_name: '',
     last_name: '',
     email: '',
     phone: '',
+    mobile: '',
     company: '',
     job_title: '',
     notes: ''
   });
-  const [images, setImages] = useState<string[]>([]);
-  const [uploadingImages, setUploadingImages] = useState(false);
+  const [creatingContact, setCreatingContact] = useState(false);
 
   // Initialize form data when modal opens
   useEffect(() => {
@@ -70,37 +64,27 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
         location: listing.location || ''
       });
       setImages(listing.images || []);
-      loadListingContacts();
     }
   }, [isOpen, listing]);
 
-  // Load contacts linked to this listing
-  const loadListingContacts = async () => {
-    try {
-      setLoading(true);
-      const listingContacts = await getListingContacts(parseInt(listing.id));
-      setContacts(listingContacts);
-    } catch (error) {
-      console.error('Error loading listing contacts:', error);
-    } finally {
-      setLoading(false);
+  // Prevent background scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      // Save current scroll position
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+      
+      return () => {
+        // Restore scroll position
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        window.scrollTo(0, scrollY);
+      };
     }
-  };
-
-  // Search for available contacts
-  const searchContacts = async (searchTerm: string) => {
-    if (searchTerm.length < 2) {
-      setAvailableContacts([]);
-      return;
-    }
-
-    try {
-      const results = await getContacts({ search: searchTerm, limit: 10 });
-      setAvailableContacts(results);
-    } catch (error) {
-      console.error('Error searching contacts:', error);
-    }
-  };
+  }, [isOpen]);
 
   // Handle form field changes
   const handleFieldChange = (field: keyof ListingUpdate, value: any) => {
@@ -173,53 +157,33 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
     }
   };
 
-  // Link contact to listing
-  const handleLinkContact = async (contact: Contact) => {
-    try {
-      const contactLink: ListingContactLink = {
-        contact_id: contact.id,
-        relationship_type: 'seller',
-        is_primary: contacts.length === 0, // First contact becomes primary
-        notes: ''
-      };
-
-      await linkContactToListing(parseInt(listing.id), contactLink);
-      await loadListingContacts(); // Refresh contacts
-      setShowContactSearch(false);
-      setContactSearchTerm('');
-      setAvailableContacts([]);
-    } catch (error) {
-      console.error('Error linking contact:', error);
-    }
-  };
-
-  // Unlink contact from listing
-  const handleUnlinkContact = async (contactId: string) => {
-    try {
-      await unlinkContactFromListing(parseInt(listing.id), contactId);
-      await loadListingContacts(); // Refresh contacts
-    } catch (error) {
-      console.error('Error unlinking contact:', error);
-    }
-  };
-
   // Create new contact
   const handleCreateContact = async () => {
+    if (!newContactData.first_name || !newContactData.last_name) {
+      alert('First name and last name are required');
+      return;
+    }
+
     try {
-      const newContact = await createContact(newContactData);
-      await handleLinkContact(newContact);
-      setShowNewContactForm(false);
+      setCreatingContact(true);
+      await createContact(newContactData);
+      setIsCreateContactOpen(false);
       setNewContactData({
         first_name: '',
         last_name: '',
         email: '',
         phone: '',
+        mobile: '',
         company: '',
         job_title: '',
         notes: ''
       });
+      alert('Contact created successfully!');
     } catch (error) {
       console.error('Error creating contact:', error);
+      alert('Failed to create contact. Please try again.');
+    } finally {
+      setCreatingContact(false);
     }
   };
 
@@ -457,272 +421,31 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
               </div>
             </div>
 
-            {/* Contact Management */}
+            {/* Quick Actions */}
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2">
-                  Contacts
-                </h3>
-                <div className="flex items-center gap-2">
-                  <Button
-                    onClick={() => setIsLeadCreateOpen(true)}
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center gap-2"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Create Lead
-                  </Button>
-                  <Button
-                    onClick={() => setShowContactSearch(true)}
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center gap-2"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add Contact
-                  </Button>
-                </div>
+              <h3 className="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2">
+                Quick Actions
+              </h3>
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={() => setIsLeadCreateOpen(true)}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Create Lead
+                </Button>
+                <Button
+                  onClick={() => setIsCreateContactOpen(true)}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Create Contact
+                </Button>
               </div>
-
-              {/* Linked Contacts */}
-              <div className="space-y-2">
-                {loading ? (
-                  <div className="text-center py-4">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="text-sm text-gray-500 mt-2">Loading contacts...</p>
-                  </div>
-                ) : contacts.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <User className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                    <p>No contacts linked to this listing</p>
-                  </div>
-                ) : (
-                  contacts.map((contact) => (
-                    <div key={contact.id} className="border border-gray-200 rounded-lg p-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-medium text-gray-900">
-                              {contact.first_name} {contact.last_name}
-                            </h4>
-                            {contact.id === listing.primary_contact_id && (
-                              <Badge variant="default" className="text-xs">Primary</Badge>
-                            )}
-                          </div>
-                          
-                          <div className="space-y-1 text-sm text-gray-600">
-                            {contact.email && (
-                              <div className="flex items-center gap-1">
-                                <Mail className="h-3 w-3" />
-                                {contact.email}
-                              </div>
-                            )}
-                            {contact.phone && (
-                              <div className="flex items-center gap-1">
-                                <Phone className="h-3 w-3" />
-                                {contact.phone}
-                              </div>
-                            )}
-                            {contact.company && (
-                              <div className="flex items-center gap-1">
-                                <Building className="h-3 w-3" />
-                                {contact.company}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        
-                        <Button
-                          onClick={() => handleUnlinkContact(contact.id)}
-                          variant="outline"
-                          size="sm"
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              {/* Contact Search Modal */}
-              {showContactSearch && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                  <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col">
-                    <div className="flex items-center justify-between p-4 border-b">
-                      <h3 className="text-lg font-semibold">Add Contact to Listing</h3>
-                      <Button onClick={() => setShowContactSearch(false)} variant="outline" size="sm">
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    
-                    <div className="p-4 space-y-4 flex-1 overflow-y-auto">
-                      <div>
-                        <Input
-                          placeholder="Search contacts..."
-                          value={contactSearchTerm}
-                          onChange={(e) => {
-                            setContactSearchTerm(e.target.value);
-                            searchContacts(e.target.value);
-                          }}
-                        />
-                      </div>
-                      
-                      <div className="max-h-60 overflow-y-auto space-y-2">
-                        {availableContacts.map((contact) => (
-                          <div key={contact.id} className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <h4 className="font-medium">{contact.first_name} {contact.last_name}</h4>
-                                <p className="text-sm text-gray-600">{contact.email}</p>
-                                {contact.company && (
-                                  <p className="text-sm text-gray-500">{contact.company}</p>
-                                )}
-                              </div>
-                              <Button
-                                onClick={() => handleLinkContact(contact)}
-                                variant="outline"
-                                size="sm"
-                              >
-                                Add
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      
-                      <div className="border-t pt-4">
-                        <Button
-                          onClick={() => setShowNewContactForm(true)}
-                          variant="outline"
-                          className="w-full"
-                        >
-                          <Plus className="h-4 w-4 mr-2" />
-                          Create New Contact
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* New Contact Form */}
-              {showNewContactForm && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                  <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col">
-                    <div className="flex items-center justify-between p-4 border-b">
-                      <h3 className="text-lg font-semibold">Create New Contact</h3>
-                      <Button onClick={() => setShowNewContactForm(false)} variant="outline" size="sm">
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    
-                    <div className="p-4 space-y-4 flex-1 overflow-y-auto">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            First Name *
-                          </label>
-                          <Input
-                            value={newContactData.first_name}
-                            onChange={(e) => setNewContactData(prev => ({ ...prev, first_name: e.target.value }))}
-                            placeholder="Enter first name"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Last Name *
-                          </label>
-                          <Input
-                            value={newContactData.last_name}
-                            onChange={(e) => setNewContactData(prev => ({ ...prev, last_name: e.target.value }))}
-                            placeholder="Enter last name"
-                          />
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Email
-                          </label>
-                          <Input
-                            type="email"
-                            value={newContactData.email}
-                            onChange={(e) => setNewContactData(prev => ({ ...prev, email: e.target.value }))}
-                            placeholder="Enter email"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Phone
-                          </label>
-                          <Input
-                            value={newContactData.phone}
-                            onChange={(e) => setNewContactData(prev => ({ ...prev, phone: e.target.value }))}
-                            placeholder="Enter phone number"
-                          />
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Company
-                          </label>
-                          <Input
-                            value={newContactData.company}
-                            onChange={(e) => setNewContactData(prev => ({ ...prev, company: e.target.value }))}
-                            placeholder="Enter company"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Job Title
-                          </label>
-                          <Input
-                            value={newContactData.job_title}
-                            onChange={(e) => setNewContactData(prev => ({ ...prev, job_title: e.target.value }))}
-                            placeholder="Enter job title"
-                          />
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Notes
-                        </label>
-                        <textarea
-                          value={newContactData.notes}
-                          onChange={(e) => setNewContactData(prev => ({ ...prev, notes: e.target.value }))}
-                          placeholder="Additional notes..."
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          rows={3}
-                        />
-                      </div>
-                      
-                      <div className="flex gap-2 pt-4">
-                        <Button
-                          onClick={handleCreateContact}
-                          disabled={!newContactData.first_name || !newContactData.last_name}
-                          className="flex-1"
-                        >
-                          Create & Link Contact
-                        </Button>
-                        <Button
-                          onClick={() => setShowNewContactForm(false)}
-                          variant="outline"
-                          className="flex-1"
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
 
@@ -800,14 +523,173 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
           </Button>
         </div>
       </div>
+
+      {/* Create Lead Modal */}
       <LeadCreateModal
         isOpen={isLeadCreateOpen}
         onClose={() => setIsLeadCreateOpen(false)}
         listingId={parseInt(listing.id)}
         onCreated={async () => {
-          await loadListingContacts();
+          // Lead created successfully
+          setIsLeadCreateOpen(false);
         }}
       />
+
+      {/* Create Contact Modal */}
+      {isCreateContactOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="text-lg font-semibold">Create New Contact</h3>
+              <Button 
+                onClick={() => {
+                  setIsCreateContactOpen(false);
+                  setNewContactData({
+                    first_name: '',
+                    last_name: '',
+                    email: '',
+                    phone: '',
+                    mobile: '',
+                    company: '',
+                    job_title: '',
+                    notes: ''
+                  });
+                }} 
+                variant="outline" 
+                size="sm"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <div className="p-4 space-y-4 flex-1 overflow-y-auto">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    First Name *
+                  </label>
+                  <Input
+                    value={newContactData.first_name}
+                    onChange={(e) => setNewContactData(prev => ({ ...prev, first_name: e.target.value }))}
+                    placeholder="Enter first name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Last Name *
+                  </label>
+                  <Input
+                    value={newContactData.last_name}
+                    onChange={(e) => setNewContactData(prev => ({ ...prev, last_name: e.target.value }))}
+                    placeholder="Enter last name"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email
+                  </label>
+                  <Input
+                    type="email"
+                    value={newContactData.email}
+                    onChange={(e) => setNewContactData(prev => ({ ...prev, email: e.target.value }))}
+                    placeholder="Enter email"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone
+                  </label>
+                  <Input
+                    value={newContactData.phone}
+                    onChange={(e) => setNewContactData(prev => ({ ...prev, phone: e.target.value }))}
+                    placeholder="Enter phone number"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Mobile
+                  </label>
+                  <Input
+                    value={newContactData.mobile}
+                    onChange={(e) => setNewContactData(prev => ({ ...prev, mobile: e.target.value }))}
+                    placeholder="Enter mobile number"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Company
+                  </label>
+                  <Input
+                    value={newContactData.company}
+                    onChange={(e) => setNewContactData(prev => ({ ...prev, company: e.target.value }))}
+                    placeholder="Enter company"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Job Title
+                </label>
+                <Input
+                  value={newContactData.job_title}
+                  onChange={(e) => setNewContactData(prev => ({ ...prev, job_title: e.target.value }))}
+                  placeholder="Enter job title"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Notes
+                </label>
+                <textarea
+                  value={newContactData.notes}
+                  onChange={(e) => setNewContactData(prev => ({ ...prev, notes: e.target.value }))}
+                  placeholder="Additional notes..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows={3}
+                />
+              </div>
+              
+              <div className="flex gap-2 pt-4">
+                <Button
+                  onClick={handleCreateContact}
+                  disabled={!newContactData.first_name || !newContactData.last_name || creatingContact}
+                  className="flex-1"
+                >
+                  {creatingContact ? 'Creating...' : 'Create Contact'}
+                </Button>
+                <Button
+                  onClick={() => {
+                    setIsCreateContactOpen(false);
+                    setNewContactData({
+                      first_name: '',
+                      last_name: '',
+                      email: '',
+                      phone: '',
+                      mobile: '',
+                      company: '',
+                      job_title: '',
+                      notes: ''
+                    });
+                  }}
+                  variant="outline"
+                  className="flex-1"
+                  disabled={creatingContact}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

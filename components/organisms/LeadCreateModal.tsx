@@ -4,10 +4,10 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Button } from '../atoms/Button';
 import { Input } from '../atoms/Input';
 import { Icon } from '../atoms/Icon';
-import { leadsApi, LeadSource, LeadStatus } from '../../lib/services/leadsApi';
+import { leadsApi } from '../../lib/services/leadsApi';
+import { LeadSource, LeadStatus } from '../../lib/types/lead';
 import { createContact } from '../../lib/services/listingManagementApi';
-import { ListingContactLink } from '../../lib/types/listing';
-
+import { useAuth } from '../../app/auth/useAuth';
 type LeadCreateModalProps = {
   isOpen: boolean;
   onClose: () => void;
@@ -17,6 +17,7 @@ type LeadCreateModalProps = {
 };
 
 export const LeadCreateModal: React.FC<LeadCreateModalProps> = ({ isOpen, onClose, onCreated, listingId }) => {
+  const { user } = useAuth();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -30,7 +31,6 @@ export const LeadCreateModal: React.FC<LeadCreateModalProps> = ({ isOpen, onClos
   const [error, setError] = useState<string | null>(null);
   const [sources, setSources] = useState<LeadSource[]>([]);
   const [statuses, setStatuses] = useState<LeadStatus[]>([]);
-
   useEffect(() => {
     if (!isOpen) return;
     const loadMeta = async () => {
@@ -73,21 +73,9 @@ export const LeadCreateModal: React.FC<LeadCreateModalProps> = ({ isOpen, onClos
     setLoading(true);
     setError(null);
     try {
-      const lead = await leadsApi.createLead({
-        first_name: firstName.trim(),
-        last_name: lastName.trim(),
-        email: email.trim() || undefined,
-        phone: phone.trim() || undefined,
-        company: company.trim() || undefined,
-        job_title: jobTitle.trim() || undefined,
-        lead_source_id: sourceId,
-        lead_status_id: statusId,
-        notes: notes.trim() || undefined,
-        lead_score: 0,
-        is_qualified: false,
-      });
+   
 
-      // Also create a Contact so it can be linked to listings
+      // First create a Contact to store contact information
       const contact = await createContact({
         first_name: firstName.trim(),
         last_name: lastName.trim(),
@@ -97,22 +85,20 @@ export const LeadCreateModal: React.FC<LeadCreateModalProps> = ({ isOpen, onClos
         job_title: jobTitle.trim() || undefined,
         notes: notes.trim() || undefined,
       });
-
-      // Optionally link to a listing if provided
-      if (listingId && contact?.id) {
-        const { linkContactToListing } = await import('../../lib/services/listingManagementApi');
-        const link: ListingContactLink = {
-          contact_id: contact.id,
-          relationship_type: 'seller',
-          is_primary: true,
-          notes: 'Created from Lead and linked to listing',
-        };
-        try {
-          await linkContactToListing(listingId, link);
-        } catch (e) {
-          // Linking failure shouldn't block lead creation
-        }
-      }
+      
+      // Then create a Lead that references the contact and listing
+      const lead = await leadsApi.createLead({
+        contact_id: contact.id,
+        listing_id: listingId,
+        source_id: sourceId,
+        status_id: statusId,
+        notes: notes.trim() || undefined,
+        lead_score: 0,
+        vehicle_interest: {},
+        budget_range: {},
+        assigned_to: user?.id ?? '',
+        created_by: user?.id ?? '',
+      });
 
       onCreated && onCreated(lead.id);
       onClose();

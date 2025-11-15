@@ -1,4 +1,4 @@
-import { Listing, ListingUpdate, ListingContactLink, ListingActivity, Contact } from '../types/listing';
+import { Listing, ListingUpdate, ListingActivity, Contact } from '../types/listing';
 
 const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL ?? '/api';
 
@@ -36,44 +36,6 @@ export const updateListing = async (listingId: number, updateData: ListingUpdate
 
 export const getListingDetails = async (listingId: number): Promise<Listing> => {
   const response = await fetch(`${API_BASE}/listings/${listingId}`, {
-    method: 'GET',
-    headers: getAuthHeaders(),
-  });
-  
-  return handleResponse(response);
-};
-
-// ==============================================
-// CONTACT LINKING FUNCTIONS
-// ==============================================
-
-export const linkContactToListing = async (
-  listingId: number, 
-  contactLink: ListingContactLink
-): Promise<{ message: string; listing_id: number; contact_id: string }> => {
-  const response = await fetch(`${API_BASE}/listings/${listingId}/contacts`, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify(contactLink),
-  });
-  
-  return handleResponse(response);
-};
-
-export const unlinkContactFromListing = async (
-  listingId: number, 
-  contactId: string
-): Promise<{ message: string; listing_id: number; contact_id: string }> => {
-  const response = await fetch(`${API_BASE}/listings/${listingId}/contacts/${contactId}`, {
-    method: 'DELETE',
-    headers: getAuthHeaders(),
-  });
-  
-  return handleResponse(response);
-};
-
-export const getListingContacts = async (listingId: number): Promise<Contact[]> => {
-  const response = await fetch(`${API_BASE}/listings/${listingId}/contacts`, {
     method: 'GET',
     headers: getAuthHeaders(),
   });

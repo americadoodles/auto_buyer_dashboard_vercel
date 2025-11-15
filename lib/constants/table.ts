@@ -3,20 +3,23 @@
  */
 
 // Number of columns in the listings table grid
-// This includes: select, score, vin, year, make, model, miles, price, dom, source, location, buyer_username, radius, buyMax, status, reasons, notify, slack, workflow, edit
-export const LISTINGS_TABLE_GRID_COLS = 20;
+// This includes: select(1), score(1), vin(2), year(1), make(1), model(2), miles(1), price(1), dom(1), source(1), location(2), buyer_username(1), radius(1), buyMax(1), status(1), reasons(3), notify(1), slack(1), workflow(1), edit(1) = 25 total
+export const LISTINGS_TABLE_GRID_COLS = 25;
 
 // CSS class name for the grid (must match Tailwind config)
-// Note: We use static class name 'grid-cols-20' instead of template literal
+// Note: We use static class name 'grid-cols-25' instead of template literal
 // because Tailwind CSS doesn't generate dynamic class names at runtime
 // This class is safelisted in tailwind.config.js to prevent purging in production
-export const LISTINGS_TABLE_GRID_CLASS = 'grid-cols-20';
+export const LISTINGS_TABLE_GRID_CLASS = 'grid-cols-25';
 
 // Alternative: CSS custom property approach (if safelist doesn't work)
 // This ensures the grid is always available regardless of Tailwind purging
 export const LISTINGS_TABLE_GRID_STYLE = {
   display: 'grid',
-  gridTemplateColumns: `repeat(${LISTINGS_TABLE_GRID_COLS}, minmax(0, 1fr))`
+  gridTemplateColumns: `repeat(${LISTINGS_TABLE_GRID_COLS}, minmax(0, 1fr))`,
+  gridAutoFlow: 'row',
+  gridTemplateRows: '1fr',
+  gridAutoRows: 'auto'
 } as const;
 
 // Optimized column configuration with responsive sizing

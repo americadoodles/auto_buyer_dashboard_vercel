@@ -65,12 +65,18 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
   return (
     <div 
       className={`grid ${LISTINGS_TABLE_GRID_CLASS} gap-2 bg-slate-50 px-4 py-2 text-xs font-medium uppercase tracking-wide text-slate-600`}
-      style={LISTINGS_TABLE_GRID_STYLE}
+      style={{
+        ...LISTINGS_TABLE_GRID_STYLE,
+        gridTemplateRows: 'auto',
+        gridAutoRows: 'auto'
+      }}
     >
       {listingsColumns.map(col => {
+        const colSpanStyle = { gridColumn: `span ${col.colSpan} / span ${col.colSpan}` };
+        
         if (col.key === 'select') {
           return (
-            <div key={col.key} className={`col-span-${col.colSpan} flex items-center justify-center`}>
+            <div key={col.key} style={colSpanStyle} className="flex items-center justify-center">
               <input
                 type="checkbox"
                 checked={isAllSelected}
@@ -86,24 +92,24 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
         }
         
         const isActionColumn = ['notify', 'slack', 'workflow', 'edit'].includes(col.key);
+        const visibilityClass = col.priority === 'low' ? 'invisible lg:visible' : 
+                                col.priority === 'medium' ? 'invisible md:visible' : '';
         
         return (
-          <button
-            key={col.key}
-            className={`col-span-${col.colSpan} flex items-center gap-1 hover:text-slate-800 transition-colors ${
-              isActionColumn ? 'justify-center' : ''
-            } ${
-              col.priority === 'low' ? 'hidden lg:flex' : 
-              col.priority === 'medium' ? 'hidden md:flex' : 'flex'
-            }`}
-            onClick={() => !isActionColumn && onSort?.(col.key as keyof Listing | 'decision_status' | 'decision_reasons')}
-            disabled={isActionColumn}
-          >
-            <span className="truncate">{col.label}</span>
-            {!isActionColumn && (
-              <ArrowUpDown className="h-3 w-3 flex-shrink-0" />
-            )}
-          </button>
+          <div key={col.key} style={colSpanStyle} className={`flex items-center ${visibilityClass}`}>
+            <button
+              className={`w-full flex items-center gap-1 hover:text-slate-800 transition-colors ${
+                isActionColumn ? 'justify-center' : ''
+              }`}
+              onClick={() => !isActionColumn && onSort?.(col.key as keyof Listing | 'decision_status' | 'decision_reasons')}
+              disabled={isActionColumn}
+            >
+              <span className="truncate">{col.label}</span>
+              {!isActionColumn && (
+                <ArrowUpDown className="h-3 w-3 flex-shrink-0" />
+              )}
+            </button>
+          </div>
         );
       })}
     </div>

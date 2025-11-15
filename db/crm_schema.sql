@@ -191,48 +191,53 @@ CREATE TABLE IF NOT EXISTS deal_vehicles (
 );
 
 -- ==============================================
--- TASK & ACTIVITY MANAGEMENT
+-- TASK & ACTIVITY MANAGEMENT (Kanban Structure)
 -- ==============================================
 
--- Task priorities
-CREATE TABLE IF NOT EXISTS task_priorities (
-    id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL,
-    description TEXT,
-    color_code TEXT DEFAULT '#3B82F6',
-    sort_order INTEGER DEFAULT 0,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Task statuses
-CREATE TABLE IF NOT EXISTS task_statuses (
-    id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL,
-    description TEXT,
-    color_code TEXT DEFAULT '#3B82F6',
-    is_active BOOLEAN DEFAULT true,
-    sort_order INTEGER DEFAULT 0,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Main tasks table
-CREATE TABLE IF NOT EXISTS tasks (
+-- Task boards (global, team, or my scope)
+CREATE TABLE IF NOT EXISTS task_boards (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    title TEXT NOT NULL,
-    description TEXT,
-    assigned_to UUID REFERENCES users(id),
-    created_by UUID REFERENCES users(id),
-    priority_id INTEGER REFERENCES task_priorities(id),
-    status_id INTEGER REFERENCES task_statuses(id),
-    due_date TIMESTAMPTZ,
-    completed_at TIMESTAMPTZ,
-    related_lead_id UUID REFERENCES leads(id),
-    related_contact_id UUID REFERENCES contacts(id),
-    related_deal_id UUID REFERENCES deals(id),
-    is_recurring BOOLEAN DEFAULT false,
-    recurrence_pattern TEXT, -- 'daily', 'weekly', 'monthly'
+    name TEXT NOT NULL,
+    scope TEXT NOT NULL CHECK (scope IN ('global', 'team', 'my')),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Task columns (Kanban columns within boards)
+CREATE TABLE IF NOT EXISTS task_columns (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    board_id UUID NOT NULL REFERENCES task_boards(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    wip_limit INTEGER, -- Work In Progress limit (NULL = unlimited)
+    position INTEGER NOT NULL DEFAULT 0, -- Order within board
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Main tasks table (Kanban structure)
+CREATE TABLE IF NOT EXISTS tasks (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    related_type TEXT, -- 'lead', 'contact', 'deal', etc.
+    related_id UUID, -- Generic related entity ID
+    title TEXT NOT NULL,
+    description TEXT,
+    priority TEXT NOT NULL DEFAULT 'Medium' CHECK (priority IN ('High', 'Medium', 'Low')),
+    status TEXT NOT NULL DEFAULT 'Open' CHECK (status IN ('Open', 'InProgress', 'Done', 'Snoozed')),
+    column_id UUID REFERENCES task_columns(id) ON DELETE SET NULL,
+    owner_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    due_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Task activity log
+CREATE TABLE IF NOT EXISTS task_activity (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    task_id UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+    type TEXT NOT NULL, -- 'created', 'updated', 'moved', 'assigned', 'commented', etc.
+    payload_json JSONB, -- Flexible JSON payload for activity details
+    at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    user_id UUID REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- ==============================================
@@ -317,10 +322,14 @@ CREATE INDEX IF NOT EXISTS idx_deals_stage ON deals(deal_stage_id);
 CREATE INDEX IF NOT EXISTS idx_deals_expected_close ON deals(expected_close_date);
 
 -- Task indexes
-CREATE INDEX IF NOT EXISTS idx_tasks_assigned_to ON tasks(assigned_to);
-CREATE INDEX IF NOT EXISTS idx_tasks_due_date ON tasks(due_date);
-CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status_id);
-CREATE INDEX IF NOT EXISTS idx_tasks_priority ON tasks(priority_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_related ON tasks(related_type, related_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_owner_due ON tasks(owner_user_id, due_at);
+CREATE INDEX IF NOT EXISTS idx_tasks_column_id ON tasks(column_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
+CREATE INDEX IF NOT EXISTS idx_tasks_priority ON tasks(priority);
+CREATE INDEX IF NOT EXISTS idx_task_columns_board_id ON task_columns(board_id);
+CREATE INDEX IF NOT EXISTS idx_task_activity_task_id ON task_activity(task_id);
+CREATE INDEX IF NOT EXISTS idx_task_activity_user_id ON task_activity(user_id);
 
 -- Activity indexes
 CREATE INDEX IF NOT EXISTS idx_lead_activities_lead ON lead_activities(lead_id);
@@ -376,22 +385,22 @@ LEFT JOIN deal_stages ds ON d.deal_stage_id = ds.id
 LEFT JOIN contacts c ON d.contact_id = c.id
 LEFT JOIN users u ON d.assigned_to = u.id;
 
--- Task dashboard view
+-- Task dashboard view (updated for Kanban structure)
 CREATE OR REPLACE VIEW v_task_dashboard AS
 SELECT 
     t.id,
     t.title,
-    t.due_date,
-    tp.name as priority_name,
-    tp.color_code as priority_color,
-    ts.name as status_name,
-    ts.color_code as status_color,
-    u.username as assigned_to_name,
+    t.due_at as due_date,
+    t.priority as priority_name,
+    t.status as status_name,
+    u.username as owner_user_name,
+    tc.name as column_name,
+    tb.name as board_name,
     t.created_at
 FROM tasks t
-LEFT JOIN task_priorities tp ON t.priority_id = tp.id
-LEFT JOIN task_statuses ts ON t.status_id = ts.id
-LEFT JOIN users u ON t.assigned_to = u.id;
+LEFT JOIN users u ON t.owner_user_id = u.id
+LEFT JOIN task_columns tc ON t.column_id = tc.id
+LEFT JOIN task_boards tb ON tc.board_id = tb.id;
 
 -- ==============================================
 -- INITIAL DATA SEEDING
@@ -446,21 +455,12 @@ BEGIN
         ) t WHERE rn > 1
     );
     
-    -- Remove duplicate task_priorities
-    DELETE FROM task_priorities
+    -- Remove duplicate task_boards (if any)
+    DELETE FROM task_boards
     WHERE id IN (
         SELECT id FROM (
-            SELECT id, ROW_NUMBER() OVER (PARTITION BY LOWER(name) ORDER BY id) as rn
-            FROM task_priorities
-        ) t WHERE rn > 1
-    );
-    
-    -- Remove duplicate task_statuses
-    DELETE FROM task_statuses
-    WHERE id IN (
-        SELECT id FROM (
-            SELECT id, ROW_NUMBER() OVER (PARTITION BY LOWER(name) ORDER BY id) as rn
-            FROM task_statuses
+            SELECT id, ROW_NUMBER() OVER (PARTITION BY LOWER(name), scope ORDER BY id) as rn
+            FROM task_boards
         ) t WHERE rn > 1
     );
     
@@ -480,8 +480,6 @@ DROP INDEX IF EXISTS ux_lead_statuses_name_ci;
 DROP INDEX IF EXISTS ux_contact_types_name_ci;
 DROP INDEX IF EXISTS ux_deal_stages_name_ci;
 DROP INDEX IF EXISTS ux_deal_categories_name_ci;
-DROP INDEX IF EXISTS ux_task_priorities_name_ci;
-DROP INDEX IF EXISTS ux_task_statuses_name_ci;
 DROP INDEX IF EXISTS ux_kpi_definitions_name_ci;
 
 -- Ensure unique names for lookup tables (case-insensitive)
@@ -491,8 +489,6 @@ CREATE UNIQUE INDEX ux_lead_statuses_name_ci ON lead_statuses (LOWER(name));
 CREATE UNIQUE INDEX ux_contact_types_name_ci ON contact_types (LOWER(name));
 CREATE UNIQUE INDEX ux_deal_stages_name_ci ON deal_stages (LOWER(name));
 CREATE UNIQUE INDEX ux_deal_categories_name_ci ON deal_categories (LOWER(name));
-CREATE UNIQUE INDEX ux_task_priorities_name_ci ON task_priorities (LOWER(name));
-CREATE UNIQUE INDEX ux_task_statuses_name_ci ON task_statuses (LOWER(name));
 CREATE UNIQUE INDEX ux_kpi_definitions_name_ci ON kpi_definitions (LOWER(name));
 
 -- Insert default lead sources (using WHERE NOT EXISTS to handle unique index)
@@ -562,29 +558,44 @@ WHERE NOT EXISTS (
     SELECT 1 FROM deal_categories WHERE LOWER(deal_categories.name) = LOWER(v.name)
 );
 
--- Insert default task priorities
-INSERT INTO task_priorities (name, description, color_code, sort_order)
+-- Insert default task boards
+INSERT INTO task_boards (id, name, scope)
 SELECT * FROM (VALUES
-    ('Low', 'Low priority task', '#6B7280', 1),
-    ('Medium', 'Medium priority task', '#F59E0B', 2),
-    ('High', 'High priority task', '#EF4444', 3),
-    ('Urgent', 'Urgent task', '#DC2626', 4)
-) AS v(name, description, color_code, sort_order)
-WHERE NOT EXISTS (
-    SELECT 1 FROM task_priorities WHERE LOWER(task_priorities.name) = LOWER(v.name)
-);
+    ('00000000-0000-0000-0000-000000000001'::UUID, 'My Tasks', 'my'),
+    ('00000000-0000-0000-0000-000000000002'::UUID, 'Team Board', 'team'),
+    ('00000000-0000-0000-0000-000000000003'::UUID, 'Global Board', 'global')
+) AS v(id, name, scope)
+ON CONFLICT (id) DO NOTHING;
 
--- Insert default task statuses
-INSERT INTO task_statuses (name, description, color_code, sort_order)
+-- Insert default task columns for My Tasks board
+INSERT INTO task_columns (id, board_id, name, wip_limit, position)
 SELECT * FROM (VALUES
-    ('Not Started', 'Task not started', '#6B7280', 1),
-    ('In Progress', 'Task in progress', '#3B82F6', 2),
-    ('Completed', 'Task completed', '#059669', 3),
-    ('Cancelled', 'Task cancelled', '#EF4444', 4)
-) AS v(name, description, color_code, sort_order)
-WHERE NOT EXISTS (
-    SELECT 1 FROM task_statuses WHERE LOWER(task_statuses.name) = LOWER(v.name)
-);
+    ('00000000-0000-0000-0000-000000000011'::UUID, '00000000-0000-0000-0000-000000000001'::UUID, 'To Do', NULL, 0),
+    ('00000000-0000-0000-0000-000000000012'::UUID, '00000000-0000-0000-0000-000000000001'::UUID, 'In Progress', 5, 1),
+    ('00000000-0000-0000-0000-000000000013'::UUID, '00000000-0000-0000-0000-000000000001'::UUID, 'Done', NULL, 2)
+) AS v(id, board_id, name, wip_limit, position)
+ON CONFLICT (id) DO NOTHING;
+
+-- Insert default task columns for Team Board
+INSERT INTO task_columns (id, board_id, name, wip_limit, position)
+SELECT * FROM (VALUES
+    ('00000000-0000-0000-0000-000000000021'::UUID, '00000000-0000-0000-0000-000000000002'::UUID, 'Backlog', NULL, 0),
+    ('00000000-0000-0000-0000-000000000022'::UUID, '00000000-0000-0000-0000-000000000002'::UUID, 'To Do', NULL, 1),
+    ('00000000-0000-0000-0000-000000000023'::UUID, '00000000-0000-0000-0000-000000000002'::UUID, 'In Progress', 10, 2),
+    ('00000000-0000-0000-0000-000000000024'::UUID, '00000000-0000-0000-0000-000000000002'::UUID, 'Review', NULL, 3),
+    ('00000000-0000-0000-0000-000000000025'::UUID, '00000000-0000-0000-0000-000000000002'::UUID, 'Done', NULL, 4)
+) AS v(id, board_id, name, wip_limit, position)
+ON CONFLICT (id) DO NOTHING;
+
+-- Insert default task columns for Global Board
+INSERT INTO task_columns (id, board_id, name, wip_limit, position)
+SELECT * FROM (VALUES
+    ('00000000-0000-0000-0000-000000000031'::UUID, '00000000-0000-0000-0000-000000000003'::UUID, 'Backlog', NULL, 0),
+    ('00000000-0000-0000-0000-000000000032'::UUID, '00000000-0000-0000-0000-000000000003'::UUID, 'To Do', NULL, 1),
+    ('00000000-0000-0000-0000-000000000033'::UUID, '00000000-0000-0000-0000-000000000003'::UUID, 'In Progress', 20, 2),
+    ('00000000-0000-0000-0000-000000000034'::UUID, '00000000-0000-0000-0000-000000000003'::UUID, 'Done', NULL, 3)
+) AS v(id, board_id, name, wip_limit, position)
+ON CONFLICT (id) DO NOTHING;
 
 -- Insert default KPI definitions
 INSERT INTO kpi_definitions (name, description, calculation_method, target_value, unit)

@@ -41,23 +41,41 @@ def get_all_tasks(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     assigned_to: Optional[UUID] = Query(None),
-    priority_id: Optional[int] = Query(None),
-    status_id: Optional[int] = Query(None),
-    due_date_from: Optional[datetime] = Query(None),
-    due_date_to: Optional[datetime] = Query(None),
-    related_lead_id: Optional[UUID] = Query(None),
-    related_contact_id: Optional[UUID] = Query(None),
-    related_deal_id: Optional[UUID] = Query(None),
+    priority: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    due_at_from: Optional[datetime] = Query(None),
+    due_at_to: Optional[datetime] = Query(None),
+    related_type: Optional[str] = Query(None),
+    related_id: Optional[UUID] = Query(None),
     search: Optional[str] = Query(None),
     current_user: UserOut = Depends(get_current_user)
 ):
     """Get all tasks with optional filtering"""
     try:
-        return list_tasks(skip=skip, limit=limit, assigned_to=assigned_to,
-                         priority_id=priority_id, status_id=status_id,
-                         due_date_from=due_date_from, due_date_to=due_date_to,
-                         related_lead_id=related_lead_id, related_contact_id=related_contact_id,
-                         related_deal_id=related_deal_id, search=search)
+        from ..schemas.crm import TaskPriority, TaskStatus
+        
+        # Convert string priority/status to enum if provided
+        priority_enum = None
+        if priority:
+            try:
+                priority_enum = TaskPriority(priority)
+            except ValueError:
+                pass
+        
+        status_enum = None
+        if status:
+            try:
+                status_enum = TaskStatus(status)
+            except ValueError:
+                pass
+        
+        return list_tasks(
+            skip=skip, limit=limit, owner_user_id=assigned_to,
+            priority=priority_enum, status=status_enum,
+            due_at_from=due_at_from, due_at_to=due_at_to,
+            related_type=related_type, related_id=related_id,
+            search=search
+        )
     except Exception as e:
         logging.error(f"Error fetching tasks: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to fetch tasks")
@@ -235,7 +253,7 @@ def update_task_by_id(
 ):
     """Update a specific task"""
     try:
-        updated_task = update_task(task_id, task_update)
+        updated_task = update_task(task_id, task_update, current_user.id)
         if not updated_task:
             raise HTTPException(status_code=404, detail="Task not found")
         return updated_task

@@ -276,6 +276,35 @@ class TaskBoardScope(str, Enum):
     TEAM = "team"
     MY = "my"
 
+# Task Priority Schemas (Lookup Table)
+class TaskPriorityBase(BaseModel):
+    name: str
+    description: Optional[str] = None
+    color_code: str = "#3B82F6"
+    is_active: bool = True
+
+class TaskPriorityCreate(TaskPriorityBase):
+    pass
+
+class TaskPriorityOut(TaskPriorityBase):
+    id: int
+    created_at: datetime
+
+# Task Status Schemas (Lookup Table)
+class TaskStatusBase(BaseModel):
+    name: str
+    description: Optional[str] = None
+    color_code: str = "#3B82F6"
+    is_active: bool = True
+    sort_order: int = 0
+
+class TaskStatusCreate(TaskStatusBase):
+    pass
+
+class TaskStatusOut(TaskStatusBase):
+    id: int
+    created_at: datetime
+
 # Task Board Schemas
 class TaskBoardBase(BaseModel):
     name: str

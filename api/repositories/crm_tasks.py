@@ -11,7 +11,9 @@ from ..schemas.crm import (
     TaskBoardCreate, TaskBoardUpdate, TaskBoardOut,
     TaskColumnCreate, TaskColumnUpdate, TaskColumnOut,
     TaskActivityCreate, TaskActivityOut,
-    TaskPriority, TaskStatus, TaskBoardScope
+    TaskPriority, TaskStatus, TaskBoardScope,
+    TaskPriorityCreate, TaskPriorityOut,
+    TaskStatusCreate, TaskStatusOut
 )
 
 # ==============================================
@@ -631,3 +633,267 @@ def get_task_activities(task_id: UUID) -> List[TaskActivityOut]:
         except Exception as e:
             logging.error(f"Error fetching task activities: {str(e)}")
             return []
+
+# ==============================================
+# TASK PRIORITY MANAGEMENT FUNCTIONS
+# ==============================================
+
+def create_task_priority(priority_data: TaskPriorityCreate) -> TaskPriorityOut:
+    """Create a new task priority"""
+    if not DB_ENABLED:
+        return TaskPriorityOut(
+            id=1,
+            **priority_data.model_dump(),
+            created_at=datetime.now()
+        )
+    
+    with get_db_connection() as conn:
+        if not conn:
+            raise Exception("Database connection failed")
+        
+        try:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO task_priorities (name, description, color_code, is_active, created_at)
+                    VALUES (%s, %s, %s, %s, %s)
+                    RETURNING id, created_at
+                """, (
+                    priority_data.name, priority_data.description,
+                    priority_data.color_code, priority_data.is_active,
+                    datetime.now()
+                ))
+                
+                result = cur.fetchone()
+                if result:
+                    return TaskPriorityOut(
+                        id=result[0],
+                        name=priority_data.name,
+                        description=priority_data.description,
+                        color_code=priority_data.color_code,
+                        is_active=priority_data.is_active,
+                        created_at=result[1]
+                    )
+                else:
+                    raise Exception("Failed to create task priority")
+                    
+        except Exception as e:
+            logging.error(f"Error creating task priority: {str(e)}")
+            raise
+
+def get_task_priorities() -> List[TaskPriorityOut]:
+    """Get all task priorities"""
+    if not DB_ENABLED:
+        return []
+    
+    with get_db_connection() as conn:
+        if not conn:
+            return []
+        
+        try:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT id, name, description, color_code, is_active, created_at
+                    FROM task_priorities
+                    WHERE is_active = true
+                    ORDER BY name
+                """)
+                
+                results = cur.fetchall()
+                priorities = []
+                
+                for result in results:
+                    priorities.append(TaskPriorityOut(
+                        id=result[0], name=result[1], description=result[2],
+                        color_code=result[3], is_active=result[4],
+                        created_at=result[5]
+                    ))
+                
+                return priorities
+                
+        except Exception as e:
+            logging.error(f"Error fetching task priorities: {str(e)}")
+            return []
+
+def update_task_priority(priority_id: int, priority_data: TaskPriorityCreate) -> Optional[TaskPriorityOut]:
+    """Update a task priority"""
+    if not DB_ENABLED:
+        return None
+    
+    with get_db_connection() as conn:
+        if not conn:
+            return None
+        
+        try:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    UPDATE task_priorities SET name = %s, description = %s, color_code = %s, is_active = %s
+                    WHERE id = %s
+                    RETURNING id, name, description, color_code, is_active, created_at
+                """, (
+                    priority_data.name, priority_data.description,
+                    priority_data.color_code, priority_data.is_active, priority_id
+                ))
+                
+                result = cur.fetchone()
+                if result:
+                    return TaskPriorityOut(
+                        id=result[0], name=result[1], description=result[2],
+                        color_code=result[3], is_active=result[4],
+                        created_at=result[5]
+                    )
+                return None
+                
+        except Exception as e:
+            logging.error(f"Error updating task priority: {str(e)}")
+            return None
+
+def delete_task_priority(priority_id: int) -> bool:
+    """Delete a task priority"""
+    if not DB_ENABLED:
+        return False
+    
+    with get_db_connection() as conn:
+        if not conn:
+            return False
+        
+        try:
+            with conn.cursor() as cur:
+                cur.execute("DELETE FROM task_priorities WHERE id = %s", (priority_id,))
+                return cur.rowcount > 0
+                
+        except Exception as e:
+            logging.error(f"Error deleting task priority: {str(e)}")
+            return False
+
+# ==============================================
+# TASK STATUS MANAGEMENT FUNCTIONS
+# ==============================================
+
+def create_task_status(status_data: TaskStatusCreate) -> TaskStatusOut:
+    """Create a new task status"""
+    if not DB_ENABLED:
+        return TaskStatusOut(
+            id=1,
+            **status_data.model_dump(),
+            created_at=datetime.now()
+        )
+    
+    with get_db_connection() as conn:
+        if not conn:
+            raise Exception("Database connection failed")
+        
+        try:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO task_statuses (name, description, color_code, is_active, sort_order, created_at)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    RETURNING id, created_at
+                """, (
+                    status_data.name, status_data.description,
+                    status_data.color_code, status_data.is_active,
+                    status_data.sort_order, datetime.now()
+                ))
+                
+                result = cur.fetchone()
+                if result:
+                    return TaskStatusOut(
+                        id=result[0],
+                        name=status_data.name,
+                        description=status_data.description,
+                        color_code=status_data.color_code,
+                        is_active=status_data.is_active,
+                        sort_order=status_data.sort_order,
+                        created_at=result[1]
+                    )
+                else:
+                    raise Exception("Failed to create task status")
+                    
+        except Exception as e:
+            logging.error(f"Error creating task status: {str(e)}")
+            raise
+
+def get_task_statuses() -> List[TaskStatusOut]:
+    """Get all task statuses"""
+    if not DB_ENABLED:
+        return []
+    
+    with get_db_connection() as conn:
+        if not conn:
+            return []
+        
+        try:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT id, name, description, color_code, is_active, sort_order, created_at
+                    FROM task_statuses
+                    WHERE is_active = true
+                    ORDER BY sort_order, name
+                """)
+                
+                results = cur.fetchall()
+                statuses = []
+                
+                for result in results:
+                    statuses.append(TaskStatusOut(
+                        id=result[0], name=result[1], description=result[2],
+                        color_code=result[3], is_active=result[4],
+                        sort_order=result[5], created_at=result[6]
+                    ))
+                
+                return statuses
+                
+        except Exception as e:
+            logging.error(f"Error fetching task statuses: {str(e)}")
+            return []
+
+def update_task_status(status_id: int, status_data: TaskStatusCreate) -> Optional[TaskStatusOut]:
+    """Update a task status"""
+    if not DB_ENABLED:
+        return None
+    
+    with get_db_connection() as conn:
+        if not conn:
+            return None
+        
+        try:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    UPDATE task_statuses SET name = %s, description = %s, color_code = %s,
+                                           is_active = %s, sort_order = %s
+                    WHERE id = %s
+                    RETURNING id, name, description, color_code, is_active, sort_order, created_at
+                """, (
+                    status_data.name, status_data.description, status_data.color_code,
+                    status_data.is_active, status_data.sort_order, status_id
+                ))
+                
+                result = cur.fetchone()
+                if result:
+                    return TaskStatusOut(
+                        id=result[0], name=result[1], description=result[2],
+                        color_code=result[3], is_active=result[4],
+                        sort_order=result[5], created_at=result[6]
+                    )
+                return None
+                
+        except Exception as e:
+            logging.error(f"Error updating task status: {str(e)}")
+            return None
+
+def delete_task_status(status_id: int) -> bool:
+    """Delete a task status"""
+    if not DB_ENABLED:
+        return False
+    
+    with get_db_connection() as conn:
+        if not conn:
+            return False
+        
+        try:
+            with conn.cursor() as cur:
+                cur.execute("DELETE FROM task_statuses WHERE id = %s", (status_id,))
+                return cur.rowcount > 0
+                
+        except Exception as e:
+            logging.error(f"Error deleting task status: {str(e)}")
+            return False

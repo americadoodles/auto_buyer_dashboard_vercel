@@ -28,7 +28,7 @@ export default function LeadsPage() {
   };
 
   const handleLeadClick = (leadId: string) => {
-    console.log('Lead clicked:', leadId);
+    // Handle lead click
   };
 
   const handleCreateLead = async () => {
@@ -36,7 +36,7 @@ export default function LeadsPage() {
   };
 
   const handleExportLeads = () => {
-    console.log('Export leads clicked');
+    // Handle export leads
   };
 
   const handleSearch = (search: string) => {
@@ -139,6 +139,7 @@ export default function LeadsPage() {
           onExportLeads={handleExportLeads}
           onSearch={handleSearch}
           onStatusFilter={handleStatusFilter}
+          currentStatusFilter={statusFilter}
           statuses={statuses}
           sources={sources}
           loading={loading}

@@ -37,6 +37,7 @@ interface LeadManagementProps {
   onExportLeads: () => void;
   onSearch?: (search: string) => void;
   onStatusFilter?: (statusId: number | undefined) => void;
+  currentStatusFilter?: number | undefined;
   statuses?: LeadStatus[];
   sources?: LeadSource[];
   loading?: boolean;
@@ -54,17 +55,20 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
   onExportLeads,
   onSearch,
   onStatusFilter,
+  currentStatusFilter,
   statuses,
   sources,
   loading,
   onLeadUpdated,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
   const [assignedFilter, setAssignedFilter] = useState("all");
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
-  console.log("leads: ", leads);
+  
+  // Derive statusFilter from parent's currentStatusFilter prop
+  const statusFilter = currentStatusFilter === undefined ? "all" : currentStatusFilter.toString();
+  
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
     if (onSearch) {
@@ -73,7 +77,6 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
   };
 
   const handleStatusFilterChange = (value: string) => {
-    setStatusFilter(value);
     if (onStatusFilter) {
       const statusId = value === "all" ? undefined : parseInt(value, 10);
       onStatusFilter(statusId);

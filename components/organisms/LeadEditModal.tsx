@@ -27,6 +27,7 @@ export const LeadEditModal: React.FC<LeadEditModalProps> = ({
   statuses = [],
   sources = []
 }) => {
+  console.log('lead', lead);
   // Contact information (editable)
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -425,6 +426,22 @@ export const LeadEditModal: React.FC<LeadEditModalProps> = ({
                   </label>
                   <div className="text-sm text-gray-900 font-semibold">
                     {lead.listing.price ? `$${lead.listing.price.toLocaleString()}` : 'N/A'}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                    Location
+                  </label>
+                  <div className="text-sm text-gray-900">
+                    {lead.listing.location || 'N/A'}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                    Radius
+                  </label>
+                  <div className="text-sm text-gray-900">
+                    {lead.listing.radius !== undefined ? `${lead.listing.radius} miles` : 'N/A'}
                   </div>
                 </div>
               </div>

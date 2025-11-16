@@ -201,6 +201,18 @@ def apply_schema_if_needed() -> None:
                 # ----- users.username column -----
                 if _table_exists(cur, "public.users"):
                     cur.execute("ALTER TABLE public.users ADD COLUMN IF NOT EXISTS username text")
+                    # Add last_login column if it doesn't exist
+                    cur.execute("ALTER TABLE public.users ADD COLUMN IF NOT EXISTS last_login timestamptz")
+                    # Create index for last_login if it doesn't exist
+                    cur.execute("""
+                        CREATE INDEX IF NOT EXISTS idx_users_last_login ON public.users(last_login)
+                    """)
+                    # Update existing users to have their created_at as last_login (best approximation)
+                    cur.execute("""
+                        UPDATE public.users 
+                        SET last_login = created_at 
+                        WHERE last_login IS NULL
+                    """)
                 else:
                     logger.warning("Skipping ALTER users: table does not exist yet")
 

@@ -97,6 +97,7 @@ def get_user_by_email(email: str) -> Optional[UserInDB]:
                 row = cur.fetchone()
                 if row:
                     is_confirmed = bool(row[5])
+                    role_name = row[6] if row[6] else "unknown"  # Fallback if role is NULL
                     logger.info(
                         "Fetched user %s: is_confirmed raw=%s converted=%s",
                         row[1], row[5], is_confirmed
@@ -107,7 +108,7 @@ def get_user_by_email(email: str) -> Optional[UserInDB]:
                         username=row[2],
                         hashed_password=row[3],
                         role_id=row[4],
-                        role=row[6],
+                        role=role_name,
                         is_confirmed=is_confirmed,
                         last_login=row[7],
                     )

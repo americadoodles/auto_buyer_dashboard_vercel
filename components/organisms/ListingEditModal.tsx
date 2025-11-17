@@ -142,16 +142,47 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
   const handleSave = async () => {
     try {
       setSaving(true);
+      
+      // Clean up the form data to remove NaN values and empty strings for numbers
+      const cleanedFormData: ListingUpdate = { ...formData };
+      
+      // Handle price - convert to number or undefined
+      if (formData.price !== undefined) {
+        const priceNum = typeof formData.price === 'string' ? parseFloat(formData.price) : formData.price;
+        cleanedFormData.price = isNaN(priceNum) ? undefined : priceNum;
+      }
+      
+      // Handle miles - convert to number or undefined
+      if (formData.miles !== undefined) {
+        const milesNum = typeof formData.miles === 'string' ? parseInt(formData.miles) : formData.miles;
+        cleanedFormData.miles = isNaN(milesNum) ? undefined : milesNum;
+      }
+      
+      // Handle condition_rating - convert to number or undefined
+      if (formData.condition_rating !== undefined) {
+        const ratingNum = typeof formData.condition_rating === 'string' ? parseInt(formData.condition_rating) : formData.condition_rating;
+        cleanedFormData.condition_rating = isNaN(ratingNum) ? undefined : ratingNum;
+      }
+      
       const updateData: ListingUpdate = {
-        ...formData,
+        ...cleanedFormData,
         images: images  // Always include images array (even if empty) to allow clearing images
       };
+      
+      console.log('Saving listing with data:', updateData);
+      
       const updatedListing = await updateListing(parseInt(listing.id), updateData);
+      
+      console.log('Listing updated successfully:', updatedListing);
+      
+      // Notify parent component of the update (this triggers the refresh)
       onSave(updatedListing);
+      
+      // Close the modal
       onClose();
     } catch (error) {
       console.error('Error updating listing:', error);
-      // You might want to show a toast notification here
+      alert(`Failed to save changes: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
     } finally {
       setSaving(false);
     }
@@ -248,7 +279,10 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
                   <Input
                     type="number"
                     value={formData.price || ''}
-                    onChange={(e) => handleFieldChange('price', parseFloat(e.target.value))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      handleFieldChange('price', value === '' ? undefined : parseFloat(value));
+                    }}
                     placeholder="Enter price"
                   />
                 </div>
@@ -260,7 +294,10 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
                   <Input
                     type="number"
                     value={formData.miles || ''}
-                    onChange={(e) => handleFieldChange('miles', parseInt(e.target.value))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      handleFieldChange('miles', value === '' ? undefined : parseInt(value));
+                    }}
                     placeholder="Enter miles"
                   />
                 </div>
@@ -395,7 +432,10 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
                 </label>
                 <select
                   value={formData.condition_rating || ''}
-                  onChange={(e) => handleFieldChange('condition_rating', parseInt(e.target.value))}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    handleFieldChange('condition_rating', value === '' ? undefined : parseInt(value));
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select condition</option>

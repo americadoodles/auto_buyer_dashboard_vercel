@@ -19,7 +19,7 @@ def get_crm_stats() -> CRMStats:
     """Get comprehensive CRM statistics for dashboard"""
     if not DB_ENABLED:
         return CRMStats(
-            total_leads=0, qualified_leads=0, total_contacts=0,
+            total_leads=0, total_contacts=0,
             active_deals=0, won_deals=0, lost_deals=0,
             total_revenue=Decimal('0'), pending_tasks=0, overdue_tasks=0
         )
@@ -33,9 +33,6 @@ def get_crm_stats() -> CRMStats:
                 # Get lead statistics
                 cur.execute("SELECT COUNT(*) FROM leads")
                 total_leads = cur.fetchone()[0]
-                
-                cur.execute("SELECT COUNT(*) FROM leads WHERE is_qualified = true")
-                qualified_leads = cur.fetchone()[0]
                 
                 # Get contact statistics
                 cur.execute("SELECT COUNT(*) FROM contacts WHERE is_active = true")
@@ -77,7 +74,6 @@ def get_crm_stats() -> CRMStats:
                 
                 return CRMStats(
                     total_leads=total_leads,
-                    qualified_leads=qualified_leads,
                     total_contacts=total_contacts,
                     active_deals=active_deals,
                     won_deals=won_deals,
@@ -95,8 +91,8 @@ def get_lead_conversion_metrics() -> LeadConversionMetrics:
     """Get lead conversion metrics"""
     if not DB_ENABLED:
         return LeadConversionMetrics(
-            leads_created=0, leads_contacted=0, leads_qualified=0,
-            leads_converted=0, conversion_rate=0.0
+            total_leads=0, converted_leads=0,
+            conversion_rate=0.0, avg_score=0.0
         )
     
     with get_db_connection() as conn:
@@ -105,61 +101,33 @@ def get_lead_conversion_metrics() -> LeadConversionMetrics:
         
         try:
             with conn.cursor() as cur:
-                # Get lead counts by status
+                # Get lead counts
                 cur.execute("SELECT COUNT(*) FROM leads")
-                leads_created = cur.fetchone()[0]
+                total_leads = cur.fetchone()[0]
                 
                 cur.execute("""
-                    SELECT COUNT(*) FROM leads l
-                    LEFT JOIN lead_statuses ls ON l.lead_status_id = ls.id
-                    WHERE ls.name = 'Contacted' OR l.lead_status_id IS NOT NULL
-                """)
-                leads_contacted = cur.fetchone()[0]
-                
-                cur.execute("SELECT COUNT(*) FROM leads WHERE is_qualified = true")
-                leads_qualified = cur.fetchone()[0]
-                
-                cur.execute("""
-                    SELECT COUNT(*) FROM leads l
-                    LEFT JOIN lead_statuses ls ON l.lead_status_id = ls.id
-                    WHERE ls.name = 'Converted' OR l.converted_at IS NOT NULL
-                """)
-                leads_converted = cur.fetchone()[0]
-                
-                # Calculate conversion rate
-                conversion_rate = (leads_converted / leads_created * 100) if leads_created > 0 else 0.0
-                
-                # Calculate average times (simplified)
-                cur.execute("""
-                    SELECT AVG(EXTRACT(EPOCH FROM (updated_at - created_at))/3600) as avg_hours
-                    FROM leads 
-                    WHERE lead_status_id IS NOT NULL
-                """)
-                avg_time_to_contact = cur.fetchone()[0]
-                
-                cur.execute("""
-                    SELECT AVG(EXTRACT(EPOCH FROM (qualified_at - created_at))/3600) as avg_hours
-                    FROM leads 
-                    WHERE qualified_at IS NOT NULL
-                """)
-                avg_time_to_qualify = cur.fetchone()[0]
-                
-                cur.execute("""
-                    SELECT AVG(EXTRACT(EPOCH FROM (converted_at - created_at))/3600) as avg_hours
-                    FROM leads 
+                    SELECT COUNT(*) FROM leads 
                     WHERE converted_at IS NOT NULL
                 """)
-                avg_time_to_convert = cur.fetchone()[0]
+                converted_leads = cur.fetchone()[0]
+                
+                # Calculate conversion rate
+                conversion_rate = (converted_leads / total_leads * 100) if total_leads > 0 else 0.0
+                
+                # Calculate average lead score
+                cur.execute("""
+                    SELECT AVG(lead_score) as avg_score
+                    FROM leads 
+                    WHERE lead_score IS NOT NULL
+                """)
+                result = cur.fetchone()
+                avg_score = float(result[0]) if result and result[0] is not None else 0.0
                 
                 return LeadConversionMetrics(
-                    leads_created=leads_created,
-                    leads_contacted=leads_contacted,
-                    leads_qualified=leads_qualified,
-                    leads_converted=leads_converted,
+                    total_leads=total_leads,
+                    converted_leads=converted_leads,
                     conversion_rate=conversion_rate,
-                    avg_time_to_contact=avg_time_to_contact,
-                    avg_time_to_qualify=avg_time_to_qualify,
-                    avg_time_to_convert=avg_time_to_convert
+                    avg_score=avg_score
                 )
                 
         except Exception as e:

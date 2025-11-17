@@ -344,7 +344,18 @@ def list_listings(
                         COALESCE(s.score, 0) AS score,
                         s.buy_max,
                         COALESCE(s.reason_codes, ARRAY[]::text[]) AS reason_codes,
-                        l.payload
+                        l.payload,
+                        l.notes,
+                        l.condition_rating,
+                        l.interior_color,
+                        l.exterior_color,
+                        l.transmission,
+                        l.fuel_type,
+                        l.drivetrain,
+                        l.engine_size,
+                        l.body_style,
+                        l.updated_at,
+                        l.updated_by
                         FROM (
                         SELECT * FROM listings """ + where_clause + """
                         ) l
@@ -375,7 +386,7 @@ def list_listings(
                     results = cur.fetchall()
                     logging.info(f"Query returned {len(results)} raw results")
                     out: list[ListingOut] = []
-                    for rid, vehicle_key, vin, year, make, model, trim, miles, price, dom, source, location, buyer_id, images, buyer_username, score, buy_max, reason_codes, payload in results:
+                    for rid, vehicle_key, vin, year, make, model, trim, miles, price, dom, source, location, buyer_id, images, buyer_username, score, buy_max, reason_codes, payload, notes, condition_rating, interior_color, exterior_color, transmission, fuel_type, drivetrain, engine_size, body_style, updated_at, updated_by in results:
                         # Extract decision data from payload if available
                         decision = None
                         status = ""
@@ -390,7 +401,18 @@ def list_listings(
                             location=location, buyer_id=buyer_id, buyer_username=buyer_username,
                             radius=25, reasonCodes=reason_codes or [],
                             buyMax=float(buy_max) if buy_max is not None else None,
-                            status=status, score=int(score) if score is not None else None, decision=decision, images=images or []
+                            status=status, score=int(score) if score is not None else None, decision=decision, images=images or [],
+                            notes=notes,
+                            condition_rating=condition_rating,
+                            interior_color=interior_color,
+                            exterior_color=exterior_color,
+                            transmission=transmission,
+                            fuel_type=fuel_type,
+                            drivetrain=drivetrain,
+                            engine_size=engine_size,
+                            body_style=body_style,
+                            updated_at=updated_at,
+                            updated_by=updated_by
                         ))
                     logging.info(f"Returning {len(out)} processed listings")
                     return out
@@ -432,7 +454,18 @@ def list_listings_by_buyer(
                             s.buy_max, 
                             COALESCE(s.reason_codes, ARRAY[]::text[]) AS reason_codes,
                             l.created_at,
-                            l.payload
+                            l.payload,
+                            l.notes,
+                            l.condition_rating,
+                            l.interior_color,
+                            l.exterior_color,
+                            l.transmission,
+                            l.fuel_type,
+                            l.drivetrain,
+                            l.engine_size,
+                            l.body_style,
+                            l.updated_at,
+                            l.updated_by
                         FROM listings l
                         LEFT JOIN vehicles v ON v.vehicle_key = l.vehicle_key
                         LEFT JOIN (
@@ -472,7 +505,9 @@ def list_listings_by_buyer(
                     for (
                         rid, vehicle_key, vin, year, make, model, trim, miles, price, dom,
                         source, location, buyer_id, images, buyer_username, score, buy_max,
-                        reason_codes, created_at, payload
+                        reason_codes, created_at, payload, notes, condition_rating, interior_color,
+                        exterior_color, transmission, fuel_type, drivetrain, engine_size,
+                        body_style, updated_at, updated_by
                     ) in results:
                         
                         # Extract decision data from payload if available
@@ -504,7 +539,18 @@ def list_listings_by_buyer(
                             status=status,
                             score=int(score) if score is not None else None,
                             decision=decision,
-                            images=images or []
+                            images=images or [],
+                            notes=notes,
+                            condition_rating=condition_rating,
+                            interior_color=interior_color,
+                            exterior_color=exterior_color,
+                            transmission=transmission,
+                            fuel_type=fuel_type,
+                            drivetrain=drivetrain,
+                            engine_size=engine_size,
+                            body_style=body_style,
+                            updated_at=updated_at,
+                            updated_by=updated_by
                         ))
                     logging.info(f"Returning {len(out)} processed listings for buyer {buyer_id}")
                     return out

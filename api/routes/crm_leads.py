@@ -43,6 +43,7 @@ def get_all_leads(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     status_id: Optional[int] = Query(None),
+    source_id: Optional[int] = Query(None),
     assigned_to: Optional[UUID] = Query(None),
     search: Optional[str] = Query(None),
     current_user: UserOut = Depends(get_current_user)
@@ -50,7 +51,7 @@ def get_all_leads(
     """Get all leads with optional filtering"""
     try:
         return list_leads(skip=skip, limit=limit, status_id=status_id, 
-                         assigned_to=assigned_to, search=search)
+                         source_id=source_id, assigned_to=assigned_to, search=search)
     except Exception as e:
         logging.error(f"Error fetching leads: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to fetch leads")

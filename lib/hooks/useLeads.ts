@@ -7,6 +7,7 @@ interface UseLeadsParams {
   skip?: number;
   limit?: number;
   status_id?: number;
+  source_id?: number;
   assigned_to?: string;
   search?: string;
 }
@@ -32,7 +33,7 @@ export const useLeads = (params?: UseLeadsParams) => {
 
   useEffect(() => {
     fetchLeads();
-  }, [params?.skip, params?.limit, params?.status_id, params?.assigned_to, params?.search]);
+  }, [params?.skip, params?.limit, params?.status_id, params?.source_id, params?.assigned_to, params?.search]);
 
   const refreshLeads = () => {
     fetchLeads();

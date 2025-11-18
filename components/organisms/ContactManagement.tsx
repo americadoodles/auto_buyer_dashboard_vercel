@@ -10,6 +10,7 @@ import { Input } from '../atoms/Input';
 import { Icon } from '../atoms/Icon';
 import { Pagination } from '../molecules/Pagination';
 import { VehicleInfoModal } from './VehicleInfoModal';
+import { ContactEditModal } from './ContactEditModal';
 import { Listing } from '../../lib/types/listing';
 
 interface Contact {
@@ -21,6 +22,7 @@ interface Contact {
   mobile: string;
   company: string;
   job_title: string;
+  notes?: string;
   contact_type: {
     id: number;
     name: string;
@@ -51,6 +53,7 @@ interface ContactManagementProps {
   onContactClick: (contactId: string) => void;
   onCreateContact: () => void;
   onExportContacts: () => void;
+  onContactUpdated?: () => void;
 }
 
 export const ContactManagement: React.FC<ContactManagementProps> = ({
@@ -61,7 +64,8 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
   onPageChange,
   onContactClick,
   onCreateContact,
-  onExportContacts
+  onExportContacts,
+  onContactUpdated
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -69,6 +73,8 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
   const [assignedFilter, setAssignedFilter] = useState('all');
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
   const [selectedVehicleListing, setSelectedVehicleListing] = useState<Listing | undefined>(undefined);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedContact, setSelectedContact] = useState<Contact | undefined>(undefined);
 
   const getTypeColor = (type: string) => {
     switch (type.toLowerCase()) {
@@ -110,6 +116,25 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
   const handleCloseVehicleModal = () => {
     setIsVehicleModalOpen(false);
     setSelectedVehicleListing(undefined);
+  };
+
+  const handleEditContact = (e: React.MouseEvent, contact: Contact) => {
+    e.stopPropagation(); // Prevent row click
+    setSelectedContact(contact);
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setSelectedContact(undefined);
+  };
+
+  const handleContactSaved = (updatedContact: any) => {
+    handleCloseEditModal();
+    // Notify parent to refresh the contacts list
+    if (onContactUpdated) {
+      onContactUpdated();
+    }
   };
 
   return (
@@ -334,7 +359,12 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
                         >
                           <Icon name="eye" className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={(e) => handleEditContact(e, contact)}
+                          title="Edit Contact"
+                        >
                           <Icon name="edit" className="w-4 h-4" />
                         </Button>
                         <Button variant="ghost" size="sm">
@@ -368,6 +398,29 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
         onClose={handleCloseVehicleModal}
         listing={selectedVehicleListing}
       />
+
+      {/* Contact Edit Modal */}
+      {selectedContact && (
+        <ContactEditModal
+          contact={{
+            id: selectedContact.id,
+            first_name: selectedContact.first_name,
+            last_name: selectedContact.last_name,
+            email: selectedContact.email,
+            phone: selectedContact.phone,
+            mobile: selectedContact.mobile,
+            company: selectedContact.company,
+            job_title: selectedContact.job_title,
+            notes: selectedContact.notes || '',
+            is_active: selectedContact.is_active,
+            created_at: selectedContact.created_at,
+            updated_at: selectedContact.updated_at
+          }}
+          isOpen={isEditModalOpen}
+          onClose={handleCloseEditModal}
+          onSave={handleContactSaved}
+        />
+      )}
     </div>
   );
 };

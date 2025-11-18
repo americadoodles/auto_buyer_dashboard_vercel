@@ -55,6 +55,7 @@ export default function ContactsPage() {
         mobile: contact.mobile || contact.phone || '',
         company: contact.company || '',
         job_title: contact.job_title || '',
+        notes: contact.notes || '',
         contact_type: contact.contact_type ? {
           id: contact.contact_type.id || 0,
           name: contact.contact_type.name || 'Contact',
@@ -176,6 +177,7 @@ export default function ContactsPage() {
           onContactClick={handleContactClick}
           onCreateContact={handleCreateContact}
           onExportContacts={handleExportContacts}
+          onContactUpdated={refreshLeads}
         />
       </div>
     </AdminLayout>

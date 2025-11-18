@@ -80,7 +80,9 @@ export default function ContactsPage() {
           id: lead.status.id,
           name: lead.status.name,
           color: lead.status.color_code
-        } : undefined
+        } : undefined,
+        // Add listing/vehicle information
+        listing: lead.listing
       };
     }).filter((contact): contact is NonNullable<typeof contact> => contact !== null);
   }, [convertedLeadsWithContacts]);

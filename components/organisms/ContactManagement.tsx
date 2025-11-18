@@ -32,6 +32,11 @@ interface Contact {
   created_at: string;
   updated_at: string;
   last_contact: string;
+  status?: {
+    id: number;
+    name: string;
+    color: string;
+  };
 }
 
 interface ContactManagementProps {
@@ -80,6 +85,15 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
     if (diffDays < 7) return `${diffDays} days ago`;
     if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
     return date.toLocaleDateString();
+  };
+
+  const formatCalendarDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
   };
 
   return (
@@ -235,13 +249,12 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
           <table className="min-w-full divide-y divide-gray-200">
             <TableHeader
               columns={[
+                { key: 'updated_at', label: 'Updated At', sortable: true },
                 { key: 'name', label: 'Name', sortable: true },
                 { key: 'company', label: 'Company', sortable: true },
                 { key: 'email', label: 'Email', sortable: true },
                 { key: 'phone', label: 'Phone', sortable: true },
-                { key: 'type', label: 'Type', sortable: true },
                 { key: 'assigned', label: 'Assigned To', sortable: true },
-                { key: 'last_contact', label: 'Last Contact', sortable: true },
                 { key: 'status', label: 'Status', sortable: true },
                 { key: 'actions', label: 'Actions', sortable: false }
               ]}
@@ -249,12 +262,15 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
             <tbody className="bg-white divide-y divide-gray-200">
               {contacts.map((contact) => (
                 <TableRow key={contact.id} onClick={() => onContactClick(contact.id)} className="cursor-pointer hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {formatCalendarDate(contact.updated_at)}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10">
                         <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
                           <span className="text-sm font-medium text-gray-700">
-                            {contact.first_name[0]}{contact.last_name[0]}
+                            {contact.first_name?.[0] || ''}{contact.last_name?.[0] || ''}
                           </span>
                         </div>
                       </div>
@@ -269,29 +285,27 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {contact.company}
+                    {contact.company || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {contact.email}
+                    {contact.email || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {contact.phone || contact.mobile}
+                    {contact.phone || contact.mobile || '-'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {contact.assigned_to?.username || 'Unassigned'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge color={getTypeColor(contact.contact_type.name)}>
-                      {contact.contact_type.name}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {contact.assigned_to.username}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(contact.last_contact)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge color={contact.is_active ? 'green' : 'gray'}>
-                      {contact.is_active ? 'Active' : 'Inactive'}
-                    </Badge>
+                    {contact.status ? (
+                      <Badge color={contact.status.color || 'blue'}>
+                        {contact.status.name}
+                      </Badge>
+                    ) : (
+                      <Badge color={contact.is_active ? 'green' : 'gray'}>
+                        {contact.is_active ? 'Active' : 'Inactive'}
+                      </Badge>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">

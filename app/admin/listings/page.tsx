@@ -39,6 +39,7 @@ export default function AdminListingsPage() {
     notify,
     notifySlack,
     triggerWorkflow,
+    updateListingInState,
   } = useListings();
 
   // Filtering and search state
@@ -340,6 +341,7 @@ export default function AdminListingsPage() {
               onSelectAll={handleSelectAll}
               isAllSelected={isAllSelected}
               isIndeterminate={isIndeterminate}
+              onListingUpdated={updateListingInState}
             />
           </div>
         </div>

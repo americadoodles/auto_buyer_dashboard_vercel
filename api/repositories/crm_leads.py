@@ -302,7 +302,8 @@ def delete_lead(lead_id: UUID) -> bool:
             return False
 
 def list_leads(skip: int = 0, limit: int = 100, status_id: Optional[int] = None,
-               assigned_to: Optional[UUID] = None, search: Optional[str] = None) -> List[LeadOut]:
+               source_id: Optional[int] = None, assigned_to: Optional[UUID] = None, 
+               search: Optional[str] = None) -> List[LeadOut]:
     """List leads with optional filtering and all nested objects"""
     if not DB_ENABLED:
         return []
@@ -319,6 +320,10 @@ def list_leads(skip: int = 0, limit: int = 100, status_id: Optional[int] = None,
                 if status_id is not None:
                     where_conditions.append("l.status_id = %s")
                     params.append(status_id)
+                
+                if source_id is not None:
+                    where_conditions.append("l.source_id = %s")
+                    params.append(source_id)
                 
                 if assigned_to is not None:
                     where_conditions.append("l.assigned_to = %s")

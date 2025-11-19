@@ -32,6 +32,7 @@ export const leadsApi = {
     skip?: number;
     limit?: number;
     status_id?: number;
+    source_id?: number;
     assigned_to?: string;
     search?: string;
   }): Promise<Lead[]> {

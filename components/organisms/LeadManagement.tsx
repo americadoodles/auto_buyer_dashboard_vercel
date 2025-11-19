@@ -13,12 +13,16 @@ import { LeadEditModal } from "./LeadEditModal";
 import { Lead as BaseLead, LeadStatus, LeadSource } from "../../lib/types/lead";
 
 // Extended Lead type with transformed fields for UI display
-type Lead = Omit<BaseLead, 'status' | 'assigned_to'> & {
+type Lead = Omit<BaseLead, 'status' | 'assigned_to' | 'source'> & {
   // These fields are transformed in the parent component
   status: {
     id: number;
     name: string;
     color: string;
+  };
+  source?: {
+    id: number;
+    name: string;
   };
   assigned_to: {
     id: string;
@@ -37,8 +41,17 @@ interface LeadManagementProps {
   onExportLeads: () => void;
   onSearch?: (search: string) => void;
   onStatusFilter?: (statusId: number | undefined) => void;
+  onSourceFilter?: (sourceId: number | undefined) => void;
+  onAssignedToFilter?: (assignedTo: string | undefined) => void;
+  onLocationFilter?: (location: string | undefined) => void;
+  currentStatusFilter?: number | undefined;
+  currentSourceFilter?: number | undefined;
+  currentAssignedToFilter?: string | undefined;
+  currentLocationFilter?: string | undefined;
   statuses?: LeadStatus[];
   sources?: LeadSource[];
+  assignedToUsers?: Array<{ id: string; username: string }>;
+  locations?: string[];
   loading?: boolean;
   onLeadUpdated?: () => void;
 }
@@ -54,17 +67,29 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
   onExportLeads,
   onSearch,
   onStatusFilter,
+  onSourceFilter,
+  onAssignedToFilter,
+  onLocationFilter,
+  currentStatusFilter,
+  currentSourceFilter,
+  currentAssignedToFilter,
+  currentLocationFilter,
   statuses,
   sources,
+  assignedToUsers,
+  locations,
   loading,
   onLeadUpdated,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [sourceFilter, setSourceFilter] = useState("all");
-  const [assignedFilter, setAssignedFilter] = useState("all");
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
-  console.log("leads: ", leads);
+  
+  // Derive filter values from parent props
+  const statusFilter = currentStatusFilter === undefined ? "all" : currentStatusFilter.toString();
+  const sourceFilter = currentSourceFilter === undefined ? "all" : currentSourceFilter.toString();
+  const assignedFilter = currentAssignedToFilter === undefined ? "all" : currentAssignedToFilter;
+  const locationFilter = currentLocationFilter === undefined ? "all" : currentLocationFilter;
+  
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
     if (onSearch) {
@@ -73,10 +98,30 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
   };
 
   const handleStatusFilterChange = (value: string) => {
-    setStatusFilter(value);
     if (onStatusFilter) {
       const statusId = value === "all" ? undefined : parseInt(value, 10);
       onStatusFilter(statusId);
+    }
+  };
+
+  const handleSourceFilterChange = (value: string) => {
+    if (onSourceFilter) {
+      const sourceId = value === "all" ? undefined : parseInt(value, 10);
+      onSourceFilter(sourceId);
+    }
+  };
+
+  const handleAssignedToFilterChange = (value: string) => {
+    if (onAssignedToFilter) {
+      const assignedTo = value === "all" ? undefined : value;
+      onAssignedToFilter(assignedTo);
+    }
+  };
+
+  const handleLocationFilterChange = (value: string) => {
+    if (onLocationFilter) {
+      const location = value === "all" ? undefined : value;
+      onLocationFilter(location);
     }
   };
 
@@ -129,7 +174,7 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
 
         {/* Filters */}
         <Card className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Search
@@ -176,15 +221,26 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
               </label>
               <select
                 value={sourceFilter}
-                onChange={(e) => setSourceFilter(e.target.value)}
+                onChange={(e) => handleSourceFilterChange(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={loading}
               >
                 <option value="all">All Sources</option>
-                <option value="website">Website</option>
-                <option value="referral">Referral</option>
-                <option value="email">Email Campaign</option>
-                <option value="social">Social Media</option>
-                <option value="vehicle">Vehicle Listing</option>
+                {sources ? (
+                  sources.map((source) => (
+                    <option key={source.id} value={source.id.toString()}>
+                      {source.name}
+                    </option>
+                  ))
+                ) : (
+                  <>
+                    <option value="website">Website</option>
+                    <option value="referral">Referral</option>
+                    <option value="email">Email Campaign</option>
+                    <option value="social">Social Media</option>
+                    <option value="vehicle">Vehicle Listing</option>
+                  </>
+                )}
               </select>
             </div>
             <div>
@@ -193,13 +249,46 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
               </label>
               <select
                 value={assignedFilter}
-                onChange={(e) => setAssignedFilter(e.target.value)}
+                onChange={(e) => handleAssignedToFilterChange(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={loading}
               >
                 <option value="all">All Users</option>
-                <option value="me">Me</option>
-                <option value="john">John Doe</option>
-                <option value="jane">Jane Smith</option>
+                {assignedToUsers ? (
+                  assignedToUsers.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.username}
+                    </option>
+                  ))
+                ) : (
+                  <>
+                    <option value="me">Me</option>
+                    <option value="john">John Doe</option>
+                    <option value="jane">Jane Smith</option>
+                  </>
+                )}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Location
+              </label>
+              <select
+                value={locationFilter}
+                onChange={(e) => handleLocationFilterChange(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={loading}
+              >
+                <option value="all">All Locations</option>
+                {locations && locations.length > 0 ? (
+                  locations.map((location) => (
+                    <option key={location} value={location}>
+                      {location}
+                    </option>
+                  ))
+                ) : (
+                  <option value="">No locations available</option>
+                )}
               </select>
             </div>
           </div>
@@ -300,6 +389,9 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
                   { key: "email", label: "Email", sortable: true },
                   { key: "phone", label: "Phone", sortable: true },
                   { key: "status", label: "Status", sortable: true },
+                  { key: "source", label: "Source", sortable: true },
+                  { key: "assigned_to", label: "Assigned To", sortable: true },
+                  { key: "location", label: "Location", sortable: true },
                   { key: "vin", label: "VIN", sortable: true },
                   { key: "year", label: "Year", sortable: true },
                   { key: "make", label: "Make", sortable: true },
@@ -345,6 +437,15 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
                       <Badge color={lead.status.color}>
                         {lead.status.name}
                       </Badge>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {lead.source?.name || "N/A"}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {lead.assigned_to?.username || "Unassigned"}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {lead.listing?.location || "N/A"}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {lead.listing?.vin || "N/A"}

@@ -5,6 +5,7 @@ from uuid import UUID
 from datetime import datetime
 from ..core.db import DB_ENABLED
 from ..core.db_helpers import get_db_connection
+from ..lib.db.query_builder import QueryBuilder
 from ..schemas.listing import (
     ListingUpdate, 
     ListingActivityOut, ListingOut
@@ -25,36 +26,26 @@ def update_listing(listing_id: int, update_data: ListingUpdate, updated_by: str)
             
         try:
             with conn.cursor() as cur:
-                # Build dynamic update query
-                update_fields = []
-                update_values = []
-                
-                for field, value in update_data.model_dump(exclude_unset=True).items():
-                    if value is not None:
-                        update_fields.append(f"{field} = %s")
-                        update_values.append(value)
-                
-                if not update_fields:
-                    logging.warning(f"No fields to update for listing {listing_id}")
+                # Build dynamic update query using QueryBuilder
+                try:
+                    query, params = QueryBuilder.build_update_query(
+                        table_name="listings",
+                        update_data=update_data.model_dump(exclude_unset=True),
+                        where_clause="id = %s",
+                        where_params=[listing_id],
+                        auto_timestamp=True,
+                        updated_by_field="updated_by",
+                        updated_by_value=updated_by
+                    )
+                    query += " RETURNING *"
+                except ValueError as e:
+                    logging.warning(f"No fields to update for listing {listing_id}: {str(e)}")
                     return None
                 
-                # Add updated_by and updated_at
-                update_fields.append("updated_by = %s")
-                update_fields.append("updated_at = now()")
-                update_values.append(updated_by)
-                update_values.append(listing_id)
-                
-                query = f"""
-                    UPDATE listings 
-                    SET {', '.join(update_fields)}
-                    WHERE id = %s
-                    RETURNING *
-                """
-                
                 logging.info(f"Executing query: {query}")
-                logging.info(f"With values: {update_values}")
+                logging.info(f"With values: {params}")
                 
-                cur.execute(query, update_values)
+                cur.execute(query, params)
                 result = cur.fetchone()
                 
                 if result:
@@ -112,8 +103,6 @@ def update_listing(listing_id: int, update_data: ListingUpdate, updated_by: str)
         except Exception as e:
             logging.error(f"Error updating listing {listing_id}: {str(e)}")
             logging.error(f"Update data: {update_data}")
-            logging.error(f"Update fields: {update_fields}")
-            logging.error(f"Update values: {update_values}")
             return None
     
     return None

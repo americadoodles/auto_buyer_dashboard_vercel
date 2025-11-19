@@ -5,7 +5,7 @@ import { Button } from '../atoms/Button';
 import { Input } from '../atoms/Input';
 import { Icon } from '../atoms/Icon';
 import { leadsApi } from '../../lib/services/leadsApi';
-import { LeadSource, LeadStatus } from '../../lib/types/lead';
+import { LeadSource, LeadStatus, Lead } from '../../lib/types/lead';
 import { createContact } from '../../lib/services/listingManagementApi';
 import { useAuth } from '../../app/auth/useAuth';
 type LeadCreateModalProps = {
@@ -31,6 +31,7 @@ export const LeadCreateModal: React.FC<LeadCreateModalProps> = ({ isOpen, onClos
   const [error, setError] = useState<string | null>(null);
   const [sources, setSources] = useState<LeadSource[]>([]);
   const [statuses, setStatuses] = useState<LeadStatus[]>([]);
+  const [hasExistingContact, setHasExistingContact] = useState(false);
   useEffect(() => {
     if (!isOpen) return;
     const loadMeta = async () => {
@@ -48,6 +49,43 @@ export const LeadCreateModal: React.FC<LeadCreateModalProps> = ({ isOpen, onClos
     loadMeta();
   }, [isOpen]);
 
+  // Load contact information from existing leads for this listing
+  useEffect(() => {
+    if (!isOpen || !listingId) return;
+    
+    const loadListingContact = async () => {
+      try {
+        // Fetch leads and find one associated with this listing
+        const leads = await leadsApi.getLeads({ limit: 1000 });
+        const listingLead = leads.find((lead: Lead) => lead.listing_id === listingId);
+        
+        if (listingLead && listingLead.contact) {
+          const contact = listingLead.contact;
+          // Pre-populate form fields with contact information
+          if (contact.first_name) setFirstName(contact.first_name);
+          if (contact.last_name) setLastName(contact.last_name);
+          if (contact.email) setEmail(contact.email);
+          if (contact.phone) setPhone(contact.phone);
+          if (contact.mobile && !contact.phone) setPhone(contact.mobile);
+          if (contact.company) setCompany(contact.company);
+          if (contact.job_title) setJobTitle(contact.job_title);
+          if (contact.notes) setNotes(contact.notes);
+          // Pre-select source and status if available
+          if (listingLead.source_id) setSourceId(listingLead.source_id);
+          if (listingLead.status_id) setStatusId(listingLead.status_id);
+          setHasExistingContact(true);
+        } else {
+          setHasExistingContact(false);
+        }
+      } catch (e) {
+        // Silently fail - it's okay if we can't load existing contact info
+        console.debug('Could not load listing contact information:', e);
+      }
+    };
+    
+    loadListingContact();
+  }, [isOpen, listingId]);
+
   useEffect(() => {
     if (!isOpen) {
       setFirstName('');
@@ -61,6 +99,7 @@ export const LeadCreateModal: React.FC<LeadCreateModalProps> = ({ isOpen, onClos
       setNotes('');
       setError(null);
       setLoading(false);
+      setHasExistingContact(false);
     }
   }, [isOpen]);
 
@@ -115,7 +154,7 @@ export const LeadCreateModal: React.FC<LeadCreateModalProps> = ({ isOpen, onClos
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl">
         <div className="flex items-center justify-between px-6 py-4 border-b">
-          <h3 className="text-lg font-semibold">New Lead</h3>
+          <h3 className="text-lg font-semibold">{hasExistingContact ? 'Update Contact' : 'New Contact'}</h3>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
             <Icon name="x" className="w-5 h-5" />
           </button>
@@ -186,14 +225,20 @@ export const LeadCreateModal: React.FC<LeadCreateModalProps> = ({ isOpen, onClos
           </div>
 
           {listingId ? (
-            <div className="text-sm text-gray-600">This lead will be linked to listing #{listingId} as a seller contact.</div>
+            <div className="text-sm text-gray-600">
+              {hasExistingContact ? (
+                <span className="text-blue-600">✓ Contact information loaded from existing lead for listing #{listingId}</span>
+              ) : (
+                <span>This lead will be linked to listing #{listingId} as a seller contact.</span>
+              )}
+            </div>
           ) : null}
         </div>
 
         <div className="px-6 py-4 border-t flex justify-end space-x-2">
           <Button variant="outline" onClick={onClose} disabled={loading}>Cancel</Button>
           <Button onClick={handleCreate} disabled={!canSubmit}>
-            {loading ? 'Creating...' : 'Create Lead'}
+            {loading ? (hasExistingContact ? 'Updating...' : 'Creating...') : (hasExistingContact ? 'Update Contact' : 'Create Contact')}
           </Button>
         </div>
       </div>

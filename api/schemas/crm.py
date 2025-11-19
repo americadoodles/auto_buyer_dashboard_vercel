@@ -1,9 +1,10 @@
 # CRM Pydantic Schemas for Auto-Buyer Platform
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Literal
 from datetime import datetime, date
 from uuid import UUID
 from decimal import Decimal
+from enum import Enum
 
 # ==============================================
 # LEAD MANAGEMENT SCHEMAS
@@ -256,14 +257,31 @@ class DealActivityOut(DealActivityBase):
     created_at: datetime
 
 # ==============================================
-# TASK MANAGEMENT SCHEMAS
+# TASK MANAGEMENT SCHEMAS (Kanban Structure)
 # ==============================================
 
+class TaskPriority(str, Enum):
+    HIGH = "High"
+    MEDIUM = "Medium"
+    LOW = "Low"
+
+class TaskStatus(str, Enum):
+    OPEN = "Open"
+    IN_PROGRESS = "InProgress"
+    DONE = "Done"
+    SNOOZED = "Snoozed"
+
+class TaskBoardScope(str, Enum):
+    GLOBAL = "global"
+    TEAM = "team"
+    MY = "my"
+
+# Task Priority Schemas (Lookup Table)
 class TaskPriorityBase(BaseModel):
     name: str
     description: Optional[str] = None
     color_code: str = "#3B82F6"
-    sort_order: int = 0
+    is_active: bool = True
 
 class TaskPriorityCreate(TaskPriorityBase):
     pass
@@ -272,6 +290,7 @@ class TaskPriorityOut(TaskPriorityBase):
     id: int
     created_at: datetime
 
+# Task Status Schemas (Lookup Table)
 class TaskStatusBase(BaseModel):
     name: str
     description: Optional[str] = None
@@ -286,42 +305,87 @@ class TaskStatusOut(TaskStatusBase):
     id: int
     created_at: datetime
 
+# Task Board Schemas
+class TaskBoardBase(BaseModel):
+    name: str
+    scope: TaskBoardScope
+
+class TaskBoardCreate(TaskBoardBase):
+    pass
+
+class TaskBoardUpdate(BaseModel):
+    name: Optional[str] = None
+    scope: Optional[TaskBoardScope] = None
+
+class TaskBoardOut(TaskBoardBase):
+    id: UUID
+    created_at: datetime
+    updated_at: datetime
+
+# Task Column Schemas
+class TaskColumnBase(BaseModel):
+    board_id: UUID
+    name: str
+    wip_limit: Optional[int] = None
+    position: int = 0
+
+class TaskColumnCreate(TaskColumnBase):
+    pass
+
+class TaskColumnUpdate(BaseModel):
+    name: Optional[str] = None
+    wip_limit: Optional[int] = None
+    position: Optional[int] = None
+
+class TaskColumnOut(TaskColumnBase):
+    id: UUID
+    created_at: datetime
+    updated_at: datetime
+
+# Task Schemas
 class TaskBase(BaseModel):
+    related_type: Optional[str] = None  # 'lead', 'contact', 'deal', etc.
+    related_id: Optional[UUID] = None
     title: str
     description: Optional[str] = None
-    assigned_to: Optional[UUID] = None
-    priority_id: Optional[int] = None
-    status_id: Optional[int] = None
-    due_date: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
-    related_lead_id: Optional[UUID] = None
-    related_contact_id: Optional[UUID] = None
-    related_deal_id: Optional[UUID] = None
-    is_recurring: bool = False
-    recurrence_pattern: Optional[str] = None  # 'daily', 'weekly', 'monthly'
+    priority: TaskPriority = TaskPriority.MEDIUM
+    status: TaskStatus = TaskStatus.OPEN
+    column_id: Optional[UUID] = None
+    owner_user_id: Optional[UUID] = None
+    due_at: Optional[datetime] = None
 
 class TaskCreate(TaskBase):
     pass
 
 class TaskUpdate(BaseModel):
+    related_type: Optional[str] = None
+    related_id: Optional[UUID] = None
     title: Optional[str] = None
     description: Optional[str] = None
-    assigned_to: Optional[UUID] = None
-    priority_id: Optional[int] = None
-    status_id: Optional[int] = None
-    due_date: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
-    related_lead_id: Optional[UUID] = None
-    related_contact_id: Optional[UUID] = None
-    related_deal_id: Optional[UUID] = None
-    is_recurring: Optional[bool] = None
-    recurrence_pattern: Optional[str] = None
+    priority: Optional[TaskPriority] = None
+    status: Optional[TaskStatus] = None
+    column_id: Optional[UUID] = None
+    owner_user_id: Optional[UUID] = None
+    due_at: Optional[datetime] = None
 
 class TaskOut(TaskBase):
     id: UUID
-    created_by: UUID
     created_at: datetime
     updated_at: datetime
+
+# Task Activity Schemas
+class TaskActivityBase(BaseModel):
+    task_id: UUID
+    type: str  # 'created', 'updated', 'moved', 'assigned', 'commented', etc.
+    payload_json: Optional[dict] = None
+    user_id: Optional[UUID] = None
+
+class TaskActivityCreate(TaskActivityBase):
+    pass
+
+class TaskActivityOut(TaskActivityBase):
+    id: UUID
+    at: datetime
 
 # ==============================================
 # COMMUNICATION SCHEMAS
@@ -440,10 +504,10 @@ class TaskDashboard(BaseModel):
     title: str
     due_date: Optional[datetime] = None
     priority_name: Optional[str] = None
-    priority_color: Optional[str] = None
     status_name: Optional[str] = None
-    status_color: Optional[str] = None
-    assigned_to_name: Optional[str] = None
+    owner_user_name: Optional[str] = None
+    column_name: Optional[str] = None
+    board_name: Optional[str] = None
     created_at: datetime
 
 class CRMStats(BaseModel):

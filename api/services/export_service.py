@@ -10,6 +10,7 @@ from ..core.db_helpers import get_db_connection
 from ..schemas.export import ExportType
 from ..schemas.listing import ListingOut
 from ..schemas.user import UserOut
+from ..repositories.crm_leads import list_leads
 
 class ExportService:
     @staticmethod
@@ -104,6 +105,123 @@ class ExportService:
                 # Convert to CSV
                 csv_content = ExportService._rows_to_csv(rows, is_admin=True, is_users=True)
                 return csv_content, len(rows)
+    
+    @staticmethod
+    def export_leads_csv(
+        status_id: Optional[int] = None,
+        source_id: Optional[int] = None,
+        assigned_to: Optional[UUID] = None,
+        search: Optional[str] = None
+    ) -> tuple[str, int]:
+        """
+        Export leads to CSV format.
+        Returns (csv_content, record_count)
+        """
+        if not DB_ENABLED:
+            return "", 0
+        
+        # Get all leads with filters (no pagination for export)
+        leads = list_leads(
+            skip=0,
+            limit=10000,  # Large limit for export
+            status_id=status_id,
+            source_id=source_id,
+            assigned_to=assigned_to,
+            search=search
+        )
+        
+        if not leads:
+            return "", 0
+        
+        # Convert leads to CSV
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # CSV headers
+        headers = [
+            "ID", "Status", "Source", "Assigned To", "Contact Name", "Contact Email", 
+            "Contact Phone", "Contact Company", "VIN", "Year", "Make", "Model",
+            "Location", "Price", "Miles", "Lead Score", "Notes", 
+            "Qualified At", "Converted At", "Created At", "Updated At"
+        ]
+        writer.writerow(headers)
+        
+        # Write lead data
+        for lead in leads:
+            contact_name = ""
+            contact_email = ""
+            contact_phone = ""
+            contact_company = ""
+            if lead.contact:
+                contact_name = f"{lead.contact.first_name or ''} {lead.contact.last_name or ''}".strip()
+                contact_email = lead.contact.email or ""
+                contact_phone = lead.contact.phone or lead.contact.mobile or ""
+                contact_company = lead.contact.company or ""
+            
+            status_name = lead.status.name if lead.status else ""
+            source_name = lead.source.name if lead.source else ""
+            assigned_to_name = lead.assigned_to_user.username if lead.assigned_to_user else ""
+            
+            vin = ""
+            year = ""
+            make = ""
+            model = ""
+            location = ""
+            price = ""
+            miles = ""
+            if lead.listing:
+                # Handle both dict and object access
+                if isinstance(lead.listing, dict):
+                    vin = lead.listing.get("vin") or ""
+                    year = str(lead.listing.get("year") or "")
+                    make = lead.listing.get("make") or ""
+                    model = lead.listing.get("model") or ""
+                    location = lead.listing.get("location") or ""
+                    price = str(lead.listing.get("price") or "")
+                    miles = str(lead.listing.get("miles") or "")
+                else:
+                    # Handle Pydantic model or object with attributes
+                    vin = getattr(lead.listing, "vin", "") or ""
+                    year = str(getattr(lead.listing, "year", "") or "")
+                    make = getattr(lead.listing, "make", "") or ""
+                    model = getattr(lead.listing, "model", "") or ""
+                    location = getattr(lead.listing, "location", "") or ""
+                    price = str(getattr(lead.listing, "price", "") or "")
+                    miles = str(getattr(lead.listing, "miles", "") or "")
+            
+            notes = lead.notes or ""
+            lead_score = str(lead.lead_score or 0)
+            qualified_at = lead.qualified_at.strftime('%Y-%m-%d %H:%M:%S') if lead.qualified_at else ""
+            converted_at = lead.converted_at.strftime('%Y-%m-%d %H:%M:%S') if lead.converted_at else ""
+            created_at = lead.created_at.strftime('%Y-%m-%d %H:%M:%S') if lead.created_at else ""
+            updated_at = lead.updated_at.strftime('%Y-%m-%d %H:%M:%S') if lead.updated_at else ""
+            
+            writer.writerow([
+                str(lead.id),
+                status_name,
+                source_name,
+                assigned_to_name,
+                contact_name,
+                contact_email,
+                contact_phone,
+                contact_company,
+                vin,
+                year,
+                make,
+                model,
+                location,
+                price,
+                miles,
+                lead_score,
+                notes,
+                qualified_at,
+                converted_at,
+                created_at,
+                updated_at
+            ])
+        
+        csv_content = output.getvalue()
+        return csv_content, len(leads)
     
     @staticmethod
     def _build_admin_query(start_date: Optional[date], end_date: Optional[date]) -> tuple[str, list]:

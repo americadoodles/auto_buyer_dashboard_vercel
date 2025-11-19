@@ -238,6 +238,14 @@ export const useListings = () => {
     }
   };
 
+  const updateListingInState = (updatedListing: Listing) => {
+    setData(prevData => 
+      prevData.map(listing => 
+        listing.id === updatedListing.id ? updatedListing : listing
+      )
+    );
+  };
+
   return {
     data,
     sortedRows,
@@ -260,6 +268,7 @@ export const useListings = () => {
     endDate,
     notify,
     notifySlack,
-    triggerWorkflow
+    triggerWorkflow,
+    updateListingInState
   };
 };

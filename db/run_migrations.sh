@@ -33,6 +33,9 @@ psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -f db/003_add_user_activity.sql
 echo "Running 004_crm_schema.sql..."
 psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -f db/004_crm_schema.sql
 
+echo "Running 006_add_contact_id_to_leads.sql..."
+psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -f db/006_add_contact_id_to_leads.sql
+
 echo "Running 005_seed_crm_data.sql..."
 psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -f db/005_seed_crm_data.sql
 

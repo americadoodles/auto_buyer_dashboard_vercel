@@ -341,8 +341,13 @@ CREATE INDEX IF NOT EXISTS idx_deal_activities_deal ON deal_activities(deal_id);
 -- VIEWS FOR COMMON QUERIES
 -- ==============================================
 
+-- Drop existing views if they exist (to handle schema changes)
+DROP VIEW IF EXISTS v_lead_summary CASCADE;
+DROP VIEW IF EXISTS v_deal_pipeline CASCADE;
+DROP VIEW IF EXISTS v_task_dashboard CASCADE;
+
 -- Lead summary view
-CREATE OR REPLACE VIEW v_lead_summary AS
+CREATE VIEW v_lead_summary AS
 SELECT 
     l.id,
     l.listing_id,
@@ -368,7 +373,7 @@ LEFT JOIN users u ON l.assigned_to = u.id
 LEFT JOIN listings lst ON l.listing_id = lst.id;
 
 -- Deal pipeline view
-CREATE OR REPLACE VIEW v_deal_pipeline AS
+CREATE VIEW v_deal_pipeline AS
 SELECT 
     d.id,
     d.name,
@@ -387,7 +392,7 @@ LEFT JOIN contacts c ON d.contact_id = c.id
 LEFT JOIN users u ON d.assigned_to = u.id;
 
 -- Task dashboard view (updated for Kanban structure)
-CREATE OR REPLACE VIEW v_task_dashboard AS
+CREATE VIEW v_task_dashboard AS
 SELECT 
     t.id,
     t.title,

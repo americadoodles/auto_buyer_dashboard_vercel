@@ -9,7 +9,8 @@ This document describes the correct order for running database migrations.
 3. **002_migrate_users_role.sql** - Migrates users from old role column to role_id (idempotent)
 4. **003_add_user_activity.sql** - Adds last_login field to users table
 5. **004_crm_schema.sql** - Creates full CRM schema (leads, contacts, deals, tasks, etc.)
-6. **005_seed_crm_data.sql** - Seeds default CRM data and creates unique indexes
+6. **006_add_contact_id_to_leads.sql** - Adds contact_id and other missing columns to existing leads table (idempotent, safe for existing databases)
+7. **005_seed_crm_data.sql** - Seeds default CRM data and creates unique indexes
 
 ## Running Migrations
 
@@ -21,6 +22,7 @@ psql -d your_database -f db/001_seed_roles.sql
 psql -d your_database -f db/002_migrate_users_role.sql
 psql -d your_database -f db/003_add_user_activity.sql
 psql -d your_database -f db/004_crm_schema.sql
+psql -d your_database -f db/006_add_contact_id_to_leads.sql
 psql -d your_database -f db/005_seed_crm_data.sql
 ```
 
@@ -35,7 +37,7 @@ The following files are now consolidated into the numbered migrations above:
 - `migrate_signup_role.sql` → Already handled in `000_base_schema.sql` (user_signup_requests has role_id)
 - `migrate_user_activity.sql` → Consolidated into `003_add_user_activity.sql`
 - `migrate_kanban_tasks.sql` → Consolidated into `004_crm_schema.sql`
-- `migrate_leads_restructure.sql` → Not needed (leads table in `004_crm_schema.sql` already has correct structure)
+- `migrate_leads_restructure.sql` → Consolidated into `006_add_contact_id_to_leads.sql` (handles existing databases)
 - `migrate_dedupe_crm_lookups.sql` → Consolidated into `005_seed_crm_data.sql`
 - `crm_schema.sql` → Consolidated into `004_crm_schema.sql` and `005_seed_crm_data.sql`
 

@@ -154,7 +154,7 @@ export const LeadCreateModal: React.FC<LeadCreateModalProps> = ({ isOpen, onClos
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl">
         <div className="flex items-center justify-between px-6 py-4 border-b">
-          <h3 className="text-lg font-semibold">New Lead</h3>
+          <h3 className="text-lg font-semibold">{hasExistingContact ? 'Update Contact' : 'New Contact'}</h3>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
             <Icon name="x" className="w-5 h-5" />
           </button>
@@ -238,7 +238,7 @@ export const LeadCreateModal: React.FC<LeadCreateModalProps> = ({ isOpen, onClos
         <div className="px-6 py-4 border-t flex justify-end space-x-2">
           <Button variant="outline" onClick={onClose} disabled={loading}>Cancel</Button>
           <Button onClick={handleCreate} disabled={!canSubmit}>
-            {loading ? 'Creating...' : 'Create Lead'}
+            {loading ? (hasExistingContact ? 'Updating...' : 'Creating...') : (hasExistingContact ? 'Update Contact' : 'Create Contact')}
           </Button>
         </div>
       </div>

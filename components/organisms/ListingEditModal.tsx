@@ -13,6 +13,8 @@ import {
 import { X, Plus, User, Phone, Mail, Building, Edit, Trash2, Save, Upload } from 'lucide-react';
 import { LeadCreateModal } from './LeadCreateModal';
 import { ImageCarousel } from './ImageCarousel';
+import { leadsApi } from '../../lib/services/leadsApi';
+import { Lead } from '../../lib/types/lead';
 interface ListingEditModalProps {
   listing: Listing;
   isOpen: boolean;
@@ -44,6 +46,7 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
     notes: ''
   });
   const [creatingContact, setCreatingContact] = useState(false);
+  const [hasExistingContact, setHasExistingContact] = useState(false);
 
   // Initialize form data when modal opens
   useEffect(() => {
@@ -66,6 +69,24 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
       setImages(listing.images || []);
     }
   }, [isOpen, listing]);
+
+  // Check if listing has existing contact information
+  useEffect(() => {
+    if (!isOpen || !listing.id) return;
+    
+    const checkExistingContact = async () => {
+      try {
+        const leads = await leadsApi.getLeads({ limit: 1000 });
+        const listingLead = leads.find((lead: Lead) => lead.listing_id === parseInt(listing.id));
+        setHasExistingContact(!!(listingLead && listingLead.contact));
+      } catch (e) {
+        // Silently fail - default to false
+        setHasExistingContact(false);
+      }
+    };
+    
+    checkExistingContact();
+  }, [isOpen, listing.id]);
 
   // Prevent background scroll when modal is open
   useEffect(() => {
@@ -474,9 +495,9 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
                   className="flex items-center gap-2"
                 >
                   <Plus className="h-4 w-4" />
-                  Create Lead
+                  {hasExistingContact ? 'Update Contact' : 'Create Contact'}
                 </Button>
-                <Button
+                {/* <Button
                   onClick={() => setIsCreateContactOpen(true)}
                   variant="outline"
                   size="sm"
@@ -484,7 +505,7 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
                 >
                   <Plus className="h-4 w-4" />
                   Create Contact
-                </Button>
+                </Button> */}
               </div>
             </div>
           </div>

@@ -1,0 +1,338 @@
+'use client';
+
+import React, { useState, useMemo } from 'react';
+import { Badge } from '../atoms/Badge';
+import { Button } from '../atoms/Button';
+import { Icon } from '../atoms/Icon';
+import { dealsApi } from '../../lib/services/dealsApi';
+
+interface Deal {
+  id: string;
+  name: string;
+  description: string;
+  contact?: {
+    id: string;
+    first_name: string;
+    last_name: string;
+  };
+  deal_value: number;
+  probability: number;
+  expected_close_date: string;
+  deal_stage?: {
+    id: number;
+    name: string;
+    color: string;
+  };
+  deal_category?: {
+    id: number;
+    name: string;
+  };
+  assigned_to?: {
+    id: string;
+    username: string;
+  };
+  is_won: boolean;
+  is_lost: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+interface KanbanStage {
+  name: string;
+  color: string;
+  bgColor: string;
+  borderColor: string;
+}
+
+interface KanbanBoardProps {
+  deals: Deal[];
+  stages: KanbanStage[];
+  dealsByStage: Record<string, Deal[]>;
+  getStageStats: (stageName: string) => { count: number; value: number };
+  formatCurrency: (amount: number) => string;
+  formatDate: (dateString: string) => string;
+  getStageColor: (stageName: string) => string;
+  onDealClick: (dealId: string) => void;
+  onDealUpdated?: () => void;
+  stagesFromDb?: Array<{ id: number; name: string; color_code?: string }>;
+}
+
+export const KanbanBoard: React.FC<KanbanBoardProps> = ({
+  deals,
+  stages,
+  dealsByStage,
+  getStageStats,
+  formatCurrency,
+  formatDate,
+  getStageColor,
+  onDealClick,
+  onDealUpdated,
+  stagesFromDb
+}) => {
+  const [draggedDeal, setDraggedDeal] = useState<Deal | null>(null);
+  const [dragOverStage, setDragOverStage] = useState<string | null>(null);
+
+  // Map stage name to stage ID
+  const getStageIdByName = (stageName: string): number | undefined => {
+    // First try to find in the stagesFromDb prop
+    if (stagesFromDb && stagesFromDb.length > 0) {
+      const stage = stagesFromDb.find(s => 
+        s.name.toLowerCase() === stageName.toLowerCase() ||
+        (stageName.toLowerCase().includes('closed') && s.name.toLowerCase().includes('closed'))
+      );
+      if (stage) return stage.id;
+    }
+    return undefined;
+  };
+
+  // Handle drag start
+  const handleDragStart = (e: React.DragEvent, deal: Deal) => {
+    setDraggedDeal(deal);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', deal.id);
+    // Add visual feedback
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '0.5';
+    }
+  };
+
+  // Handle drag end
+  const handleDragEnd = (e: React.DragEvent) => {
+    setDraggedDeal(null);
+    setDragOverStage(null);
+    // Reset visual feedback
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '1';
+    }
+  };
+
+  // Handle drag over
+  const handleDragOver = (e: React.DragEvent, stageName: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverStage(stageName);
+  };
+
+  // Handle drag leave
+  const handleDragLeave = (e: React.DragEvent) => {
+    // Only clear if we're leaving the drop zone, not entering a child
+    const target = e.currentTarget as HTMLElement;
+    const relatedTarget = e.relatedTarget as HTMLElement;
+    if (!target.contains(relatedTarget)) {
+      setDragOverStage(null);
+    }
+  };
+
+  // Handle drop
+  const handleDrop = async (e: React.DragEvent, targetStageName: string) => {
+    e.preventDefault();
+    setDragOverStage(null);
+
+    if (!draggedDeal) return;
+
+    // Don't update if dropped on the same stage
+    const currentStageName = draggedDeal.deal_stage?.name || '';
+    if (currentStageName.toLowerCase() === targetStageName.toLowerCase() ||
+        (currentStageName.toLowerCase().includes('closed') && targetStageName.toLowerCase() === 'closed')) {
+      setDraggedDeal(null);
+      return;
+    }
+
+    // Get the stage ID
+    const stageId = getStageIdByName(targetStageName);
+    if (!stageId) {
+      console.error(`Could not find stage ID for stage: ${targetStageName}`);
+      setDraggedDeal(null);
+      return;
+    }
+
+    try {
+      // Update the deal's stage
+      await dealsApi.updateDeal(draggedDeal.id, {
+        deal_stage_id: stageId
+      });
+
+      // Call the callback to refresh deals
+      if (onDealUpdated) {
+        onDealUpdated();
+      }
+    } catch (error) {
+      console.error('Error updating deal stage:', error);
+      alert('Failed to update deal stage. Please try again.');
+    } finally {
+      setDraggedDeal(null);
+    }
+  };
+
+  return (
+    <div className="w-full">
+      <div className="flex gap-4 pb-4">
+        {stages.map((stage) => {
+          const stageDeals = dealsByStage[stage.name] || [];
+          const stats = getStageStats(stage.name);
+          const isDragOver = dragOverStage === stage.name;
+          
+          return (
+            <div
+              key={stage.name}
+              className={`flex-1 min-w-0 ${stage.bgColor} rounded-lg border-2 ${isDragOver ? 'border-blue-500 border-dashed' : stage.borderColor} flex flex-col transition-all`}
+              onDragOver={(e) => handleDragOver(e, stage.name)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, stage.name)}
+            >
+              {/* Column Header */}
+              <div className={`p-4 border-b-2 ${stage.borderColor} ${stage.bgColor}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center space-x-2">
+                    <div
+                      className="w-3 h-3 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: stage.color }}
+                    ></div>
+                    <h3 className="font-semibold text-gray-900 truncate">{stage.name}</h3>
+                  </div>
+                  <Badge color={getStageColor(stage.name)}>
+                    {stats.count}
+                  </Badge>
+                </div>
+                <div className="text-xs text-gray-600 font-medium">
+                  {formatCurrency(stats.value)}
+                </div>
+              </div>
+
+              {/* Deal Cards */}
+              <div className="flex-1 p-3 space-y-3">
+                {stageDeals.length === 0 ? (
+                  <div className={`text-center py-8 text-gray-400 text-sm ${isDragOver ? 'border-2 border-dashed border-blue-400 rounded-lg' : ''}`}>
+                    {isDragOver ? 'Drop deal here' : 'No deals in this stage'}
+                  </div>
+                ) : (
+                  stageDeals.map((deal) => (
+                    <div
+                      key={deal.id}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, deal)}
+                      onDragEnd={handleDragEnd}
+                      onClick={() => onDealClick(deal.id)}
+                      className={`bg-white rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md transition-all cursor-move ${
+                        draggedDeal?.id === deal.id ? 'opacity-50' : ''
+                      }`}
+                    >
+                      {/* Deal Header */}
+                      <div className="mb-3">
+                        <h4 className="text-sm font-semibold text-gray-900 mb-1 line-clamp-2">
+                          {deal.name}
+                        </h4>
+                        {deal.description && (
+                          <p className="text-xs text-gray-500 line-clamp-2">
+                            {deal.description}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Deal Value */}
+                      <div className="mb-3">
+                        <div className="text-lg font-bold text-gray-900">
+                          {formatCurrency(deal.deal_value)}
+                        </div>
+                      </div>
+
+                      {/* Contact */}
+                      {deal.contact && (
+                        <div className="mb-3 flex items-center space-x-2">
+                          <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center">
+                            <span className="text-xs font-medium text-gray-700">
+                              {deal.contact.first_name[0]}{deal.contact.last_name[0]}
+                            </span>
+                          </div>
+                          <span className="text-xs text-gray-600">
+                            {deal.contact.first_name} {deal.contact.last_name}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Probability */}
+                      <div className="mb-3">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs text-gray-500">Probability</span>
+                          <span className="text-xs font-medium text-gray-700">{deal.probability}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-1.5">
+                          <div
+                            className="h-1.5 rounded-full"
+                            style={{ 
+                              width: `${deal.probability}%`,
+                              backgroundColor: stage.color
+                            }}
+                          ></div>
+                        </div>
+                      </div>
+
+                      {/* Expected Close Date */}
+                      <div className="mb-3">
+                        <div className="flex items-center space-x-1 text-xs text-gray-500">
+                          <Icon name="calendar" className="w-3 h-3" />
+                          <span>{formatDate(deal.expected_close_date)}</span>
+                        </div>
+                      </div>
+
+                      {/* Assigned To */}
+                      {deal.assigned_to && (
+                        <div className="mb-3">
+                          <div className="flex items-center space-x-1 text-xs text-gray-500">
+                            <Icon name="user" className="w-3 h-3" />
+                            <span>{deal.assigned_to.username}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Actions */}
+                      <div className="flex items-center justify-end space-x-1 pt-2 border-t border-gray-100">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDealClick(deal.id);
+                          }}
+                          className="h-7 w-7 p-0"
+                          title="View Deal"
+                        >
+                          <Icon name="eye" className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Handle edit
+                          }}
+                          className="h-7 w-7 p-0"
+                          title="Edit Deal"
+                        >
+                          <Icon name="edit" className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Handle call
+                          }}
+                          className="h-7 w-7 p-0"
+                          title="Call Contact"
+                        >
+                          <Icon name="phone" className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+

@@ -10,6 +10,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@syncfusion/ej2-react-kanban": "^24.1.47",
     "autoprefixer": "10.4.19",
     "concurrently": "^8.2.2",
     "framer-motion": "11.0.0",

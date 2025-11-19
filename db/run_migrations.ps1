@@ -38,6 +38,10 @@ Write-Host "Running 004_crm_schema.sql..." -ForegroundColor Yellow
 psql -h $Host -U $User -d $Database -f db/004_crm_schema.sql
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+Write-Host "Running 006_add_contact_id_to_leads.sql..." -ForegroundColor Yellow
+psql -h $Host -U $User -d $Database -f db/006_add_contact_id_to_leads.sql
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
 Write-Host "Running 005_seed_crm_data.sql..." -ForegroundColor Yellow
 psql -h $Host -U $User -d $Database -f db/005_seed_crm_data.sql
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

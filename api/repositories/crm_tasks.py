@@ -303,7 +303,7 @@ def get_user_tasks(user_id: UUID) -> List[TaskOut]:
     return list_tasks(owner_user_id=user_id)
 
 def complete_task(task_id: UUID, user_id: UUID) -> bool:
-    """Mark a task as completed"""
+    """Mark a task as completed. Ownership check should be done at the route level."""
     if not DB_ENABLED:
         return True
     
@@ -316,8 +316,8 @@ def complete_task(task_id: UUID, user_id: UUID) -> bool:
                 cur.execute("""
                     UPDATE tasks 
                     SET status = %s, updated_at = %s
-                    WHERE id = %s AND owner_user_id = %s
-                """, (TaskStatus.DONE.value, datetime.now(), task_id, user_id))
+                    WHERE id = %s
+                """, (TaskStatus.DONE.value, datetime.now(), task_id))
                 
                 if cur.rowcount > 0:
                     log_task_activity(task_id, 'completed', {}, user_id)

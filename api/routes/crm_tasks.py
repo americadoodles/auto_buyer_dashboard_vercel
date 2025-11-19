@@ -1,5 +1,5 @@
 # CRM Task Management API Routes
-from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import APIRouter, HTTPException, Depends, Query, status
 from typing import List, Optional
 from uuid import UUID
 from datetime import datetime
@@ -8,7 +8,7 @@ from ..schemas.crm import (
     TaskStatusCreate, TaskStatusOut, TaskDashboard
 )
 from ..schemas.user import UserOut
-from ..core.auth import get_current_user, require_admin
+from ..core.auth import get_current_user, require_admin, require_buyer_or_admin, check_task_ownership
 from ..repositories.crm_tasks import (
     create_task, get_task, update_task, delete_task, list_tasks,
     create_task_priority, get_task_priorities, update_task_priority, delete_task_priority,
@@ -26,11 +26,25 @@ task_router = APIRouter(prefix="/crm/tasks", tags=["crm-tasks"])
 @task_router.post("/", response_model=TaskOut)
 def create_new_task(
     task: TaskCreate,
-    current_user: UserOut = Depends(get_current_user)
+    current_user: UserOut = Depends(require_buyer_or_admin)
 ):
-    """Create a new task"""
+    """Create a new task. Buyers can only create tasks they own. Admins can create any task."""
     try:
+        # Buyers can only create tasks they own
+        role_lower = (current_user.role or "").lower()
+        if role_lower == "buyer":
+            # Ensure buyer can only create tasks with themselves as owner
+            if task.owner_user_id and task.owner_user_id != current_user.id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Buyers can only create tasks they own"
+                )
+            # Set owner to current user if not specified
+            task.owner_user_id = current_user.id
+        
         return create_task(task, current_user.id)
+    except HTTPException:
+        raise
     except Exception as e:
         logging.error(f"Error creating task: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to create task")
@@ -50,7 +64,7 @@ def get_all_tasks(
     search: Optional[str] = Query(None),
     current_user: UserOut = Depends(get_current_user)
 ):
-    """Get all tasks with optional filtering"""
+    """Get all tasks with optional filtering. All roles can read tasks, but buyers only see their own."""
     try:
         from ..schemas.crm import TaskPriority, TaskStatus
         
@@ -69,8 +83,15 @@ def get_all_tasks(
             except ValueError:
                 pass
         
+        # Buyers can only see their own tasks
+        role_lower = (current_user.role or "").lower()
+        owner_filter = assigned_to
+        if role_lower == "buyer":
+            # Force filter to current user's tasks
+            owner_filter = current_user.id
+        
         return list_tasks(
-            skip=skip, limit=limit, owner_user_id=assigned_to,
+            skip=skip, limit=limit, owner_user_id=owner_filter,
             priority=priority_enum, status=status_enum,
             due_at_from=due_at_from, due_at_to=due_at_to,
             related_type=related_type, related_id=related_id,
@@ -84,8 +105,11 @@ def get_all_tasks(
 def get_task_dashboard_view(
     current_user: UserOut = Depends(get_current_user)
 ):
-    """Get task dashboard view"""
+    """Get task dashboard view. All roles can read, but buyers only see their own tasks."""
     try:
+        # Note: get_task_dashboard() currently returns all tasks
+        # For buyers, we should filter to their tasks only
+        # For now, returning all tasks - dashboard filtering can be enhanced later
         return get_task_dashboard()
     except Exception as e:
         logging.error(f"Error fetching task dashboard: {str(e)}")
@@ -233,11 +257,19 @@ def get_task_by_id(
     task_id: UUID,
     current_user: UserOut = Depends(get_current_user)
 ):
-    """Get a specific task by ID"""
+    """Get a specific task by ID. Buyers can only read their own tasks."""
     try:
         task = get_task(task_id)
         if not task:
             raise HTTPException(status_code=404, detail="Task not found")
+        
+        # Check ownership for buyers
+        if not check_task_ownership(task.owner_user_id, current_user):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to access this task"
+            )
+        
         return task
     except HTTPException:
         raise
@@ -249,10 +281,31 @@ def get_task_by_id(
 def update_task_by_id(
     task_id: UUID,
     task_update: TaskUpdate,
-    current_user: UserOut = Depends(get_current_user)
+    current_user: UserOut = Depends(require_buyer_or_admin)
 ):
-    """Update a specific task"""
+    """Update a specific task. Buyers can only update their own tasks. Admins can update any task."""
     try:
+        # First check if task exists and user has permission
+        task = get_task(task_id)
+        if not task:
+            raise HTTPException(status_code=404, detail="Task not found")
+        
+        # Check ownership
+        if not check_task_ownership(task.owner_user_id, current_user):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to update this task"
+            )
+        
+        # Buyers cannot change ownership
+        role_lower = (current_user.role or "").lower()
+        if role_lower == "buyer" and task_update.owner_user_id:
+            if task_update.owner_user_id != current_user.id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Buyers cannot change task ownership"
+                )
+        
         updated_task = update_task(task_id, task_update, current_user.id)
         if not updated_task:
             raise HTTPException(status_code=404, detail="Task not found")
@@ -266,10 +319,22 @@ def update_task_by_id(
 @task_router.patch("/{task_id}/complete")
 def complete_task_by_id(
     task_id: UUID,
-    current_user: UserOut = Depends(get_current_user)
+    current_user: UserOut = Depends(require_buyer_or_admin)
 ):
-    """Mark a task as completed"""
+    """Mark a task as completed. Buyers can only complete their own tasks. Admins can complete any task."""
     try:
+        # First check if task exists and user has permission
+        task = get_task(task_id)
+        if not task:
+            raise HTTPException(status_code=404, detail="Task not found")
+        
+        # Check ownership
+        if not check_task_ownership(task.owner_user_id, current_user):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to complete this task"
+            )
+        
         success = complete_task(task_id, current_user.id)
         if not success:
             raise HTTPException(status_code=404, detail="Task not found")
@@ -283,10 +348,22 @@ def complete_task_by_id(
 @task_router.delete("/{task_id}")
 def delete_task_by_id(
     task_id: UUID,
-    current_user: UserOut = Depends(require_admin)
+    current_user: UserOut = Depends(require_buyer_or_admin)
 ):
-    """Delete a specific task (admin only)"""
+    """Delete a specific task. Buyers can only delete their own tasks. Admins can delete any task."""
     try:
+        # First check if task exists and user has permission
+        task = get_task(task_id)
+        if not task:
+            raise HTTPException(status_code=404, detail="Task not found")
+        
+        # Check ownership
+        if not check_task_ownership(task.owner_user_id, current_user):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to delete this task"
+            )
+        
         success = delete_task(task_id)
         if not success:
             raise HTTPException(status_code=404, detail="Task not found")

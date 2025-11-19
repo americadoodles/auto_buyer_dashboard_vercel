@@ -7,9 +7,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="min-h-screen">
-        <ToastProvider>
-          {children}
-        </ToastProvider>
+        <div className="mx-auto" style={{ maxWidth: '1920px' }}>
+          <ToastProvider>
+            {children}
+          </ToastProvider>
+        </div>
       </body>
     </html>
   );

@@ -155,10 +155,10 @@ export default function DealsPage() {
   return (
     <AdminLayout>
       <div className="p-6">
-        <div className="mb-6">
+        {/* <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Deal Pipeline</h1>
           <p className="text-gray-600 mt-1">Track and manage your sales opportunities</p>
-        </div>
+        </div> */}
         <DealPipeline 
           deals={transformedDeals}
           dealStages={transformedPipeline}
@@ -174,6 +174,7 @@ export default function DealsPage() {
           onCategoryFilter={handleCategoryFilter}
           stages={stages}
           loading={loading}
+          onDealUpdated={refreshDeals}
         />
       </div>
     </AdminLayout>

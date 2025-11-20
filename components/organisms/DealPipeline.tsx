@@ -1,14 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card } from '../molecules/Card';
-import { TableHeader } from '../molecules/TableHeader';
-import { TableRow } from '../molecules/TableRow';
 import { Badge } from '../atoms/Badge';
 import { Button } from '../atoms/Button';
 import { Input } from '../atoms/Input';
 import { Icon } from '../atoms/Icon';
 import { Pagination } from '../molecules/Pagination';
+import { KanbanBoard } from './KanbanBoard';
 
 interface Deal {
   id: string;
@@ -64,6 +63,7 @@ interface DealPipelineProps {
   onCategoryFilter?: (categoryId: number | undefined) => void;
   stages?: Array<{ id: number; name: string; color_code?: string }>;
   loading?: boolean;
+  onDealUpdated?: () => void;
 }
 
 export const DealPipeline: React.FC<DealPipelineProps> = ({
@@ -75,7 +75,9 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
   onPageChange,
   onDealClick,
   onCreateDeal,
-  onExportDeals
+  onExportDeals,
+  onDealUpdated,
+  stages
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [stageFilter, setStageFilter] = useState('all');
@@ -108,8 +110,230 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
     }
   };
 
+  // Sample deals for demonstration (use when no real deals exist)
+  const sampleDeals: Deal[] = [
+    {
+      id: 'sample-1',
+      name: '2023 Toyota Camry Purchase',
+      description: 'Customer interested in purchasing a 2023 Toyota Camry. Budget: $25,000-$30,000',
+      contact: { id: 'c1', first_name: 'John', last_name: 'Smith' },
+      deal_value: 28000,
+      probability: 15,
+      expected_close_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      deal_stage: { id: 1, name: 'Prospecting', color: '#3B82F6' },
+      deal_category: { id: 1, name: 'Used Vehicle Sale' },
+      assigned_to: { id: 'u1', username: 'sales_rep_1' },
+      is_won: false,
+      is_lost: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    },
+    {
+      id: 'sample-2',
+      name: 'Honda Accord Trade-In Deal',
+      description: 'Customer wants to trade in 2019 Honda Accord for a new vehicle',
+      contact: { id: 'c2', first_name: 'Sarah', last_name: 'Johnson' },
+      deal_value: 35000,
+      probability: 30,
+      expected_close_date: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(),
+      deal_stage: { id: 1, name: 'Prospecting', color: '#3B82F6' },
+      deal_category: { id: 3, name: 'Trade-In' },
+      assigned_to: { id: 'u2', username: 'sales_rep_2' },
+      is_won: false,
+      is_lost: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    },
+    {
+      id: 'sample-3',
+      name: 'BMW 3 Series Financing',
+      description: 'High-value customer interested in BMW 3 Series with financing options',
+      contact: { id: 'c3', first_name: 'Michael', last_name: 'Davis' },
+      deal_value: 45000,
+      probability: 40,
+      expected_close_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+      deal_stage: { id: 2, name: 'Qualification', color: '#10B981' },
+      deal_category: { id: 4, name: 'Financing' },
+      assigned_to: { id: 'u1', username: 'sales_rep_1' },
+      is_won: false,
+      is_lost: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    },
+    {
+      id: 'sample-4',
+      name: 'Ford F-150 Commercial Sale',
+      description: 'Business customer needs fleet of 5 Ford F-150 trucks',
+      contact: { id: 'c4', first_name: 'Robert', last_name: 'Wilson' },
+      deal_value: 175000,
+      probability: 55,
+      expected_close_date: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+      deal_stage: { id: 3, name: 'Proposal', color: '#F59E0B' },
+      deal_category: { id: 1, name: 'New Vehicle Sale' },
+      assigned_to: { id: 'u2', username: 'sales_rep_2' },
+      is_won: false,
+      is_lost: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    },
+    {
+      id: 'sample-5',
+      name: 'Tesla Model 3 Purchase',
+      description: 'Customer ready to purchase Tesla Model 3, negotiating final price',
+      contact: { id: 'c5', first_name: 'Emily', last_name: 'Brown' },
+      deal_value: 42000,
+      probability: 80,
+      expected_close_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      deal_stage: { id: 4, name: 'Negotiation', color: '#8B5CF6' },
+      deal_category: { id: 1, name: 'New Vehicle Sale' },
+      assigned_to: { id: 'u1', username: 'sales_rep_1' },
+      is_won: false,
+      is_lost: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    },
+    {
+      id: 'sample-6',
+      name: 'Mercedes-Benz C-Class Sale',
+      description: 'Successfully closed deal for Mercedes-Benz C-Class',
+      contact: { id: 'c6', first_name: 'David', last_name: 'Martinez' },
+      deal_value: 52000,
+      probability: 100,
+      expected_close_date: new Date().toISOString(),
+      deal_stage: { id: 5, name: 'Closed Won', color: '#059669' },
+      deal_category: { id: 1, name: 'New Vehicle Sale' },
+      assigned_to: { id: 'u2', username: 'sales_rep_2' },
+      is_won: true,
+      is_lost: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    },
+    {
+      id: 'sample-7',
+      name: 'Audi A4 Lease Agreement',
+      description: 'Customer exploring lease options for Audi A4',
+      contact: { id: 'c7', first_name: 'Lisa', last_name: 'Anderson' },
+      deal_value: 38000,
+      probability: 25,
+      expected_close_date: new Date(Date.now() + 18 * 24 * 60 * 60 * 1000).toISOString(),
+      deal_stage: { id: 2, name: 'Qualification', color: '#10B981' },
+      deal_category: { id: 4, name: 'Financing' },
+      assigned_to: { id: 'u1', username: 'sales_rep_1' },
+      is_won: false,
+      is_lost: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    },
+    {
+      id: 'sample-8',
+      name: 'Chevrolet Silverado Proposal',
+      description: 'Proposal sent for 2024 Chevrolet Silverado 1500',
+      contact: { id: 'c8', first_name: 'James', last_name: 'Taylor' },
+      deal_value: 48000,
+      probability: 60,
+      expected_close_date: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000).toISOString(),
+      deal_stage: { id: 3, name: 'Proposal', color: '#F59E0B' },
+      deal_category: { id: 1, name: 'New Vehicle Sale' },
+      assigned_to: { id: 'u2', username: 'sales_rep_2' },
+      is_won: false,
+      is_lost: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
+  ];
+
+  // Use sample deals if no real deals exist, otherwise use real deals
+  const dealsToDisplay = deals.length > 0 ? deals : sampleDeals;
+
+  // Define the Kanban stages in order (moved before dealsByStage to avoid dependency issues)
+  const kanbanStages = useMemo(() => [
+    { name: 'Prospecting', color: '#3B82F6', bgColor: 'bg-blue-50', borderColor: 'border-blue-200' },
+    { name: 'Qualification', color: '#10B981', bgColor: 'bg-green-50', borderColor: 'border-green-200' },
+    { name: 'Proposal', color: '#F59E0B', bgColor: 'bg-yellow-50', borderColor: 'border-yellow-200' },
+    { name: 'Negotiation', color: '#8B5CF6', bgColor: 'bg-purple-50', borderColor: 'border-purple-200' },
+    { name: 'Closed', color: '#059669', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200' }
+  ], []);
+
   const totalPipelineValue = dealStages.reduce((sum, stage) => sum + stage.value, 0);
-  const wonDealsValue = deals.filter(deal => deal.is_won).reduce((sum, deal) => sum + deal.deal_value, 0);
+  const wonDealsValue = dealsToDisplay.filter(deal => deal.is_won).reduce((sum, deal) => sum + deal.deal_value, 0);
+
+  // Filter deals based on search and filters
+  const filteredDeals = useMemo(() => {
+    return dealsToDisplay.filter(deal => {
+      // Search filter
+      if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase();
+        const matchesSearch = 
+          deal.name.toLowerCase().includes(searchLower) ||
+          deal.description?.toLowerCase().includes(searchLower) ||
+          deal.contact?.first_name.toLowerCase().includes(searchLower) ||
+          deal.contact?.last_name.toLowerCase().includes(searchLower);
+        if (!matchesSearch) return false;
+      }
+
+      // Stage filter
+      if (stageFilter !== 'all') {
+        const dealStageName = deal.deal_stage?.name.toLowerCase() || '';
+        if (dealStageName !== stageFilter.toLowerCase()) return false;
+      }
+
+      // Category filter
+      if (categoryFilter !== 'all') {
+        const dealCategoryName = deal.deal_category?.name.toLowerCase().replace(/\s+/g, '_') || '';
+        if (dealCategoryName !== categoryFilter) return false;
+      }
+
+      // Assigned filter
+      if (assignedFilter !== 'all') {
+        if (assignedFilter === 'me') {
+          // You might want to check against current user
+          return true; // Placeholder
+        }
+        const assignedUsername = deal.assigned_to?.username.toLowerCase() || '';
+        if (assignedUsername !== assignedFilter.toLowerCase()) return false;
+      }
+
+      return true;
+    });
+  }, [deals, searchTerm, stageFilter, categoryFilter, assignedFilter]);
+
+  // Group deals by stage
+  const dealsByStage = useMemo(() => {
+    const grouped: Record<string, Deal[]> = {};
+    kanbanStages.forEach(stage => {
+      grouped[stage.name] = [];
+    });
+
+    filteredDeals.forEach(deal => {
+      const stageName = deal.deal_stage?.name || '';
+      // Handle "Closed Won" and "Closed Lost" as "Closed"
+      if (stageName.toLowerCase().includes('closed')) {
+        grouped['Closed'].push(deal);
+      } else {
+        // Match exact stage name
+        const matchedStage = kanbanStages.find(s => 
+          s.name.toLowerCase() === stageName.toLowerCase()
+        );
+        if (matchedStage) {
+          grouped[matchedStage.name].push(deal);
+        } else {
+          // Default to Prospecting if no match
+          grouped['Prospecting'].push(deal);
+        }
+      }
+    });
+
+    return grouped;
+  }, [filteredDeals, kanbanStages]);
+
+  // Calculate stage totals
+  const getStageStats = (stageName: string) => {
+    const stageDeals = dealsByStage[stageName] || [];
+    const count = stageDeals.length;
+    const value = stageDeals.reduce((sum, deal) => sum + deal.deal_value, 0);
+    return { count, value };
+  };
+
 
   return (
     <div className="space-y-6">
@@ -255,93 +479,28 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
         </div>
       </Card>
 
-      {/* Deal List */}
-      <Card className="p-6">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <TableHeader
-              columns={[
-                { key: 'name', label: 'Deal Name', sortable: true },
-                { key: 'contact', label: 'Contact', sortable: true },
-                { key: 'value', label: 'Value', sortable: true },
-                { key: 'stage', label: 'Stage', sortable: true },
-                { key: 'probability', label: 'Probability', sortable: true },
-                { key: 'expected_close', label: 'Expected Close', sortable: true },
-                { key: 'assigned', label: 'Assigned To', sortable: true },
-                { key: 'actions', label: 'Actions', sortable: false }
-              ]}
-            />
-            <tbody className="bg-white divide-y divide-gray-200">
-              {deals.map((deal) => (
-                <TableRow key={deal.id} onClick={() => onDealClick(deal.id)} className="cursor-pointer hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{deal.name}</div>
-                      {deal.description && (
-                        <div className="text-sm text-gray-500 truncate max-w-xs">{deal.description}</div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {deal.contact ? `${deal.contact.first_name} ${deal.contact.last_name}` : 'N/A'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {formatCurrency(deal.deal_value)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {deal.deal_stage ? (
-                      <Badge color={getStageColor(deal.deal_stage.name)}>
-                        {deal.deal_stage.name}
-                      </Badge>
-                    ) : (
-                      <span className="text-sm text-gray-500">N/A</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
-                        <div
-                          className="bg-blue-600 h-2 rounded-full"
-                          style={{ width: `${deal.probability}%` }}
-                        ></div>
-                      </div>
-                      <span className="text-sm text-gray-600">{deal.probability}%</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(deal.expected_close_date)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {deal.assigned_to?.username || 'N/A'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
-                      <Button variant="ghost" size="sm">
-                        <Icon name="eye" className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Icon name="edit" className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Icon name="phone" className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </td>
-                </TableRow>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {/* Kanban Board */}
+      <KanbanBoard
+        deals={filteredDeals}
+        stages={kanbanStages}
+        dealsByStage={dealsByStage}
+        getStageStats={getStageStats}
+        formatCurrency={formatCurrency}
+        formatDate={formatDate}
+        getStageColor={getStageColor}
+        onDealClick={onDealClick}
+        onDealUpdated={onDealUpdated}
+        stagesFromDb={stages}
+      />
 
-        {/* Pagination */}
-        <div className="mt-6">
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={onPageChange}
-          />
-        </div>
-      </Card>
+      {/* Pagination */}
+      <div className="mt-6">
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={onPageChange}
+        />
+      </div>
     </div>
   );
 };

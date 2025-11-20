@@ -242,24 +242,98 @@ def list_deals(skip: int = 0, limit: int = 100, stage_id: Optional[int] = None,
                 where_clause = "WHERE " + " AND ".join(where_conditions) if where_conditions else ""
                 
                 cur.execute(f"""
-                    SELECT id, name, description, contact_id, assigned_to, deal_stage_id,
-                           deal_category_id, expected_close_date, actual_close_date,
-                           deal_value, probability, notes, is_won, is_lost, created_by, created_at, updated_at
-                    FROM deals {where_clause}
-                    ORDER BY created_at DESC
+                    SELECT 
+                        d.id, d.name, d.description, d.contact_id, d.assigned_to, d.deal_stage_id,
+                        d.deal_category_id, d.expected_close_date, d.actual_close_date,
+                        d.deal_value, d.probability, d.notes, d.is_won, d.is_lost, d.created_by, d.created_at, d.updated_at,
+                        -- Contact fields
+                        c.id as contact_obj_id, c.first_name, c.last_name,
+                        -- Assigned to user fields
+                        u.id as user_obj_id, u.username, u.email as user_email,
+                        -- Deal category fields
+                        dc.id as category_obj_id, dc.name as category_name, dc.description as category_description, dc.created_at as category_created_at
+                    FROM deals d
+                    LEFT JOIN contacts c ON d.contact_id = c.id
+                    LEFT JOIN users u ON d.assigned_to = u.id
+                    LEFT JOIN deal_categories dc ON d.deal_category_id = dc.id
+                    {where_clause}
+                    ORDER BY d.created_at DESC
                     LIMIT %s OFFSET %s
                 """, params + [limit, skip])
                 
                 results = cur.fetchall()
                 deals = []
                 for result in results:
-                    deals.append(DealOut(
-                        id=result[0], title=result[1], description=result[2], contact_id=result[3],
-                        assigned_to=result[4], deal_stage_id=result[5], deal_category_id=result[6],
-                        expected_close_date=result[7], actual_close_date=result[8],
-                        deal_value=result[9], probability=result[10], notes=result[11],
-                        is_won=result[12], is_lost=result[13], created_by=result[14], created_at=result[15], updated_at=result[16]
-                    ))
+                    from ..schemas.crm import ContactBasic, UserBasic, DealCategoryOut
+                    
+                    deal_data = {
+                        "id": result[0],
+                        "title": result[1] or "",
+                        "description": result[2],
+                        "contact_id": result[3],
+                        "assigned_to": result[4],
+                        "deal_stage_id": result[5],
+                        "deal_category_id": result[6],
+                        "expected_close_date": result[7],
+                        "actual_close_date": result[8],
+                        "deal_value": result[9],
+                        "probability": result[10] or 0,
+                        "notes": result[11],
+                        "is_won": result[12] or False,
+                        "is_lost": result[13] or False,
+                        "created_by": result[14],
+                        "created_at": result[15],
+                        "updated_at": result[16],
+                        "is_active": True
+                    }
+                    
+                    # Add nested objects if they exist
+                    if result[17]:  # contact_obj_id
+                        deal_data["contact"] = ContactBasic(
+                            id=result[17],
+                            first_name=result[18] or "",
+                            last_name=result[19] or ""
+                        )
+                    # Set assigned_to as UserBasic object if user exists, otherwise keep UUID
+                    if result[20] and result[21]:  # user_obj_id and username exist
+                        try:
+                            # Get raw values from database
+                            user_id_raw = result[20]
+                            user_username_raw = result[21]
+                            
+                            # EXPLICIT DEBUG LOGGING
+                            logging.info(f"DEBUG: Creating UserBasic - user_id_raw type: {type(user_id_raw)}, value: {user_id_raw}")
+                            logging.info(f"DEBUG: Creating UserBasic - user_username_raw type: {type(user_username_raw)}, value: {user_username_raw}")
+                            
+                            # Convert to proper types
+                            if not isinstance(user_id_raw, UUID):
+                                user_id_raw = UUID(str(user_id_raw))
+                            if not isinstance(user_username_raw, str):
+                                user_username_raw = str(user_username_raw)
+                            
+                            # Create UserBasic with explicit parameters
+                            user_basic = UserBasic(id=user_id_raw, username=user_username_raw)
+                            
+                            logging.info(f"DEBUG: Created UserBasic - id type: {type(user_basic.id)}, username type: {type(user_basic.username)}")
+                            logging.info(f"DEBUG: Created UserBasic - id value: {user_basic.id}, username value: {user_basic.username}")
+                            
+                            deal_data["assigned_to"] = user_basic
+                        except (ValueError, TypeError, AttributeError) as e:
+                            logging.error(f"Failed to create UserBasic object: {e}, using UUID instead")
+                            deal_data["assigned_to"] = result[4]
+                    # If no user object, assigned_to is already set to UUID (result[4]) above
+                    
+                    # Add deal_category if it exists
+                    if result[23]:  # category_obj_id (index 23: after 17 deal fields + 3 contact fields + 3 user fields)
+                        deal_data["deal_category"] = DealCategoryOut(
+                            id=result[23],
+                            name=result[24] or "",
+                            description=result[25],
+                            is_active=True,
+                            created_at=result[26] if result[26] else datetime.now()
+                        )
+                    
+                    deals.append(DealOut(**deal_data))
                 
                 return deals
                 

@@ -1,6 +1,6 @@
 # CRM Pydantic Schemas for Auto-Buyer Platform
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional, List, Dict, Any, Literal
+from typing import Optional, List, Dict, Any, Literal, Union
 from datetime import datetime, date
 from uuid import UUID
 from decimal import Decimal
@@ -198,7 +198,7 @@ class DealBase(BaseModel):
     title: str  # Frontend uses 'title', maps to 'name' in database
     description: Optional[str] = None
     contact_id: Optional[UUID] = None
-    assigned_to: Optional[UUID] = None
+    assigned_to: Optional[Union[UUID, 'UserBasic']] = None  # Can be UUID or nested UserBasic object
     deal_stage_id: Optional[int] = None
     deal_category_id: Optional[int] = None
     expected_close_date: Optional[date] = None
@@ -237,11 +237,32 @@ class DealUpdate(BaseModel):
     is_lost: Optional[bool] = None
     lost_reason: Optional[str] = None
 
+class ContactBasic(BaseModel):
+    id: UUID
+    first_name: str
+    last_name: str
+
+class UserBasic(BaseModel):
+    id: UUID
+    username: str
+    
+    class Config:
+        from_attributes = True
+        # Ensure proper JSON serialization
+        json_encoders = {
+            UUID: str
+        }
+
 class DealOut(DealBase):
     id: UUID
     created_by: UUID
     created_at: datetime
     updated_at: datetime
+    contact: Optional[ContactBasic] = None
+    deal_category: Optional[DealCategoryOut] = None
+    # assigned_to inherited from DealBase as Union[UUID, UserBasic]
+    # Override to ensure proper serialization
+    model_config = {"from_attributes": True}
 
 class DealActivityBase(BaseModel):
     activity_type: str

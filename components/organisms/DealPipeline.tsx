@@ -273,7 +273,6 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
 
   // Use sample deals if no real deals exist, otherwise use real deals
   const dealsToDisplay = deals.length > 0 ? deals : sampleDeals;
-
   // Define the Kanban stages from database (moved before dealsByStage to avoid dependency issues)
   const kanbanStages = useMemo(() => {
     // Use database stages if available, otherwise fall back to prop stages or default
@@ -354,7 +353,9 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
           // You might want to check against current user
           return true; // Placeholder
         }
-        const assignedUsername = deal.assigned_to?.username.toLowerCase() || '';
+        const assignedUsername = typeof deal.assigned_to === 'object' && deal.assigned_to !== null && 'username' in deal.assigned_to
+          ? deal.assigned_to.username.toLowerCase()
+          : '';
         if (assignedUsername !== assignedFilter.toLowerCase()) return false;
       }
 
@@ -390,7 +391,8 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
   const getStageStats = (stageName: string) => {
     const stageDeals = dealsByStage[stageName] || [];
     const count = stageDeals.length;
-    const value = stageDeals.reduce((sum, deal) => sum + deal.deal_value, 0);
+    const value = stageDeals.reduce((sum, deal) => sum + Number(deal.deal_value), 0);
+    console.log('value: ', value)
     return { count, value };
   };
 
@@ -410,16 +412,15 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
             <Icon name="download" className="w-4 h-4 mr-2" />
             Export
           </Button>
-          <Button onClick={onCreateDeal}>
+          {/* <Button onClick={onCreateDeal}>
             <Icon name="plus" className="w-4 h-4 mr-2" />
             New Deal
-          </Button>
+          </Button> */}
         </div>
       </div>
 
       {/* Pipeline Overview */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Pipeline Stages */}
+      {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Pipeline Stages</h2>
           <div className="space-y-4">
@@ -443,8 +444,6 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
             </div>
           </div>
         </Card>
-
-        {/* Revenue Summary */}
         <Card className="p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Revenue Summary</h2>
           <div className="space-y-4">
@@ -470,7 +469,7 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
             </div>
           </div>
         </Card>
-      </div>
+      </div> */}
 
       {/* Filters */}
       <Card className="p-6">

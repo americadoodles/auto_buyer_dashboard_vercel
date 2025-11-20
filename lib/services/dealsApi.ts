@@ -3,6 +3,8 @@ import { ApiService } from './api';
 
 // Types for Deal data
 export interface Deal {
+  deal_category: any;
+  contact: any;
   id: string;
   title: string;
   description?: string;

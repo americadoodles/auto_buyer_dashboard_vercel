@@ -257,5 +257,96 @@ class SlackService:
                 error=str(e)
             )
 
+    def send_task_notification(self, message: str, task_id: str, owner_email: Optional[str] = None) -> bool:
+        """Send a task notification to Slack"""
+        if not self.enabled:
+            return False
+        
+        try:
+            blocks = [
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": message
+                    }
+                }
+            ]
+            
+            payload = {
+                "channel": self.channel,
+                "blocks": blocks,
+                "text": "Task Notification"
+            }
+            
+            response = requests.post(
+                self.webhook_url,
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                logger.info(f"Successfully sent task notification for task {task_id}")
+                return True
+            else:
+                logger.error(f"Slack webhook failed with status {response.status_code}: {response.text}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Error sending task notification: {str(e)}")
+            return False
+    
+    def send_daily_digest(self, tasks_summary: dict) -> bool:
+        """Send daily task digest to Slack"""
+        if not self.enabled:
+            return False
+        
+        try:
+            message = "*📋 Daily Task Digest*\n\n"
+            
+            if tasks_summary.get("overdue_count", 0) > 0:
+                message += f"⚠️ *Overdue Tasks:* {tasks_summary['overdue_count']}\n"
+            
+            if tasks_summary.get("due_today_count", 0) > 0:
+                message += f"📅 *Due Today:* {tasks_summary['due_today_count']}\n"
+            
+            if tasks_summary.get("new_tasks_count", 0) > 0:
+                message += f"🆕 *New Tasks:* {tasks_summary['new_tasks_count']}\n"
+            
+            blocks = [
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": message
+                    }
+                }
+            ]
+            
+            payload = {
+                "channel": self.channel,
+                "blocks": blocks,
+                "text": "Daily Task Digest"
+            }
+            
+            response = requests.post(
+                self.webhook_url,
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                logger.info("Successfully sent daily digest")
+                return True
+            else:
+                logger.error(f"Slack webhook failed with status {response.status_code}: {response.text}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Error sending daily digest: {str(e)}")
+            return False
+
 # Global instance
 slack_service = SlackService()

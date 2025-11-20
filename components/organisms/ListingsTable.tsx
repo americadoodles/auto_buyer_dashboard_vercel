@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Listing } from '../../lib/types/listing';
-import { TableHeader } from '../molecules/TableHeader';
-import { TableRow } from '../molecules/TableRow';
+import { ListingsTableContent } from '../molecules/ListingsTableContent';
 import { Pagination } from '../molecules/Pagination';
 import { Badge } from '../atoms/Badge';
 import { ListingEditModal } from './ListingEditModal';
@@ -70,25 +69,20 @@ export const ListingsTable: React.FC<ListingsTableProps> = ({
       {/* Desktop/Tablet Table View with Horizontal Scroll */}
       <div className="hidden md:block overflow-x-auto">
         <div className="min-w-max">
-          <TableHeader 
-            sort={sort} 
+          <ListingsTableContent
+            listings={listings}
+            sort={sort}
             onSort={handleSort}
+            onNotify={onNotify}
+            onNotifySlack={onNotifySlack}
+            onTriggerWorkflow={onTriggerWorkflow}
+            onEdit={handleEditListing}
+            selectedListings={selectedListings}
+            onSelectListing={onSelectListing}
             onSelectAll={onSelectAll}
             isAllSelected={isAllSelected}
             isIndeterminate={isIndeterminate}
           />
-          {listings.map(listing => (
-            <TableRow
-              key={listing.id}
-              listing={listing}
-              onNotify={onNotify}
-              onNotifySlack={onNotifySlack}
-              onTriggerWorkflow={onTriggerWorkflow}
-              onEdit={handleEditListing}
-              isSelected={selectedListings.has(listing.id)}
-              onSelect={onSelectListing}
-            />
-          ))}
         </div>
       </div>
       

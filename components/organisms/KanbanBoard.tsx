@@ -5,6 +5,8 @@ import { Badge } from '../atoms/Badge';
 import { Button } from '../atoms/Button';
 import { Icon } from '../atoms/Icon';
 import { dealsApi } from '../../lib/services/dealsApi';
+import { DealCreateModal } from './DealCreateModal';
+import { DealDetailModal } from './DealDetailModal';
 
 interface Deal {
   id: string;
@@ -55,6 +57,7 @@ interface KanbanBoardProps {
   onDealClick: (dealId: string) => void;
   onDealUpdated?: () => void;
   stagesFromDb?: Array<{ id: number; name: string; color_code?: string }>;
+  onCreateDeal?: (stageName: string, stageId?: number) => void;
 }
 
 export const KanbanBoard: React.FC<KanbanBoardProps> = ({
@@ -67,10 +70,17 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   getStageColor,
   onDealClick,
   onDealUpdated,
-  stagesFromDb
+  stagesFromDb,
+  onCreateDeal
 }) => {
   const [draggedDeal, setDraggedDeal] = useState<Deal | null>(null);
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [createModalStageId, setCreateModalStageId] = useState<number | undefined>(undefined);
+  const [createModalStageName, setCreateModalStageName] = useState<string>('');
+  const [hoveredStage, setHoveredStage] = useState<string | null>(null);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
 
   // Map stage name to stage ID
   const getStageIdByName = (stageName: string): number | undefined => {
@@ -179,6 +189,15 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
               onDragOver={(e) => handleDragOver(e, stage.name)}
               onDragLeave={handleDragLeave}
               onDrop={(e) => handleDrop(e, stage.name)}
+              onMouseEnter={() => setHoveredStage(stage.name)}
+              onMouseLeave={() => setHoveredStage(null)}
+              onFocus={() => setHoveredStage(stage.name)}
+              onBlur={(e) => {
+                // Only clear hover if focus is moving outside the stage column
+                if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                  setHoveredStage(null);
+                }
+              }}
             >
               {/* Column Header */}
               <div className={`p-4 border-b-2 ${stage.borderColor} ${stage.bgColor}`}>
@@ -212,7 +231,11 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                       draggable
                       onDragStart={(e) => handleDragStart(e, deal)}
                       onDragEnd={handleDragEnd}
-                      onClick={() => onDealClick(deal.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedDeal(deal);
+                        setDetailModalOpen(true);
+                      }}
                       className={`bg-white rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md transition-all cursor-move ${
                         draggedDeal?.id === deal.id ? 'opacity-50' : ''
                       }`}
@@ -292,7 +315,8 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                           size="sm"
                           onClick={(e) => {
                             e.stopPropagation();
-                            onDealClick(deal.id);
+                            setSelectedDeal(deal);
+                            setDetailModalOpen(true);
                           }}
                           className="h-7 w-7 p-0"
                           title="View Deal"
@@ -328,10 +352,66 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                   ))
                 )}
               </div>
+
+              {/* Create Deal Button - Only show on hover/focus */}
+              {hoveredStage === stage.name && (
+                <div className="p-3 border-t-2 border-gray-200">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const stageId = getStageIdByName(stage.name);
+                      setCreateModalStageId(stageId);
+                      setCreateModalStageName(stage.name);
+                      setCreateModalOpen(true);
+                    }}
+                    className="w-full justify-center"
+                  >
+                    <Icon name="plus" className="w-4 h-4 mr-2" />
+                    Create Deal
+                  </Button>
+                </div>
+              )}
             </div>
           );
         })}
       </div>
+
+      {/* Create Deal Modal */}
+      <DealCreateModal
+        isOpen={createModalOpen}
+        onClose={() => {
+          setCreateModalOpen(false);
+          setCreateModalStageId(undefined);
+          setCreateModalStageName('');
+        }}
+        onCreated={() => {
+          if (onDealUpdated) {
+            onDealUpdated();
+          }
+          setCreateModalOpen(false);
+          setCreateModalStageId(undefined);
+          setCreateModalStageName('');
+        }}
+        stageId={createModalStageId}
+        stageName={createModalStageName}
+      />
+
+      {/* Deal Detail Modal */}
+      <DealDetailModal
+        isOpen={detailModalOpen}
+        onClose={() => {
+          setDetailModalOpen(false);
+          setSelectedDeal(null);
+        }}
+        deal={selectedDeal}
+        onDealUpdated={() => {
+          if (onDealUpdated) {
+            onDealUpdated();
+          }
+        }}
+      />
     </div>
   );
 };

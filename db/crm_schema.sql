@@ -1,5 +1,53 @@
--- CRM Database Schema for Auto-Buyer Platform
--- Extends existing vehicle scoring system with comprehensive CRM functionality
+-- Migration 004: CRM Schema
+-- Creates comprehensive CRM functionality including leads, contacts, deals, and tasks
+-- Run after 003_add_user_activity.sql
+
+-- ==============================================
+-- CONTACT MANAGEMENT (must come before leads)
+-- ==============================================
+
+-- Contact types (Customer, Prospect, Vendor, Partner)
+CREATE TABLE IF NOT EXISTS contact_types (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Main contacts table
+CREATE TABLE IF NOT EXISTS contacts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    first_name TEXT NOT NULL,
+    last_name TEXT NOT NULL,
+    email TEXT,
+    phone TEXT,
+    mobile TEXT,
+    company TEXT,
+    job_title TEXT,
+    contact_type_id INTEGER REFERENCES contact_types(id),
+    assigned_to UUID REFERENCES users(id),
+    address JSONB, -- Full address object
+    social_profiles JSONB, -- LinkedIn, Facebook, etc.
+    preferences JSONB, -- Communication preferences
+    notes TEXT,
+    is_active BOOLEAN DEFAULT true,
+    created_by UUID REFERENCES users(id),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Contact activities
+CREATE TABLE IF NOT EXISTS contact_activities (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    contact_id UUID REFERENCES contacts(id) ON DELETE CASCADE,
+    activity_type TEXT NOT NULL,
+    subject TEXT,
+    description TEXT,
+    activity_date TIMESTAMPTZ DEFAULT NOW(),
+    created_by UUID REFERENCES users(id),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
 -- ==============================================
 -- LEAD MANAGEMENT
@@ -45,58 +93,153 @@ CREATE TABLE IF NOT EXISTS leads (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Update existing leads table to match new schema
+DO $$
+BEGIN
+    -- Rename old column names if they exist
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'leads' AND column_name = 'lead_source_id'
+    ) THEN
+        ALTER TABLE leads RENAME COLUMN lead_source_id TO source_id;
+    END IF;
+    
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'leads' AND column_name = 'lead_status_id'
+    ) THEN
+        ALTER TABLE leads RENAME COLUMN lead_status_id TO status_id;
+    END IF;
+    
+    -- Add missing columns
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'leads' AND column_name = 'listing_id'
+    ) THEN
+        ALTER TABLE leads ADD COLUMN listing_id INTEGER REFERENCES listings(id);
+    END IF;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'leads' AND column_name = 'contact_id'
+    ) THEN
+        ALTER TABLE leads ADD COLUMN contact_id UUID REFERENCES contacts(id);
+    END IF;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'leads' AND column_name = 'status_id'
+    ) THEN
+        ALTER TABLE leads ADD COLUMN status_id INTEGER REFERENCES lead_statuses(id);
+    END IF;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'leads' AND column_name = 'source_id'
+    ) THEN
+        ALTER TABLE leads ADD COLUMN source_id INTEGER REFERENCES lead_sources(id);
+    END IF;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'leads' AND column_name = 'assigned_to'
+    ) THEN
+        ALTER TABLE leads ADD COLUMN assigned_to UUID REFERENCES users(id);
+    END IF;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'leads' AND column_name = 'vehicle_interest'
+    ) THEN
+        ALTER TABLE leads ADD COLUMN vehicle_interest JSONB;
+    END IF;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'leads' AND column_name = 'budget_range'
+    ) THEN
+        ALTER TABLE leads ADD COLUMN budget_range JSONB;
+    END IF;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'leads' AND column_name = 'notes'
+    ) THEN
+        ALTER TABLE leads ADD COLUMN notes TEXT;
+    END IF;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'leads' AND column_name = 'lead_score'
+    ) THEN
+        ALTER TABLE leads ADD COLUMN lead_score INTEGER DEFAULT 0;
+    END IF;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'leads' AND column_name = 'qualified_at'
+    ) THEN
+        ALTER TABLE leads ADD COLUMN qualified_at TIMESTAMPTZ;
+    END IF;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'leads' AND column_name = 'converted_at'
+    ) THEN
+        ALTER TABLE leads ADD COLUMN converted_at TIMESTAMPTZ;
+    END IF;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'leads' AND column_name = 'created_by'
+    ) THEN
+        ALTER TABLE leads ADD COLUMN created_by UUID REFERENCES users(id);
+    END IF;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'leads' AND column_name = 'created_at'
+    ) THEN
+        ALTER TABLE leads ADD COLUMN created_at TIMESTAMPTZ DEFAULT NOW();
+    END IF;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'leads' AND column_name = 'updated_at'
+    ) THEN
+        ALTER TABLE leads ADD COLUMN updated_at TIMESTAMPTZ DEFAULT NOW();
+    END IF;
+    
+    -- Ensure lead_score constraint exists
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'leads' AND column_name = 'lead_score'
+    ) AND NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE table_name = 'leads' AND constraint_name = 'leads_lead_score_check'
+    ) THEN
+        ALTER TABLE leads ADD CONSTRAINT leads_lead_score_check 
+            CHECK (lead_score BETWEEN 0 AND 100);
+    END IF;
+END $$;
+
+-- Drop old columns that should be in contacts table instead
+ALTER TABLE leads DROP COLUMN IF EXISTS first_name;
+ALTER TABLE leads DROP COLUMN IF EXISTS second_name;
+ALTER TABLE leads DROP COLUMN IF EXISTS last_name;
+ALTER TABLE leads DROP COLUMN IF EXISTS email;
+ALTER TABLE leads DROP COLUMN IF EXISTS phone;
+ALTER TABLE leads DROP COLUMN IF EXISTS mobile;
+ALTER TABLE leads DROP COLUMN IF EXISTS company;
+ALTER TABLE leads DROP COLUMN IF EXISTS job_title;
+ALTER TABLE leads DROP COLUMN IF EXISTS location;
+ALTER TABLE leads DROP COLUMN IF EXISTS is_qualified;
+
 -- Lead activities (calls, emails, meetings)
 CREATE TABLE IF NOT EXISTS lead_activities (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     lead_id UUID REFERENCES leads(id) ON DELETE CASCADE,
     activity_type TEXT NOT NULL, -- 'call', 'email', 'meeting', 'note'
-    subject TEXT,
-    description TEXT,
-    activity_date TIMESTAMPTZ DEFAULT NOW(),
-    created_by UUID REFERENCES users(id),
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- ==============================================
--- CONTACT MANAGEMENT
--- ==============================================
-
--- Contact types (Customer, Prospect, Vendor, Partner)
-CREATE TABLE IF NOT EXISTS contact_types (
-    id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL,
-    description TEXT,
-    is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Main contacts table
-CREATE TABLE IF NOT EXISTS contacts (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    first_name TEXT NOT NULL,
-    last_name TEXT NOT NULL,
-    email TEXT,
-    phone TEXT,
-    mobile TEXT,
-    company TEXT,
-    job_title TEXT,
-    contact_type_id INTEGER REFERENCES contact_types(id),
-    assigned_to UUID REFERENCES users(id),
-    address JSONB, -- Full address object
-    social_profiles JSONB, -- LinkedIn, Facebook, etc.
-    preferences JSONB, -- Communication preferences
-    notes TEXT,
-    is_active BOOLEAN DEFAULT true,
-    created_by UUID REFERENCES users(id),
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Contact activities
-CREATE TABLE IF NOT EXISTS contact_activities (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    contact_id UUID REFERENCES contacts(id) ON DELETE CASCADE,
-    activity_type TEXT NOT NULL,
     subject TEXT,
     description TEXT,
     activity_date TIMESTAMPTZ DEFAULT NOW(),
@@ -230,6 +373,38 @@ CREATE TABLE IF NOT EXISTS tasks (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Add missing columns if they don't exist (for existing tables)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'related_type') THEN
+        ALTER TABLE tasks ADD COLUMN related_type TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'related_id') THEN
+        ALTER TABLE tasks ADD COLUMN related_id UUID;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'owner_user_id') THEN
+        ALTER TABLE tasks ADD COLUMN owner_user_id UUID REFERENCES users(id) ON DELETE SET NULL;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'column_id') THEN
+        ALTER TABLE tasks ADD COLUMN column_id UUID REFERENCES task_columns(id) ON DELETE SET NULL;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'due_at') THEN
+        ALTER TABLE tasks ADD COLUMN due_at TIMESTAMPTZ;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'status') THEN
+        ALTER TABLE tasks ADD COLUMN status TEXT NOT NULL DEFAULT 'Open' CHECK (status IN ('Open', 'InProgress', 'Done', 'Snoozed'));
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'priority') THEN
+        ALTER TABLE tasks ADD COLUMN priority TEXT NOT NULL DEFAULT 'Medium' CHECK (priority IN ('High', 'Medium', 'Low'));
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'title') THEN
+        ALTER TABLE tasks ADD COLUMN title TEXT NOT NULL;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'description') THEN
+        ALTER TABLE tasks ADD COLUMN description TEXT;
+    END IF;
+END $$;
+
 -- Task activity log
 CREATE TABLE IF NOT EXISTS task_activity (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -340,8 +515,13 @@ CREATE INDEX IF NOT EXISTS idx_deal_activities_deal ON deal_activities(deal_id);
 -- VIEWS FOR COMMON QUERIES
 -- ==============================================
 
+-- Drop existing views if they exist (to handle schema changes)
+DROP VIEW IF EXISTS v_lead_summary CASCADE;
+DROP VIEW IF EXISTS v_deal_pipeline CASCADE;
+DROP VIEW IF EXISTS v_task_dashboard CASCADE;
+
 -- Lead summary view
-CREATE OR REPLACE VIEW v_lead_summary AS
+CREATE VIEW v_lead_summary AS
 SELECT 
     l.id,
     l.listing_id,
@@ -367,7 +547,7 @@ LEFT JOIN users u ON l.assigned_to = u.id
 LEFT JOIN listings lst ON l.listing_id = lst.id;
 
 -- Deal pipeline view
-CREATE OR REPLACE VIEW v_deal_pipeline AS
+CREATE VIEW v_deal_pipeline AS
 SELECT 
     d.id,
     d.name,
@@ -386,7 +566,7 @@ LEFT JOIN contacts c ON d.contact_id = c.id
 LEFT JOIN users u ON d.assigned_to = u.id;
 
 -- Task dashboard view (updated for Kanban structure)
-CREATE OR REPLACE VIEW v_task_dashboard AS
+CREATE VIEW v_task_dashboard AS
 SELECT 
     t.id,
     t.title,
@@ -402,210 +582,3 @@ LEFT JOIN users u ON t.owner_user_id = u.id
 LEFT JOIN task_columns tc ON t.column_id = tc.id
 LEFT JOIN task_boards tb ON tc.board_id = tb.id;
 
--- ==============================================
--- INITIAL DATA SEEDING
--- ==============================================
-
--- Clean up any existing duplicates before creating unique indexes
--- This handles cases where data was inserted before unique constraints existed
-DO $$
-BEGIN
-    -- Remove duplicate lead_sources (keep lowest ID)
-    DELETE FROM lead_sources
-    WHERE id IN (
-        SELECT id FROM (
-            SELECT id, ROW_NUMBER() OVER (PARTITION BY LOWER(name) ORDER BY id) as rn
-            FROM lead_sources
-        ) t WHERE rn > 1
-    );
-    
-    -- Remove duplicate lead_statuses
-    DELETE FROM lead_statuses
-    WHERE id IN (
-        SELECT id FROM (
-            SELECT id, ROW_NUMBER() OVER (PARTITION BY LOWER(name) ORDER BY id) as rn
-            FROM lead_statuses
-        ) t WHERE rn > 1
-    );
-    
-    -- Remove duplicate contact_types
-    DELETE FROM contact_types
-    WHERE id IN (
-        SELECT id FROM (
-            SELECT id, ROW_NUMBER() OVER (PARTITION BY LOWER(name) ORDER BY id) as rn
-            FROM contact_types
-        ) t WHERE rn > 1
-    );
-    
-    -- Remove duplicate deal_stages
-    DELETE FROM deal_stages
-    WHERE id IN (
-        SELECT id FROM (
-            SELECT id, ROW_NUMBER() OVER (PARTITION BY LOWER(name) ORDER BY id) as rn
-            FROM deal_stages
-        ) t WHERE rn > 1
-    );
-    
-    -- Remove duplicate deal_categories
-    DELETE FROM deal_categories
-    WHERE id IN (
-        SELECT id FROM (
-            SELECT id, ROW_NUMBER() OVER (PARTITION BY LOWER(name) ORDER BY id) as rn
-            FROM deal_categories
-        ) t WHERE rn > 1
-    );
-    
-    -- Remove duplicate task_boards (if any)
-    DELETE FROM task_boards
-    WHERE id IN (
-        SELECT id FROM (
-            SELECT id, ROW_NUMBER() OVER (PARTITION BY LOWER(name), scope ORDER BY id) as rn
-            FROM task_boards
-        ) t WHERE rn > 1
-    );
-    
-    -- Remove duplicate kpi_definitions
-    DELETE FROM kpi_definitions
-    WHERE id IN (
-        SELECT id FROM (
-            SELECT id, ROW_NUMBER() OVER (PARTITION BY LOWER(name) ORDER BY id) as rn
-            FROM kpi_definitions
-        ) t WHERE rn > 1
-    );
-END $$;
-
--- Drop existing indexes if they exist (in case of partial/failed creation)
-DROP INDEX IF EXISTS ux_lead_sources_name_ci;
-DROP INDEX IF EXISTS ux_lead_statuses_name_ci;
-DROP INDEX IF EXISTS ux_contact_types_name_ci;
-DROP INDEX IF EXISTS ux_deal_stages_name_ci;
-DROP INDEX IF EXISTS ux_deal_categories_name_ci;
-DROP INDEX IF EXISTS ux_kpi_definitions_name_ci;
-
--- Ensure unique names for lookup tables (case-insensitive)
--- These indexes make seed inserts idempotent and prevent duplicate options
-CREATE UNIQUE INDEX ux_lead_sources_name_ci ON lead_sources (LOWER(name));
-CREATE UNIQUE INDEX ux_lead_statuses_name_ci ON lead_statuses (LOWER(name));
-CREATE UNIQUE INDEX ux_contact_types_name_ci ON contact_types (LOWER(name));
-CREATE UNIQUE INDEX ux_deal_stages_name_ci ON deal_stages (LOWER(name));
-CREATE UNIQUE INDEX ux_deal_categories_name_ci ON deal_categories (LOWER(name));
-CREATE UNIQUE INDEX ux_kpi_definitions_name_ci ON kpi_definitions (LOWER(name));
-
--- Insert default lead sources (using WHERE NOT EXISTS to handle unique index)
-INSERT INTO lead_sources (name, description)
-SELECT * FROM (VALUES
-    ('Website', 'Lead generated from website'),
-    ('Referral', 'Lead from customer referral'),
-    ('Cold Call', 'Lead from cold calling'),
-    ('Email Campaign', 'Lead from email marketing'),
-    ('Social Media', 'Lead from social media'),
-    ('Trade Show', 'Lead from trade show/event'),
-    ('Vehicle Listing', 'Lead from vehicle listing interest')
-) AS v(name, description)
-WHERE NOT EXISTS (
-    SELECT 1 FROM lead_sources WHERE LOWER(lead_sources.name) = LOWER(v.name)
-);
-
--- Insert default lead statuses
-INSERT INTO lead_statuses (name, description, color_code, sort_order)
-SELECT * FROM (VALUES
-    ('New', 'Newly created lead', '#3B82F6', 1),
-    ('Contacted', 'Initial contact made', '#10B981', 2),
-    ('Qualified', 'Lead qualified for sales', '#F59E0B', 3),
-    ('Converted', 'Lead converted to customer', '#059669', 4),
-    ('Lost', 'Lead lost or disqualified', '#EF4444', 5)
-) AS v(name, description, color_code, sort_order)
-WHERE NOT EXISTS (
-    SELECT 1 FROM lead_statuses WHERE LOWER(lead_statuses.name) = LOWER(v.name)
-);
-
--- Insert default contact types
-INSERT INTO contact_types (name, description)
-SELECT * FROM (VALUES
-    ('Customer', 'Existing customer'),
-    ('Prospect', 'Potential customer'),
-    ('Vendor', 'Vendor or supplier'),
-    ('Partner', 'Business partner')
-) AS v(name, description)
-WHERE NOT EXISTS (
-    SELECT 1 FROM contact_types WHERE LOWER(contact_types.name) = LOWER(v.name)
-);
-
--- Insert default deal stages
-INSERT INTO deal_stages (name, description, probability, color_code, sort_order)
-SELECT * FROM (VALUES
-    ('Prospecting', 'Initial prospecting phase', 10, '#3B82F6', 1),
-    ('Qualification', 'Qualifying the opportunity', 25, '#10B981', 2),
-    ('Proposal', 'Proposal sent to customer', 50, '#F59E0B', 3),
-    ('Negotiation', 'Negotiating terms', 75, '#8B5CF6', 4),
-    ('Closed Won', 'Deal successfully closed', 100, '#059669', 5),
-    ('Closed Lost', 'Deal lost', 0, '#EF4444', 6)
-) AS v(name, description, probability, color_code, sort_order)
-WHERE NOT EXISTS (
-    SELECT 1 FROM deal_stages WHERE LOWER(deal_stages.name) = LOWER(v.name)
-);
-
--- Insert default deal categories
-INSERT INTO deal_categories (name, description)
-SELECT * FROM (VALUES
-    ('New Vehicle Sale', 'Sale of new vehicle'),
-    ('Used Vehicle Sale', 'Sale of used vehicle'),
-    ('Trade-In', 'Vehicle trade-in transaction'),
-    ('Financing', 'Vehicle financing deal'),
-    ('Service', 'Vehicle service agreement')
-) AS v(name, description)
-WHERE NOT EXISTS (
-    SELECT 1 FROM deal_categories WHERE LOWER(deal_categories.name) = LOWER(v.name)
-);
-
--- Insert default task boards
-INSERT INTO task_boards (id, name, scope)
-SELECT * FROM (VALUES
-    ('00000000-0000-0000-0000-000000000001'::UUID, 'My Tasks', 'my'),
-    ('00000000-0000-0000-0000-000000000002'::UUID, 'Team Board', 'team'),
-    ('00000000-0000-0000-0000-000000000003'::UUID, 'Global Board', 'global')
-) AS v(id, name, scope)
-ON CONFLICT (id) DO NOTHING;
-
--- Insert default task columns for My Tasks board
-INSERT INTO task_columns (id, board_id, name, wip_limit, position)
-SELECT * FROM (VALUES
-    ('00000000-0000-0000-0000-000000000011'::UUID, '00000000-0000-0000-0000-000000000001'::UUID, 'To Do', NULL, 0),
-    ('00000000-0000-0000-0000-000000000012'::UUID, '00000000-0000-0000-0000-000000000001'::UUID, 'In Progress', 5, 1),
-    ('00000000-0000-0000-0000-000000000013'::UUID, '00000000-0000-0000-0000-000000000001'::UUID, 'Done', NULL, 2)
-) AS v(id, board_id, name, wip_limit, position)
-ON CONFLICT (id) DO NOTHING;
-
--- Insert default task columns for Team Board
-INSERT INTO task_columns (id, board_id, name, wip_limit, position)
-SELECT * FROM (VALUES
-    ('00000000-0000-0000-0000-000000000021'::UUID, '00000000-0000-0000-0000-000000000002'::UUID, 'Backlog', NULL, 0),
-    ('00000000-0000-0000-0000-000000000022'::UUID, '00000000-0000-0000-0000-000000000002'::UUID, 'To Do', NULL, 1),
-    ('00000000-0000-0000-0000-000000000023'::UUID, '00000000-0000-0000-0000-000000000002'::UUID, 'In Progress', 10, 2),
-    ('00000000-0000-0000-0000-000000000024'::UUID, '00000000-0000-0000-0000-000000000002'::UUID, 'Review', NULL, 3),
-    ('00000000-0000-0000-0000-000000000025'::UUID, '00000000-0000-0000-0000-000000000002'::UUID, 'Done', NULL, 4)
-) AS v(id, board_id, name, wip_limit, position)
-ON CONFLICT (id) DO NOTHING;
-
--- Insert default task columns for Global Board
-INSERT INTO task_columns (id, board_id, name, wip_limit, position)
-SELECT * FROM (VALUES
-    ('00000000-0000-0000-0000-000000000031'::UUID, '00000000-0000-0000-0000-000000000003'::UUID, 'Backlog', NULL, 0),
-    ('00000000-0000-0000-0000-000000000032'::UUID, '00000000-0000-0000-0000-000000000003'::UUID, 'To Do', NULL, 1),
-    ('00000000-0000-0000-0000-000000000033'::UUID, '00000000-0000-0000-0000-000000000003'::UUID, 'In Progress', 20, 2),
-    ('00000000-0000-0000-0000-000000000034'::UUID, '00000000-0000-0000-0000-000000000003'::UUID, 'Done', NULL, 3)
-) AS v(id, board_id, name, wip_limit, position)
-ON CONFLICT (id) DO NOTHING;
-
--- Insert default KPI definitions
-INSERT INTO kpi_definitions (name, description, calculation_method, target_value, unit)
-SELECT * FROM (VALUES
-    ('Leads Generated', 'Number of new leads created', 'COUNT', 50, 'count'),
-    ('Lead Conversion Rate', 'Percentage of leads converted to customers', 'PERCENTAGE', 15, 'percentage'),
-    ('Deals Closed', 'Number of deals closed', 'COUNT', 20, 'count'),
-    ('Revenue Generated', 'Total revenue from closed deals', 'SUM', 500000, 'currency'),
-    ('Average Deal Size', 'Average value of closed deals', 'AVERAGE', 25000, 'currency')
-) AS v(name, description, calculation_method, target_value, unit)
-WHERE NOT EXISTS (
-    SELECT 1 FROM kpi_definitions WHERE LOWER(kpi_definitions.name) = LOWER(v.name)
-);

@@ -19,6 +19,7 @@ from .routes.crm_contacts import contact_router
 from .routes.crm_deals import deal_router
 from .routes.crm_tasks import task_router
 from .routes.crm_dashboard import dashboard_router
+from .routes.communications import communication_router
 
 # ---- run-on-cold-start: ensure schema once ----
 import logging
@@ -65,6 +66,7 @@ app.include_router(contact_router, prefix="/api")
 app.include_router(deal_router, prefix="/api")
 app.include_router(task_router, prefix="/api")
 app.include_router(dashboard_router, prefix="/api")
+app.include_router(communication_router, prefix="/api")
 
 @app.get("/api/healthz")
 def healthz():

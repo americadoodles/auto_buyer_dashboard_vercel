@@ -19,7 +19,23 @@ async def lifespan(app: FastAPI):
     else:
         logging.warning("DB is disabled; running in in-memory mode")
     
+    # Start background jobs
+    try:
+        from ..services.background_jobs import background_job_scheduler
+        await background_job_scheduler.start()
+        logging.info("Background jobs started")
+    except Exception:
+        logging.exception("Failed to start background jobs")
+    
     yield
+    
+    # Stop background jobs
+    try:
+        from ..services.background_jobs import background_job_scheduler
+        await background_job_scheduler.stop()
+        logging.info("Background jobs stopped")
+    except Exception:
+        logging.exception("Error stopping background jobs")
     
     # Cleanup on shutdown
     if DB_ENABLED:

@@ -303,7 +303,7 @@ def get_user_tasks(user_id: UUID) -> List[TaskOut]:
     return list_tasks(owner_user_id=user_id)
 
 def complete_task(task_id: UUID, user_id: UUID) -> bool:
-    """Mark a task as completed"""
+    """Mark a task as completed. Ownership check should be done at the route level."""
     if not DB_ENABLED:
         return True
     
@@ -316,8 +316,8 @@ def complete_task(task_id: UUID, user_id: UUID) -> bool:
                 cur.execute("""
                     UPDATE tasks 
                     SET status = %s, updated_at = %s
-                    WHERE id = %s AND owner_user_id = %s
-                """, (TaskStatus.DONE.value, datetime.now(), task_id, user_id))
+                    WHERE id = %s
+                """, (TaskStatus.DONE.value, datetime.now(), task_id))
                 
                 if cur.rowcount > 0:
                     log_task_activity(task_id, 'completed', {}, user_id)
@@ -559,6 +559,316 @@ def get_task_columns(board_id: UUID) -> List[TaskColumnOut]:
         except Exception as e:
             logging.error(f"Error fetching task columns: {str(e)}")
             return []
+
+def get_task_board_detail(board_id: UUID):
+    """Get task board with columns and task counts"""
+    if not DB_ENABLED:
+        return None
+    
+    with get_db_connection() as conn:
+        if not conn:
+            return None
+        
+        try:
+            with conn.cursor() as cur:
+                # Get board info
+                cur.execute("""
+                    SELECT id, name, scope, created_at, updated_at
+                    FROM task_boards WHERE id = %s
+                """, (board_id,))
+                
+                board_result = cur.fetchone()
+                if not board_result:
+                    return None
+                
+                # Get columns with task counts
+                cur.execute("""
+                    SELECT 
+                        tc.id, tc.board_id, tc.name, tc.wip_limit, tc.position,
+                        tc.created_at, tc.updated_at,
+                        COUNT(t.id) as task_count
+                    FROM task_columns tc
+                    LEFT JOIN tasks t ON t.column_id = tc.id
+                    WHERE tc.board_id = %s
+                    GROUP BY tc.id, tc.board_id, tc.name, tc.wip_limit, tc.position,
+                             tc.created_at, tc.updated_at
+                    ORDER BY tc.position ASC
+                """, (board_id,))
+                
+                from ..schemas.crm import TaskColumnWithCount, TaskBoardScope
+                
+                columns = []
+                for result in cur.fetchall():
+                    columns.append(TaskColumnWithCount(
+                        id=result[0],
+                        board_id=result[1],
+                        name=result[2],
+                        wip_limit=result[3],
+                        position=result[4],
+                        created_at=result[5],
+                        updated_at=result[6],
+                        task_count=result[7]
+                    ))
+                
+                from ..schemas.crm import TaskBoardDetailOut
+                return TaskBoardDetailOut(
+                    id=board_result[0],
+                    name=board_result[1],
+                    scope=TaskBoardScope(board_result[2]),
+                    created_at=board_result[3],
+                    updated_at=board_result[4],
+                    columns=columns
+                )
+                
+        except Exception as e:
+            logging.error(f"Error fetching task board detail {board_id}: {str(e)}")
+            return None
+
+def check_column_wip_limit(column_id: UUID) -> tuple[Optional[int], int]:
+    """Check WIP limit for a column. Returns (wip_limit, current_count)"""
+    if not DB_ENABLED:
+        return (None, 0)
+    
+    with get_db_connection() as conn:
+        if not conn:
+            return (None, 0)
+        
+        try:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT wip_limit, COUNT(t.id) as current_count
+                    FROM task_columns tc
+                    LEFT JOIN tasks t ON t.column_id = tc.id
+                    WHERE tc.id = %s
+                    GROUP BY tc.wip_limit
+                """, (column_id,))
+                
+                result = cur.fetchone()
+                if result:
+                    return (result[0], result[1])
+                return (None, 0)
+                
+        except Exception as e:
+            logging.error(f"Error checking WIP limit for column {column_id}: {str(e)}")
+            return (None, 0)
+
+def move_task(task_id: UUID, column_id: UUID, user_id: UUID, admin_override: bool = False) -> Optional[TaskOut]:
+    """Move a task to a different column with WIP validation"""
+    if not DB_ENABLED:
+        return None
+    
+    with get_db_connection() as conn:
+        if not conn:
+            return None
+        
+        try:
+            with conn.cursor() as cur:
+                # Check WIP limit if not admin override
+                if not admin_override:
+                    wip_limit, current_count = check_column_wip_limit(column_id)
+                    if wip_limit is not None and current_count >= wip_limit:
+                        raise ValueError(f"Column WIP limit ({wip_limit}) exceeded. Current count: {current_count}")
+                
+                # Get current task
+                current_task = get_task(task_id)
+                if not current_task:
+                    return None
+                
+                # Update task column
+                cur.execute("""
+                    UPDATE tasks 
+                    SET column_id = %s, updated_at = %s
+                    WHERE id = %s
+                    RETURNING id, related_type, related_id, title, description, priority, status,
+                              column_id, owner_user_id, due_at, created_at, updated_at
+                """, (column_id, datetime.now(), task_id))
+                
+                result = cur.fetchone()
+                if result:
+                    # Log activity
+                    log_task_activity(
+                        task_id, 
+                        'moved', 
+                        {
+                            'from_column_id': str(current_task.column_id) if current_task.column_id else None,
+                            'to_column_id': str(column_id),
+                            'admin_override': admin_override
+                        }, 
+                        user_id
+                    )
+                    
+                    return TaskOut(
+                        id=result[0], related_type=result[1], related_id=result[2],
+                        title=result[3], description=result[4],
+                        priority=TaskPriority(result[5]), status=TaskStatus(result[6]),
+                        column_id=result[7], owner_user_id=result[8],
+                        due_at=result[9], created_at=result[10], updated_at=result[11]
+                    )
+                return None
+                
+        except ValueError:
+            raise
+        except Exception as e:
+            logging.error(f"Error moving task {task_id}: {str(e)}")
+            return None
+
+def bulk_move_tasks(task_ids: List[UUID], column_id: UUID, user_id: UUID, admin_override: bool = False) -> dict:
+    """Bulk move tasks to a column with WIP validation"""
+    if not DB_ENABLED:
+        return {'success': [], 'failed': []}
+    
+    # Check WIP limit if not admin override
+    if not admin_override:
+        wip_limit, current_count = check_column_wip_limit(column_id)
+        if wip_limit is not None:
+            available_slots = wip_limit - current_count
+            if available_slots < len(task_ids):
+                raise ValueError(
+                    f"Column WIP limit ({wip_limit}) would be exceeded. "
+                    f"Current count: {current_count}, Available slots: {available_slots}, "
+                    f"Requested moves: {len(task_ids)}"
+                )
+    
+    success = []
+    failed = []
+    
+    with get_db_connection() as conn:
+        if not conn:
+            return {'success': [], 'failed': task_ids}
+        
+        try:
+            with conn.cursor() as cur:
+                for task_id in task_ids:
+                    try:
+                        current_task = get_task(task_id)
+                        if not current_task:
+                            failed.append({'task_id': task_id, 'reason': 'Task not found'})
+                            continue
+                        
+                        cur.execute("""
+                            UPDATE tasks 
+                            SET column_id = %s, updated_at = %s
+                            WHERE id = %s
+                            RETURNING id
+                        """, (column_id, datetime.now(), task_id))
+                        
+                        if cur.fetchone():
+                            log_task_activity(
+                                task_id,
+                                'moved',
+                                {
+                                    'from_column_id': str(current_task.column_id) if current_task.column_id else None,
+                                    'to_column_id': str(column_id),
+                                    'bulk_operation': True,
+                                    'admin_override': admin_override
+                                },
+                                user_id
+                            )
+                            success.append(task_id)
+                        else:
+                            failed.append({'task_id': task_id, 'reason': 'Update failed'})
+                    except Exception as e:
+                        failed.append({'task_id': task_id, 'reason': str(e)})
+                
+                conn.commit()
+                return {'success': success, 'failed': failed}
+                
+        except ValueError:
+            raise
+        except Exception as e:
+            logging.error(f"Error in bulk move tasks: {str(e)}")
+            return {'success': [], 'failed': task_ids}
+
+def bulk_change_task_owner(task_ids: List[UUID], owner_user_id: UUID, user_id: UUID) -> dict:
+    """Bulk change task owner"""
+    if not DB_ENABLED:
+        return {'success': [], 'failed': []}
+    
+    success = []
+    failed = []
+    
+    with get_db_connection() as conn:
+        if not conn:
+            return {'success': [], 'failed': task_ids}
+        
+        try:
+            with conn.cursor() as cur:
+                for task_id in task_ids:
+                    try:
+                        cur.execute("""
+                            UPDATE tasks 
+                            SET owner_user_id = %s, updated_at = %s
+                            WHERE id = %s
+                            RETURNING id
+                        """, (owner_user_id, datetime.now(), task_id))
+                        
+                        if cur.fetchone():
+                            log_task_activity(
+                                task_id,
+                                'assigned',
+                                {
+                                    'owner_user_id': str(owner_user_id),
+                                    'bulk_operation': True
+                                },
+                                user_id
+                            )
+                            success.append(task_id)
+                        else:
+                            failed.append({'task_id': task_id, 'reason': 'Task not found'})
+                    except Exception as e:
+                        failed.append({'task_id': task_id, 'reason': str(e)})
+                
+                conn.commit()
+                return {'success': success, 'failed': failed}
+                
+        except Exception as e:
+            logging.error(f"Error in bulk change task owner: {str(e)}")
+            return {'success': [], 'failed': task_ids}
+
+def bulk_close_tasks(task_ids: List[UUID], user_id: UUID) -> dict:
+    """Bulk close tasks (set status to Done)"""
+    if not DB_ENABLED:
+        return {'success': [], 'failed': []}
+    
+    success = []
+    failed = []
+    
+    with get_db_connection() as conn:
+        if not conn:
+            return {'success': [], 'failed': task_ids}
+        
+        try:
+            with conn.cursor() as cur:
+                for task_id in task_ids:
+                    try:
+                        cur.execute("""
+                            UPDATE tasks 
+                            SET status = %s, updated_at = %s
+                            WHERE id = %s
+                            RETURNING id
+                        """, (TaskStatus.DONE.value, datetime.now(), task_id))
+                        
+                        if cur.fetchone():
+                            log_task_activity(
+                                task_id,
+                                'completed',
+                                {
+                                    'bulk_operation': True
+                                },
+                                user_id
+                            )
+                            success.append(task_id)
+                        else:
+                            failed.append({'task_id': task_id, 'reason': 'Task not found'})
+                    except Exception as e:
+                        failed.append({'task_id': task_id, 'reason': str(e)})
+                
+                conn.commit()
+                return {'success': success, 'failed': failed}
+                
+        except Exception as e:
+            logging.error(f"Error in bulk close tasks: {str(e)}")
+            return {'success': [], 'failed': task_ids}
 
 # ==============================================
 # TASK ACTIVITY FUNCTIONS

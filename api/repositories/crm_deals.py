@@ -53,6 +53,14 @@ def create_deal(deal_data: DealCreate, created_by: UUID) -> DealOut:
                 result = cur.fetchone()
                 if result:
                     deal_id, created_at, updated_at = result
+                    
+                    # Emit DealCreated event
+                    try:
+                        from ..services.event_bus import publish_deal_created
+                        publish_deal_created(deal_id, deal_data.contact_id, deal_data.assigned_to, deal_data.deal_stage_id, created_by)
+                    except Exception as event_error:
+                        logging.warning(f"Failed to emit DealCreated event: {str(event_error)}")
+                    
                     return DealOut(
                         id=deal_id,
                         **deal_data.model_dump(),
@@ -111,6 +119,10 @@ def update_deal(deal_id: UUID, deal_update: DealUpdate) -> Optional[DealOut]:
         
         try:
             with conn.cursor() as cur:
+                # Get current deal to check for stage changes
+                current_deal = get_deal(deal_id)
+                old_stage_id = current_deal.deal_stage_id if current_deal else None
+                
                 # Build dynamic update query
                 update_fields = []
                 values = []
@@ -124,7 +136,7 @@ def update_deal(deal_id: UUID, deal_update: DealUpdate) -> Optional[DealOut]:
                         values.append(value)
                 
                 if not update_fields:
-                    return get_deal(deal_id)
+                    return current_deal
                 
                 update_fields.append("updated_at = %s")
                 values.append(datetime.now())
@@ -140,13 +152,25 @@ def update_deal(deal_id: UUID, deal_update: DealUpdate) -> Optional[DealOut]:
                 
                 result = cur.fetchone()
                 if result:
-                    return DealOut(
+                    updated_deal = DealOut(
                         id=result[0], title=result[1], description=result[2], contact_id=result[3],
                         assigned_to=result[4], deal_stage_id=result[5], deal_category_id=result[6],
                         expected_close_date=result[7], actual_close_date=result[8],
                         deal_value=result[9], probability=result[10], notes=result[11],
                         is_won=result[12], is_lost=result[13], created_by=result[14], created_at=result[15], updated_at=result[16]
                     )
+                    
+                    # Emit DealStageChanged event if stage changed
+                    new_stage_id = updated_deal.deal_stage_id
+                    if old_stage_id != new_stage_id:
+                        try:
+                            from ..services.event_bus import publish_deal_stage_changed
+                            changed_by = updated_deal.created_by  # Use created_by as changed_by
+                            publish_deal_stage_changed(deal_id, old_stage_id, new_stage_id, changed_by)
+                        except Exception as event_error:
+                            logging.warning(f"Failed to emit DealStageChanged event: {str(event_error)}")
+                    
+                    return updated_deal
                 return None
                 
         except Exception as e:

@@ -88,3 +88,35 @@ async def require_admin(current_user: UserOut = Depends(get_current_user)) -> Us
     if (current_user.role or "").lower() != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin privileges required")
     return current_user
+
+
+async def require_buyer_or_admin(current_user: UserOut = Depends(get_current_user)) -> UserOut:
+    """Require user to be either buyer or admin (analysts are not allowed)"""
+    role_lower = (current_user.role or "").lower()
+    if role_lower not in ["buyer", "admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Buyer or admin privileges required"
+        )
+    return current_user
+
+
+def check_task_ownership(task_owner_id, current_user: UserOut) -> bool:
+    """Check if current user can access/modify a task.
+    Returns True if:
+    - User is admin (can access all tasks)
+    - User is buyer and owns the task
+    Returns False otherwise.
+    """
+    role_lower = (current_user.role or "").lower()
+    
+    # Admins can access all tasks
+    if role_lower == "admin":
+        return True
+    
+    # Buyers can only access their own tasks
+    if role_lower == "buyer":
+        return task_owner_id == current_user.id
+    
+    # Analysts cannot modify tasks (read-only)
+    return False

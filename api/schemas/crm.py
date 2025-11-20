@@ -387,6 +387,36 @@ class TaskActivityOut(TaskActivityBase):
     id: UUID
     at: datetime
 
+# Task Move Schema
+class TaskMoveRequest(BaseModel):
+    column_id: UUID
+    admin_override: bool = False  # Allow admin to override WIP limits
+
+# Task Board Detail Schema (with columns and counts)
+class TaskColumnWithCount(TaskColumnOut):
+    task_count: int
+
+class TaskBoardDetailOut(BaseModel):
+    id: UUID
+    name: str
+    scope: TaskBoardScope
+    created_at: datetime
+    updated_at: datetime
+    columns: List[TaskColumnWithCount]
+
+# Bulk Operation Schemas
+class BulkTaskMoveRequest(BaseModel):
+    task_ids: List[UUID]
+    column_id: UUID
+    admin_override: bool = False
+
+class BulkTaskOwnerChangeRequest(BaseModel):
+    task_ids: List[UUID]
+    owner_user_id: UUID
+
+class BulkTaskStatusCloseRequest(BaseModel):
+    task_ids: List[UUID]
+
 # ==============================================
 # COMMUNICATION SCHEMAS
 # ==============================================

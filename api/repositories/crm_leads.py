@@ -161,6 +161,14 @@ def create_lead(lead_data: LeadCreate, created_by: UUID) -> LeadOut:
                 result = cur.fetchone()
                 if result:
                     lead_id, qualified_at, converted_at, created_at, updated_at = result
+                    
+                    # Emit LeadCreated event
+                    try:
+                        from ..services.event_bus import publish_lead_created
+                        publish_lead_created(lead_id, lead_data.contact_id, lead_data.assigned_to, created_by)
+                    except Exception as event_error:
+                        logging.warning(f"Failed to emit LeadCreated event: {str(event_error)}")
+                    
                     return LeadOut(
                         id=lead_id,
                         **lead_data.model_dump(),

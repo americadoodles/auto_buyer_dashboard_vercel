@@ -74,8 +74,17 @@ def get_pending_events(limit: int = 100) -> List[EventOut]:
                 events = []
                 
                 for result in results:
-                    payload = json.loads(result[2]) if result[2] else {}
-                    metadata = json.loads(result[4]) if result[4] else None
+                    # PostgreSQL JSONB columns are automatically parsed by psycopg
+                    # So result[2] and result[4] are already dicts, not JSON strings
+                    if result[2]:
+                        payload = result[2] if isinstance(result[2], dict) else json.loads(result[2])
+                    else:
+                        payload = {}
+                    
+                    if result[4]:
+                        metadata = result[4] if isinstance(result[4], dict) else json.loads(result[4])
+                    else:
+                        metadata = None
                     
                     events.append(EventOut(
                         id=result[0],

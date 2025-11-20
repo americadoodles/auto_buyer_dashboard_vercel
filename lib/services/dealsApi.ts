@@ -132,15 +132,10 @@ const handleResponse = async <T>(response: Response): Promise<T> => {
   }
 };
 
-// Helper function to make API calls
+// Helper function to make API calls using unified ApiService
 const apiCall = async <T>(endpoint: string, options: RequestInit = {}): Promise<T> => {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL ?? '/api'}${endpoint}`, {
-    headers: getAuthHeaders(),
-    ...options
-  });
-  return handleResponse<T>(response);
+  return ApiService.request<T>(endpoint, options);
 };
-
 // Deals API functions
 export const dealsApi = {
   // Deal management
@@ -165,7 +160,7 @@ export const dealsApi = {
   },
 
   async createDeal(deal: Partial<Deal>): Promise<Deal> {
-    return apiCall<Deal>('/crm/deals', {
+    return apiCall<Deal>('/crm/deals/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(deal)

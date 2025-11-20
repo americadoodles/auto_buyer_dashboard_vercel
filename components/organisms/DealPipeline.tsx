@@ -8,6 +8,7 @@ import { Input } from '../atoms/Input';
 import { Icon } from '../atoms/Icon';
 import { Pagination } from '../molecules/Pagination';
 import { KanbanBoard } from './KanbanBoard';
+import { useDealStages } from '../../lib/hooks/useDeals';
 
 interface Deal {
   id: string;
@@ -83,6 +84,9 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
   const [stageFilter, setStageFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [assignedFilter, setAssignedFilter] = useState('all');
+  
+  // Fetch deal stages from database
+  const { stages: dbStages, loading: stagesLoading } = useDealStages();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -96,6 +100,31 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString();
+  };
+
+  // Helper function to convert hex color to Tailwind classes
+  const getTailwindColors = (hexColor: string) => {
+    // Map common hex colors to Tailwind classes
+    const colorMap: Record<string, { bg: string; border: string }> = {
+      '#3B82F6': { bg: 'bg-blue-50', border: 'border-blue-200' }, // blue
+      '#10B981': { bg: 'bg-green-50', border: 'border-green-200' }, // green
+      '#F59E0B': { bg: 'bg-yellow-50', border: 'border-yellow-200' }, // yellow/amber
+      '#8B5CF6': { bg: 'bg-purple-50', border: 'border-purple-200' }, // purple
+      '#059669': { bg: 'bg-emerald-50', border: 'border-emerald-200' }, // emerald
+      '#EF4444': { bg: 'bg-red-50', border: 'border-red-200' }, // red
+      '#F97316': { bg: 'bg-orange-50', border: 'border-orange-200' }, // orange
+      '#06B6D4': { bg: 'bg-cyan-50', border: 'border-cyan-200' }, // cyan
+      '#6366F1': { bg: 'bg-indigo-50', border: 'border-indigo-200' }, // indigo
+      '#EC4899': { bg: 'bg-pink-50', border: 'border-pink-200' }, // pink
+    };
+    
+    // Check if we have a direct mapping
+    if (colorMap[hexColor]) {
+      return colorMap[hexColor];
+    }
+    
+    // Default to gray if no match
+    return { bg: 'bg-gray-50', border: 'border-gray-200' };
   };
 
   const getStageColor = (stageName: string) => {
@@ -245,14 +274,50 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
   // Use sample deals if no real deals exist, otherwise use real deals
   const dealsToDisplay = deals.length > 0 ? deals : sampleDeals;
 
-  // Define the Kanban stages in order (moved before dealsByStage to avoid dependency issues)
-  const kanbanStages = useMemo(() => [
-    { name: 'Prospecting', color: '#3B82F6', bgColor: 'bg-blue-50', borderColor: 'border-blue-200' },
-    { name: 'Qualification', color: '#10B981', bgColor: 'bg-green-50', borderColor: 'border-green-200' },
-    { name: 'Proposal', color: '#F59E0B', bgColor: 'bg-yellow-50', borderColor: 'border-yellow-200' },
-    { name: 'Negotiation', color: '#8B5CF6', bgColor: 'bg-purple-50', borderColor: 'border-purple-200' },
-    { name: 'Closed', color: '#059669', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200' }
-  ], []);
+  // Define the Kanban stages from database (moved before dealsByStage to avoid dependency issues)
+  const kanbanStages = useMemo(() => {
+    // Use database stages if available, otherwise fall back to prop stages or default
+    if (dbStages.length > 0) {
+      // Map database stages to kanban format, sorted by sort_order
+      return dbStages
+        .filter(stage => stage.is_active !== false) // Only include active stages
+        .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)) // Sort by sort_order
+        .map(stage => {
+          const color = stage.color_code || '#6B7280'; // Default gray if no color
+          const tailwindColors = getTailwindColors(color);
+          return {
+            name: stage.name,
+            color: color,
+            bgColor: tailwindColors.bg,
+            borderColor: tailwindColors.border
+          };
+        });
+    }
+    
+    // Fallback to prop stages if available
+    if (stages && stages.length > 0) {
+      return stages.map(stage => {
+        const color = stage.color_code || '#6B7280';
+        const tailwindColors = getTailwindColors(color);
+        return {
+          name: stage.name,
+          color: color,
+          bgColor: tailwindColors.bg,
+          borderColor: tailwindColors.border
+        };
+      });
+    }
+    
+    // Fallback to default stages if no stages available
+    return [
+      { name: 'Prospecting', color: '#3B82F6', bgColor: 'bg-blue-50', borderColor: 'border-blue-200' },
+      { name: 'Qualification', color: '#10B981', bgColor: 'bg-green-50', borderColor: 'border-green-200' },
+      { name: 'Proposal', color: '#F59E0B', bgColor: 'bg-yellow-50', borderColor: 'border-yellow-200' },
+      { name: 'Negotiation', color: '#8B5CF6', bgColor: 'bg-purple-50', borderColor: 'border-purple-200' },
+      { name: 'Closed Won', color: '#059669', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200' },
+      { name: 'Closed Lost', color: '#EF4444', bgColor: 'bg-red-50', borderColor: 'border-red-200' }
+    ];
+  }, [dbStages, stages]);
 
   const totalPipelineValue = dealStages.reduce((sum, stage) => sum + stage.value, 0);
   const wonDealsValue = dealsToDisplay.filter(deal => deal.is_won).reduce((sum, deal) => sum + deal.deal_value, 0);
@@ -306,20 +371,15 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
 
     filteredDeals.forEach(deal => {
       const stageName = deal.deal_stage?.name || '';
-      // Handle "Closed Won" and "Closed Lost" as "Closed"
-      if (stageName.toLowerCase().includes('closed')) {
-        grouped['Closed'].push(deal);
+      // Match exact stage name (including "Closed Won" and "Closed Lost")
+      const matchedStage = kanbanStages.find(s => 
+        s.name.toLowerCase() === stageName.toLowerCase()
+      );
+      if (matchedStage) {
+        grouped[matchedStage.name].push(deal);
       } else {
-        // Match exact stage name
-        const matchedStage = kanbanStages.find(s => 
-          s.name.toLowerCase() === stageName.toLowerCase()
-        );
-        if (matchedStage) {
-          grouped[matchedStage.name].push(deal);
-        } else {
-          // Default to Prospecting if no match
-          grouped['Prospecting'].push(deal);
-        }
+        // Default to Prospecting if no match
+        grouped['Prospecting'].push(deal);
       }
     });
 

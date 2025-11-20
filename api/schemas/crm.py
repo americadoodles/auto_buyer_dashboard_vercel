@@ -195,7 +195,7 @@ class DealCategoryOut(DealCategoryBase):
     created_at: datetime
 
 class DealBase(BaseModel):
-    name: str
+    title: str  # Frontend uses 'title', maps to 'name' in database
     description: Optional[str] = None
     contact_id: Optional[UUID] = None
     assigned_to: Optional[UUID] = None
@@ -209,6 +209,7 @@ class DealBase(BaseModel):
     financing_requirements: Optional[Dict[str, Any]] = None
     trade_in_info: Optional[Dict[str, Any]] = None
     notes: Optional[str] = None
+    is_active: bool = True
     is_won: bool = False
     is_lost: bool = False
     lost_reason: Optional[str] = None
@@ -217,7 +218,7 @@ class DealCreate(DealBase):
     pass
 
 class DealUpdate(BaseModel):
-    name: Optional[str] = None
+    title: Optional[str] = None
     description: Optional[str] = None
     contact_id: Optional[UUID] = None
     assigned_to: Optional[UUID] = None
@@ -231,6 +232,7 @@ class DealUpdate(BaseModel):
     financing_requirements: Optional[Dict[str, Any]] = None
     trade_in_info: Optional[Dict[str, Any]] = None
     notes: Optional[str] = None
+    is_active: Optional[bool] = None
     is_won: Optional[bool] = None
     is_lost: Optional[bool] = None
     lost_reason: Optional[str] = None
@@ -517,17 +519,12 @@ class LeadSummary(BaseModel):
     converted_at: Optional[datetime] = None
 
 class DealPipeline(BaseModel):
-    id: UUID
-    name: str
-    deal_value: Optional[Decimal] = None
-    probability: int
-    expected_close_date: Optional[date] = None
-    stage_name: Optional[str] = None
-    stage_color: Optional[str] = None
-    contact_name: Optional[str] = None
-    assigned_to_name: Optional[str] = None
-    created_at: datetime
-    updated_at: datetime
+    stage_id: int
+    stage_name: str
+    color_code: str
+    deal_count: int
+    total_value: Decimal
+    avg_probability: float
 
 class TaskDashboard(BaseModel):
     id: UUID

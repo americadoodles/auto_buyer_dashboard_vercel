@@ -626,8 +626,12 @@ def get_deal_pipeline() -> List[DealPipeline]:
                 pipeline = []
                 for result in results:
                     pipeline.append(DealPipeline(
-                        stage_id=result[0], stage_name=result[1], color_code=result[2],
-                        deal_count=result[3], total_value=float(result[4]), avg_probability=float(result[5])
+                        stage_id=result[0],
+                        stage_name=result[1],
+                        color_code=result[2] or "#6B7280",  # Default gray if no color
+                        deal_count=result[3] or 0,
+                        total_value=Decimal(str(result[4] or 0)),
+                        avg_probability=float(result[5] or 0)
                     ))
                 
                 return pipeline

@@ -392,7 +392,6 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
     const stageDeals = dealsByStage[stageName] || [];
     const count = stageDeals.length;
     const value = stageDeals.reduce((sum, deal) => sum + Number(deal.deal_value), 0);
-    console.log('value: ', value)
     return { count, value };
   };
 

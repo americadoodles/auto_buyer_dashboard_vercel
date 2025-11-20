@@ -81,8 +81,6 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const [hoveredStage, setHoveredStage] = useState<string | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
-  console.log('deals: ',deals)
-  console.log('stage: ', stages)
   // Map stage name to stage ID
   const getStageIdByName = (stageName: string): number | undefined => {
     // First try to find in the stagesFromDb prop
@@ -183,7 +181,6 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
           const stageDeals = dealsByStage[stage.name] || [];
           const stats = getStageStats(stage.name);
           const isDragOver = dragOverStage === stage.name;
-          console.log('stats', stats);
           return (
             <div
               key={stage.name}
@@ -384,8 +381,12 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                   }}
                   className={`w-full justify-center ${hoveredStage === stage.name ? 'pointer-events-auto' : 'pointer-events-none'}`}
                 >
+                  <div className="flex items-center justify-center">
                   <Icon name="plus" className="w-4 h-4 mr-2" />
-                  Create Deal
+                  <span className="text-sm font-medium">
+                    Create Deal
+                  </span>
+                  </div>
                 </Button>
               </div>
             </div>

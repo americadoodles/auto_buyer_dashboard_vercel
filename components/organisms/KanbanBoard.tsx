@@ -81,7 +81,6 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const [hoveredStage, setHoveredStage] = useState<string | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
-
   // Map stage name to stage ID
   const getStageIdByName = (stageName: string): number | undefined => {
     // First try to find in the stagesFromDb prop
@@ -176,16 +175,16 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
   return (
     <div className="w-full">
-      <div className="flex gap-4 pb-4">
-        {stages.map((stage) => {
+      <div className="overflow-x-auto pb-4" style={{ scrollbarWidth: 'thin' }}>
+        <div className="flex gap-4 min-w-max">
+          {stages.map((stage) => {
           const stageDeals = dealsByStage[stage.name] || [];
           const stats = getStageStats(stage.name);
           const isDragOver = dragOverStage === stage.name;
-          
           return (
             <div
               key={stage.name}
-              className={`flex-1 min-w-0 ${stage.bgColor} rounded-lg border-2 ${isDragOver ? 'border-blue-500 border-dashed' : stage.borderColor} flex flex-col transition-all`}
+              className={`flex-shrink-0 w-[300px]  h-[800px] ${stage.bgColor} rounded-lg border-2 ${isDragOver ? 'border-blue-500 border-dashed' : stage.borderColor} flex flex-col transition-all relative`}
               onDragOver={(e) => handleDragOver(e, stage.name)}
               onDragLeave={handleDragLeave}
               onDrop={(e) => handleDrop(e, stage.name)}
@@ -219,7 +218,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
               </div>
 
               {/* Deal Cards */}
-              <div className="flex-1 p-3 space-y-3">
+              <div className="flex-1 p-3 space-y-3 overflow-y-auto min-h-0">
                 {stageDeals.length === 0 ? (
                   <div className={`text-center py-8 text-gray-400 text-sm ${isDragOver ? 'border-2 border-dashed border-blue-400 rounded-lg' : ''}`}>
                     {isDragOver ? 'Drop deal here' : 'No deals in this stage'}
@@ -231,18 +230,20 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                       draggable
                       onDragStart={(e) => handleDragStart(e, deal)}
                       onDragEnd={handleDragEnd}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedDeal(deal);
-                        setDetailModalOpen(true);
-                      }}
                       className={`bg-white rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md transition-all cursor-move ${
                         draggedDeal?.id === deal.id ? 'opacity-50' : ''
                       }`}
                     >
                       {/* Deal Header */}
                       <div className="mb-3">
-                        <h4 className="text-sm font-semibold text-gray-900 mb-1 line-clamp-2">
+                        <h4 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedDeal(deal);
+                            setDetailModalOpen(true);
+                          }}
+                          className="text-lg font-semibold text-gray-900 mb-1 line-clamp-2 cursor-pointer hover:text-blue-600 hover:underline transition-colors"
+                        >
                           {deal.name}
                         </h4>
                         {deal.description && (
@@ -262,13 +263,13 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                       {/* Contact */}
                       {deal.contact && (
                         <div className="mb-3 flex items-center space-x-2">
-                          <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center">
+                          <div className="w-6 h-6 rounded-full bg-blue-300 flex items-center justify-center">
                             <span className="text-xs font-medium text-gray-700">
-                              {deal.contact.first_name[0]}{deal.contact.last_name[0]}
+                              {(deal.contact.first_name?.[0]?.toUpperCase() || '')}{(deal.contact.last_name?.[0]?.toUpperCase() || '')}
                             </span>
                           </div>
                           <span className="text-xs text-gray-600">
-                            {deal.contact.first_name} {deal.contact.last_name}
+                            {deal.contact.first_name?.charAt(0).toUpperCase() + deal.contact.first_name?.slice(1)} {deal.contact.last_name?.charAt(0).toUpperCase() + deal.contact.last_name?.slice(1)}
                           </span>
                         </div>
                       )}
@@ -301,15 +302,22 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                       {/* Assigned To */}
                       {deal.assigned_to && (
                         <div className="mb-3">
-                          <div className="flex items-center space-x-1 text-xs text-gray-500">
+                          <div className="flex items-center space-x-1 text-xs text-gray-700 bg-yellow-200 rounded-lg px-2 py-1">
                             <Icon name="user" className="w-3 h-3" />
-                            <span>{deal.assigned_to.username}</span>
+                            <span>
+                              {'Owner: '}
+                              {typeof deal.assigned_to === 'object' && 
+                               deal.assigned_to !== null && 
+                               'username' in deal.assigned_to 
+                                ? String(deal.assigned_to.username) 
+                                : 'Unassigned'}
+                            </span>
                           </div>
                         </div>
                       )}
 
                       {/* Actions */}
-                      <div className="flex items-center justify-end space-x-1 pt-2 border-t border-gray-100">
+                      {/* <div className="flex items-center justify-end space-x-1 pt-2 border-t border-gray-100">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -347,35 +355,44 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                         >
                           <Icon name="phone" className="w-3 h-3" />
                         </Button>
-                      </div>
+                      </div> */}
                     </div>
                   ))
                 )}
               </div>
 
-              {/* Create Deal Button - Only show on hover/focus */}
-              {hoveredStage === stage.name && (
-                <div className="p-3 border-t-2 border-gray-200">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const stageId = getStageIdByName(stage.name);
-                      setCreateModalStageId(stageId);
-                      setCreateModalStageName(stage.name);
-                      setCreateModalOpen(true);
-                    }}
-                    className="w-full justify-center"
-                  >
-                    <Icon name="plus" className="w-4 h-4 mr-2" />
+              {/* Create Deal Button - Always takes space at bottom, visible on hover */}
+              <div 
+                className={`p-3 border-t-2 border-gray-200 flex-shrink-0 transition-opacity ${
+                  hoveredStage === stage.name ? 'opacity-100' : 'opacity-0'
+                }`}
+                onDragOver={(e) => handleDragOver(e, stage.name)}
+                onDrop={(e) => handleDrop(e, stage.name)}
+              >
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const stageId = getStageIdByName(stage.name);
+                    setCreateModalStageId(stageId);
+                    setCreateModalStageName(stage.name);
+                    setCreateModalOpen(true);
+                  }}
+                  className={`w-full justify-center ${hoveredStage === stage.name ? 'pointer-events-auto' : 'pointer-events-none'}`}
+                >
+                  <div className="flex items-center justify-center">
+                  <Icon name="plus" className="w-4 h-4 mr-2" />
+                  <span className="text-sm font-medium">
                     Create Deal
-                  </Button>
-                </div>
-              )}
+                  </span>
+                  </div>
+                </Button>
+              </div>
             </div>
           );
         })}
+        </div>
       </div>
 
       {/* Create Deal Modal */}

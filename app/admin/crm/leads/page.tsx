@@ -191,10 +191,6 @@ export default function LeadsPage() {
   return (
     <AdminLayout>
       <div className="p-6">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Lead Management</h1>
-          <p className="text-gray-600 mt-1">Manage and track your sales leads</p>
-        </div>
         <LeadManagement 
           leads={transformedLeads as any}
           totalLeads={filteredLeads.length}

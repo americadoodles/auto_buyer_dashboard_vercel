@@ -19,7 +19,6 @@ export default function DealsPage() {
     stage_id: stageFilter,
     category_id: categoryFilter
   });
-
   const { stages } = useDealStages();
   const { pipeline } = useDealPipeline();
 
@@ -76,8 +75,8 @@ export default function DealsPage() {
       is_lost: deal.is_lost || false, // Ensure is_lost is always a boolean
       contact: deal.contact_id ? {
         id: deal.contact_id,
-        first_name: 'Contact', // This would need to be fetched from contact data
-        last_name: 'Name'
+        first_name: deal.contact?.first_name || '',
+        last_name: deal.contact?.last_name || ''
       } : undefined,
       deal_stage: foundStage ? {
         id: foundStage.id,
@@ -86,12 +85,22 @@ export default function DealsPage() {
       } : undefined,
       deal_category: deal.deal_category_id ? {
         id: deal.deal_category_id,
-        name: 'Category' // This would need to be fetched from category data
+        name: deal.deal_category?.name || ''
       } : undefined,
-      assigned_to: deal.assigned_to ? {
-        id: deal.assigned_to,
-        username: deal.assigned_to // This would need to be fetched from user data
-      } : undefined
+      assigned_to: deal.assigned_to ? (
+        typeof deal.assigned_to === 'object' && 
+        deal.assigned_to !== null && 
+        'username' in deal.assigned_to &&
+        'id' in deal.assigned_to
+          ? {
+              id: String((deal.assigned_to as { id: string | number; username: string }).id || ''),
+              username: String((deal.assigned_to as { id: string | number; username: string }).username || '')
+            }
+          : {
+              id: String(deal.assigned_to || ''),
+              username: '' // UUID only, no username available
+            }
+      ) : undefined
     };
   });
 

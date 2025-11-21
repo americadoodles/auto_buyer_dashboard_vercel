@@ -1,6 +1,6 @@
 # CRM Pydantic Schemas for Auto-Buyer Platform
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional, List, Dict, Any, Literal
+from typing import Optional, List, Dict, Any, Literal, Union
 from datetime import datetime, date
 from uuid import UUID
 from decimal import Decimal
@@ -195,10 +195,11 @@ class DealCategoryOut(DealCategoryBase):
     created_at: datetime
 
 class DealBase(BaseModel):
-    name: str
+    title: str  # Frontend uses 'title', maps to 'name' in database
     description: Optional[str] = None
     contact_id: Optional[UUID] = None
-    assigned_to: Optional[UUID] = None
+    lead_id: Optional[UUID] = None
+    assigned_to: Optional[Union[UUID, 'UserBasic']] = None  # Can be UUID or nested UserBasic object
     deal_stage_id: Optional[int] = None
     deal_category_id: Optional[int] = None
     expected_close_date: Optional[date] = None
@@ -209,6 +210,7 @@ class DealBase(BaseModel):
     financing_requirements: Optional[Dict[str, Any]] = None
     trade_in_info: Optional[Dict[str, Any]] = None
     notes: Optional[str] = None
+    is_active: bool = True
     is_won: bool = False
     is_lost: bool = False
     lost_reason: Optional[str] = None
@@ -217,9 +219,10 @@ class DealCreate(DealBase):
     pass
 
 class DealUpdate(BaseModel):
-    name: Optional[str] = None
+    title: Optional[str] = None
     description: Optional[str] = None
     contact_id: Optional[UUID] = None
+    lead_id: Optional[UUID] = None
     assigned_to: Optional[UUID] = None
     deal_stage_id: Optional[int] = None
     deal_category_id: Optional[int] = None
@@ -231,15 +234,37 @@ class DealUpdate(BaseModel):
     financing_requirements: Optional[Dict[str, Any]] = None
     trade_in_info: Optional[Dict[str, Any]] = None
     notes: Optional[str] = None
+    is_active: Optional[bool] = None
     is_won: Optional[bool] = None
     is_lost: Optional[bool] = None
     lost_reason: Optional[str] = None
+
+class ContactBasic(BaseModel):
+    id: UUID
+    first_name: str
+    last_name: str
+
+class UserBasic(BaseModel):
+    id: UUID
+    username: str
+    
+    class Config:
+        from_attributes = True
+        # Ensure proper JSON serialization
+        json_encoders = {
+            UUID: str
+        }
 
 class DealOut(DealBase):
     id: UUID
     created_by: UUID
     created_at: datetime
     updated_at: datetime
+    contact: Optional[ContactBasic] = None
+    deal_category: Optional[DealCategoryOut] = None
+    # assigned_to inherited from DealBase as Union[UUID, UserBasic]
+    # Override to ensure proper serialization
+    model_config = {"from_attributes": True}
 
 class DealActivityBase(BaseModel):
     activity_type: str
@@ -517,17 +542,12 @@ class LeadSummary(BaseModel):
     converted_at: Optional[datetime] = None
 
 class DealPipeline(BaseModel):
-    id: UUID
-    name: str
-    deal_value: Optional[Decimal] = None
-    probability: int
-    expected_close_date: Optional[date] = None
-    stage_name: Optional[str] = None
-    stage_color: Optional[str] = None
-    contact_name: Optional[str] = None
-    assigned_to_name: Optional[str] = None
-    created_at: datetime
-    updated_at: datetime
+    stage_id: int
+    stage_name: str
+    color_code: str
+    deal_count: int
+    total_value: Decimal
+    avg_probability: float
 
 class TaskDashboard(BaseModel):
     id: UUID

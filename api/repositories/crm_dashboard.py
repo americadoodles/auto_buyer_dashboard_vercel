@@ -60,15 +60,14 @@ def get_crm_stats() -> CRMStats:
                 
                 # Get task statistics
                 cur.execute("""
-                    SELECT COUNT(*) FROM tasks t
-                    LEFT JOIN task_statuses ts ON t.status_id = ts.id
-                    WHERE ts.name != 'Completed' OR ts.name IS NULL
+                    SELECT COUNT(*) FROM tasks 
+                    WHERE status != 'Done'
                 """)
                 pending_tasks = cur.fetchone()[0]
                 
                 cur.execute("""
                     SELECT COUNT(*) FROM tasks 
-                    WHERE due_date < NOW() AND completed_at IS NULL
+                    WHERE due_at < NOW() AND status != 'Done'
                 """)
                 overdue_tasks = cur.fetchone()[0]
                 
@@ -314,18 +313,16 @@ def get_upcoming_tasks(user_id: UUID) -> List[TaskDashboard]:
         try:
             with conn.cursor() as cur:
                 cur.execute("""
-                    SELECT t.id, t.title, t.due_date, tp.name as priority_name,
-                           tp.color_code as priority_color, ts.name as status_name,
-                           ts.color_code as status_color, u.username as assigned_to_name,
+                    SELECT t.id, t.title, t.due_at, t.priority as priority_name,
+                           NULL as priority_color, t.status as status_name,
+                           NULL as status_color, u.username as assigned_to_name,
                            t.created_at
                     FROM tasks t
-                    LEFT JOIN task_priorities tp ON t.priority_id = tp.id
-                    LEFT JOIN task_statuses ts ON t.status_id = ts.id
-                    LEFT JOIN users u ON t.assigned_to = u.id
-                    WHERE t.assigned_to = %s 
-                    AND (t.due_date IS NULL OR t.due_date >= NOW())
-                    AND (ts.name != 'Completed' OR ts.name IS NULL)
-                    ORDER BY t.due_date ASC NULLS LAST, t.created_at DESC
+                    LEFT JOIN users u ON t.owner_user_id = u.id
+                    WHERE t.owner_user_id = %s 
+                    AND (t.due_at IS NULL OR t.due_at >= NOW())
+                    AND t.status != 'Done'
+                    ORDER BY t.due_at ASC NULLS LAST, t.created_at DESC
                     LIMIT 10
                 """, (user_id,))
                 

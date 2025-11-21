@@ -9,6 +9,7 @@ export interface Deal {
   title: string;
   description?: string;
   contact_id?: string;
+  lead_id?: string;
   assigned_to?: string;
   deal_stage_id?: number;
   deal_category_id?: number;

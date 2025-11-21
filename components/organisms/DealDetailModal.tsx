@@ -6,6 +6,8 @@ import { Input } from '../atoms/Input';
 import { Icon } from '../atoms/Icon';
 import { Badge } from '../atoms/Badge';
 import { dealsApi, DealCategory, DealStage } from '../../lib/services/dealsApi';
+import { leadsApi } from '../../lib/services/leadsApi';
+import { Lead } from '../../lib/types/lead';
 import { useAuth } from '../../app/auth/useAuth';
 import { useRouter } from 'next/navigation';
 import { useDealStages, useDealCategories } from '../../lib/hooks/useDeals';
@@ -30,6 +32,7 @@ interface Deal {
     first_name: string;
     last_name: string;
   };
+  lead_id?: string;
   deal_value: number;
   probability: number;
   expected_close_date: string;
@@ -89,6 +92,8 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
   const [activities, setActivities] = useState<DealActivity[]>([]);
   const [contactName, setContactName] = useState<string>('');
   const [leadId, setLeadId] = useState<string | undefined>(undefined);
+  const [lead, setLead] = useState<Lead | null>(null);
+  const [loadingLead, setLoadingLead] = useState(false);
 
   // Reset states when modal closes
   useEffect(() => {
@@ -97,9 +102,10 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
       setShowDeleteConfirm(false);
       setSaving(false);
       setError(null);
+      setLead(null);
+      setLeadId(undefined);
     }
   }, [isOpen]);
-
   // Load deal details and activities
   useEffect(() => {
     if (!isOpen || !initialDeal) return;
@@ -109,6 +115,7 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
     setShowDeleteConfirm(false);
     setSaving(false);
     setError(null);
+    setLead(null);
     
     // Initialize form fields from the deal prop
     setTitle(initialDeal.name || '');
@@ -119,6 +126,7 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
     setDealCategoryId(initialDeal.deal_category?.id);
     setDealValue(initialDeal.deal_value?.toString() || '');
     setContactId(initialDeal.contact?.id);
+    setLeadId(initialDeal.lead_id);
     
     if (initialDeal.contact) {
       setContactName(`${initialDeal.contact.first_name} ${initialDeal.contact.last_name}`);
@@ -128,8 +136,12 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
       setLoading(true);
       setError(null);
       try {
-        const dealActivities = await dealsApi.getDealActivities(initialDeal.id).catch(() => []);
+        const [dealActivities, leadData] = await Promise.all([
+          dealsApi.getDealActivities(initialDeal.id).catch(() => []),
+          initialDeal.lead_id ? leadsApi.getLead(initialDeal.lead_id).catch(() => null) : Promise.resolve(null)
+        ]);
         setActivities(dealActivities);
+        setLead(leadData);
       } catch (e: any) {
         setError(e?.message || 'Failed to load deal details');
       } finally {
@@ -261,6 +273,56 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
             <div className="p-6 space-y-6">
               {error && (
                 <div className="text-red-600 text-sm bg-red-50 p-3 rounded-md">{error}</div>
+              )}
+
+              {/* Vehicle and Contact Information Section */}
+              {lead && (lead.listing || lead.contact) && (
+                <div className="space-y-2">
+                  <h4 className="text-md font-semibold text-gray-900 border-b pb-2">Lead Information</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Vehicle Information */}
+                    {lead.listing && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                        <div className="text-sm font-medium text-blue-900 mb-2">Vehicle Information</div>
+                        <div className="text-sm text-blue-700 space-y-1">
+                          <div><span className="font-medium">Year:</span> {lead.listing.year}</div>
+                          <div><span className="font-medium">Make:</span> {lead.listing.make}</div>
+                          <div><span className="font-medium">Model:</span> {lead.listing.model}</div>
+                          {lead.listing.trim && (
+                            <div><span className="font-medium">Trim:</span> {lead.listing.trim}</div>
+                          )}
+                          {lead.listing.vin && (
+                            <div><span className="font-medium">VIN:</span> {lead.listing.vin}</div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Contact Information */}
+                    {lead.contact && (
+                      <div className="bg-green-50 border border-green-200 rounded-md p-3">
+                        <div className="text-sm font-medium text-green-900 mb-2">Contact Information</div>
+                        <div className="text-sm text-green-700 space-y-1">
+                          <div>
+                            <span className="font-medium">Name:</span> {lead.contact.first_name} {lead.contact.last_name}
+                          </div>
+                          {lead.contact.company && (
+                            <div><span className="font-medium">Company:</span> {lead.contact.company}</div>
+                          )}
+                          {lead.contact.email && (
+                            <div><span className="font-medium">Email:</span> {lead.contact.email}</div>
+                          )}
+                          {lead.contact.phone && (
+                            <div><span className="font-medium">Phone:</span> {lead.contact.phone}</div>
+                          )}
+                          {lead.contact.mobile && !lead.contact.phone && (
+                            <div><span className="font-medium">Mobile:</span> {lead.contact.mobile}</div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}
 
               {/* Edit Fields Section */}

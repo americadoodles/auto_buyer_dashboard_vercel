@@ -198,6 +198,7 @@ class DealBase(BaseModel):
     title: str  # Frontend uses 'title', maps to 'name' in database
     description: Optional[str] = None
     contact_id: Optional[UUID] = None
+    lead_id: Optional[UUID] = None
     assigned_to: Optional[Union[UUID, 'UserBasic']] = None  # Can be UUID or nested UserBasic object
     deal_stage_id: Optional[int] = None
     deal_category_id: Optional[int] = None
@@ -221,6 +222,7 @@ class DealUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     contact_id: Optional[UUID] = None
+    lead_id: Optional[UUID] = None
     assigned_to: Optional[UUID] = None
     deal_stage_id: Optional[int] = None
     deal_category_id: Optional[int] = None

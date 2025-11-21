@@ -130,6 +130,7 @@ export const DealCreateModal: React.FC<DealCreateModalProps> = ({
         title: name.trim(), // API interface uses 'title' which maps to 'name' in database
         description: description.trim() || undefined,
         contact_id: contactId || undefined,
+        lead_id: selectedLeadId || undefined,
         deal_stage_id: selectedStageId,
         deal_category_id: dealCategoryId || undefined,
         expected_close_date: expectedCloseDate || undefined,

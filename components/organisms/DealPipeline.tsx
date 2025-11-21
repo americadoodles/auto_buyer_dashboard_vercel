@@ -221,8 +221,6 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
       if (matchedStage) {
         grouped[matchedStage.name].push(deal);
       } else {
-        // Default to Prospecting if no match
-        grouped['Prospecting'].push(deal);
       }
     });
 

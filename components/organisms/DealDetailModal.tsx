@@ -69,6 +69,8 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   // Deal fields
@@ -88,9 +90,26 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
   const [contactName, setContactName] = useState<string>('');
   const [leadId, setLeadId] = useState<string | undefined>(undefined);
 
+  // Reset states when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+      setSaving(false);
+      setError(null);
+    }
+  }, [isOpen]);
+
   // Load deal details and activities
   useEffect(() => {
     if (!isOpen || !initialDeal) return;
+    
+    // Reset all states when opening a new deal
+    setDeleting(false);
+    setShowDeleteConfirm(false);
+    setSaving(false);
+    setError(null);
+    
     // Initialize form fields from the deal prop
     setTitle(initialDeal.name || '');
     setDescription(initialDeal.description || '');
@@ -152,6 +171,31 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
       setError(e?.message || 'Failed to update deal');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!initialDeal) return;
+    
+    setDeleting(true);
+    setError(null);
+    
+    try {
+      await dealsApi.deleteDeal(initialDeal.id);
+
+      // Reset states before closing
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+
+      if (onDealUpdated) {
+        onDealUpdated();
+      }
+      
+      onClose();
+    } catch (e: any) {
+      setError(e?.message || 'Failed to delete deal');
+      setDeleting(false);
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -406,13 +450,49 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
         )}
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t flex justify-end space-x-2 sticky bottom-0 bg-white">
-          <Button variant="outline" onClick={onClose} disabled={saving || loading}>
-            Close
-          </Button>
-          <Button onClick={handleSave} disabled={!title.trim() || saving || loading}>
-            {saving ? 'Saving...' : 'Save Changes'}
-          </Button>
+        <div className="px-6 py-4 border-t flex justify-between items-center sticky bottom-0 bg-white">
+          <div>
+            {!showDeleteConfirm ? (
+              <Button 
+                variant="outline" 
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={saving || deleting || loading}
+                className="text-red-600 border-red-300 hover:bg-red-50 flex items-center"
+              >
+                <Icon name="trash-2" className="w-4 h-4 mr-2" />
+                <span>
+                  Delete Deal
+                </span>
+              </Button>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-700">Are you sure?</span>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={deleting}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="bg-red-400 hover:bg-red-500 text-white"
+                >
+                  {deleting ? 'Deleting...' : 'Confirm Delete'}
+                </Button>
+              </div>
+            )}
+          </div>
+          <div className="flex space-x-2">
+            <Button variant="outline" onClick={onClose} disabled={saving || deleting || loading}>
+              Close
+            </Button>
+            <Button onClick={handleSave} disabled={!title.trim() || saving || deleting || loading}>
+              {saving ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
         </div>
       </div>
     </div>

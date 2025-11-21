@@ -16,7 +16,8 @@ import {
   AlertCircle,
   Check,
   Settings,
-  X
+  X,
+  Trash2
 } from 'lucide-react';
 
 interface IconProps {
@@ -43,7 +44,8 @@ const iconMap: Record<string, LucideIcon> = {
   'alert-circle': AlertCircle,
   'check': Check,
   'settings': Settings,
-  'x': X
+  'x': X,
+  'trash-2': Trash2
 };
 
 export const Icon: React.FC<IconProps> = ({ 

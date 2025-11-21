@@ -307,6 +307,7 @@ class TaskPriorityBase(BaseModel):
     description: Optional[str] = None
     color_code: str = "#3B82F6"
     is_active: bool = True
+    sort_order: int
 
 class TaskPriorityCreate(TaskPriorityBase):
     pass

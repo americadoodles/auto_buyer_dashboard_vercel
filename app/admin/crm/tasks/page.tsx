@@ -182,10 +182,10 @@ export default function TasksPage() {
   return (
     <AdminLayout>
       <div className="p-6">
-        <div className="mb-6">
+        {/* <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Task Management</h1>
           <p className="text-gray-600 mt-1">Track and manage your sales tasks and activities</p>
-        </div>
+        </div> */}
         <TaskManagement 
           tasks={transformedTasks}
           totalTasks={tasks.length}

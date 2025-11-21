@@ -9,37 +9,7 @@ import { Icon } from '../atoms/Icon';
 import { Pagination } from '../molecules/Pagination';
 import { KanbanBoard } from './KanbanBoard';
 import { useDealStages, useDealCategories } from '../../lib/hooks/useDeals';
-
-interface Deal {
-  id: string;
-  name: string;
-  description: string;
-  contact?: {
-    id: string;
-    first_name: string;
-    last_name: string;
-  };
-  deal_value: number;
-  probability: number;
-  expected_close_date: string;
-  deal_stage?: {
-    id: number;
-    name: string;
-    color: string;
-  };
-  deal_category?: {
-    id: number;
-    name: string;
-  };
-  assigned_to?: {
-    id: string;
-    username: string;
-  };
-  is_won: boolean;
-  is_lost: boolean;
-  created_at: string;
-  updated_at: string;
-}
+import { Deal } from '../../lib/types/deal';
 
 interface DealStage {
   id: number;

@@ -10,26 +10,12 @@ import { getContacts } from '../../lib/services/listingManagementApi';
 import { leadsApi } from '../../lib/services/leadsApi';
 import { dealsApi } from '../../lib/services/dealsApi';
 import { Lead } from '../../lib/types/lead';
+import { Contact } from '../../lib/types/listing';
+import { User } from '../../lib/types/user';
 import { useAuth } from '../../app/auth/useAuth';
 import { useRouter } from 'next/navigation';
 import { useTaskStatuses, useTaskPriorities } from '../../lib/hooks/useTasks';
 import { ApiService } from '../../lib/services/api';
-
-interface Contact {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email?: string;
-  company?: string;
-  phone?: string;
-  mobile?: string;
-}
-
-interface User {
-  id: string;
-  username: string;
-  email: string;
-}
 
 interface Task {
   id: string;

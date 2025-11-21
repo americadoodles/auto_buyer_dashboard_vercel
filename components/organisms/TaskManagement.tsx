@@ -63,8 +63,8 @@ interface TaskManagementProps {
   onPriorityFilter?: (priorityId: number | undefined) => void;
   onStatusFilter?: (statusId: number | undefined) => void;
   onAssignedToFilter?: (assignedTo: string | undefined) => void;
-  priorities?: Array<{ id: number; name: string; color_code?: string }>;
-  statuses?: Array<{ id: number; name: string; color_code?: string }>;
+  priorities?: Array<{ id: number; name: string; color_code?: string, sort_order?: number }>;
+  statuses?: Array<{ id: number; name: string; color_code?: string, sort_order?: number }>;
   loading?: boolean;
   onTasksUpdated?: () => void;
 }
@@ -413,11 +413,13 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
               disabled={loading || prioritiesLoading}
             >
               <option value="all">All Priorities</option>
-              {priorities.map((priority) => (
-                <option key={priority.id} value={priority.id.toString()}>
-                  {priority.name}
-                </option>
-              ))}
+              {[...priorities]
+                .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+                .map((priority) => (
+                  <option key={priority.id} value={priority.id.toString()}>
+                    {priority.name}
+                  </option>
+                ))}
             </select>
           </div>
           <div>

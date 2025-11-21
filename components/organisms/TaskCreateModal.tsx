@@ -9,25 +9,11 @@ import { getContacts } from '../../lib/services/listingManagementApi';
 import { leadsApi } from '../../lib/services/leadsApi';
 import { dealsApi } from '../../lib/services/dealsApi';
 import { Lead } from '../../lib/types/lead';
+import { Contact } from '../../lib/types/listing';
+import { User } from '../../lib/types/user';
 import { useAuth } from '../../app/auth/useAuth';
 import { useTaskStatuses, useTaskPriorities } from '../../lib/hooks/useTasks';
 import { ApiService } from '../../lib/services/api';
-
-interface Contact {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email?: string;
-  company?: string;
-  phone?: string;
-  mobile?: string;
-}
-
-interface User {
-  id: string;
-  username: string;
-  email: string;
-}
 
 interface TaskCreateModalProps {
   isOpen: boolean;
@@ -232,11 +218,13 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
                 disabled={prioritiesLoading}
               >
                 <option value="">Select priority</option>
-                {priorities.map((priority) => (
-                  <option key={priority.id} value={priority.id}>
-                    {priority.name}
-                  </option>
-                ))}
+                {[...priorities]
+                  .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+                  .map((priority) => (
+                    <option key={priority.id} value={priority.id}>
+                      {priority.name}
+                    </option>
+                  ))}
               </select>
             </div>
           </div>

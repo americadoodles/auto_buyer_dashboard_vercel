@@ -964,13 +964,12 @@ def create_task_priority(priority_data: TaskPriorityCreate) -> TaskPriorityOut:
         try:
             with conn.cursor() as cur:
                 cur.execute("""
-                    INSERT INTO task_priorities (name, description, color_code, is_active, created_at)
-                    VALUES (%s, %s, %s, %s, %s)
+                    INSERT INTO task_priorities (name, description, color_code, created_at)
+                    VALUES (%s, %s, %s, %s)
                     RETURNING id, created_at
                 """, (
                     priority_data.name, priority_data.description,
-                    priority_data.color_code, priority_data.is_active,
-                    datetime.now()
+                    priority_data.color_code, datetime.now()
                 ))
                 
                 result = cur.fetchone()
@@ -1002,9 +1001,8 @@ def get_task_priorities() -> List[TaskPriorityOut]:
         try:
             with conn.cursor() as cur:
                 cur.execute("""
-                    SELECT id, name, description, color_code, is_active, created_at
+                    SELECT id, name, description, color_code, created_at, sort_order
                     FROM task_priorities
-                    WHERE is_active = true
                     ORDER BY name
                 """)
                 
@@ -1014,10 +1012,9 @@ def get_task_priorities() -> List[TaskPriorityOut]:
                 for result in results:
                     priorities.append(TaskPriorityOut(
                         id=result[0], name=result[1], description=result[2],
-                        color_code=result[3], is_active=result[4],
-                        created_at=result[5]
+                        color_code=result[3], is_active=True,
+                        created_at=result[4], sort_order=result[5]
                     ))
-                
                 return priorities
                 
         except Exception as e:
@@ -1036,20 +1033,20 @@ def update_task_priority(priority_id: int, priority_data: TaskPriorityCreate) ->
         try:
             with conn.cursor() as cur:
                 cur.execute("""
-                    UPDATE task_priorities SET name = %s, description = %s, color_code = %s, is_active = %s
+                    UPDATE task_priorities SET name = %s, description = %s, color_code = %s
                     WHERE id = %s
-                    RETURNING id, name, description, color_code, is_active, created_at
+                    RETURNING id, name, description, color_code, created_at
                 """, (
                     priority_data.name, priority_data.description,
-                    priority_data.color_code, priority_data.is_active, priority_id
+                    priority_data.color_code, priority_id
                 ))
                 
                 result = cur.fetchone()
                 if result:
                     return TaskPriorityOut(
                         id=result[0], name=result[1], description=result[2],
-                        color_code=result[3], is_active=result[4],
-                        created_at=result[5]
+                        color_code=result[3], is_active=priority_data.is_active,
+                        created_at=result[4]
                     )
                 return None
                 

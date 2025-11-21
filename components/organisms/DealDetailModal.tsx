@@ -8,6 +8,7 @@ import { Badge } from '../atoms/Badge';
 import { dealsApi, DealCategory, DealStage } from '../../lib/services/dealsApi';
 import { useAuth } from '../../app/auth/useAuth';
 import { useRouter } from 'next/navigation';
+import { useDealStages } from '../../lib/hooks/useDeals';
 
 interface DealActivity {
   id: string;
@@ -80,8 +81,8 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
   const [dealValue, setDealValue] = useState('');
   const [contactId, setContactId] = useState<string | undefined>(undefined);
   
-  // Related data
-  const [stages, setStages] = useState<DealStage[]>([]);
+  // Related data - use hooks for stages
+  const { stages, loading: stagesLoading } = useDealStages();
   const [activities, setActivities] = useState<DealActivity[]>([]);
   const [contactName, setContactName] = useState<string>('');
   const [leadId, setLeadId] = useState<string | undefined>(undefined);
@@ -108,13 +109,8 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
       setLoading(true);
       setError(null);
       try {
-        const [dealActivities, dealStages] = await Promise.all([
-          dealsApi.getDealActivities(initialDeal.id).catch(() => []),
-          dealsApi.getDealStages().catch(() => [])
-        ]);
-
+        const dealActivities = await dealsApi.getDealActivities(initialDeal.id).catch(() => []);
         setActivities(dealActivities);
-        setStages(dealStages);
       } catch (e: any) {
         setError(e?.message || 'Failed to load deal details');
       } finally {
@@ -210,7 +206,7 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
           </button>
         </div>
 
-        {loading ? (
+        {(loading || stagesLoading) ? (
           <div className="flex items-center justify-center p-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           </div>

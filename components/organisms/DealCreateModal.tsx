@@ -9,6 +9,7 @@ import { getContacts } from '../../lib/services/listingManagementApi';
 import { leadsApi } from '../../lib/services/leadsApi';
 import { Lead } from '../../lib/types/lead';
 import { useAuth } from '../../app/auth/useAuth';
+import { useDealStages, useDealCategories } from '../../lib/hooks/useDeals';
 
 interface Contact {
   id: string;
@@ -47,27 +48,26 @@ export const DealCreateModal: React.FC<DealCreateModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [categories, setCategories] = useState<DealCategory[]>([]);
-  const [stages, setStages] = useState<DealStage[]>([]);
-  const [selectedStageId, setSelectedStageId] = useState<number | undefined>(stageId);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [selectedLeadId, setSelectedLeadId] = useState<string | undefined>(undefined);
   const [selectedLead, setSelectedLead] = useState<Lead | undefined>(undefined);
+  
+  // Use hooks for stages and categories
+  const { stages, loading: stagesLoading } = useDealStages();
+  const { categories, loading: categoriesLoading } = useDealCategories();
+  
+  const [selectedStageId, setSelectedStageId] = useState<number | undefined>(stageId);
 
   useEffect(() => {
     if (!isOpen) return;
     
     const loadData = async () => {
       try {
-        const [contactsData, categoriesData, stagesData, leadsData] = await Promise.all([
+        const [contactsData, leadsData] = await Promise.all([
           getContacts({ limit: 1000 }).catch(() => []),
-          dealsApi.getDealCategories().catch(() => []),
-          dealsApi.getDealStages().catch(() => []),
           leadsApi.getLeads({ limit: 1000 }).catch(() => [])
         ]);
         setContacts(contactsData);
-        setCategories(categoriesData);
-        setStages(stagesData);
         setLeads(leadsData);
       } catch (e) {
         console.error('Error loading data:', e);

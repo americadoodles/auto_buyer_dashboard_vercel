@@ -1,14 +1,15 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card } from '../molecules/Card';
-import { TableHeader } from '../molecules/TableHeader';
-import { TableRow } from '../molecules/TableRow';
 import { Badge } from '../atoms/Badge';
 import { Button } from '../atoms/Button';
 import { Input } from '../atoms/Input';
 import { Icon } from '../atoms/Icon';
 import { Pagination } from '../molecules/Pagination';
+import { KanbanBoard } from './KanbanBoard';
+import { useTaskStatuses, useTaskPriorities } from '../../lib/hooks/useTasks';
+import { tasksApi } from '../../lib/services/tasksApi';
 
 interface Task {
   id: string;
@@ -65,6 +66,7 @@ interface TaskManagementProps {
   priorities?: Array<{ id: number; name: string; color_code?: string }>;
   statuses?: Array<{ id: number; name: string; color_code?: string }>;
   loading?: boolean;
+  onTasksUpdated?: () => void;
 }
 
 export const TaskManagement: React.FC<TaskManagementProps> = ({
@@ -81,15 +83,40 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
   onPriorityFilter,
   onStatusFilter,
   onAssignedToFilter,
-  priorities,
-  statuses,
-  loading
+  priorities: prioritiesProp,
+  statuses: statusesProp,
+  loading,
+  onTasksUpdated
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [assignedFilter, setAssignedFilter] = useState('all');
   const [showOverdue, setShowOverdue] = useState(false);
+
+  // Fetch task statuses and priorities from database
+  const { statuses: dbStatuses, loading: statusesLoading } = useTaskStatuses();
+  const { priorities: dbPriorities, loading: prioritiesLoading } = useTaskPriorities();
+
+  // Use database statuses/priorities if available, otherwise fall back to prop
+  const statuses = dbStatuses.length > 0 ? dbStatuses : (statusesProp || []);
+  const priorities = dbPriorities.length > 0 ? dbPriorities : (prioritiesProp || []);
+
+  // Helper function to convert hex color to Tailwind classes
+  const getTailwindColors = (hexColor: string) => {
+    // Map common colors to Tailwind classes
+    const colorMap: Record<string, { bg: string; border: string }> = {
+      '#3B82F6': { bg: 'bg-blue-50', border: 'border-blue-200' },
+      '#10B981': { bg: 'bg-green-50', border: 'border-green-200' },
+      '#F59E0B': { bg: 'bg-yellow-50', border: 'border-yellow-200' },
+      '#8B5CF6': { bg: 'bg-purple-50', border: 'border-purple-200' },
+      '#EF4444': { bg: 'bg-red-50', border: 'border-red-200' },
+      '#6B7280': { bg: 'bg-gray-50', border: 'border-gray-200' },
+      '#059669': { bg: 'bg-emerald-50', border: 'border-emerald-200' },
+    };
+    
+    return colorMap[hexColor] || { bg: 'bg-gray-50', border: 'border-gray-200' };
+  };
 
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
@@ -143,6 +170,7 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
   };
 
   const formatDate = (dateString: string) => {
+    if (!dateString) return 'No due date';
     const date = new Date(dateString);
     const now = new Date();
     const diffTime = date.getTime() - now.getTime();
@@ -156,17 +184,110 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
   };
 
   const isOverdue = (dueDate: string) => {
+    if (!dueDate) return false;
     const date = new Date(dueDate);
     const now = new Date();
-    return date < now && !tasks.find(task => task.due_date === dueDate)?.completed_at;
+    return date < now;
   };
 
   const overdueTasks = tasks.filter(task => isOverdue(task.due_date));
   const dueTodayTasks = tasks.filter(task => {
+    if (!task.due_date) return false;
     const date = new Date(task.due_date);
     const today = new Date();
     return date.toDateString() === today.toDateString() && !task.completed_at;
   });
+
+  // Define the Kanban stages from database
+  const kanbanStages = useMemo(() => {
+    // Use database statuses from useTaskStatuses hook
+    return dbStatuses
+      .filter(status => status.is_active !== false) // Only include active statuses
+      .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)) // Sort by sort_order
+      .map(status => {
+        const color = status.color_code || '#6B7280'; // Default gray if no color
+        const tailwindColors = getTailwindColors(color);
+        return {
+          id: status.id,
+          name: status.name,
+          color: color,
+          bgColor: tailwindColors.bg,
+          borderColor: tailwindColors.border
+        };
+      });
+  }, [dbStatuses]);
+
+  // Filter tasks based on search and filters
+  const filteredTasks = useMemo(() => {
+    let filtered = tasks;
+
+    // Search filter
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(task =>
+        task.title.toLowerCase().includes(searchLower) ||
+        task.description?.toLowerCase().includes(searchLower) ||
+        task.assigned_to?.username.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Status filter
+    if (statusFilter !== 'all') {
+      const statusId = parseInt(statusFilter, 10);
+      filtered = filtered.filter(task => task.status.id === statusId);
+    }
+
+    // Priority filter
+    if (priorityFilter !== 'all') {
+      const priorityId = parseInt(priorityFilter, 10);
+      filtered = filtered.filter(task => task.priority.id === priorityId);
+    }
+
+    // Assigned filter
+    if (assignedFilter !== 'all') {
+      if (assignedFilter === 'me') {
+        // You might want to check against current user
+        // For now, just pass through
+      } else {
+        filtered = filtered.filter(task =>
+          task.assigned_to?.username.toLowerCase() === assignedFilter.toLowerCase()
+        );
+      }
+    }
+
+    // Overdue filter
+    if (showOverdue) {
+      filtered = filtered.filter(task => isOverdue(task.due_date));
+    }
+
+    return filtered;
+  }, [tasks, searchTerm, statusFilter, priorityFilter, assignedFilter, showOverdue]);
+
+  // Group tasks by status
+  const tasksByStatus = useMemo(() => {
+    const grouped: Record<string, Task[]> = {};
+    kanbanStages.forEach(stage => {
+      grouped[stage.name] = [];
+    });
+
+    filteredTasks.forEach(task => {
+      const statusName = task.status?.name || '';
+      const matchedStage = kanbanStages.find(s => 
+        s.name.toLowerCase() === statusName.toLowerCase()
+      );
+      if (matchedStage) {
+        grouped[matchedStage.name].push(task);
+      }
+    });
+
+    return grouped;
+  }, [filteredTasks, kanbanStages]);
+
+  // Calculate status totals
+  const getStatusStats = (statusName: string) => {
+    const statusTasks = tasksByStatus[statusName] || [];
+    return { count: statusTasks.length };
+  };
 
   return (
     <div className="space-y-6">
@@ -241,7 +362,7 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
             <div className="ml-3">
               <p className="text-sm font-medium text-gray-500">Completed</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {tasks.filter(task => task.status.name === 'Completed').length}
+                {tasks.filter(task => task.status.name.toLowerCase() === 'completed').length}
               </p>
             </div>
           </div>
@@ -271,23 +392,14 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
               value={statusFilter}
               onChange={(e) => handleStatusFilterChange(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={loading}
+              disabled={loading || statusesLoading}
             >
               <option value="all">All Status</option>
-              {statuses ? (
-                statuses.map((status) => (
-                  <option key={status.id} value={status.id.toString()}>
-                    {status.name}
-                  </option>
-                ))
-              ) : (
-                <>
-                  <option value="not_started">Not Started</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
-                </>
-              )}
+              {statuses.map((status) => (
+                <option key={status.id} value={status.id.toString()}>
+                  {status.name}
+                </option>
+              ))}
             </select>
           </div>
           <div>
@@ -298,23 +410,14 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
               value={priorityFilter}
               onChange={(e) => handlePriorityFilterChange(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={loading}
+              disabled={loading || prioritiesLoading}
             >
               <option value="all">All Priorities</option>
-              {priorities ? (
-                priorities.map((priority) => (
-                  <option key={priority.id} value={priority.id.toString()}>
-                    {priority.name}
-                  </option>
-                ))
-              ) : (
-                <>
-                  <option value="urgent">Urgent</option>
-                  <option value="high">High</option>
-                  <option value="medium">Medium</option>
-                  <option value="low">Low</option>
-                </>
-              )}
+              {priorities.map((priority) => (
+                <option key={priority.id} value={priority.id.toString()}>
+                  {priority.name}
+                </option>
+              ))}
             </select>
           </div>
           <div>
@@ -347,98 +450,121 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
         </div>
       </Card>
 
-      {/* Task List */}
-      <Card className="p-6">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <TableHeader
-              columns={[
-                { key: 'title', label: 'Task', sortable: true },
-                { key: 'priority', label: 'Priority', sortable: true },
-                { key: 'status', label: 'Status', sortable: true },
-                { key: 'assigned', label: 'Assigned To', sortable: true },
-                { key: 'due_date', label: 'Due Date', sortable: true },
-                { key: 'related', label: 'Related To', sortable: false },
-                { key: 'actions', label: 'Actions', sortable: false }
-              ]}
-            />
-            <tbody className="bg-white divide-y divide-gray-200">
-              {tasks.map((task) => (
-                <TableRow key={task.id} onClick={() => onTaskClick(task.id)} className="cursor-pointer hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{task.title}</div>
-                      {task.description && (
-                        <div className="text-sm text-gray-500 truncate max-w-xs">{task.description}</div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge color={getPriorityColor(task.priority.name)}>
-                      {task.priority.name}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge color={getStatusColor(task.status.name)}>
-                      {task.status.name}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {task.assigned_to.username}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className={`text-sm ${isOverdue(task.due_date) ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
-                      {formatDate(task.due_date)}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {task.related_lead && (
-                      <div>Lead: {task.related_lead.first_name} {task.related_lead.last_name}</div>
-                    )}
-                    {task.related_contact && (
-                      <div>Contact: {task.related_contact.first_name} {task.related_contact.last_name}</div>
-                    )}
-                    {task.related_deal && (
-                      <div>Deal: {task.related_deal.name}</div>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
-                      {task.status.name !== 'Completed' && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onCompleteTask(task.id);
-                          }}
-                        >
-                          <Icon name="check" className="w-4 h-4" />
-                        </Button>
-                      )}
-                      <Button variant="ghost" size="sm">
-                        <Icon name="eye" className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Icon name="edit" className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </td>
-                </TableRow>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {/* Kanban Board */}
+      <KanbanBoard
+        items={filteredTasks}
+        stages={kanbanStages}
+        itemsByStage={tasksByStatus}
+        getStageStats={getStatusStats}
+        formatDate={formatDate}
+        getStageColor={(statusName) => {
+          const status = statuses.find(s => s.name.toLowerCase() === statusName.toLowerCase());
+          return getStatusColor(status?.name || statusName);
+        }}
+        onItemClick={onTaskClick}
+        onItemUpdated={onTasksUpdated}
+        onItemMove={async (taskId, newStatusId, newStatusName) => {
+          await tasksApi.updateTask(taskId, {
+            status_id: typeof newStatusId === 'number' ? newStatusId : parseInt(newStatusId.toString(), 10)
+          });
+        }}
+        stagesFromDb={statuses}
+        itemType="task"
+        onCreateItem={(stageName, stageId) => {
+          // Handled by KanbanBoard's create button
+        }}
+        renderCard={(task, stage, onItemClick) => (
+          <>
+            {/* Task Header */}
+            <div className="mb-3">
+              <h4 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onItemClick(task);
+                }}
+                className="text-lg font-semibold text-gray-900 mb-1 line-clamp-2 cursor-pointer hover:text-blue-600 hover:underline transition-colors"
+              >
+                {task.title}
+              </h4>
+              {task.description && (
+                <p className="text-xs text-gray-500 line-clamp-2">
+                  {task.description}
+                </p>
+              )}
+            </div>
 
-        {/* Pagination */}
-        <div className="mt-6">
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={onPageChange}
-          />
-        </div>
-      </Card>
+            {/* Priority */}
+            <div className="mb-3">
+              <Badge color={getPriorityColor(task.priority.name)}>
+                {task.priority.name}
+              </Badge>
+            </div>
+
+            {/* Due Date */}
+            <div className="mb-3">
+              <div className={`flex items-center space-x-1 text-xs ${isOverdue(task.due_date) ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
+                <Icon name="calendar" className="w-3 h-3" />
+                <span>{formatDate(task.due_date)}</span>
+              </div>
+            </div>
+
+            {/* Assigned To */}
+            {task.assigned_to && (
+              <div className="mb-3">
+                <div className="flex items-center space-x-1 text-xs text-gray-700 bg-yellow-200 rounded-lg px-2 py-1">
+                  <Icon name="user" className="w-3 h-3" />
+                  <span>Owner: {task.assigned_to.username}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Related To */}
+            {(task.related_lead || task.related_contact || task.related_deal) && (
+              <div className="mb-3">
+                <div className="text-xs text-gray-500 space-y-1">
+                  {task.related_lead && (
+                    <div>Lead: {task.related_lead.first_name} {task.related_lead.last_name}</div>
+                  )}
+                  {task.related_contact && (
+                    <div>Contact: {task.related_contact.first_name} {task.related_contact.last_name}</div>
+                  )}
+                  {task.related_deal && (
+                    <div>Deal: {task.related_deal.name}</div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Complete Button */}
+            {task.status.name.toLowerCase() !== 'completed' && (
+              <div className="pt-2 border-t border-gray-100">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCompleteTask(task.id);
+                  }}
+                  className="w-full"
+                >
+                  <Icon name="check" className="w-4 h-4 mr-2" />
+                  Complete
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+        emptyStateText="No tasks in this status"
+      />
+
+      {/* Pagination */}
+      <div className="mt-6">
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={onPageChange}
+        />
+      </div>
     </div>
   );
 };

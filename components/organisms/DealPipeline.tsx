@@ -380,16 +380,104 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
 
       {/* Kanban Board */}
       <KanbanBoard
-        deals={filteredDeals}
+        items={filteredDeals}
         stages={kanbanStages}
-        dealsByStage={dealsByStage}
+        itemsByStage={dealsByStage}
         getStageStats={getStageStats}
         formatCurrency={formatCurrency}
         formatDate={formatDate}
         getStageColor={getStageColor}
-        onDealClick={onDealClick}
-        onDealUpdated={onDealUpdated}
+        onItemClick={onDealClick}
+        onItemUpdated={onDealUpdated}
         stagesFromDb={stages}
+        itemType="deal"
+        onCreateItem={(stageName, stageId) => {
+          // Handled by KanbanBoard's create button
+        }}
+        renderCard={(deal, stage, onItemClick) => (
+          <>
+            {/* Deal Header */}
+            <div className="mb-3">
+              <h4 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onItemClick(deal);
+                }}
+                className="text-lg font-semibold text-gray-900 mb-1 line-clamp-2 cursor-pointer hover:text-blue-600 hover:underline transition-colors"
+              >
+                {deal.name}
+              </h4>
+              {deal.description && (
+                <p className="text-xs text-gray-500 line-clamp-2">
+                  {deal.description}
+                </p>
+              )}
+            </div>
+
+            {/* Deal Value */}
+            <div className="mb-3">
+              <div className="text-lg font-bold text-gray-900">
+                {formatCurrency(deal.deal_value)}
+              </div>
+            </div>
+
+            {/* Contact */}
+            {deal.contact && (
+              <div className="mb-3 flex items-center space-x-2">
+                <div className="w-6 h-6 rounded-full bg-blue-300 flex items-center justify-center">
+                  <span className="text-xs font-medium text-gray-700">
+                    {(deal.contact.first_name?.[0]?.toUpperCase() || '')}{(deal.contact.last_name?.[0]?.toUpperCase() || '')}
+                  </span>
+                </div>
+                <span className="text-xs text-gray-600">
+                  {deal.contact.first_name?.charAt(0).toUpperCase() + deal.contact.first_name?.slice(1)} {deal.contact.last_name?.charAt(0).toUpperCase() + deal.contact.last_name?.slice(1)}
+                </span>
+              </div>
+            )}
+
+            {/* Probability */}
+            <div className="mb-3">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs text-gray-500">Probability</span>
+                <span className="text-xs font-medium text-gray-700">{deal.probability}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-1.5">
+                <div
+                  className="h-1.5 rounded-full"
+                  style={{ 
+                    width: `${deal.probability}%`,
+                    backgroundColor: stage.color
+                  }}
+                ></div>
+              </div>
+            </div>
+
+            {/* Expected Close Date */}
+            <div className="mb-3">
+              <div className="flex items-center space-x-1 text-xs text-gray-500">
+                <Icon name="calendar" className="w-3 h-3" />
+                <span>{formatDate(deal.expected_close_date)}</span>
+              </div>
+            </div>
+
+            {/* Assigned To */}
+            {deal.assigned_to && (
+              <div className="mb-3">
+                <div className="flex items-center space-x-1 text-xs text-gray-700 bg-yellow-200 rounded-lg px-2 py-1">
+                  <Icon name="user" className="w-3 h-3" />
+                  <span>
+                    {'Owner: '}
+                    {typeof deal.assigned_to === 'object' && 
+                     deal.assigned_to !== null && 
+                     'username' in deal.assigned_to 
+                      ? String(deal.assigned_to.username) 
+                      : 'Unassigned'}
+                  </span>
+                </div>
+              </div>
+            )}
+          </>
+        )}
       />
 
       {/* Pagination */}

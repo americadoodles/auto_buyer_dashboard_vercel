@@ -278,6 +278,7 @@ CREATE TABLE IF NOT EXISTS deals (
     name TEXT NOT NULL,
     description TEXT,
     contact_id UUID REFERENCES contacts(id),
+    lead_id UUID REFERENCES leads(id),
     assigned_to UUID REFERENCES users(id),
     deal_stage_id INTEGER REFERENCES deal_stages(id),
     deal_category_id INTEGER REFERENCES deal_categories(id),
@@ -492,6 +493,7 @@ CREATE INDEX IF NOT EXISTS idx_contacts_type ON contacts(contact_type_id);
 
 -- Deal indexes
 CREATE INDEX IF NOT EXISTS idx_deals_contact ON deals(contact_id);
+CREATE INDEX IF NOT EXISTS idx_deals_lead_id ON deals(lead_id);
 CREATE INDEX IF NOT EXISTS idx_deals_assigned_to ON deals(assigned_to);
 CREATE INDEX IF NOT EXISTS idx_deals_stage ON deals(deal_stage_id);
 CREATE INDEX IF NOT EXISTS idx_deals_expected_close ON deals(expected_close_date);

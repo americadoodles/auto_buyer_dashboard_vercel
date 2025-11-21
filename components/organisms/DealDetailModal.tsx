@@ -146,6 +146,8 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
       if (onDealUpdated) {
         onDealUpdated();
       }
+      
+      onClose();
     } catch (e: any) {
       setError(e?.message || 'Failed to update deal');
     } finally {

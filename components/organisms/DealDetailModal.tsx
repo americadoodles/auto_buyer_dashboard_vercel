@@ -74,7 +74,7 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [assignedTo, setAssignedTo] = useState<string | undefined>(undefined);
-  const [expectedCloseDate, setExpectedCloseDate] = useState('');
+  const [expectedCloseDate, setExpectedCloseDate] = useState(''); 
   const [probability, setProbability] = useState('0');
   const [dealStageId, setDealStageId] = useState<number | undefined>(undefined);
   const [dealValue, setDealValue] = useState('');
@@ -89,12 +89,12 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
   // Load deal details and activities
   useEffect(() => {
     if (!isOpen || !initialDeal) return;
-
+    console.log('initialDeal: ', initialDeal)
     // Initialize form fields from the deal prop
     setTitle(initialDeal.name || '');
     setDescription(initialDeal.description || '');
-    setAssignedTo(initialDeal.assigned_to?.id || initialDeal.assigned_to?.username);
-    setExpectedCloseDate(initialDeal.expected_close_date || '');
+    setAssignedTo(initialDeal.assigned_to?.username || '');
+    setExpectedCloseDate(formatDateForInput(initialDeal.expected_close_date));
     setProbability(initialDeal.probability?.toString() || '0');
     setDealStageId(initialDeal.deal_stage?.id);
     setDealValue(initialDeal.deal_value?.toString() || '');
@@ -161,6 +161,23 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  // Convert ISO datetime string to YYYY-MM-DD format for date input
+  const formatDateForInput = (dateString: string | undefined): string => {
+    if (!dateString) return '';
+    try {
+      const date = new Date(dateString);
+      // Check if date is valid
+      if (isNaN(date.getTime())) return '';
+      // Format as YYYY-MM-DD
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    } catch (e) {
+      return '';
+    }
   };
 
   const getActivityIcon = (activityType: string) => {

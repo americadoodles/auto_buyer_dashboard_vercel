@@ -19,7 +19,6 @@ export default function DealsPage() {
     stage_id: stageFilter,
     category_id: categoryFilter
   });
-  console.log('---deals: ', deals)
   const { stages } = useDealStages();
   const { pipeline } = useDealPipeline();
 

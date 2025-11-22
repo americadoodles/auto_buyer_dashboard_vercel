@@ -480,7 +480,7 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
                 className="text-red-600 border-red-300 hover:bg-red-50 flex items-center"
               >
                 <Icon name="trash-2" className="w-4 h-4 mr-2" />
-                <span>
+                <span className='text-red-600'>
                   Delete Deal
                 </span>
               </Button>
@@ -498,7 +498,7 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
                 <Button 
                   onClick={handleDelete}
                   disabled={deleting}
-                  className="bg-red-400 hover:bg-red-500 text-white"
+                  className="bg-red-300 hover:bg-red-300 text-white"
                 >
                   {deleting ? 'Deleting...' : 'Confirm Delete'}
                 </Button>

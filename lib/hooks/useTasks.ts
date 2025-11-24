@@ -123,7 +123,6 @@ export const useTaskPriorities = () => {
       setLoading(true);
       setError(null);
       const data = await tasksApi.getTaskPriorities();
-      console.log('priorities: ', data )
       setPriorities(data);
     } catch (err) {
       console.error('Error fetching task priorities:', err);

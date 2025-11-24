@@ -27,7 +27,8 @@ task_router = APIRouter(prefix="/crm/tasks", tags=["crm-tasks"])
 # TASK MANAGEMENT ENDPOINTS
 # ==============================================
 
-@task_router.post("/", response_model=TaskOut)
+@task_router.post("", response_model=TaskOut, include_in_schema=False)  # /api/crm/tasks
+@task_router.post("/", response_model=TaskOut)  # /api/crm/tasks/
 def create_new_task(
     task: TaskCreate,
     current_user: UserOut = Depends(require_buyer_or_admin)

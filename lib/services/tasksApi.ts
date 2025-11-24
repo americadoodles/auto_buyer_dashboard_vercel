@@ -112,17 +112,10 @@ const handleResponse = async <T>(response: Response): Promise<T> => {
   }
 };
 
-// Helper function to make API calls
+// Helper function to make API calls using unified ApiService
 const apiCall = async <T>(endpoint: string, options: RequestInit = {}): Promise<T> => {
-  // Always use the Next.js proxy path in development
-  const baseUrl = process.env.NODE_ENV === 'development' ? '/api' : (process.env.NEXT_PUBLIC_BACKEND_URL ?? '/api');
-  const response = await fetch(`${baseUrl}${endpoint}`, {
-    headers: getAuthHeaders(),
-    ...options
-  });
-  return handleResponse<T>(response);
+  return ApiService.request<T>(endpoint, options);
 };
-
 // Tasks API functions
 export const tasksApi = {
   // Task management

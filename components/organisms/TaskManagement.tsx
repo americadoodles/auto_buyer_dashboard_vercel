@@ -6,7 +6,6 @@ import { Badge } from '../atoms/Badge';
 import { Button } from '../atoms/Button';
 import { Input } from '../atoms/Input';
 import { Icon } from '../atoms/Icon';
-import { Pagination } from '../molecules/Pagination';
 import { KanbanBoard } from './KanbanBoard';
 import { useTaskStatuses, useTaskPriorities } from '../../lib/hooks/useTasks';
 import { tasksApi } from '../../lib/services/tasksApi';
@@ -558,15 +557,6 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
         )}
         emptyStateText="No tasks in this status"
       />
-
-      {/* Pagination */}
-      <div className="mt-6">
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={onPageChange}
-        />
-      </div>
     </div>
   );
 };

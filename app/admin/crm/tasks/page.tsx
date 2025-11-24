@@ -21,7 +21,6 @@ export default function TasksPage() {
     status_id: statusFilter,
     assigned_to: assignedToFilter
   });
-
   const { priorities } = useTaskPriorities();
   const { statuses } = useTaskStatuses();
 

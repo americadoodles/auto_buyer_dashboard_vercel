@@ -6,10 +6,12 @@ export interface Task {
   id: string;
   title: string;
   description?: string;
+  owner_user_id?: string;
   assigned_to?: string;
   priority_id?: number;
   status_id?: number;
   due_date?: string;
+  due_at?: string;
   completed_at?: string;
   related_lead_id?: string;
   related_contact_id?: string;

@@ -40,16 +40,20 @@ def create_task(task_data: TaskCreate, user_id: UUID) -> TaskOut:
             with conn.cursor() as cur:
                 cur.execute("""
                     INSERT INTO tasks (
-                        related_type, related_id, title, description, priority, status,
-                        column_id, owner_user_id, due_at, created_at, updated_at
+                        related_type, related_id, title, description, priority_id, status_id,
+                        column_id, owner_user_id, assigned_to, due_at, due_date,
+                        related_lead_id, related_contact_id, related_deal_id,
+                        created_at, updated_at
                     ) VALUES (
-                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                     ) RETURNING id, created_at, updated_at
                 """, (
                     task_data.related_type, task_data.related_id, task_data.title,
-                    task_data.description, task_data.priority.value, task_data.status.value,
-                    task_data.column_id, task_data.owner_user_id or user_id,
-                    task_data.due_at, datetime.now(), datetime.now()
+                    task_data.description, task_data.priority_id, task_data.status_id,
+                    task_data.column_id, task_data.owner_user_id or user_id, task_data.assigned_to,
+                    task_data.due_at, task_data.due_date,
+                    task_data.related_lead_id, task_data.related_contact_id, task_data.related_deal_id,
+                    datetime.now(), datetime.now()
                 ))
                 
                 result = cur.fetchone()
@@ -84,19 +88,43 @@ def get_task(task_id: UUID) -> Optional[TaskOut]:
         try:
             with conn.cursor() as cur:
                 cur.execute("""
-                    SELECT id, related_type, related_id, title, description, priority, status,
-                           column_id, owner_user_id, due_at, created_at, updated_at
-                    FROM tasks WHERE id = %s
+                    SELECT t.id, t.related_type, t.related_id, t.title, t.description, 
+                           t.priority_id, t.status_id, t.column_id, t.owner_user_id, t.assigned_to,
+                           t.due_at, t.due_date, t.related_lead_id, t.related_contact_id, t.related_deal_id,
+                           t.created_at, t.updated_at,
+                           tp.name as priority_name, ts.name as status_name
+                    FROM tasks t
+                    LEFT JOIN task_priorities tp ON t.priority_id = tp.id
+                    LEFT JOIN task_statuses ts ON t.status_id = ts.id
+                    WHERE t.id = %s
                 """, (task_id,))
                 
                 result = cur.fetchone()
                 if result:
+                    # Map priority/status names to enums for backward compatibility
+                    priority_enum = None
+                    status_enum = None
+                    if result[17]:  # priority_name
+                        try:
+                            priority_enum = TaskPriority(result[17])
+                        except ValueError:
+                            pass
+                    if result[18]:  # status_name
+                        try:
+                            status_enum = TaskStatus(result[18])
+                        except ValueError:
+                            pass
+                    
                     return TaskOut(
                         id=result[0], related_type=result[1], related_id=result[2],
                         title=result[3], description=result[4],
-                        priority=TaskPriority(result[5]), status=TaskStatus(result[6]),
-                        column_id=result[7], owner_user_id=result[8],
-                        due_at=result[9], created_at=result[10], updated_at=result[11]
+                        priority_id=result[5], status_id=result[6],
+                        column_id=result[7], owner_user_id=result[8], assigned_to=result[9],
+                        due_at=result[10], due_date=result[11],
+                        related_lead_id=result[12], related_contact_id=result[13], related_deal_id=result[14],
+                        created_at=result[15], updated_at=result[16],
+                        priority=priority_enum, status=status_enum,
+                        priority_name=result[17], status_name=result[18]
                     )
                 return None
                 
@@ -128,23 +156,13 @@ def update_task(task_id: UUID, task_update: TaskUpdate, user_id: UUID) -> Option
                 update_dict = task_update.model_dump(exclude_unset=True)
                 for field, value in update_dict.items():
                     if value is not None:
-                        # Handle enum values
-                        if field == 'priority' and isinstance(value, TaskPriority):
-                            update_fields.append("priority = %s")
-                            update_values.append(value.value)
-                            changes['priority'] = value.value
-                        elif field == 'status' and isinstance(value, TaskStatus):
-                            update_fields.append("status = %s")
-                            update_values.append(value.value)
-                            changes['status'] = value.value
-                        else:
-                            # Map field names if needed
+                        # Map field names to database columns
+                        db_field = field
+                        if field == 'due_at' or field == 'due_date':
                             db_field = field
-                            if field == 'due_at':
-                                db_field = 'due_at'
-                            update_fields.append(f"{db_field} = %s")
-                            update_values.append(value)
-                            changes[field] = value
+                        update_fields.append(f"{db_field} = %s")
+                        update_values.append(value)
+                        changes[field] = value
                 
                 if not update_fields:
                     return current_task
@@ -155,21 +173,50 @@ def update_task(task_id: UUID, task_update: TaskUpdate, user_id: UUID) -> Option
                 cur.execute(f"""
                     UPDATE tasks SET {', '.join(update_fields)}, updated_at = %s
                     WHERE id = %s
-                    RETURNING id, related_type, related_id, title, description, priority, status,
-                              column_id, owner_user_id, due_at, created_at, updated_at
                 """, update_values)
+                
+                # Fetch updated task with joins
+                cur.execute("""
+                    SELECT t.id, t.related_type, t.related_id, t.title, t.description, 
+                           t.priority_id, t.status_id, t.column_id, t.owner_user_id, t.assigned_to,
+                           t.due_at, t.due_date, t.related_lead_id, t.related_contact_id, t.related_deal_id,
+                           t.created_at, t.updated_at,
+                           tp.name as priority_name, ts.name as status_name
+                    FROM tasks t
+                    LEFT JOIN task_priorities tp ON t.priority_id = tp.id
+                    LEFT JOIN task_statuses ts ON t.status_id = ts.id
+                    WHERE t.id = %s
+                """, (task_id,))
                 
                 result = cur.fetchone()
                 if result:
                     # Log activity
                     log_task_activity(task_id, 'updated', {'changes': changes}, user_id)
                     
+                    # Map priority/status names to enums for backward compatibility
+                    priority_enum = None
+                    status_enum = None
+                    if result[17]:  # priority_name
+                        try:
+                            priority_enum = TaskPriority(result[17])
+                        except ValueError:
+                            pass
+                    if result[18]:  # status_name
+                        try:
+                            status_enum = TaskStatus(result[18])
+                        except ValueError:
+                            pass
+                    
                     return TaskOut(
                         id=result[0], related_type=result[1], related_id=result[2],
                         title=result[3], description=result[4],
-                        priority=TaskPriority(result[5]), status=TaskStatus(result[6]),
-                        column_id=result[7], owner_user_id=result[8],
-                        due_at=result[9], created_at=result[10], updated_at=result[11]
+                        priority_id=result[5], status_id=result[6],
+                        column_id=result[7], owner_user_id=result[8], assigned_to=result[9],
+                        due_at=result[10], due_date=result[11],
+                        related_lead_id=result[12], related_contact_id=result[13], related_deal_id=result[14],
+                        created_at=result[15], updated_at=result[16],
+                        priority=priority_enum, status=status_enum,
+                        priority_name=result[17], status_name=result[18]
                     )
                 return None
                 
@@ -226,13 +273,28 @@ def list_tasks(
                     where_conditions.append("t.owner_user_id = %s")
                     query_params.append(owner_user_id)
                 
+                # Lookup priority_id and status_id from enum values if provided
+                priority_id_filter = None
                 if priority:
-                    where_conditions.append("t.priority = %s")
-                    query_params.append(priority.value)
+                    cur.execute("SELECT id FROM task_priorities WHERE LOWER(name) = LOWER(%s) LIMIT 1", (priority.value,))
+                    priority_result = cur.fetchone()
+                    if priority_result:
+                        priority_id_filter = priority_result[0]
                 
+                status_id_filter = None
                 if status:
-                    where_conditions.append("t.status = %s")
-                    query_params.append(status.value)
+                    cur.execute("SELECT id FROM task_statuses WHERE LOWER(name) = LOWER(%s) LIMIT 1", (status.value,))
+                    status_result = cur.fetchone()
+                    if status_result:
+                        status_id_filter = status_result[0]
+                
+                if priority_id_filter:
+                    where_conditions.append("t.priority_id = %s")
+                    query_params.append(priority_id_filter)
+                
+                if status_id_filter:
+                    where_conditions.append("t.status_id = %s")
+                    query_params.append(status_id_filter)
                 
                 if due_at_from:
                     where_conditions.append("t.due_at >= %s")
@@ -265,15 +327,19 @@ def list_tasks(
                 
                 where_clause = " AND ".join(where_conditions) if where_conditions else "1=1"
                 
-                # Join with task_columns if board_id filter is used
+                # Join with task_columns if board_id filter is used, and always join with priorities/statuses
                 from_clause = "FROM tasks t"
                 if board_id:
                     from_clause = "FROM tasks t LEFT JOIN task_columns tc ON t.column_id = tc.id"
+                from_clause += " LEFT JOIN task_priorities tp ON t.priority_id = tp.id"
+                from_clause += " LEFT JOIN task_statuses ts ON t.status_id = ts.id"
                 
                 cur.execute(f"""
                     SELECT t.id, t.related_type, t.related_id, t.title, t.description, 
-                           t.priority, t.status, t.column_id, t.owner_user_id, t.due_at,
-                           t.created_at, t.updated_at
+                           t.priority_id, t.status_id, t.column_id, t.owner_user_id, t.assigned_to,
+                           t.due_at, t.due_date, t.related_lead_id, t.related_contact_id, t.related_deal_id,
+                           t.created_at, t.updated_at,
+                           tp.name as priority_name, ts.name as status_name
                     {from_clause}
                     WHERE {where_clause}
                     ORDER BY t.created_at DESC
@@ -284,12 +350,30 @@ def list_tasks(
                 tasks = []
                 
                 for result in results:
+                    # Map priority/status names to enums for backward compatibility
+                    priority_enum = None
+                    status_enum = None
+                    if result[17]:  # priority_name
+                        try:
+                            priority_enum = TaskPriority(result[17])
+                        except ValueError:
+                            pass
+                    if result[18]:  # status_name
+                        try:
+                            status_enum = TaskStatus(result[18])
+                        except ValueError:
+                            pass
+                    
                     tasks.append(TaskOut(
                         id=result[0], related_type=result[1], related_id=result[2],
                         title=result[3], description=result[4],
-                        priority=TaskPriority(result[5]), status=TaskStatus(result[6]),
-                        column_id=result[7], owner_user_id=result[8],
-                        due_at=result[9], created_at=result[10], updated_at=result[11]
+                        priority_id=result[5], status_id=result[6],
+                        column_id=result[7], owner_user_id=result[8], assigned_to=result[9],
+                        due_at=result[10], due_date=result[11],
+                        related_lead_id=result[12], related_contact_id=result[13], related_deal_id=result[14],
+                        created_at=result[15], updated_at=result[16],
+                        priority=priority_enum, status=status_enum,
+                        priority_name=result[17], status_name=result[18]
                     ))
                 
                 return tasks
@@ -313,11 +397,23 @@ def complete_task(task_id: UUID, user_id: UUID) -> bool:
         
         try:
             with conn.cursor() as cur:
-                cur.execute("""
-                    UPDATE tasks 
-                    SET status = %s, updated_at = %s
-                    WHERE id = %s
-                """, (TaskStatus.DONE.value, datetime.now(), task_id))
+                # Find the "Completed" status_id
+                cur.execute("SELECT id FROM task_statuses WHERE LOWER(name) = LOWER(%s) LIMIT 1", ('Completed',))
+                status_result = cur.fetchone()
+                if not status_result:
+                    # Fallback: try 'Done'
+                    cur.execute("SELECT id FROM task_statuses WHERE LOWER(name) = LOWER(%s) LIMIT 1", ('Done',))
+                    status_result = cur.fetchone()
+                
+                if status_result:
+                    cur.execute("""
+                        UPDATE tasks 
+                        SET status_id = %s, completed_at = %s, updated_at = %s
+                        WHERE id = %s
+                    """, (status_result[0], datetime.now(), datetime.now(), task_id))
+                else:
+                    logging.error("Could not find 'Completed' or 'Done' status in task_statuses table")
+                    return False
                 
                 if cur.rowcount > 0:
                     log_task_activity(task_id, 'completed', {}, user_id)
@@ -679,9 +775,20 @@ def move_task(task_id: UUID, column_id: UUID, user_id: UUID, admin_override: boo
                     UPDATE tasks 
                     SET column_id = %s, updated_at = %s
                     WHERE id = %s
-                    RETURNING id, related_type, related_id, title, description, priority, status,
-                              column_id, owner_user_id, due_at, created_at, updated_at
                 """, (column_id, datetime.now(), task_id))
+                
+                # Fetch updated task with joins
+                cur.execute("""
+                    SELECT t.id, t.related_type, t.related_id, t.title, t.description, 
+                           t.priority_id, t.status_id, t.column_id, t.owner_user_id, t.assigned_to,
+                           t.due_at, t.due_date, t.related_lead_id, t.related_contact_id, t.related_deal_id,
+                           t.created_at, t.updated_at,
+                           tp.name as priority_name, ts.name as status_name
+                    FROM tasks t
+                    LEFT JOIN task_priorities tp ON t.priority_id = tp.id
+                    LEFT JOIN task_statuses ts ON t.status_id = ts.id
+                    WHERE t.id = %s
+                """, (task_id,))
                 
                 result = cur.fetchone()
                 if result:
@@ -697,12 +804,30 @@ def move_task(task_id: UUID, column_id: UUID, user_id: UUID, admin_override: boo
                         user_id
                     )
                     
+                    # Map priority/status names to enums for backward compatibility
+                    priority_enum = None
+                    status_enum = None
+                    if result[17]:  # priority_name
+                        try:
+                            priority_enum = TaskPriority(result[17])
+                        except ValueError:
+                            pass
+                    if result[18]:  # status_name
+                        try:
+                            status_enum = TaskStatus(result[18])
+                        except ValueError:
+                            pass
+                    
                     return TaskOut(
                         id=result[0], related_type=result[1], related_id=result[2],
                         title=result[3], description=result[4],
-                        priority=TaskPriority(result[5]), status=TaskStatus(result[6]),
-                        column_id=result[7], owner_user_id=result[8],
-                        due_at=result[9], created_at=result[10], updated_at=result[11]
+                        priority_id=result[5], status_id=result[6],
+                        column_id=result[7], owner_user_id=result[8], assigned_to=result[9],
+                        due_at=result[10], due_date=result[11],
+                        related_lead_id=result[12], related_contact_id=result[13], related_deal_id=result[14],
+                        created_at=result[15], updated_at=result[16],
+                        priority=priority_enum, status=status_enum,
+                        priority_name=result[17], status_name=result[18]
                     )
                 return None
                 
@@ -839,14 +964,28 @@ def bulk_close_tasks(task_ids: List[UUID], user_id: UUID) -> dict:
         
         try:
             with conn.cursor() as cur:
+                # Find the "Completed" status_id once
+                cur.execute("SELECT id FROM task_statuses WHERE LOWER(name) = LOWER(%s) LIMIT 1", ('Completed',))
+                status_result = cur.fetchone()
+                if not status_result:
+                    # Fallback: try 'Done'
+                    cur.execute("SELECT id FROM task_statuses WHERE LOWER(name) = LOWER(%s) LIMIT 1", ('Done',))
+                    status_result = cur.fetchone()
+                
+                if not status_result:
+                    logging.error("Could not find 'Completed' or 'Done' status in task_statuses table")
+                    return {'success': [], 'failed': [{'task_id': tid, 'reason': 'Status not found'} for tid in task_ids]}
+                
+                status_id = status_result[0]
+                
                 for task_id in task_ids:
                     try:
                         cur.execute("""
                             UPDATE tasks 
-                            SET status = %s, updated_at = %s
+                            SET status_id = %s, completed_at = %s, updated_at = %s
                             WHERE id = %s
                             RETURNING id
-                        """, (TaskStatus.DONE.value, datetime.now(), task_id))
+                        """, (status_id, datetime.now(), datetime.now(), task_id))
                         
                         if cur.fetchone():
                             log_task_activity(

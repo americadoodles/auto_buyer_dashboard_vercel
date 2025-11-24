@@ -5,10 +5,10 @@ import { Button } from '../atoms/Button';
 import { Input } from '../atoms/Input';
 import { Icon } from '../atoms/Icon';
 import { tasksApi } from '../../lib/services/tasksApi';
-import { dealsApi } from '../../lib/services/dealsApi';
 import { User } from '../../lib/types/user';
 import { useAuth } from '../../app/auth/useAuth';
 import { useTaskStatuses, useTaskPriorities } from '../../lib/hooks/useTasks';
+import { useDeals } from '../../lib/hooks/useDeals';
 import { ApiService } from '../../lib/services/api';
 
 interface TaskCreateModalProps {
@@ -29,19 +29,19 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
   const { user } = useAuth();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [assignedToId, setAssignedToId] = useState<string | undefined>(user?.id);
+  const [ownerUserId, setOwnerUserId] = useState<string | undefined>(user?.id);
   const [priorityId, setPriorityId] = useState<number | undefined>(undefined);
   const [selectedStatusId, setSelectedStatusId] = useState<number | undefined>(statusId);
   const [dueDate, setDueDate] = useState('');
   const [relatedDealId, setRelatedDealId] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [deals, setDeals] = useState<any[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   
-  // Use hooks for statuses and priorities
+  // Use hooks for statuses, priorities, and deals
   const { statuses, loading: statusesLoading } = useTaskStatuses();
   const { priorities, loading: prioritiesLoading } = useTaskPriorities();
+  const { deals, loading: dealsLoading } = useDeals({ limit: 1000 });
 
   // Prevent background scrolling when modal is open
   useEffect(() => {
@@ -60,11 +60,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
     
     const loadData = async () => {
       try {
-        const [dealsData, usersData] = await Promise.all([
-          dealsApi.getDeals({ limit: 1000 }).catch(() => []),
-          ApiService.getUsers().catch(() => [])
-        ]);
-        setDeals(dealsData);
+        const usersData = await ApiService.getUsers().catch(() => []);
         setUsers(usersData);
       } catch (e) {
         console.error('Error loading data:', e);
@@ -84,7 +80,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
     if (!isOpen) {
       setTitle('');
       setDescription('');
-      setAssignedToId(user?.id);
+      setOwnerUserId(user?.id);
       setPriorityId(undefined);
       setSelectedStatusId(statusId);
       setDueDate('');
@@ -101,20 +97,26 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
     setLoading(true);
     setError(null);
     try {
-      await tasksApi.createTask({
+      const newTask = await tasksApi.createTask({
         title: title.trim(),
         description: description.trim() || undefined,
-        assigned_to: assignedToId || undefined,
+        owner_user_id: ownerUserId || undefined,
         priority_id: priorityId || undefined,
         status_id: selectedStatusId,
         due_date: dueDate || undefined,
         related_deal_id: relatedDealId || undefined,
       });
-
-      if (onCreated) {
-        onCreated();
-      }
+      
+      // Close modal first
       onClose();
+      
+      // Then trigger refresh callback to update the board
+      // Use setTimeout to ensure modal closes before refresh
+      setTimeout(() => {
+        if (onCreated) {
+          onCreated();
+        }
+      }, 100);
     } catch (e: any) {
       setError(e?.message || 'Failed to create task');
     } finally {
@@ -209,11 +211,11 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Owner</label>
               <select
                 className="w-full border rounded-md h-10 px-3"
-                value={assignedToId || ''}
-                onChange={(e) => setAssignedToId(e.target.value || undefined)}
+                value={ownerUserId || ''}
+                onChange={(e) => setOwnerUserId(e.target.value || undefined)}
               >
                 <option value="">Unassigned</option>
                 {users.map((u) => (
@@ -243,7 +245,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
               <option value="">No deal selected</option>
               {deals.map((deal) => (
                 <option key={deal.id} value={deal.id}>
-                  {deal.name || deal.title || `Deal ${deal.id}`}
+                  {deal.title || `Deal ${deal.id}`}
                 </option>
               ))}
             </select>

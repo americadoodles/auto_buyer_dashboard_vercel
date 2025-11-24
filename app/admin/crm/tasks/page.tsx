@@ -13,9 +13,10 @@ export default function TasksPage() {
   const [statusFilter, setStatusFilter] = useState<number | undefined>(undefined);
   const [assignedToFilter, setAssignedToFilter] = useState<string | undefined>(undefined);
 
+  // Fetch all tasks for kanban board (large limit to get all tasks)
   const { tasks, loading, error, refreshTasks } = useTasks({
-    skip: (currentPage - 1) * pageSize,
-    limit: pageSize,
+    skip: 0,
+    limit: 1000, // Large limit to fetch all tasks for kanban board
     search: searchTerm || undefined,
     priority_id: priorityFilter,
     status_id: statusFilter,
@@ -202,6 +203,7 @@ export default function TasksPage() {
           priorities={priorities}
           statuses={statuses}
           loading={loading}
+          onTasksUpdated={refreshTasks}
         />
       </div>
     </AdminLayout>

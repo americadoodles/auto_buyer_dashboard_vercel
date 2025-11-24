@@ -26,6 +26,7 @@ export const useTasks = (params?: UseTasksParams) => {
       setLoading(true);
       setError(null);
       const data = await tasksApi.getTasks(params);
+      console.log('data: ', data)
       setTasks(data);
     } catch (err) {
       console.error('Error fetching tasks:', err);

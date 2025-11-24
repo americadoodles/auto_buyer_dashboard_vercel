@@ -374,11 +374,16 @@ class TaskBase(BaseModel):
     related_id: Optional[UUID] = None
     title: str
     description: Optional[str] = None
-    priority: TaskPriority = TaskPriority.MEDIUM
-    status: TaskStatus = TaskStatus.OPEN
+    priority_id: Optional[int] = None
+    status_id: Optional[int] = None
     column_id: Optional[UUID] = None
     owner_user_id: Optional[UUID] = None
+    assigned_to: Optional[UUID] = None
     due_at: Optional[datetime] = None
+    due_date: Optional[datetime] = None
+    related_lead_id: Optional[UUID] = None
+    related_contact_id: Optional[UUID] = None
+    related_deal_id: Optional[UUID] = None
 
 class TaskCreate(TaskBase):
     pass
@@ -388,14 +393,23 @@ class TaskUpdate(BaseModel):
     related_id: Optional[UUID] = None
     title: Optional[str] = None
     description: Optional[str] = None
-    priority: Optional[TaskPriority] = None
-    status: Optional[TaskStatus] = None
+    priority_id: Optional[int] = None
+    status_id: Optional[int] = None
     column_id: Optional[UUID] = None
     owner_user_id: Optional[UUID] = None
+    assigned_to: Optional[UUID] = None
     due_at: Optional[datetime] = None
+    due_date: Optional[datetime] = None
+    related_lead_id: Optional[UUID] = None
+    related_contact_id: Optional[UUID] = None
+    related_deal_id: Optional[UUID] = None
 
 class TaskOut(TaskBase):
     id: UUID
+    priority: Optional[TaskPriority] = None  # For backward compatibility
+    status: Optional[TaskStatus] = None  # For backward compatibility
+    priority_name: Optional[str] = None
+    status_name: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 

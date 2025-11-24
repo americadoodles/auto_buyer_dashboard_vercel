@@ -92,7 +92,7 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [assignedFilter, setAssignedFilter] = useState('all');
   const [showOverdue, setShowOverdue] = useState(false);
-
+  console.log('tasks: ', tasks)
   // Fetch task statuses and priorities from database
   const { statuses: dbStatuses, loading: statusesLoading } = useTaskStatuses();
   const { priorities: dbPriorities, loading: prioritiesLoading } = useTaskPriorities();

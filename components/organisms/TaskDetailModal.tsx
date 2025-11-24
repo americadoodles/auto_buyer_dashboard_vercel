@@ -6,11 +6,7 @@ import { Input } from '../atoms/Input';
 import { Icon } from '../atoms/Icon';
 import { Badge } from '../atoms/Badge';
 import { tasksApi } from '../../lib/services/tasksApi';
-import { getContacts } from '../../lib/services/listingManagementApi';
-import { leadsApi } from '../../lib/services/leadsApi';
 import { dealsApi } from '../../lib/services/dealsApi';
-import { Lead } from '../../lib/types/lead';
-import { Contact } from '../../lib/types/listing';
 import { User } from '../../lib/types/user';
 import { useAuth } from '../../app/auth/useAuth';
 import { useRouter } from 'next/navigation';
@@ -83,19 +79,14 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   const [priorityId, setPriorityId] = useState<number | undefined>(undefined);
   const [statusId, setStatusId] = useState<number | undefined>(undefined);
   const [dueDate, setDueDate] = useState('');
-  const [relatedLeadId, setRelatedLeadId] = useState<string | undefined>(undefined);
-  const [relatedContactId, setRelatedContactId] = useState<string | undefined>(undefined);
   const [relatedDealId, setRelatedDealId] = useState<string | undefined>(undefined);
   
   // Related data
   const { statuses, loading: statusesLoading } = useTaskStatuses();
   const { priorities, loading: prioritiesLoading } = useTaskPriorities();
-  const [contacts, setContacts] = useState<Contact[]>([]);
-  const [leads, setLeads] = useState<Lead[]>([]);
   const [deals, setDeals] = useState<any[]>([]);
   const [users, setUsers] = useState<User[]>([]);
-  const [lead, setLead] = useState<Lead | null>(null);
-  const [loadingLead, setLoadingLead] = useState(false);
+  const [deal, setDeal] = useState<any | null>(null);
 
   // Reset states when modal closes
   useEffect(() => {
@@ -104,7 +95,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
       setShowDeleteConfirm(false);
       setSaving(false);
       setError(null);
-      setLead(null);
+      setDeal(null);
     }
   }, [isOpen]);
 
@@ -117,7 +108,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
     setShowDeleteConfirm(false);
     setSaving(false);
     setError(null);
-    setLead(null);
+    setDeal(null);
     
     // Initialize form fields from the task prop
     setTitle(initialTask.title || '');
@@ -126,26 +117,20 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
     setPriorityId(initialTask.priority?.id);
     setStatusId(initialTask.status?.id);
     setAssignedToId(initialTask.assigned_to?.id);
-    setRelatedLeadId(initialTask.related_lead?.id);
-    setRelatedContactId(initialTask.related_contact?.id);
     setRelatedDealId(initialTask.related_deal?.id);
 
     const loadData = async () => {
       setLoading(true);
       setError(null);
       try {
-        const [contactsData, leadsData, dealsData, usersData, leadData] = await Promise.all([
-          getContacts({ limit: 1000 }).catch(() => []),
-          leadsApi.getLeads({ limit: 1000 }).catch(() => []),
+        const [dealsData, usersData, dealData] = await Promise.all([
           dealsApi.getDeals({ limit: 1000 }).catch(() => []),
           ApiService.getUsers().catch(() => []),
-          initialTask.related_lead?.id ? leadsApi.getLead(initialTask.related_lead.id).catch(() => null) : Promise.resolve(null)
+          initialTask.related_deal?.id ? dealsApi.getDeal(initialTask.related_deal.id).catch(() => null) : Promise.resolve(null)
         ]);
-        setContacts(contactsData);
-        setLeads(leadsData);
         setDeals(dealsData);
         setUsers(usersData);
-        setLead(leadData);
+        setDeal(dealData);
       } catch (e: any) {
         setError(e?.message || 'Failed to load task details');
       } finally {
@@ -170,8 +155,6 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
         priority_id: priorityId || undefined,
         status_id: statusId,
         due_date: dueDate || undefined,
-        related_lead_id: relatedLeadId || undefined,
-        related_contact_id: relatedContactId || undefined,
         related_deal_id: relatedDealId || undefined,
       });
 
@@ -301,48 +284,86 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                 )}
               </div>
 
-              {/* Lead Information Section */}
-              {lead && (lead.listing || lead.contact) && (
+              {/* Deal Information Section - Vehicle and Contact */}
+              {deal && (deal.contact || deal.vehicle_requirements) && (
                 <div className="space-y-2">
-                  <h4 className="text-md font-semibold text-gray-900 border-b pb-2">Related Lead Information</h4>
+                  <h4 className="text-md font-semibold text-gray-900 border-b pb-2">Deal Information</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Vehicle Information */}
-                    {lead.listing && (
+                    {deal.vehicle_requirements && (
                       <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
                         <div className="text-sm font-medium text-blue-900 mb-2">Vehicle Information</div>
                         <div className="text-sm text-blue-700 space-y-1">
-                          <div><span className="font-medium">Year:</span> {lead.listing.year}</div>
-                          <div><span className="font-medium">Make:</span> {lead.listing.make}</div>
-                          <div><span className="font-medium">Model:</span> {lead.listing.model}</div>
-                          {lead.listing.trim && (
-                            <div><span className="font-medium">Trim:</span> {lead.listing.trim}</div>
+                          {deal.vehicle_requirements.year && (
+                            <div><span className="font-medium">Year:</span> {deal.vehicle_requirements.year}</div>
                           )}
-                          {lead.listing.vin && (
-                            <div><span className="font-medium">VIN:</span> {lead.listing.vin}</div>
+                          {deal.vehicle_requirements.make && (
+                            <div><span className="font-medium">Make:</span> {deal.vehicle_requirements.make}</div>
+                          )}
+                          {deal.vehicle_requirements.model && (
+                            <div><span className="font-medium">Model:</span> {deal.vehicle_requirements.model}</div>
+                          )}
+                          {deal.vehicle_requirements.trim && (
+                            <div><span className="font-medium">Trim:</span> {deal.vehicle_requirements.trim}</div>
+                          )}
+                          {deal.vehicle_requirements.vin && (
+                            <div><span className="font-medium">VIN:</span> {deal.vehicle_requirements.vin}</div>
+                          )}
+                          {deal.vehicle_requirements.mileage && (
+                            <div><span className="font-medium">Mileage:</span> {deal.vehicle_requirements.mileage}</div>
+                          )}
+                          {deal.vehicle_requirements.price_range && (
+                            <div><span className="font-medium">Price Range:</span> {deal.vehicle_requirements.price_range}</div>
+                          )}
+                          {!deal.vehicle_requirements.year && 
+                           !deal.vehicle_requirements.make && 
+                           !deal.vehicle_requirements.model && (
+                            <div className="text-blue-600 italic">Vehicle requirements specified</div>
                           )}
                         </div>
                       </div>
                     )}
                     
                     {/* Contact Information */}
-                    {lead.contact && (
+                    {deal.contact && (
                       <div className="bg-green-50 border border-green-200 rounded-md p-3">
                         <div className="text-sm font-medium text-green-900 mb-2">Contact Information</div>
                         <div className="text-sm text-green-700 space-y-1">
                           <div>
-                            <span className="font-medium">Name:</span> {lead.contact.first_name} {lead.contact.last_name}
+                            <span className="font-medium">Name:</span> {deal.contact.first_name} {deal.contact.last_name}
                           </div>
-                          {lead.contact.company && (
-                            <div><span className="font-medium">Company:</span> {lead.contact.company}</div>
+                          {deal.contact.email && (
+                            <div>
+                              <span className="font-medium">Email:</span>{' '}
+                              <a 
+                                href={`mailto:${deal.contact.email}`}
+                                className="text-green-600 hover:underline"
+                              >
+                                {deal.contact.email}
+                              </a>
+                            </div>
                           )}
-                          {lead.contact.email && (
-                            <div><span className="font-medium">Email:</span> {lead.contact.email}</div>
+                          {deal.contact.phone && (
+                            <div>
+                              <span className="font-medium">Phone:</span>{' '}
+                              <a 
+                                href={`tel:${deal.contact.phone}`}
+                                className="text-green-600 hover:underline"
+                              >
+                                {deal.contact.phone}
+                              </a>
+                            </div>
                           )}
-                          {lead.contact.phone && (
-                            <div><span className="font-medium">Phone:</span> {lead.contact.phone}</div>
-                          )}
-                          {lead.contact.mobile && !lead.contact.phone && (
-                            <div><span className="font-medium">Mobile:</span> {lead.contact.mobile}</div>
+                          {deal.contact.mobile && (
+                            <div>
+                              <span className="font-medium">Mobile:</span>{' '}
+                              <a 
+                                href={`tel:${deal.contact.mobile}`}
+                                className="text-green-600 hover:underline"
+                              >
+                                {deal.contact.mobile}
+                              </a>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -439,93 +460,36 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Related Lead</label>
-                    <select
-                      className="w-full border rounded-md h-10 px-3"
-                      value={relatedLeadId || ''}
-                      onChange={(e) => setRelatedLeadId(e.target.value || undefined)}
-                    >
-                      <option value="">No lead selected</option>
-                      {leads.map((lead) => (
-                        <option key={lead.id} value={lead.id}>
-                          {lead.contact 
-                            ? `${lead.contact.first_name} ${lead.contact.last_name} - ${lead.listing ? `${lead.listing.year} ${lead.listing.make} ${lead.listing.model}` : 'No vehicle'}`
-                            : `Lead ${lead.id} - ${lead.listing ? `${lead.listing.year} ${lead.listing.make} ${lead.listing.model}` : 'No vehicle'}`
-                          }
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Related Contact</label>
-                    <select
-                      className="w-full border rounded-md h-10 px-3"
-                      value={relatedContactId || ''}
-                      onChange={(e) => setRelatedContactId(e.target.value || undefined)}
-                    >
-                      <option value="">No contact selected</option>
-                      {contacts.map((contact) => (
-                        <option key={contact.id} value={contact.id}>
-                          {contact.first_name} {contact.last_name} {contact.company ? `(${contact.company})` : ''}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Related Deal</label>
-                    <select
-                      className="w-full border rounded-md h-10 px-3"
-                      value={relatedDealId || ''}
-                      onChange={(e) => setRelatedDealId(e.target.value || undefined)}
-                    >
-                      <option value="">No deal selected</option>
-                      {deals.map((deal) => (
-                        <option key={deal.id} value={deal.id}>
-                          {deal.name || deal.title || `Deal ${deal.id}`}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Related Deal</label>
+                  <select
+                    className="w-full border rounded-md h-10 px-3"
+                    value={relatedDealId || ''}
+                    onChange={(e) => setRelatedDealId(e.target.value || undefined)}
+                  >
+                    <option value="">No deal selected</option>
+                    {deals.map((deal) => (
+                      <option key={deal.id} value={deal.id}>
+                        {deal.name || deal.title || `Deal ${deal.id}`}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
-              {/* Related Entities Section */}
-              {(relatedContactId || relatedLeadId || relatedDealId) && (
+              {/* Related Deal Section */}
+              {relatedDealId && (
                 <div className="space-y-2">
-                  <h4 className="text-md font-semibold text-gray-900 border-b pb-2">Related Entities</h4>
+                  <h4 className="text-md font-semibold text-gray-900 border-b pb-2">Related Deal</h4>
                   <div className="flex flex-wrap gap-2">
-                    {relatedContactId && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => router.push(`/admin/crm/contacts`)}
-                      >
-                        <Icon name="user" className="w-4 h-4 mr-2" />
-                        View Contact
-                      </Button>
-                    )}
-                    {relatedLeadId && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => router.push(`/admin/crm/leads`)}
-                      >
-                        <Icon name="file-text" className="w-4 h-4 mr-2" />
-                        View Lead
-                      </Button>
-                    )}
-                    {relatedDealId && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => router.push(`/admin/crm/deals`)}
-                      >
-                        <Icon name="briefcase" className="w-4 h-4 mr-2" />
-                        View Deal
-                      </Button>
-                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => router.push(`/admin/crm/deals`)}
+                    >
+                      <Icon name="briefcase" className="w-4 h-4 mr-2" />
+                      View Deal
+                    </Button>
                   </div>
                 </div>
               )}

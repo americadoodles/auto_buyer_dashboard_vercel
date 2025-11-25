@@ -7,11 +7,15 @@ import { Icon } from '../atoms/Icon';
 import { Badge } from '../atoms/Badge';
 import { tasksApi } from '../../lib/services/tasksApi';
 import { dealsApi } from '../../lib/services/dealsApi';
+import { leadsApi } from '../../lib/services/leadsApi';
+import { getListingDetails } from '../../lib/services/listingManagementApi';
 import { User } from '../../lib/types/user';
 import { useAuth } from '../../app/auth/useAuth';
 import { useRouter } from 'next/navigation';
 import { useTaskStatuses, useTaskPriorities } from '../../lib/hooks/useTasks';
-import { ApiService } from '../../lib/services/api';
+import { ApiService, apiCall } from '../../lib/services/api';
+import { Listing } from '../../lib/types/listing';
+import { VehicleContactCard } from '../molecules/VehicleContactCard';
 
 interface Task {
   id: string;
@@ -87,6 +91,8 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   const [deals, setDeals] = useState<any[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [deal, setDeal] = useState<any | null>(null);
+  const [listing, setListing] = useState<Listing | null>(null);
+  const [taskContact, setTaskContact] = useState<any | null>(null);
 
   // Reset states when modal closes
   useEffect(() => {
@@ -96,6 +102,8 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
       setSaving(false);
       setError(null);
       setDeal(null);
+      setListing(null);
+      setTaskContact(null);
     }
   }, [isOpen]);
 
@@ -109,6 +117,8 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
     setSaving(false);
     setError(null);
     setDeal(null);
+    setListing(null);
+    setTaskContact(null);
     
     // Initialize form fields from the task prop
     setTitle(initialTask.title || '');
@@ -123,14 +133,46 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
       setLoading(true);
       setError(null);
       try {
+        // Get full task data to access contact_id and related_deal_id
+        const taskData = await tasksApi.getTask(initialTask.id).catch(() => null);
+        
+        const dealId = taskData?.related_deal_id || (initialTask.related_deal ? initialTask.related_deal.id : null);
         const [dealsData, usersData, dealData] = await Promise.all([
           dealsApi.getDeals({ limit: 1000 }).catch(() => []),
           ApiService.getUsers().catch(() => []),
-          initialTask.related_deal?.id ? dealsApi.getDeal(initialTask.related_deal.id).catch(() => null) : Promise.resolve(null)
+          dealId ? dealsApi.getDeal(dealId).catch(() => null) : Promise.resolve(null)
         ]);
         setDeals(dealsData);
         setUsers(usersData);
         setDeal(dealData);
+        
+        // Load contact from task's contact_id if available
+        const contactId = taskData?.contact_id || taskData?.related_contact_id;
+        if (contactId) {
+          try {
+            const contactData = await apiCall<any>(`/crm/contacts/${contactId}`);
+            setTaskContact(contactData);
+          } catch (e) {
+            console.error('Failed to load task contact:', e);
+          }
+        }
+        
+        // If deal has a lead_id, fetch the lead and then the listing
+        if (dealData?.lead_id) {
+          try {
+            const leadData = await leadsApi.getLead(dealData.lead_id);
+            if (leadData?.listing_id) {
+              try {
+                const listingData = await getListingDetails(leadData.listing_id);
+                setListing(listingData);
+              } catch (e) {
+                console.error('Failed to load listing:', e);
+              }
+            }
+          } catch (e) {
+            console.error('Failed to load lead:', e);
+          }
+        }
       } catch (e: any) {
         setError(e?.message || 'Failed to load task details');
       } finally {
@@ -284,93 +326,32 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                 )}
               </div>
 
+              {/* Vehicle and Contact Information from Deal's Listing and Task's Contact */}
+              <VehicleContactCard
+                title="Vehicle & Contact Information"
+                vehicle={listing ? {
+                  year: listing.year,
+                  make: listing.make,
+                  model: listing.model,
+                  trim: listing.trim,
+                  vin: listing.vin
+                } : null}
+                contact={taskContact ? {
+                  first_name: taskContact.first_name,
+                  last_name: taskContact.last_name,
+                  company: taskContact.company,
+                  email: taskContact.email,
+                  phone: taskContact.phone,
+                  mobile: taskContact.mobile
+                } : null}
+              />
+
               {/* Deal Information Section - Vehicle and Contact */}
-              {deal && (deal.contact || deal.vehicle_requirements) && (
-                <div className="space-y-2">
-                  <h4 className="text-md font-semibold text-gray-900 border-b pb-2">Deal Information</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Vehicle Information */}
-                    {deal.vehicle_requirements && (
-                      <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-                        <div className="text-sm font-medium text-blue-900 mb-2">Vehicle Information</div>
-                        <div className="text-sm text-blue-700 space-y-1">
-                          {deal.vehicle_requirements.year && (
-                            <div><span className="font-medium">Year:</span> {deal.vehicle_requirements.year}</div>
-                          )}
-                          {deal.vehicle_requirements.make && (
-                            <div><span className="font-medium">Make:</span> {deal.vehicle_requirements.make}</div>
-                          )}
-                          {deal.vehicle_requirements.model && (
-                            <div><span className="font-medium">Model:</span> {deal.vehicle_requirements.model}</div>
-                          )}
-                          {deal.vehicle_requirements.trim && (
-                            <div><span className="font-medium">Trim:</span> {deal.vehicle_requirements.trim}</div>
-                          )}
-                          {deal.vehicle_requirements.vin && (
-                            <div><span className="font-medium">VIN:</span> {deal.vehicle_requirements.vin}</div>
-                          )}
-                          {deal.vehicle_requirements.mileage && (
-                            <div><span className="font-medium">Mileage:</span> {deal.vehicle_requirements.mileage}</div>
-                          )}
-                          {deal.vehicle_requirements.price_range && (
-                            <div><span className="font-medium">Price Range:</span> {deal.vehicle_requirements.price_range}</div>
-                          )}
-                          {!deal.vehicle_requirements.year && 
-                           !deal.vehicle_requirements.make && 
-                           !deal.vehicle_requirements.model && (
-                            <div className="text-blue-600 italic">Vehicle requirements specified</div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Contact Information */}
-                    {deal.contact && (
-                      <div className="bg-green-50 border border-green-200 rounded-md p-3">
-                        <div className="text-sm font-medium text-green-900 mb-2">Contact Information</div>
-                        <div className="text-sm text-green-700 space-y-1">
-                          <div>
-                            <span className="font-medium">Name:</span> {deal.contact.first_name} {deal.contact.last_name}
-                          </div>
-                          {deal.contact.email && (
-                            <div>
-                              <span className="font-medium">Email:</span>{' '}
-                              <a 
-                                href={`mailto:${deal.contact.email}`}
-                                className="text-green-600 hover:underline"
-                              >
-                                {deal.contact.email}
-                              </a>
-                            </div>
-                          )}
-                          {deal.contact.phone && (
-                            <div>
-                              <span className="font-medium">Phone:</span>{' '}
-                              <a 
-                                href={`tel:${deal.contact.phone}`}
-                                className="text-green-600 hover:underline"
-                              >
-                                {deal.contact.phone}
-                              </a>
-                            </div>
-                          )}
-                          {deal.contact.mobile && (
-                            <div>
-                              <span className="font-medium">Mobile:</span>{' '}
-                              <a 
-                                href={`tel:${deal.contact.mobile}`}
-                                className="text-green-600 hover:underline"
-                              >
-                                {deal.contact.mobile}
-                              </a>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
+              <VehicleContactCard
+                title="Deal Information"
+                vehicle={deal?.vehicle_requirements || null}
+                contact={deal?.contact || null}
+              />
 
               {/* Edit Fields Section */}
               <div className="space-y-4">
@@ -520,21 +501,36 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
 
         {/* Footer */}
         <div className="px-6 py-4 border-t flex justify-between items-center sticky bottom-0 bg-white">
-          <div>
+          <div className="flex items-center space-x-2">
             {!showDeleteConfirm ? (
-              <Button 
-                variant="outline" 
-                onClick={() => setShowDeleteConfirm(true)}
-                disabled={saving || deleting || loading}
-                className="text-red-600 border-red-300 hover:bg-red-50 flex items-center"
-              >
-                <Icon name="trash-2" className="w-4 h-4 mr-2" />
-                <span>
-                  Delete Task
-                </span>
-              </Button>
+              <>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowDeleteConfirm(true)}
+                  disabled={saving || deleting || loading}
+                  className="text-red-600 border-red-300 hover:bg-red-50 flex items-center"
+                >
+                  <Icon name="trash-2" className="w-4 h-4 mr-2" />
+                  <span>
+                    Delete Task
+                  </span>
+                </Button>
+                {!isCompleted && (
+                  <Button 
+                    variant="outline" 
+                    onClick={handleComplete}
+                    disabled={saving || deleting || loading}
+                    className="text-green-600 border-green-300 hover:bg-green-50 flex items-center"
+                  >
+                    <Icon name="check" className="w-4 h-4 mr-2" />
+                    <span>
+                      Complete Task
+                    </span>
+                  </Button>
+                )}
+              </>
             ) : (
-              <div className="flex items-center space-x-2">
+              <>
                 <span className="text-sm text-gray-700">Are you sure?</span>
                 <Button 
                   variant="outline" 
@@ -551,20 +547,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                 >
                   {deleting ? 'Deleting...' : 'Confirm Delete'}
                 </Button>
-              </div>
-            )}
-            {!isCompleted && (
-              <Button 
-                variant="outline" 
-                onClick={handleComplete}
-                disabled={saving || deleting || loading}
-                className="ml-2 text-green-600 border-green-300 hover:bg-green-50 flex items-center"
-              >
-                <Icon name="check" className="w-4 h-4 mr-2" />
-                <span>
-                  Complete Task
-                </span>
-              </Button>
+              </>
             )}
           </div>
           <div className="flex space-x-2">

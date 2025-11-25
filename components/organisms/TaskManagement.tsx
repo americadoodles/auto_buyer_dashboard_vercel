@@ -560,10 +560,12 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
                     e.stopPropagation();
                     onCompleteTask(task.id);
                   }}
-                  className="w-full"
+                  className="w-full flex items-center justify-center"
                 >
                   <Icon name="check" className="w-4 h-4 mr-2" />
-                  Complete
+                  <span>
+                    Complete
+                  </span>
                 </Button>
               </div>
             )}

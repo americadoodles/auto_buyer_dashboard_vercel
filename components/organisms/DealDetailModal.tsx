@@ -12,6 +12,7 @@ import { Deal, DealActivity } from '../../lib/types/deal';
 import { useAuth } from '../../app/auth/useAuth';
 import { useRouter } from 'next/navigation';
 import { useDealStages, useDealCategories } from '../../lib/hooks/useDeals';
+import { VehicleContactCard } from '../molecules/VehicleContactCard';
 
 interface DealDetailModalProps {
   isOpen: boolean;
@@ -234,54 +235,24 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
               )}
 
               {/* Vehicle and Contact Information Section */}
-              {lead && (lead.listing || lead.contact) && (
-                <div className="space-y-2">
-                  <h4 className="text-md font-semibold text-gray-900 border-b pb-2">Lead Information</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Vehicle Information */}
-                    {lead.listing && (
-                      <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-                        <div className="text-sm font-medium text-blue-900 mb-2">Vehicle Information</div>
-                        <div className="text-sm text-blue-700 space-y-1">
-                          <div><span className="font-medium">Year:</span> {lead.listing.year}</div>
-                          <div><span className="font-medium">Make:</span> {lead.listing.make}</div>
-                          <div><span className="font-medium">Model:</span> {lead.listing.model}</div>
-                          {lead.listing.trim && (
-                            <div><span className="font-medium">Trim:</span> {lead.listing.trim}</div>
-                          )}
-                          {lead.listing.vin && (
-                            <div><span className="font-medium">VIN:</span> {lead.listing.vin}</div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Contact Information */}
-                    {lead.contact && (
-                      <div className="bg-green-50 border border-green-200 rounded-md p-3">
-                        <div className="text-sm font-medium text-green-900 mb-2">Contact Information</div>
-                        <div className="text-sm text-green-700 space-y-1">
-                          <div>
-                            <span className="font-medium">Name:</span> {lead.contact.first_name} {lead.contact.last_name}
-                          </div>
-                          {lead.contact.company && (
-                            <div><span className="font-medium">Company:</span> {lead.contact.company}</div>
-                          )}
-                          {lead.contact.email && (
-                            <div><span className="font-medium">Email:</span> {lead.contact.email}</div>
-                          )}
-                          {lead.contact.phone && (
-                            <div><span className="font-medium">Phone:</span> {lead.contact.phone}</div>
-                          )}
-                          {lead.contact.mobile && !lead.contact.phone && (
-                            <div><span className="font-medium">Mobile:</span> {lead.contact.mobile}</div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
+              <VehicleContactCard
+                title="Lead Information"
+                vehicle={lead?.listing ? {
+                  year: lead.listing.year,
+                  make: lead.listing.make,
+                  model: lead.listing.model,
+                  trim: lead.listing.trim,
+                  vin: lead.listing.vin
+                } : null}
+                contact={lead?.contact ? {
+                  first_name: lead.contact.first_name,
+                  last_name: lead.contact.last_name,
+                  company: lead.contact.company,
+                  email: lead.contact.email,
+                  phone: lead.contact.phone,
+                  mobile: lead.contact.mobile
+                } : null}
+              />
 
               {/* Edit Fields Section */}
               <div className="space-y-4">

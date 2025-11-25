@@ -278,7 +278,6 @@ CREATE TABLE IF NOT EXISTS deals (
     name TEXT NOT NULL,
     description TEXT,
     contact_id UUID REFERENCES contacts(id),
-    lead_id UUID REFERENCES leads(id),
     assigned_to UUID REFERENCES users(id),
     deal_stage_id INTEGER REFERENCES deal_stages(id),
     deal_category_id INTEGER REFERENCES deal_categories(id),
@@ -297,6 +296,17 @@ CREATE TABLE IF NOT EXISTS deals (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Add lead_id column to deals table if it doesn't exist (for existing tables)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'deals' AND column_name = 'lead_id'
+    ) THEN
+        ALTER TABLE deals ADD COLUMN lead_id UUID REFERENCES leads(id);
+    END IF;
+END $$;
 
 -- Deal activities
 CREATE TABLE IF NOT EXISTS deal_activities (
@@ -464,6 +474,11 @@ BEGIN
     END IF;
 END $$;
 
+-- Drop existing views if they exist (must be done before dropping columns they depend on)
+DROP VIEW IF EXISTS v_lead_summary CASCADE;
+DROP VIEW IF EXISTS v_deal_pipeline CASCADE;
+DROP VIEW IF EXISTS v_task_dashboard CASCADE;
+
 -- Remove old priority and status TEXT columns if they exist
 DO $$
 BEGIN
@@ -474,8 +489,8 @@ BEGIN
     ) THEN
         -- Drop the check constraint first if it exists
         ALTER TABLE tasks DROP CONSTRAINT IF EXISTS tasks_priority_check;
-        -- Drop the column
-        ALTER TABLE tasks DROP COLUMN priority;
+        -- Drop the column (CASCADE will drop dependent views if any remain)
+        ALTER TABLE tasks DROP COLUMN priority CASCADE;
     END IF;
     
     -- Drop status TEXT column and its constraint if it exists
@@ -485,8 +500,8 @@ BEGIN
     ) THEN
         -- Drop the check constraint first if it exists
         ALTER TABLE tasks DROP CONSTRAINT IF EXISTS tasks_status_check;
-        -- Drop the column
-        ALTER TABLE tasks DROP COLUMN status;
+        -- Drop the column (CASCADE will drop dependent views if any remain)
+        ALTER TABLE tasks DROP COLUMN status CASCADE;
     END IF;
 END $$;
 
@@ -577,7 +592,16 @@ CREATE INDEX IF NOT EXISTS idx_contacts_type ON contacts(contact_type_id);
 
 -- Deal indexes
 CREATE INDEX IF NOT EXISTS idx_deals_contact ON deals(contact_id);
-CREATE INDEX IF NOT EXISTS idx_deals_lead_id ON deals(lead_id);
+-- Only create lead_id index if the column exists
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'deals' AND column_name = 'lead_id'
+    ) THEN
+        CREATE INDEX IF NOT EXISTS idx_deals_lead_id ON deals(lead_id);
+    END IF;
+END $$;
 CREATE INDEX IF NOT EXISTS idx_deals_assigned_to ON deals(assigned_to);
 CREATE INDEX IF NOT EXISTS idx_deals_stage ON deals(deal_stage_id);
 CREATE INDEX IF NOT EXISTS idx_deals_expected_close ON deals(expected_close_date);
@@ -608,10 +632,8 @@ CREATE INDEX IF NOT EXISTS idx_deal_activities_deal ON deal_activities(deal_id);
 -- VIEWS FOR COMMON QUERIES
 -- ==============================================
 
--- Drop existing views if they exist (to handle schema changes)
-DROP VIEW IF EXISTS v_lead_summary CASCADE;
-DROP VIEW IF EXISTS v_deal_pipeline CASCADE;
-DROP VIEW IF EXISTS v_task_dashboard CASCADE;
+-- Note: Views were dropped earlier before dropping columns
+-- Recreate them here with the updated schema
 
 -- Lead summary view
 CREATE VIEW v_lead_summary AS
@@ -756,4 +778,3 @@ SELECT * FROM (VALUES
 WHERE NOT EXISTS (
     SELECT 1 FROM task_statuses WHERE LOWER(task_statuses.name) = LOWER(v.name)
 );
-

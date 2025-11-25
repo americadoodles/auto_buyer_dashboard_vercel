@@ -13,15 +13,15 @@ export default function TasksPage() {
   const [statusFilter, setStatusFilter] = useState<number | undefined>(undefined);
   const [assignedToFilter, setAssignedToFilter] = useState<string | undefined>(undefined);
 
+  // Fetch all tasks for kanban board (large limit to get all tasks)
   const { tasks, loading, error, refreshTasks } = useTasks({
-    skip: (currentPage - 1) * pageSize,
-    limit: pageSize,
+    skip: 0,
+    limit: 1000, // Large limit to fetch all tasks for kanban board
     search: searchTerm || undefined,
     priority_id: priorityFilter,
     status_id: statusFilter,
     assigned_to: assignedToFilter
   });
-
   const { priorities } = useTaskPriorities();
   const { statuses } = useTaskStatuses();
 
@@ -107,11 +107,15 @@ export default function TasksPage() {
       },
       assigned_to: task.assigned_to ? {
         id: task.assigned_to,
-        username: task.assigned_to // This would need to be fetched from user data
+        username: task.assigned_to_user || task.assigned_to // Use assigned_to_user from API if available
       } : {
         id: '',
         username: 'Unassigned'
       },
+      owner: task.owner_user_name ? {
+        id: task.owner_user_id || '',
+        username: task.owner_user_name
+      } : null,
       due_date: task.due_date || new Date().toISOString(), // Ensure due_date is always a string
       completed_at: task.completed_at || null, // Keep as null if not completed
       related_lead: task.related_lead_id ? {
@@ -126,7 +130,7 @@ export default function TasksPage() {
       } : null,
       related_deal: task.related_deal_id ? {
         id: task.related_deal_id,
-        name: 'Deal Name' // This would need to be fetched from deal data
+        name: task.related_deal_name || 'Deal Name' // Use related_deal_name from API
       } : null
     };
   });
@@ -182,10 +186,10 @@ export default function TasksPage() {
   return (
     <AdminLayout>
       <div className="p-6">
-        <div className="mb-6">
+        {/* <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Task Management</h1>
           <p className="text-gray-600 mt-1">Track and manage your sales tasks and activities</p>
-        </div>
+        </div> */}
         <TaskManagement 
           tasks={transformedTasks}
           totalTasks={tasks.length}
@@ -203,6 +207,7 @@ export default function TasksPage() {
           priorities={priorities}
           statuses={statuses}
           loading={loading}
+          onTasksUpdated={refreshTasks}
         />
       </div>
     </AdminLayout>

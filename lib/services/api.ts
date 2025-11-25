@@ -508,3 +508,8 @@ export class ApiService {
     }>(response);
   }
 }
+
+// Helper function to make API calls using unified ApiService
+export const apiCall = async <T>(endpoint: string, options: RequestInit = {}): Promise<T> => {
+  return ApiService.request<T>(endpoint, options);
+};

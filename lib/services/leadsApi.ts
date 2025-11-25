@@ -1,5 +1,5 @@
 // Leads API Service
-import { ApiService } from './api';
+import { apiCall } from './api';
 import type {
   Lead,
   LeadStatus,
@@ -18,11 +18,6 @@ const buildQueryParams = (params: Record<string, any>): string => {
     }
   });
   return queryParams.toString();
-};
-
-// Helper function to make API calls using unified ApiService
-const apiCall = async <T>(endpoint: string, options: RequestInit = {}): Promise<T> => {
-  return ApiService.request<T>(endpoint, options);
 };
 
 // Leads API functions

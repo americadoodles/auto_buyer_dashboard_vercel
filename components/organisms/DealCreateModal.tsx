@@ -8,18 +8,9 @@ import { dealsApi, DealCategory, DealStage } from '../../lib/services/dealsApi';
 import { getContacts } from '../../lib/services/listingManagementApi';
 import { leadsApi } from '../../lib/services/leadsApi';
 import { Lead } from '../../lib/types/lead';
+import { Contact } from '../../lib/types/listing';
 import { useAuth } from '../../app/auth/useAuth';
 import { useDealStages, useDealCategories } from '../../lib/hooks/useDeals';
-
-interface Contact {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email?: string;
-  company?: string;
-  phone?: string;
-  mobile?: string;
-}
 
 interface DealCreateModalProps {
   isOpen: boolean;

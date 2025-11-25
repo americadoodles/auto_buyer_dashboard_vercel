@@ -8,52 +8,11 @@ import { Badge } from '../atoms/Badge';
 import { dealsApi, DealCategory, DealStage } from '../../lib/services/dealsApi';
 import { leadsApi } from '../../lib/services/leadsApi';
 import { Lead } from '../../lib/types/lead';
+import { Deal, DealActivity } from '../../lib/types/deal';
 import { useAuth } from '../../app/auth/useAuth';
 import { useRouter } from 'next/navigation';
 import { useDealStages, useDealCategories } from '../../lib/hooks/useDeals';
-
-interface DealActivity {
-  id: string;
-  deal_id: string;
-  activity_type: string;
-  subject: string;
-  description: string;
-  activity_date: string;
-  created_by: string;
-  created_at: string;
-}
-
-interface Deal {
-  id: string;
-  name: string;
-  description: string;
-  contact?: {
-    id: string;
-    first_name: string;
-    last_name: string;
-  };
-  lead_id?: string;
-  deal_value: number;
-  probability: number;
-  expected_close_date: string;
-  deal_stage?: {
-    id: number;
-    name: string;
-    color: string;
-  };
-  deal_category?: {
-    id: number;
-    name: string;
-  };
-  assigned_to?: {
-    id: string;
-    username: string;
-  };
-  is_won: boolean;
-  is_lost: boolean;
-  created_at: string;
-  updated_at: string;
-}
+import { VehicleContactCard } from '../molecules/VehicleContactCard';
 
 interface DealDetailModalProps {
   isOpen: boolean;
@@ -276,54 +235,24 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
               )}
 
               {/* Vehicle and Contact Information Section */}
-              {lead && (lead.listing || lead.contact) && (
-                <div className="space-y-2">
-                  <h4 className="text-md font-semibold text-gray-900 border-b pb-2">Lead Information</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Vehicle Information */}
-                    {lead.listing && (
-                      <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-                        <div className="text-sm font-medium text-blue-900 mb-2">Vehicle Information</div>
-                        <div className="text-sm text-blue-700 space-y-1">
-                          <div><span className="font-medium">Year:</span> {lead.listing.year}</div>
-                          <div><span className="font-medium">Make:</span> {lead.listing.make}</div>
-                          <div><span className="font-medium">Model:</span> {lead.listing.model}</div>
-                          {lead.listing.trim && (
-                            <div><span className="font-medium">Trim:</span> {lead.listing.trim}</div>
-                          )}
-                          {lead.listing.vin && (
-                            <div><span className="font-medium">VIN:</span> {lead.listing.vin}</div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Contact Information */}
-                    {lead.contact && (
-                      <div className="bg-green-50 border border-green-200 rounded-md p-3">
-                        <div className="text-sm font-medium text-green-900 mb-2">Contact Information</div>
-                        <div className="text-sm text-green-700 space-y-1">
-                          <div>
-                            <span className="font-medium">Name:</span> {lead.contact.first_name} {lead.contact.last_name}
-                          </div>
-                          {lead.contact.company && (
-                            <div><span className="font-medium">Company:</span> {lead.contact.company}</div>
-                          )}
-                          {lead.contact.email && (
-                            <div><span className="font-medium">Email:</span> {lead.contact.email}</div>
-                          )}
-                          {lead.contact.phone && (
-                            <div><span className="font-medium">Phone:</span> {lead.contact.phone}</div>
-                          )}
-                          {lead.contact.mobile && !lead.contact.phone && (
-                            <div><span className="font-medium">Mobile:</span> {lead.contact.mobile}</div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
+              <VehicleContactCard
+                title="Lead Information"
+                vehicle={lead?.listing ? {
+                  year: lead.listing.year,
+                  make: lead.listing.make,
+                  model: lead.listing.model,
+                  trim: lead.listing.trim,
+                  vin: lead.listing.vin
+                } : null}
+                contact={lead?.contact ? {
+                  first_name: lead.contact.first_name,
+                  last_name: lead.contact.last_name,
+                  company: lead.contact.company,
+                  email: lead.contact.email,
+                  phone: lead.contact.phone,
+                  mobile: lead.contact.mobile
+                } : null}
+              />
 
               {/* Edit Fields Section */}
               <div className="space-y-4">
@@ -522,7 +451,7 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
                 className="text-red-600 border-red-300 hover:bg-red-50 flex items-center"
               >
                 <Icon name="trash-2" className="w-4 h-4 mr-2" />
-                <span>
+                <span className='text-red-600'>
                   Delete Deal
                 </span>
               </Button>
@@ -540,7 +469,7 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
                 <Button 
                   onClick={handleDelete}
                   disabled={deleting}
-                  className="bg-red-400 hover:bg-red-500 text-white"
+                  className="bg-red-300 hover:bg-red-300 text-white"
                 >
                   {deleting ? 'Deleting...' : 'Confirm Delete'}
                 </Button>

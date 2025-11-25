@@ -307,6 +307,7 @@ class TaskPriorityBase(BaseModel):
     description: Optional[str] = None
     color_code: str = "#3B82F6"
     is_active: bool = True
+    sort_order: int
 
 class TaskPriorityCreate(TaskPriorityBase):
     pass
@@ -373,11 +374,16 @@ class TaskBase(BaseModel):
     related_id: Optional[UUID] = None
     title: str
     description: Optional[str] = None
-    priority: TaskPriority = TaskPriority.MEDIUM
-    status: TaskStatus = TaskStatus.OPEN
+    priority_id: Optional[int] = None
+    status_id: Optional[int] = None
     column_id: Optional[UUID] = None
     owner_user_id: Optional[UUID] = None
+    assigned_to: Optional[UUID] = None
     due_at: Optional[datetime] = None
+    due_date: Optional[datetime] = None
+    related_lead_id: Optional[UUID] = None
+    related_contact_id: Optional[UUID] = None
+    related_deal_id: Optional[UUID] = None
 
 class TaskCreate(TaskBase):
     pass
@@ -387,14 +393,27 @@ class TaskUpdate(BaseModel):
     related_id: Optional[UUID] = None
     title: Optional[str] = None
     description: Optional[str] = None
-    priority: Optional[TaskPriority] = None
-    status: Optional[TaskStatus] = None
+    priority_id: Optional[int] = None
+    status_id: Optional[int] = None
     column_id: Optional[UUID] = None
     owner_user_id: Optional[UUID] = None
+    assigned_to: Optional[UUID] = None
     due_at: Optional[datetime] = None
+    due_date: Optional[datetime] = None
+    related_lead_id: Optional[UUID] = None
+    related_contact_id: Optional[UUID] = None
+    related_deal_id: Optional[UUID] = None
 
 class TaskOut(TaskBase):
     id: UUID
+    priority: Optional[TaskPriority] = None  # For backward compatibility
+    status: Optional[TaskStatus] = None  # For backward compatibility
+    priority_name: Optional[str] = None
+    status_name: Optional[str] = None
+    assigned_to_user: Optional[str] = None  # Username of assigned user
+    owner_user_name: Optional[str] = None  # Username of owner user
+    related_deal_name: Optional[str] = None  # Deal name if related to a deal
+    contact_id: Optional[UUID] = None  # Contact ID from related deal
     created_at: datetime
     updated_at: datetime
 

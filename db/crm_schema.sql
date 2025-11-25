@@ -278,7 +278,6 @@ CREATE TABLE IF NOT EXISTS deals (
     name TEXT NOT NULL,
     description TEXT,
     contact_id UUID REFERENCES contacts(id),
-    lead_id UUID REFERENCES leads(id),
     assigned_to UUID REFERENCES users(id),
     deal_stage_id INTEGER REFERENCES deal_stages(id),
     deal_category_id INTEGER REFERENCES deal_categories(id),
@@ -297,6 +296,17 @@ CREATE TABLE IF NOT EXISTS deals (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Add lead_id column to deals table if it doesn't exist (for existing tables)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'deals' AND column_name = 'lead_id'
+    ) THEN
+        ALTER TABLE deals ADD COLUMN lead_id UUID REFERENCES leads(id);
+    END IF;
+END $$;
 
 -- Deal activities
 CREATE TABLE IF NOT EXISTS deal_activities (
@@ -338,6 +348,28 @@ CREATE TABLE IF NOT EXISTS deal_vehicles (
 -- TASK & ACTIVITY MANAGEMENT (Kanban Structure)
 -- ==============================================
 
+-- Task priorities
+CREATE TABLE IF NOT EXISTS task_priorities (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    description TEXT,
+    color_code TEXT DEFAULT '#3B82F6',
+    sort_order INTEGER DEFAULT 0,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Task statuses
+CREATE TABLE IF NOT EXISTS task_statuses (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    description TEXT,
+    color_code TEXT DEFAULT '#3B82F6',
+    is_active BOOLEAN DEFAULT true,
+    sort_order INTEGER DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Task boards (global, team, or my scope)
 CREATE TABLE IF NOT EXISTS task_boards (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -365,11 +397,20 @@ CREATE TABLE IF NOT EXISTS tasks (
     related_id UUID, -- Generic related entity ID
     title TEXT NOT NULL,
     description TEXT,
-    priority TEXT NOT NULL DEFAULT 'Medium' CHECK (priority IN ('High', 'Medium', 'Low')),
-    status TEXT NOT NULL DEFAULT 'Open' CHECK (status IN ('Open', 'InProgress', 'Done', 'Snoozed')),
+    priority_id INTEGER REFERENCES task_priorities(id),
+    status_id INTEGER REFERENCES task_statuses(id),
     column_id UUID REFERENCES task_columns(id) ON DELETE SET NULL,
     owner_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    assigned_to UUID REFERENCES users(id) ON DELETE SET NULL,
+    created_by UUID REFERENCES users(id),
     due_at TIMESTAMPTZ,
+    due_date TIMESTAMPTZ,
+    completed_at TIMESTAMPTZ,
+    related_lead_id UUID REFERENCES leads(id) ON DELETE SET NULL,
+    related_contact_id UUID REFERENCES contacts(id) ON DELETE SET NULL,
+    related_deal_id UUID REFERENCES deals(id) ON DELETE SET NULL,
+    is_recurring BOOLEAN DEFAULT false,
+    recurrence_pattern TEXT, -- 'daily', 'weekly', 'monthly'
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -392,17 +433,75 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'due_at') THEN
         ALTER TABLE tasks ADD COLUMN due_at TIMESTAMPTZ;
     END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'status') THEN
-        ALTER TABLE tasks ADD COLUMN status TEXT NOT NULL DEFAULT 'Open' CHECK (status IN ('Open', 'InProgress', 'Done', 'Snoozed'));
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'due_date') THEN
+        ALTER TABLE tasks ADD COLUMN due_date TIMESTAMPTZ;
     END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'priority') THEN
-        ALTER TABLE tasks ADD COLUMN priority TEXT NOT NULL DEFAULT 'Medium' CHECK (priority IN ('High', 'Medium', 'Low'));
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'priority_id') THEN
+        ALTER TABLE tasks ADD COLUMN priority_id INTEGER REFERENCES task_priorities(id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'status_id') THEN
+        ALTER TABLE tasks ADD COLUMN status_id INTEGER REFERENCES task_statuses(id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'assigned_to') THEN
+        ALTER TABLE tasks ADD COLUMN assigned_to UUID REFERENCES users(id) ON DELETE SET NULL;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'created_by') THEN
+        ALTER TABLE tasks ADD COLUMN created_by UUID REFERENCES users(id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'completed_at') THEN
+        ALTER TABLE tasks ADD COLUMN completed_at TIMESTAMPTZ;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'related_lead_id') THEN
+        ALTER TABLE tasks ADD COLUMN related_lead_id UUID REFERENCES leads(id) ON DELETE SET NULL;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'related_contact_id') THEN
+        ALTER TABLE tasks ADD COLUMN related_contact_id UUID REFERENCES contacts(id) ON DELETE SET NULL;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'related_deal_id') THEN
+        ALTER TABLE tasks ADD COLUMN related_deal_id UUID REFERENCES deals(id) ON DELETE SET NULL;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'is_recurring') THEN
+        ALTER TABLE tasks ADD COLUMN is_recurring BOOLEAN DEFAULT false;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'recurrence_pattern') THEN
+        ALTER TABLE tasks ADD COLUMN recurrence_pattern TEXT;
     END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'title') THEN
         ALTER TABLE tasks ADD COLUMN title TEXT NOT NULL;
     END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'description') THEN
         ALTER TABLE tasks ADD COLUMN description TEXT;
+    END IF;
+END $$;
+
+-- Drop existing views if they exist (must be done before dropping columns they depend on)
+DROP VIEW IF EXISTS v_lead_summary CASCADE;
+DROP VIEW IF EXISTS v_deal_pipeline CASCADE;
+DROP VIEW IF EXISTS v_task_dashboard CASCADE;
+
+-- Remove old priority and status TEXT columns if they exist
+DO $$
+BEGIN
+    -- Drop priority TEXT column and its constraint if it exists
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'tasks' AND column_name = 'priority'
+    ) THEN
+        -- Drop the check constraint first if it exists
+        ALTER TABLE tasks DROP CONSTRAINT IF EXISTS tasks_priority_check;
+        -- Drop the column (CASCADE will drop dependent views if any remain)
+        ALTER TABLE tasks DROP COLUMN priority CASCADE;
+    END IF;
+    
+    -- Drop status TEXT column and its constraint if it exists
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'tasks' AND column_name = 'status'
+    ) THEN
+        -- Drop the check constraint first if it exists
+        ALTER TABLE tasks DROP CONSTRAINT IF EXISTS tasks_status_check;
+        -- Drop the column (CASCADE will drop dependent views if any remain)
+        ALTER TABLE tasks DROP COLUMN status CASCADE;
     END IF;
 END $$;
 
@@ -493,7 +592,16 @@ CREATE INDEX IF NOT EXISTS idx_contacts_type ON contacts(contact_type_id);
 
 -- Deal indexes
 CREATE INDEX IF NOT EXISTS idx_deals_contact ON deals(contact_id);
-CREATE INDEX IF NOT EXISTS idx_deals_lead_id ON deals(lead_id);
+-- Only create lead_id index if the column exists
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'deals' AND column_name = 'lead_id'
+    ) THEN
+        CREATE INDEX IF NOT EXISTS idx_deals_lead_id ON deals(lead_id);
+    END IF;
+END $$;
 CREATE INDEX IF NOT EXISTS idx_deals_assigned_to ON deals(assigned_to);
 CREATE INDEX IF NOT EXISTS idx_deals_stage ON deals(deal_stage_id);
 CREATE INDEX IF NOT EXISTS idx_deals_expected_close ON deals(expected_close_date);
@@ -502,8 +610,15 @@ CREATE INDEX IF NOT EXISTS idx_deals_expected_close ON deals(expected_close_date
 CREATE INDEX IF NOT EXISTS idx_tasks_related ON tasks(related_type, related_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_owner_due ON tasks(owner_user_id, due_at);
 CREATE INDEX IF NOT EXISTS idx_tasks_column_id ON tasks(column_id);
-CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
-CREATE INDEX IF NOT EXISTS idx_tasks_priority ON tasks(priority);
+CREATE INDEX IF NOT EXISTS idx_tasks_status_id ON tasks(status_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_priority_id ON tasks(priority_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_assigned_to ON tasks(assigned_to);
+CREATE INDEX IF NOT EXISTS idx_tasks_due_date ON tasks(due_date);
+CREATE INDEX IF NOT EXISTS idx_tasks_related_lead_id ON tasks(related_lead_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_related_contact_id ON tasks(related_contact_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_related_deal_id ON tasks(related_deal_id);
+CREATE INDEX IF NOT EXISTS idx_task_priorities_name ON task_priorities(name);
+CREATE INDEX IF NOT EXISTS idx_task_statuses_name ON task_statuses(name);
 CREATE INDEX IF NOT EXISTS idx_task_columns_board_id ON task_columns(board_id);
 CREATE INDEX IF NOT EXISTS idx_task_activity_task_id ON task_activity(task_id);
 CREATE INDEX IF NOT EXISTS idx_task_activity_user_id ON task_activity(user_id);
@@ -517,10 +632,8 @@ CREATE INDEX IF NOT EXISTS idx_deal_activities_deal ON deal_activities(deal_id);
 -- VIEWS FOR COMMON QUERIES
 -- ==============================================
 
--- Drop existing views if they exist (to handle schema changes)
-DROP VIEW IF EXISTS v_lead_summary CASCADE;
-DROP VIEW IF EXISTS v_deal_pipeline CASCADE;
-DROP VIEW IF EXISTS v_task_dashboard CASCADE;
+-- Note: Views were dropped earlier before dropping columns
+-- Recreate them here with the updated schema
 
 -- Lead summary view
 CREATE VIEW v_lead_summary AS
@@ -572,15 +685,96 @@ CREATE VIEW v_task_dashboard AS
 SELECT 
     t.id,
     t.title,
-    t.due_at as due_date,
-    t.priority as priority_name,
-    t.status as status_name,
+    COALESCE(t.due_date, t.due_at) as due_date,
+    tp.name as priority_name,
+    tp.color_code as priority_color,
+    ts.name as status_name,
+    ts.color_code as status_color,
     u.username as owner_user_name,
+    u_assigned.username as assigned_to_name,
     tc.name as column_name,
     tb.name as board_name,
     t.created_at
 FROM tasks t
+LEFT JOIN task_priorities tp ON t.priority_id = tp.id
+LEFT JOIN task_statuses ts ON t.status_id = ts.id
 LEFT JOIN users u ON t.owner_user_id = u.id
+LEFT JOIN users u_assigned ON t.assigned_to = u_assigned.id
 LEFT JOIN task_columns tc ON t.column_id = tc.id
 LEFT JOIN task_boards tb ON tc.board_id = tb.id;
 
+-- ==============================================
+-- CLEANUP DUPLICATES BEFORE SEEDING
+-- ==============================================
+-- Remove duplicates from task_priorities (keep lowest ID)
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'task_priorities') THEN
+        DELETE FROM task_priorities
+        WHERE id IN (
+            SELECT id
+            FROM (
+                SELECT id,
+                       ROW_NUMBER() OVER (PARTITION BY LOWER(name) ORDER BY id) as rn
+                FROM task_priorities
+            ) t
+            WHERE rn > 1
+        );
+    END IF;
+END $$;
+
+-- Remove duplicates from task_statuses (keep lowest ID)
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'task_statuses') THEN
+        DELETE FROM task_statuses
+        WHERE id IN (
+            SELECT id
+            FROM (
+                SELECT id,
+                       ROW_NUMBER() OVER (PARTITION BY LOWER(name) ORDER BY id) as rn
+                FROM task_statuses
+            ) t
+            WHERE rn > 1
+        );
+    END IF;
+END $$;
+
+-- ==============================================
+-- CREATE CASE-INSENSITIVE UNIQUE INDEXES
+-- ==============================================
+-- Drop existing indexes if they exist
+DROP INDEX IF EXISTS ux_task_priorities_name_ci;
+DROP INDEX IF EXISTS ux_task_statuses_name_ci;
+
+-- Create unique case-insensitive indexes (allows safe idempotent inserts)
+CREATE UNIQUE INDEX IF NOT EXISTS ux_task_priorities_name_ci ON task_priorities (LOWER(name));
+CREATE UNIQUE INDEX IF NOT EXISTS ux_task_statuses_name_ci ON task_statuses (LOWER(name));
+
+-- ==============================================
+-- SEED DEFAULT TASK PRIORITIES AND STATUSES
+-- ==============================================
+
+-- Insert default task priorities (idempotent)
+INSERT INTO task_priorities (name, description, color_code, sort_order)
+SELECT * FROM (VALUES
+    ('Low', 'Low priority task', '#6B7280', 1),
+    ('Medium', 'Medium priority task', '#F59E0B', 2),
+    ('High', 'High priority task', '#EF4444', 3),
+    ('Urgent', 'Urgent task', '#DC2626', 4)
+) AS v(name, description, color_code, sort_order)
+WHERE NOT EXISTS (
+    SELECT 1 FROM task_priorities WHERE LOWER(task_priorities.name) = LOWER(v.name)
+);
+
+-- Insert default task statuses (idempotent)
+INSERT INTO task_statuses (name, description, color_code, sort_order, is_active)
+SELECT * FROM (VALUES
+    ('Not Started', 'Task not started', '#6B7280', 1, true),
+    ('In Progress', 'Task in progress', '#3B82F6', 2, true),
+    ('Completed', 'Task completed', '#059669', 3, true),
+    ('Cancelled', 'Task cancelled', '#EF4444', 4, true)
+) AS v(name, description, color_code, sort_order, is_active)
+WHERE NOT EXISTS (
+    SELECT 1 FROM task_statuses WHERE LOWER(task_statuses.name) = LOWER(v.name)
+);

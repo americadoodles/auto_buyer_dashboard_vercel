@@ -1,5 +1,5 @@
 // Deals API Service
-import { ApiService } from './api';
+import { apiCall } from './api';
 
 // Types for Deal data
 export interface Deal {
@@ -86,59 +86,6 @@ const buildQueryParams = (params: Record<string, any>): string => {
   return queryParams.toString();
 };
 
-// Helper function to get auth headers
-const getAuthHeaders = (): HeadersInit => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('auth.token') : null;
-  const headers: Record<string, string> = {};
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  return headers;
-};
-
-// Helper function to handle API responses
-const handleResponse = async <T>(response: Response): Promise<T> => {
-  if (!response.ok) {
-    let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-    try {
-      const errorData = await response.json();
-      console.error('API Error Response:', errorData);
-      
-      // Handle different error response formats
-      if (typeof errorData === 'string') {
-        errorMessage = errorData;
-      } else if (errorData && typeof errorData === 'object') {
-        // Handle FastAPI validation errors where detail is an array
-        if (errorData.detail && Array.isArray(errorData.detail)) {
-          errorMessage = errorData.detail.map((err: any) => {
-            if (typeof err === 'string') return err;
-            if (err.msg) return err.msg;
-            if (err.message) return err.message;
-            return JSON.stringify(err);
-          }).join(', ');
-        } else {
-          errorMessage = errorData.detail || errorData.message || errorData.error || JSON.stringify(errorData);
-        }
-      }
-    } catch (parseError) {
-      console.error('Failed to parse error response:', parseError);
-      // If we can't parse the error response, use the default message
-    }
-    throw new Error(errorMessage);
-  }
-  
-  try {
-    return await response.json();
-  } catch (error) {
-    console.error('Failed to parse JSON response:', error);
-    throw new Error('Invalid response format from server');
-  }
-};
-
-// Helper function to make API calls using unified ApiService
-const apiCall = async <T>(endpoint: string, options: RequestInit = {}): Promise<T> => {
-  return ApiService.request<T>(endpoint, options);
-};
 // Deals API functions
 export const dealsApi = {
   // Deal management

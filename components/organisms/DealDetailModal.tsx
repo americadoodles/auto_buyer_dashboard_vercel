@@ -6,50 +6,13 @@ import { Input } from '../atoms/Input';
 import { Icon } from '../atoms/Icon';
 import { Badge } from '../atoms/Badge';
 import { dealsApi, DealCategory, DealStage } from '../../lib/services/dealsApi';
+import { leadsApi } from '../../lib/services/leadsApi';
+import { Lead } from '../../lib/types/lead';
+import { Deal, DealActivity } from '../../lib/types/deal';
 import { useAuth } from '../../app/auth/useAuth';
 import { useRouter } from 'next/navigation';
-
-interface DealActivity {
-  id: string;
-  deal_id: string;
-  activity_type: string;
-  subject: string;
-  description: string;
-  activity_date: string;
-  created_by: string;
-  created_at: string;
-}
-
-interface Deal {
-  id: string;
-  name: string;
-  description: string;
-  contact?: {
-    id: string;
-    first_name: string;
-    last_name: string;
-  };
-  deal_value: number;
-  probability: number;
-  expected_close_date: string;
-  deal_stage?: {
-    id: number;
-    name: string;
-    color: string;
-  };
-  deal_category?: {
-    id: number;
-    name: string;
-  };
-  assigned_to?: {
-    id: string;
-    username: string;
-  };
-  is_won: boolean;
-  is_lost: boolean;
-  created_at: string;
-  updated_at: string;
-}
+import { useDealStages, useDealCategories } from '../../lib/hooks/useDeals';
+import { VehicleContactCard } from '../molecules/VehicleContactCard';
 
 interface DealDetailModalProps {
   isOpen: boolean;
@@ -68,37 +31,61 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   // Deal fields
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [assignedTo, setAssignedTo] = useState<string | undefined>(undefined);
-  const [expectedCloseDate, setExpectedCloseDate] = useState('');
+  const [expectedCloseDate, setExpectedCloseDate] = useState(''); 
   const [probability, setProbability] = useState('0');
   const [dealStageId, setDealStageId] = useState<number | undefined>(undefined);
+  const [dealCategoryId, setDealCategoryId] = useState<number | undefined>(undefined);
   const [dealValue, setDealValue] = useState('');
   const [contactId, setContactId] = useState<string | undefined>(undefined);
   
-  // Related data
-  const [stages, setStages] = useState<DealStage[]>([]);
+  // Related data - use hooks for stages and categories
+  const { stages, loading: stagesLoading } = useDealStages();
+  const { categories, loading: categoriesLoading } = useDealCategories();
   const [activities, setActivities] = useState<DealActivity[]>([]);
   const [contactName, setContactName] = useState<string>('');
   const [leadId, setLeadId] = useState<string | undefined>(undefined);
+  const [lead, setLead] = useState<Lead | null>(null);
+  const [loadingLead, setLoadingLead] = useState(false);
 
+  // Reset states when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+      setSaving(false);
+      setError(null);
+      setLead(null);
+      setLeadId(undefined);
+    }
+  }, [isOpen]);
   // Load deal details and activities
   useEffect(() => {
     if (!isOpen || !initialDeal) return;
-
+    
+    // Reset all states when opening a new deal
+    setDeleting(false);
+    setShowDeleteConfirm(false);
+    setSaving(false);
+    setError(null);
+    setLead(null);
+    
     // Initialize form fields from the deal prop
     setTitle(initialDeal.name || '');
     setDescription(initialDeal.description || '');
-    setAssignedTo(initialDeal.assigned_to?.id || initialDeal.assigned_to?.username);
-    setExpectedCloseDate(initialDeal.expected_close_date || '');
+    setExpectedCloseDate(formatDateForInput(initialDeal.expected_close_date));
     setProbability(initialDeal.probability?.toString() || '0');
     setDealStageId(initialDeal.deal_stage?.id);
+    setDealCategoryId(initialDeal.deal_category?.id);
     setDealValue(initialDeal.deal_value?.toString() || '');
     setContactId(initialDeal.contact?.id);
+    setLeadId(initialDeal.lead_id);
     
     if (initialDeal.contact) {
       setContactName(`${initialDeal.contact.first_name} ${initialDeal.contact.last_name}`);
@@ -108,13 +95,12 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
       setLoading(true);
       setError(null);
       try {
-        const [dealActivities, dealStages] = await Promise.all([
+        const [dealActivities, leadData] = await Promise.all([
           dealsApi.getDealActivities(initialDeal.id).catch(() => []),
-          dealsApi.getDealStages().catch(() => [])
+          initialDeal.lead_id ? leadsApi.getLead(initialDeal.lead_id).catch(() => null) : Promise.resolve(null)
         ]);
-
         setActivities(dealActivities);
-        setStages(dealStages);
+        setLead(leadData);
       } catch (e: any) {
         setError(e?.message || 'Failed to load deal details');
       } finally {
@@ -135,10 +121,10 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
       await dealsApi.updateDeal(initialDeal.id, {
         title: title.trim(),
         description: description.trim() || undefined,
-        assigned_to: assignedTo || undefined,
         expected_close_date: expectedCloseDate || undefined,
         probability: probability ? parseInt(probability) : 0,
         deal_stage_id: dealStageId,
+        deal_category_id: dealCategoryId,
         deal_value: dealValue ? parseFloat(dealValue) : undefined,
         contact_id: contactId || undefined
       });
@@ -150,6 +136,8 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
       if (onDealUpdated) {
         onDealUpdated();
       }
+      
+      onClose();
     } catch (e: any) {
       setError(e?.message || 'Failed to update deal');
     } finally {
@@ -157,10 +145,52 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
     }
   };
 
+  const handleDelete = async () => {
+    if (!initialDeal) return;
+    
+    setDeleting(true);
+    setError(null);
+    
+    try {
+      await dealsApi.deleteDeal(initialDeal.id);
+
+      // Reset states before closing
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+
+      if (onDealUpdated) {
+        onDealUpdated();
+      }
+      
+      onClose();
+    } catch (e: any) {
+      setError(e?.message || 'Failed to delete deal');
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  // Convert ISO datetime string to YYYY-MM-DD format for date input
+  const formatDateForInput = (dateString: string | undefined): string => {
+    if (!dateString) return '';
+    try {
+      const date = new Date(dateString);
+      // Check if date is valid
+      if (isNaN(date.getTime())) return '';
+      // Format as YYYY-MM-DD
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    } catch (e) {
+      return '';
+    }
   };
 
   const getActivityIcon = (activityType: string) => {
@@ -193,7 +223,7 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
           </button>
         </div>
 
-        {loading ? (
+        {(loading || stagesLoading || categoriesLoading) ? (
           <div className="flex items-center justify-center p-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           </div>
@@ -203,6 +233,26 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
               {error && (
                 <div className="text-red-600 text-sm bg-red-50 p-3 rounded-md">{error}</div>
               )}
+
+              {/* Vehicle and Contact Information Section */}
+              <VehicleContactCard
+                title="Lead Information"
+                vehicle={lead?.listing ? {
+                  year: lead.listing.year,
+                  make: lead.listing.make,
+                  model: lead.listing.model,
+                  trim: lead.listing.trim,
+                  vin: lead.listing.vin
+                } : null}
+                contact={lead?.contact ? {
+                  first_name: lead.contact.first_name,
+                  last_name: lead.contact.last_name,
+                  company: lead.contact.company,
+                  email: lead.contact.email,
+                  phone: lead.contact.phone,
+                  mobile: lead.contact.mobile
+                } : null}
+              />
 
               {/* Edit Fields Section */}
               <div className="space-y-4">
@@ -234,12 +284,11 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Owner (Assigned To)</label>
-                    <Input
-                      value={assignedTo || ''}
-                      onChange={(e) => setAssignedTo(e.target.value || undefined)}
-                      placeholder="User ID"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Enter user ID or username</p>
+                    <div className="w-full border rounded-md h-10 px-3 flex items-center bg-gray-50">
+                      <span className="text-sm text-gray-700">
+                        {initialDeal.assigned_to?.username || 'Unassigned'}
+                      </span>
+                    </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
@@ -285,16 +334,33 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Deal Value ($)</label>
-                  <Input
-                    type="number"
-                    value={dealValue}
-                    onChange={(e) => setDealValue(e.target.value)}
-                    placeholder="0.00"
-                    min="0"
-                    step="0.01"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    <select
+                      className="w-full border rounded-md h-10 px-3"
+                      value={dealCategoryId !== undefined ? String(dealCategoryId) : ''}
+                      onChange={(e) => setDealCategoryId(e.target.value ? Number(e.target.value) : undefined)}
+                    >
+                      <option value="">Select category</option>
+                      {categories.map((category) => (
+                        <option key={category.id} value={String(category.id)}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Deal Value ($)</label>
+                    <Input
+                      type="number"
+                      value={dealValue}
+                      onChange={(e) => setDealValue(e.target.value)}
+                      placeholder="0.00"
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -375,13 +441,49 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
         )}
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t flex justify-end space-x-2 sticky bottom-0 bg-white">
-          <Button variant="outline" onClick={onClose} disabled={saving || loading}>
-            Close
-          </Button>
-          <Button onClick={handleSave} disabled={!title.trim() || saving || loading}>
-            {saving ? 'Saving...' : 'Save Changes'}
-          </Button>
+        <div className="px-6 py-4 border-t flex justify-between items-center sticky bottom-0 bg-white">
+          <div>
+            {!showDeleteConfirm ? (
+              <Button 
+                variant="outline" 
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={saving || deleting || loading}
+                className="text-red-600 border-red-300 hover:bg-red-50 flex items-center"
+              >
+                <Icon name="trash-2" className="w-4 h-4 mr-2" />
+                <span className='text-red-600'>
+                  Delete Deal
+                </span>
+              </Button>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-700">Are you sure?</span>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={deleting}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="bg-red-300 hover:bg-red-300 text-white"
+                >
+                  {deleting ? 'Deleting...' : 'Confirm Delete'}
+                </Button>
+              </div>
+            )}
+          </div>
+          <div className="flex space-x-2">
+            <Button variant="outline" onClick={onClose} disabled={saving || deleting || loading}>
+              Close
+            </Button>
+            <Button onClick={handleSave} disabled={!title.trim() || saving || deleting || loading}>
+              {saving ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
         </div>
       </div>
     </div>

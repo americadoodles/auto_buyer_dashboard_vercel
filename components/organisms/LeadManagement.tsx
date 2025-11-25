@@ -11,6 +11,7 @@ import { Icon } from "../atoms/Icon";
 import { Pagination } from "../molecules/Pagination";
 import { LeadEditModal } from "./LeadEditModal";
 import { Lead as BaseLead, LeadStatus, LeadSource } from "../../lib/types/lead";
+import { useLeadSources, useLeadStatuses } from "../../lib/hooks/useLeads";
 
 // Extended Lead type with transformed fields for UI display
 type Lead = Omit<BaseLead, 'status' | 'assigned_to' | 'source'> & {
@@ -74,13 +75,22 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
   currentSourceFilter,
   currentAssignedToFilter,
   currentLocationFilter,
-  statuses,
-  sources,
+  statuses: statusesProp,
+  sources: sourcesProp,
   assignedToUsers,
   locations,
   loading,
   onLeadUpdated,
 }) => {
+  // Fetch lead sources and statuses from database
+  const { sources: dbSources, loading: sourcesLoading } = useLeadSources();
+  const { statuses: dbStatuses, loading: statusesLoading } = useLeadStatuses();
+  
+  // Use database sources if available, otherwise fall back to prop
+  const sources = dbSources.length > 0 ? dbSources : (sourcesProp || []);
+  // Use database statuses if available, otherwise fall back to prop
+  const statuses = dbStatuses.length > 0 ? dbStatuses : (statusesProp || []);
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   
@@ -195,24 +205,14 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
                 value={statusFilter}
                 onChange={(e) => handleStatusFilterChange(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={loading}
+                disabled={loading || statusesLoading}
               >
                 <option value="all">All Status</option>
-                {statuses ? (
-                  statuses.map((status) => (
-                    <option key={status.id} value={status.id.toString()}>
-                      {status.name}
-                    </option>
-                  ))
-                ) : (
-                  <>
-                    <option value="new">New</option>
-                    <option value="contacted">Contacted</option>
-                    <option value="qualified">Qualified</option>
-                    <option value="converted">Converted</option>
-                    <option value="lost">Lost</option>
-                  </>
-                )}
+                {statuses && statuses.length > 0 && statuses.map((status) => (
+                  <option key={status.id} value={status.id.toString()}>
+                    {status.name}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
@@ -223,24 +223,14 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
                 value={sourceFilter}
                 onChange={(e) => handleSourceFilterChange(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={loading}
+                disabled={loading || sourcesLoading}
               >
                 <option value="all">All Sources</option>
-                {sources ? (
-                  sources.map((source) => (
-                    <option key={source.id} value={source.id.toString()}>
-                      {source.name}
-                    </option>
-                  ))
-                ) : (
-                  <>
-                    <option value="website">Website</option>
-                    <option value="referral">Referral</option>
-                    <option value="email">Email Campaign</option>
-                    <option value="social">Social Media</option>
-                    <option value="vehicle">Vehicle Listing</option>
-                  </>
-                )}
+                {sources && sources.length > 0 && sources.map((source) => (
+                  <option key={source.id} value={source.id.toString()}>
+                    {source.name}
+                  </option>
+                ))}
               </select>
             </div>
             <div>

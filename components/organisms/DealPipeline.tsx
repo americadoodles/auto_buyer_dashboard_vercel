@@ -8,37 +8,8 @@ import { Input } from '../atoms/Input';
 import { Icon } from '../atoms/Icon';
 import { Pagination } from '../molecules/Pagination';
 import { KanbanBoard } from './KanbanBoard';
-
-interface Deal {
-  id: string;
-  name: string;
-  description: string;
-  contact?: {
-    id: string;
-    first_name: string;
-    last_name: string;
-  };
-  deal_value: number;
-  probability: number;
-  expected_close_date: string;
-  deal_stage?: {
-    id: number;
-    name: string;
-    color: string;
-  };
-  deal_category?: {
-    id: number;
-    name: string;
-  };
-  assigned_to?: {
-    id: string;
-    username: string;
-  };
-  is_won: boolean;
-  is_lost: boolean;
-  created_at: string;
-  updated_at: string;
-}
+import { useDealStages, useDealCategories } from '../../lib/hooks/useDeals';
+import { Deal } from '../../lib/types/deal';
 
 interface DealStage {
   id: number;
@@ -83,6 +54,10 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
   const [stageFilter, setStageFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [assignedFilter, setAssignedFilter] = useState('all');
+  
+  // Fetch deal stages and categories from database
+  const { stages: dbStages, loading: stagesLoading } = useDealStages();
+  const { categories, loading: categoriesLoading } = useDealCategories();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -98,6 +73,31 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
     return date.toLocaleDateString();
   };
 
+  // Helper function to convert hex color to Tailwind classes
+  const getTailwindColors = (hexColor: string) => {
+    // Map common hex colors to Tailwind classes
+    const colorMap: Record<string, { bg: string; border: string }> = {
+      '#3B82F6': { bg: 'bg-blue-50', border: 'border-blue-200' }, // blue
+      '#10B981': { bg: 'bg-green-50', border: 'border-green-200' }, // green
+      '#F59E0B': { bg: 'bg-yellow-50', border: 'border-yellow-200' }, // yellow/amber
+      '#8B5CF6': { bg: 'bg-purple-50', border: 'border-purple-200' }, // purple
+      '#059669': { bg: 'bg-emerald-50', border: 'border-emerald-200' }, // emerald
+      '#EF4444': { bg: 'bg-red-50', border: 'border-red-200' }, // red
+      '#F97316': { bg: 'bg-orange-50', border: 'border-orange-200' }, // orange
+      '#06B6D4': { bg: 'bg-cyan-50', border: 'border-cyan-200' }, // cyan
+      '#6366F1': { bg: 'bg-indigo-50', border: 'border-indigo-200' }, // indigo
+      '#EC4899': { bg: 'bg-pink-50', border: 'border-pink-200' }, // pink
+    };
+    
+    // Check if we have a direct mapping
+    if (colorMap[hexColor]) {
+      return colorMap[hexColor];
+    }
+    
+    // Default to gray if no match
+    return { bg: 'bg-gray-50', border: 'border-gray-200' };
+  };
+
   const getStageColor = (stageName: string) => {
     switch (stageName.toLowerCase()) {
       case 'prospecting': return 'blue';
@@ -110,149 +110,25 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
     }
   };
 
-  // Sample deals for demonstration (use when no real deals exist)
-  const sampleDeals: Deal[] = [
-    {
-      id: 'sample-1',
-      name: '2023 Toyota Camry Purchase',
-      description: 'Customer interested in purchasing a 2023 Toyota Camry. Budget: $25,000-$30,000',
-      contact: { id: 'c1', first_name: 'John', last_name: 'Smith' },
-      deal_value: 28000,
-      probability: 15,
-      expected_close_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      deal_stage: { id: 1, name: 'Prospecting', color: '#3B82F6' },
-      deal_category: { id: 1, name: 'Used Vehicle Sale' },
-      assigned_to: { id: 'u1', username: 'sales_rep_1' },
-      is_won: false,
-      is_lost: false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    },
-    {
-      id: 'sample-2',
-      name: 'Honda Accord Trade-In Deal',
-      description: 'Customer wants to trade in 2019 Honda Accord for a new vehicle',
-      contact: { id: 'c2', first_name: 'Sarah', last_name: 'Johnson' },
-      deal_value: 35000,
-      probability: 30,
-      expected_close_date: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(),
-      deal_stage: { id: 1, name: 'Prospecting', color: '#3B82F6' },
-      deal_category: { id: 3, name: 'Trade-In' },
-      assigned_to: { id: 'u2', username: 'sales_rep_2' },
-      is_won: false,
-      is_lost: false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    },
-    {
-      id: 'sample-3',
-      name: 'BMW 3 Series Financing',
-      description: 'High-value customer interested in BMW 3 Series with financing options',
-      contact: { id: 'c3', first_name: 'Michael', last_name: 'Davis' },
-      deal_value: 45000,
-      probability: 40,
-      expected_close_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-      deal_stage: { id: 2, name: 'Qualification', color: '#10B981' },
-      deal_category: { id: 4, name: 'Financing' },
-      assigned_to: { id: 'u1', username: 'sales_rep_1' },
-      is_won: false,
-      is_lost: false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    },
-    {
-      id: 'sample-4',
-      name: 'Ford F-150 Commercial Sale',
-      description: 'Business customer needs fleet of 5 Ford F-150 trucks',
-      contact: { id: 'c4', first_name: 'Robert', last_name: 'Wilson' },
-      deal_value: 175000,
-      probability: 55,
-      expected_close_date: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
-      deal_stage: { id: 3, name: 'Proposal', color: '#F59E0B' },
-      deal_category: { id: 1, name: 'New Vehicle Sale' },
-      assigned_to: { id: 'u2', username: 'sales_rep_2' },
-      is_won: false,
-      is_lost: false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    },
-    {
-      id: 'sample-5',
-      name: 'Tesla Model 3 Purchase',
-      description: 'Customer ready to purchase Tesla Model 3, negotiating final price',
-      contact: { id: 'c5', first_name: 'Emily', last_name: 'Brown' },
-      deal_value: 42000,
-      probability: 80,
-      expected_close_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-      deal_stage: { id: 4, name: 'Negotiation', color: '#8B5CF6' },
-      deal_category: { id: 1, name: 'New Vehicle Sale' },
-      assigned_to: { id: 'u1', username: 'sales_rep_1' },
-      is_won: false,
-      is_lost: false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    },
-    {
-      id: 'sample-6',
-      name: 'Mercedes-Benz C-Class Sale',
-      description: 'Successfully closed deal for Mercedes-Benz C-Class',
-      contact: { id: 'c6', first_name: 'David', last_name: 'Martinez' },
-      deal_value: 52000,
-      probability: 100,
-      expected_close_date: new Date().toISOString(),
-      deal_stage: { id: 5, name: 'Closed Won', color: '#059669' },
-      deal_category: { id: 1, name: 'New Vehicle Sale' },
-      assigned_to: { id: 'u2', username: 'sales_rep_2' },
-      is_won: true,
-      is_lost: false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    },
-    {
-      id: 'sample-7',
-      name: 'Audi A4 Lease Agreement',
-      description: 'Customer exploring lease options for Audi A4',
-      contact: { id: 'c7', first_name: 'Lisa', last_name: 'Anderson' },
-      deal_value: 38000,
-      probability: 25,
-      expected_close_date: new Date(Date.now() + 18 * 24 * 60 * 60 * 1000).toISOString(),
-      deal_stage: { id: 2, name: 'Qualification', color: '#10B981' },
-      deal_category: { id: 4, name: 'Financing' },
-      assigned_to: { id: 'u1', username: 'sales_rep_1' },
-      is_won: false,
-      is_lost: false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    },
-    {
-      id: 'sample-8',
-      name: 'Chevrolet Silverado Proposal',
-      description: 'Proposal sent for 2024 Chevrolet Silverado 1500',
-      contact: { id: 'c8', first_name: 'James', last_name: 'Taylor' },
-      deal_value: 48000,
-      probability: 60,
-      expected_close_date: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000).toISOString(),
-      deal_stage: { id: 3, name: 'Proposal', color: '#F59E0B' },
-      deal_category: { id: 1, name: 'New Vehicle Sale' },
-      assigned_to: { id: 'u2', username: 'sales_rep_2' },
-      is_won: false,
-      is_lost: false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }
-  ];
-
-  // Use sample deals if no real deals exist, otherwise use real deals
-  const dealsToDisplay = deals.length > 0 ? deals : sampleDeals;
-
-  // Define the Kanban stages in order (moved before dealsByStage to avoid dependency issues)
-  const kanbanStages = useMemo(() => [
-    { name: 'Prospecting', color: '#3B82F6', bgColor: 'bg-blue-50', borderColor: 'border-blue-200' },
-    { name: 'Qualification', color: '#10B981', bgColor: 'bg-green-50', borderColor: 'border-green-200' },
-    { name: 'Proposal', color: '#F59E0B', bgColor: 'bg-yellow-50', borderColor: 'border-yellow-200' },
-    { name: 'Negotiation', color: '#8B5CF6', bgColor: 'bg-purple-50', borderColor: 'border-purple-200' },
-    { name: 'Closed', color: '#059669', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200' }
-  ], []);
+  const dealsToDisplay = deals
+  // Define the Kanban stages from database (moved before dealsByStage to avoid dependency issues)
+  const kanbanStages = useMemo(() => {
+    // Use database stages from useDealStages hook
+    // Map database stages to kanban format, sorted by sort_order
+    return dbStages
+      .filter(stage => stage.is_active !== false) // Only include active stages
+      .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)) // Sort by sort_order
+      .map(stage => {
+        const color = stage.color_code || '#6B7280'; // Default gray if no color
+        const tailwindColors = getTailwindColors(color);
+        return {
+          name: stage.name,
+          color: color,
+          bgColor: tailwindColors.bg,
+          borderColor: tailwindColors.border
+        };
+      });
+  }, [dbStages]);
 
   const totalPipelineValue = dealStages.reduce((sum, stage) => sum + stage.value, 0);
   const wonDealsValue = dealsToDisplay.filter(deal => deal.is_won).reduce((sum, deal) => sum + deal.deal_value, 0);
@@ -279,8 +155,8 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
 
       // Category filter
       if (categoryFilter !== 'all') {
-        const dealCategoryName = deal.deal_category?.name.toLowerCase().replace(/\s+/g, '_') || '';
-        if (dealCategoryName !== categoryFilter) return false;
+        const dealCategoryId = deal.deal_category?.id?.toString() || '';
+        if (dealCategoryId !== categoryFilter) return false;
       }
 
       // Assigned filter
@@ -289,7 +165,9 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
           // You might want to check against current user
           return true; // Placeholder
         }
-        const assignedUsername = deal.assigned_to?.username.toLowerCase() || '';
+        const assignedUsername = typeof deal.assigned_to === 'object' && deal.assigned_to !== null && 'username' in deal.assigned_to
+          ? deal.assigned_to.username.toLowerCase()
+          : '';
         if (assignedUsername !== assignedFilter.toLowerCase()) return false;
       }
 
@@ -306,20 +184,13 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
 
     filteredDeals.forEach(deal => {
       const stageName = deal.deal_stage?.name || '';
-      // Handle "Closed Won" and "Closed Lost" as "Closed"
-      if (stageName.toLowerCase().includes('closed')) {
-        grouped['Closed'].push(deal);
+      // Match exact stage name (including "Closed Won" and "Closed Lost")
+      const matchedStage = kanbanStages.find(s => 
+        s.name.toLowerCase() === stageName.toLowerCase()
+      );
+      if (matchedStage) {
+        grouped[matchedStage.name].push(deal);
       } else {
-        // Match exact stage name
-        const matchedStage = kanbanStages.find(s => 
-          s.name.toLowerCase() === stageName.toLowerCase()
-        );
-        if (matchedStage) {
-          grouped[matchedStage.name].push(deal);
-        } else {
-          // Default to Prospecting if no match
-          grouped['Prospecting'].push(deal);
-        }
       }
     });
 
@@ -330,7 +201,7 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
   const getStageStats = (stageName: string) => {
     const stageDeals = dealsByStage[stageName] || [];
     const count = stageDeals.length;
-    const value = stageDeals.reduce((sum, deal) => sum + deal.deal_value, 0);
+    const value = stageDeals.reduce((sum, deal) => sum + Number(deal.deal_value), 0);
     return { count, value };
   };
 
@@ -350,16 +221,15 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
             <Icon name="download" className="w-4 h-4 mr-2" />
             Export
           </Button>
-          <Button onClick={onCreateDeal}>
+          {/* <Button onClick={onCreateDeal}>
             <Icon name="plus" className="w-4 h-4 mr-2" />
             New Deal
-          </Button>
+          </Button> */}
         </div>
       </div>
 
       {/* Pipeline Overview */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Pipeline Stages */}
+      {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Pipeline Stages</h2>
           <div className="space-y-4">
@@ -383,8 +253,6 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
             </div>
           </div>
         </Card>
-
-        {/* Revenue Summary */}
         <Card className="p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Revenue Summary</h2>
           <div className="space-y-4">
@@ -410,7 +278,7 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
             </div>
           </div>
         </Card>
-      </div>
+      </div> */}
 
       {/* Filters */}
       <Card className="p-6">
@@ -452,13 +320,14 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={categoriesLoading}
             >
               <option value="all">All Categories</option>
-              <option value="new_vehicle">New Vehicle Sale</option>
-              <option value="used_vehicle">Used Vehicle Sale</option>
-              <option value="trade_in">Trade-In</option>
-              <option value="financing">Financing</option>
-              <option value="service">Service</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id.toString()}>
+                  {category.name}
+                </option>
+              ))}
             </select>
           </div>
           <div>
@@ -481,16 +350,104 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
 
       {/* Kanban Board */}
       <KanbanBoard
-        deals={filteredDeals}
+        items={filteredDeals}
         stages={kanbanStages}
-        dealsByStage={dealsByStage}
+        itemsByStage={dealsByStage}
         getStageStats={getStageStats}
         formatCurrency={formatCurrency}
         formatDate={formatDate}
         getStageColor={getStageColor}
-        onDealClick={onDealClick}
-        onDealUpdated={onDealUpdated}
+        onItemClick={onDealClick}
+        onItemUpdated={onDealUpdated}
         stagesFromDb={stages}
+        itemType="deal"
+        onCreateItem={(stageName, stageId) => {
+          // Handled by KanbanBoard's create button
+        }}
+        renderCard={(deal, stage, onItemClick) => (
+          <>
+            {/* Deal Header */}
+            <div className="mb-3">
+              <h4 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onItemClick(deal);
+                }}
+                className="text-lg font-semibold text-gray-900 mb-1 line-clamp-2 cursor-pointer hover:text-blue-600 hover:underline transition-colors"
+              >
+                {deal.name}
+              </h4>
+              {deal.description && (
+                <p className="text-xs text-gray-500 line-clamp-2">
+                  {deal.description}
+                </p>
+              )}
+            </div>
+
+            {/* Deal Value */}
+            <div className="mb-3">
+              <div className="text-lg font-bold text-gray-900">
+                {formatCurrency(deal.deal_value)}
+              </div>
+            </div>
+
+            {/* Contact */}
+            {deal.contact && (
+              <div className="mb-3 flex items-center space-x-2">
+                <div className="w-6 h-6 rounded-full bg-blue-300 flex items-center justify-center">
+                  <span className="text-xs font-medium text-gray-700">
+                    {(deal.contact.first_name?.[0]?.toUpperCase() || '')}{(deal.contact.last_name?.[0]?.toUpperCase() || '')}
+                  </span>
+                </div>
+                <span className="text-xs text-gray-600">
+                  {deal.contact.first_name?.charAt(0).toUpperCase() + deal.contact.first_name?.slice(1)} {deal.contact.last_name?.charAt(0).toUpperCase() + deal.contact.last_name?.slice(1)}
+                </span>
+              </div>
+            )}
+
+            {/* Probability */}
+            <div className="mb-3">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs text-gray-500">Probability</span>
+                <span className="text-xs font-medium text-gray-700">{deal.probability}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-1.5">
+                <div
+                  className="h-1.5 rounded-full"
+                  style={{ 
+                    width: `${deal.probability}%`,
+                    backgroundColor: stage.color
+                  }}
+                ></div>
+              </div>
+            </div>
+
+            {/* Expected Close Date */}
+            <div className="mb-3">
+              <div className="flex items-center space-x-1 text-xs text-gray-500">
+                <Icon name="calendar" className="w-3 h-3" />
+                <span>{formatDate(deal.expected_close_date)}</span>
+              </div>
+            </div>
+
+            {/* Assigned To */}
+            {deal.assigned_to && (
+              <div className="mb-3">
+                <div className="flex items-center space-x-1 text-xs text-gray-700 bg-yellow-200 rounded-lg px-2 py-1">
+                  <Icon name="user" className="w-3 h-3" />
+                  <span>
+                    {'Owner: '}
+                    {typeof deal.assigned_to === 'object' && 
+                     deal.assigned_to !== null && 
+                     'username' in deal.assigned_to 
+                      ? String(deal.assigned_to.username) 
+                      : 'Unassigned'}
+                  </span>
+                </div>
+              </div>
+            )}
+          </>
+        )}
       />
 
       {/* Pagination */}

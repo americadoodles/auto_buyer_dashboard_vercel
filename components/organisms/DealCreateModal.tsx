@@ -6,15 +6,11 @@ import { Input } from '../atoms/Input';
 import { Icon } from '../atoms/Icon';
 import { dealsApi, DealCategory, DealStage } from '../../lib/services/dealsApi';
 import { getContacts } from '../../lib/services/listingManagementApi';
+import { leadsApi } from '../../lib/services/leadsApi';
+import { Lead } from '../../lib/types/lead';
+import { Contact } from '../../lib/types/listing';
 import { useAuth } from '../../app/auth/useAuth';
-
-interface Contact {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email?: string;
-  company?: string;
-}
+import { useDealStages, useDealCategories } from '../../lib/hooks/useDeals';
 
 interface DealCreateModalProps {
   isOpen: boolean;
@@ -43,8 +39,14 @@ export const DealCreateModal: React.FC<DealCreateModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [categories, setCategories] = useState<DealCategory[]>([]);
-  const [stages, setStages] = useState<DealStage[]>([]);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [selectedLeadId, setSelectedLeadId] = useState<string | undefined>(undefined);
+  const [selectedLead, setSelectedLead] = useState<Lead | undefined>(undefined);
+  
+  // Use hooks for stages and categories
+  const { stages, loading: stagesLoading } = useDealStages();
+  const { categories, loading: categoriesLoading } = useDealCategories();
+  
   const [selectedStageId, setSelectedStageId] = useState<number | undefined>(stageId);
 
   useEffect(() => {
@@ -52,14 +54,12 @@ export const DealCreateModal: React.FC<DealCreateModalProps> = ({
     
     const loadData = async () => {
       try {
-        const [contactsData, categoriesData, stagesData] = await Promise.all([
+        const [contactsData, leadsData] = await Promise.all([
           getContacts({ limit: 1000 }).catch(() => []),
-          dealsApi.getDealCategories().catch(() => []),
-          dealsApi.getDealStages().catch(() => [])
+          leadsApi.getLeads({ limit: 1000 }).catch(() => [])
         ]);
         setContacts(contactsData);
-        setCategories(categoriesData);
-        setStages(stagesData);
+        setLeads(leadsData);
       } catch (e) {
         console.error('Error loading data:', e);
       }
@@ -74,6 +74,24 @@ export const DealCreateModal: React.FC<DealCreateModalProps> = ({
     }
   }, [stageId]);
 
+  // Handle lead selection - set selected lead and auto-populate contact
+  useEffect(() => {
+    if (selectedLeadId) {
+      const lead = leads.find(l => l.id === selectedLeadId);
+      if (lead) {
+        setSelectedLead(lead);
+        // Auto-populate contact_id from lead
+        if (lead.contact_id) {
+          setContactId(lead.contact_id);
+        }
+      }
+    } else {
+      setSelectedLead(undefined);
+      // Clear contact when no lead is selected
+      setContactId(undefined);
+    }
+  }, [selectedLeadId, leads]);
+
   useEffect(() => {
     if (!isOpen) {
       setName('');
@@ -87,6 +105,8 @@ export const DealCreateModal: React.FC<DealCreateModalProps> = ({
       setError(null);
       setLoading(false);
       setSelectedStageId(stageId);
+      setSelectedLeadId(undefined);
+      setSelectedLead(undefined);
     }
   }, [isOpen, stageId]);
 
@@ -96,12 +116,12 @@ export const DealCreateModal: React.FC<DealCreateModalProps> = ({
     if (!canSubmit) return;
     setLoading(true);
     setError(null);
-    
     try {
       await dealsApi.createDeal({
         title: name.trim(), // API interface uses 'title' which maps to 'name' in database
         description: description.trim() || undefined,
         contact_id: contactId || undefined,
+        lead_id: selectedLeadId || undefined,
         deal_stage_id: selectedStageId,
         deal_category_id: dealCategoryId || undefined,
         expected_close_date: expectedCloseDate || undefined,
@@ -112,7 +132,9 @@ export const DealCreateModal: React.FC<DealCreateModalProps> = ({
         is_active: true
       });
 
-      onCreated && onCreated();
+      if (onCreated) {
+        onCreated();
+      }
       onClose();
     } catch (e: any) {
       setError(e?.message || 'Failed to create deal');
@@ -145,12 +167,85 @@ export const DealCreateModal: React.FC<DealCreateModalProps> = ({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
+              Select Lead (Optional)
+            </label>
+            <select
+              className="w-full border rounded-md h-10 px-3 mb-2"
+              value={selectedLeadId || ''}
+              onChange={(e) => setSelectedLeadId(e.target.value || undefined)}
+            >
+              <option value="">No lead selected</option>
+              {leads.map((lead) => (
+                <option key={lead.id} value={lead.id}>
+                  {lead.contact 
+                    ? `${lead.contact.first_name} ${lead.contact.last_name} - ${lead.listing ? `${lead.listing.year} ${lead.listing.make} ${lead.listing.model}` : 'No vehicle'}`
+                    : `Lead ${lead.id} - ${lead.listing ? `${lead.listing.year} ${lead.listing.make} ${lead.listing.model}` : 'No vehicle'}`
+                  }
+                </option>
+              ))}
+            </select>
+            {selectedLead && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
+                {/* Vehicle Information */}
+                {selectedLead.listing && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                    <div className="text-sm font-medium text-blue-900 mb-2">Vehicle Information</div>
+                    <div className="text-sm text-blue-700 space-y-1">
+                      <div><span className="font-medium">Year:</span> {selectedLead.listing.year}</div>
+                      <div><span className="font-medium">Make:</span> {selectedLead.listing.make}</div>
+                      <div><span className="font-medium">Model:</span> {selectedLead.listing.model}</div>
+                      {selectedLead.listing.trim && (
+                        <div><span className="font-medium">Trim:</span> {selectedLead.listing.trim}</div>
+                      )}
+                      {selectedLead.listing.vin && (
+                        <div><span className="font-medium">VIN:</span> {selectedLead.listing.vin}</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Contact Information */}
+                {selectedLead.contact && (
+                  <div className="bg-green-50 border border-green-200 rounded-md p-3">
+                    <div className="text-sm font-medium text-green-900 mb-2">Contact Information</div>
+                    <div className="text-sm text-green-700 space-y-1">
+                      <div>
+                        <span className="font-medium">Name:</span> {selectedLead.contact.first_name} {selectedLead.contact.last_name}
+                      </div>
+                      {selectedLead.contact.company && (
+                        <div><span className="font-medium">Company:</span> {selectedLead.contact.company}</div>
+                      )}
+                      {selectedLead.contact.email && (
+                        <div><span className="font-medium">Email:</span> {selectedLead.contact.email}</div>
+                      )}
+                      {selectedLead.contact.phone && (
+                        <div><span className="font-medium">Phone:</span> {selectedLead.contact.phone}</div>
+                      )}
+                      {selectedLead.contact.mobile && !selectedLead.contact.phone && (
+                        <div><span className="font-medium">Mobile:</span> {selectedLead.contact.mobile}</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Deal Name <span className="text-red-500">*</span>
             </label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., 2024 Toyota Camry Purchase"
+              placeholder={selectedLead?.listing ? `${selectedLead.listing.year} ${selectedLead.listing.make} ${selectedLead.listing.model} Purchase` : "e.g., 2024 Toyota Camry Purchase"}
+              onKeyDown={(e) => {
+                if (e.key === 'Tab' && !name && selectedLead?.listing) {
+                  e.preventDefault();
+                  const placeholderValue = `${selectedLead.listing.year} ${selectedLead.listing.make} ${selectedLead.listing.model} Purchase`;
+                  setName(placeholderValue);
+                }
+              }}
               required
             />
           </div>
@@ -166,39 +261,21 @@ export const DealCreateModal: React.FC<DealCreateModalProps> = ({
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Stage <span className="text-red-500">*</span>
-            </label>
-            <select
-              className="w-full border rounded-md h-10 px-3"
-              value={selectedStageId || ''}
-              onChange={(e) => setSelectedStageId(e.target.value ? Number(e.target.value) : undefined)}
-              required
-            >
-              <option value="">Select stage</option>
-              {stages.map((stage) => (
-                <option key={stage.id} value={stage.id}>
-                  {stage.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Contact</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Stage <span className="text-red-500">*</span>
+              </label>
               <select
                 className="w-full border rounded-md h-10 px-3"
-                value={contactId || ''}
-                onChange={(e) => setContactId(e.target.value || undefined)}
+                value={selectedStageId || ''}
+                onChange={(e) => setSelectedStageId(e.target.value ? Number(e.target.value) : undefined)}
+                required
               >
-                <option value="">Select contact</option>
-                {contacts.map((contact) => (
-                  <option key={contact.id} value={contact.id}>
-                    {contact.first_name} {contact.last_name}
-                    {contact.company ? ` - ${contact.company}` : ''}
-                    {contact.email ? ` (${contact.email})` : ''}
+                <option value="">Select stage</option>
+                {stages.map((stage) => (
+                  <option key={stage.id} value={stage.id}>
+                    {stage.name}
                   </option>
                 ))}
               </select>

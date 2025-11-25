@@ -7,80 +7,68 @@ import { Icon } from '../atoms/Icon';
 import { dealsApi } from '../../lib/services/dealsApi';
 import { DealCreateModal } from './DealCreateModal';
 import { DealDetailModal } from './DealDetailModal';
+import { TaskCreateModal } from './TaskCreateModal';
+import { TaskDetailModal } from './TaskDetailModal';
 
-interface Deal {
-  id: string;
-  name: string;
-  description: string;
-  contact?: {
-    id: string;
-    first_name: string;
-    last_name: string;
-  };
-  deal_value: number;
-  probability: number;
-  expected_close_date: string;
-  deal_stage?: {
-    id: number;
-    name: string;
-    color: string;
-  };
-  deal_category?: {
-    id: number;
-    name: string;
-  };
-  assigned_to?: {
-    id: string;
-    username: string;
-  };
-  is_won: boolean;
-  is_lost: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-interface KanbanStage {
+// Generic types
+export interface KanbanStage {
+  id?: number | string;
   name: string;
   color: string;
   bgColor: string;
   borderColor: string;
 }
 
-interface KanbanBoardProps {
-  deals: Deal[];
-  stages: KanbanStage[];
-  dealsByStage: Record<string, Deal[]>;
-  getStageStats: (stageName: string) => { count: number; value: number };
-  formatCurrency: (amount: number) => string;
-  formatDate: (dateString: string) => string;
-  getStageColor: (stageName: string) => string;
-  onDealClick: (dealId: string) => void;
-  onDealUpdated?: () => void;
-  stagesFromDb?: Array<{ id: number; name: string; color_code?: string }>;
-  onCreateDeal?: (stageName: string, stageId?: number) => void;
+export interface KanbanItem {
+  id: string;
+  [key: string]: any; // Allow any additional properties
 }
 
-export const KanbanBoard: React.FC<KanbanBoardProps> = ({
-  deals,
+export interface KanbanBoardProps<T extends KanbanItem> {
+  items: T[];
+  stages: KanbanStage[];
+  itemsByStage: Record<string, T[]>;
+  getStageStats: (stageName: string) => { count: number; value?: number };
+  formatCurrency?: (amount: number) => string;
+  formatDate: (dateString: string) => string;
+  getStageColor: (stageName: string) => string;
+  onItemClick: (itemId: string) => void;
+  onItemUpdated?: () => void;
+  onItemMove?: (itemId: string, newStageId: number | string, newStageName: string) => Promise<void>;
+  stagesFromDb?: Array<{ id: number; name: string; color_code?: string }>;
+  onCreateItem?: (stageName: string, stageId?: number) => void;
+  renderCard: (item: T, stage: KanbanStage, onItemClick: (item: T) => void) => React.ReactNode;
+  renderCreateButton?: (stage: KanbanStage, onCreateClick: () => void) => React.ReactNode;
+  emptyStateText?: string;
+  itemType?: 'deal' | 'task' | string; // For type-specific behavior
+}
+
+export function KanbanBoard<T extends KanbanItem>({
+  items,
   stages,
-  dealsByStage,
+  itemsByStage,
   getStageStats,
   formatCurrency,
   formatDate,
   getStageColor,
-  onDealClick,
-  onDealUpdated,
+  onItemClick,
+  onItemUpdated,
+  onItemMove,
   stagesFromDb,
-  onCreateDeal
-}) => {
-  const [draggedDeal, setDraggedDeal] = useState<Deal | null>(null);
+  onCreateItem,
+  renderCard,
+  renderCreateButton,
+  emptyStateText = 'No items in this stage',
+  itemType = 'deal'
+}: KanbanBoardProps<T>) {
+  const [draggedItem, setDraggedItem] = useState<T | null>(null);
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [createModalStageId, setCreateModalStageId] = useState<number | undefined>(undefined);
   const [createModalStageName, setCreateModalStageName] = useState<string>('');
   const [hoveredStage, setHoveredStage] = useState<string | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
-  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
+  const [selectedItem, setSelectedItem] = useState<T | null>(null);
 
   // Map stage name to stage ID
   const getStageIdByName = (stageName: string): number | undefined => {
@@ -92,14 +80,27 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
       );
       if (stage) return stage.id;
     }
+    // Try to find in stages array
+    const stage = stages.find(s => s.name.toLowerCase() === stageName.toLowerCase());
+    if (stage && typeof stage.id === 'number') return stage.id;
     return undefined;
   };
 
+  // Get stage name from item (for deals vs tasks)
+  const getItemStageName = (item: T): string => {
+    if (itemType === 'deal') {
+      return (item as any).deal_stage?.name || '';
+    } else if (itemType === 'task') {
+      return (item as any).status?.name || '';
+    }
+    return '';
+  };
+
   // Handle drag start
-  const handleDragStart = (e: React.DragEvent, deal: Deal) => {
-    setDraggedDeal(deal);
+  const handleDragStart = (e: React.DragEvent, item: T) => {
+    setDraggedItem(item);
     e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', deal.id);
+    e.dataTransfer.setData('text/plain', item.id);
     // Add visual feedback
     if (e.currentTarget instanceof HTMLElement) {
       e.currentTarget.style.opacity = '0.5';
@@ -108,7 +109,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
   // Handle drag end
   const handleDragEnd = (e: React.DragEvent) => {
-    setDraggedDeal(null);
+    setDraggedItem(null);
     setDragOverStage(null);
     // Reset visual feedback
     if (e.currentTarget instanceof HTMLElement) {
@@ -138,13 +139,13 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
     e.preventDefault();
     setDragOverStage(null);
 
-    if (!draggedDeal) return;
+    if (!draggedItem) return;
 
     // Don't update if dropped on the same stage
-    const currentStageName = draggedDeal.deal_stage?.name || '';
+    const currentStageName = getItemStageName(draggedItem);
     if (currentStageName.toLowerCase() === targetStageName.toLowerCase() ||
         (currentStageName.toLowerCase().includes('closed') && targetStageName.toLowerCase() === 'closed')) {
-      setDraggedDeal(null);
+      setDraggedItem(null);
       return;
     }
 
@@ -152,267 +153,238 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
     const stageId = getStageIdByName(targetStageName);
     if (!stageId) {
       console.error(`Could not find stage ID for stage: ${targetStageName}`);
-      setDraggedDeal(null);
+      setDraggedItem(null);
       return;
     }
 
     try {
-      // Update the deal's stage
-      await dealsApi.updateDeal(draggedDeal.id, {
-        deal_stage_id: stageId
-      });
+      // Use custom move handler if provided, otherwise use default
+      if (onItemMove) {
+        await onItemMove(draggedItem.id, stageId, targetStageName);
+      } else if (itemType === 'deal') {
+        // Default behavior for deals
+        await dealsApi.updateDeal(draggedItem.id, {
+          deal_stage_id: stageId
+        });
+      } else {
+        console.error('No move handler provided and itemType is not "deal"');
+        setDraggedItem(null);
+        return;
+      }
 
-      // Call the callback to refresh deals
-      if (onDealUpdated) {
-        onDealUpdated();
+      // Call the callback to refresh items
+      if (onItemUpdated) {
+        onItemUpdated();
       }
     } catch (error) {
-      console.error('Error updating deal stage:', error);
-      alert('Failed to update deal stage. Please try again.');
+      console.error('Error updating item stage:', error);
+      alert(`Failed to update ${itemType} stage. Please try again.`);
     } finally {
-      setDraggedDeal(null);
+      setDraggedItem(null);
     }
   };
 
+  // Default create button renderer
+  const defaultRenderCreateButton = (stage: KanbanStage, onCreateClick: () => void) => (
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={(e) => {
+        e.stopPropagation();
+        onCreateClick();
+      }}
+      className={`w-full justify-center ${hoveredStage === stage.name ? 'pointer-events-auto' : 'pointer-events-none'}`}
+    >
+      <div className="flex items-center justify-center">
+        <Icon name="plus" className="w-4 h-4 mr-2" />
+        <span className="text-sm font-medium">
+          Create {itemType === 'deal' ? 'Deal' : 'Task'}
+        </span>
+      </div>
+    </Button>
+  );
+
   return (
     <div className="w-full">
-      <div className="flex gap-4 pb-4">
-        {stages.map((stage) => {
-          const stageDeals = dealsByStage[stage.name] || [];
-          const stats = getStageStats(stage.name);
-          const isDragOver = dragOverStage === stage.name;
-          
-          return (
-            <div
-              key={stage.name}
-              className={`flex-1 min-w-0 ${stage.bgColor} rounded-lg border-2 ${isDragOver ? 'border-blue-500 border-dashed' : stage.borderColor} flex flex-col transition-all`}
-              onDragOver={(e) => handleDragOver(e, stage.name)}
-              onDragLeave={handleDragLeave}
-              onDrop={(e) => handleDrop(e, stage.name)}
-              onMouseEnter={() => setHoveredStage(stage.name)}
-              onMouseLeave={() => setHoveredStage(null)}
-              onFocus={() => setHoveredStage(stage.name)}
-              onBlur={(e) => {
-                // Only clear hover if focus is moving outside the stage column
-                if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                  setHoveredStage(null);
-                }
-              }}
-            >
-              {/* Column Header */}
-              <div className={`p-4 border-b-2 ${stage.borderColor} ${stage.bgColor}`}>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center space-x-2">
-                    <div
-                      className="w-3 h-3 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: stage.color }}
-                    ></div>
-                    <h3 className="font-semibold text-gray-900 truncate">{stage.name}</h3>
-                  </div>
-                  <Badge color={getStageColor(stage.name)}>
-                    {stats.count}
-                  </Badge>
-                </div>
-                <div className="text-xs text-gray-600 font-medium">
-                  {formatCurrency(stats.value)}
-                </div>
-              </div>
-
-              {/* Deal Cards */}
-              <div className="flex-1 p-3 space-y-3">
-                {stageDeals.length === 0 ? (
-                  <div className={`text-center py-8 text-gray-400 text-sm ${isDragOver ? 'border-2 border-dashed border-blue-400 rounded-lg' : ''}`}>
-                    {isDragOver ? 'Drop deal here' : 'No deals in this stage'}
-                  </div>
-                ) : (
-                  stageDeals.map((deal) => (
-                    <div
-                      key={deal.id}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, deal)}
-                      onDragEnd={handleDragEnd}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedDeal(deal);
-                        setDetailModalOpen(true);
-                      }}
-                      className={`bg-white rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md transition-all cursor-move ${
-                        draggedDeal?.id === deal.id ? 'opacity-50' : ''
-                      }`}
-                    >
-                      {/* Deal Header */}
-                      <div className="mb-3">
-                        <h4 className="text-sm font-semibold text-gray-900 mb-1 line-clamp-2">
-                          {deal.name}
-                        </h4>
-                        {deal.description && (
-                          <p className="text-xs text-gray-500 line-clamp-2">
-                            {deal.description}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Deal Value */}
-                      <div className="mb-3">
-                        <div className="text-lg font-bold text-gray-900">
-                          {formatCurrency(deal.deal_value)}
-                        </div>
-                      </div>
-
-                      {/* Contact */}
-                      {deal.contact && (
-                        <div className="mb-3 flex items-center space-x-2">
-                          <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center">
-                            <span className="text-xs font-medium text-gray-700">
-                              {deal.contact.first_name[0]}{deal.contact.last_name[0]}
-                            </span>
-                          </div>
-                          <span className="text-xs text-gray-600">
-                            {deal.contact.first_name} {deal.contact.last_name}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Probability */}
-                      <div className="mb-3">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs text-gray-500">Probability</span>
-                          <span className="text-xs font-medium text-gray-700">{deal.probability}%</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-1.5">
-                          <div
-                            className="h-1.5 rounded-full"
-                            style={{ 
-                              width: `${deal.probability}%`,
-                              backgroundColor: stage.color
-                            }}
-                          ></div>
-                        </div>
-                      </div>
-
-                      {/* Expected Close Date */}
-                      <div className="mb-3">
-                        <div className="flex items-center space-x-1 text-xs text-gray-500">
-                          <Icon name="calendar" className="w-3 h-3" />
-                          <span>{formatDate(deal.expected_close_date)}</span>
-                        </div>
-                      </div>
-
-                      {/* Assigned To */}
-                      {deal.assigned_to && (
-                        <div className="mb-3">
-                          <div className="flex items-center space-x-1 text-xs text-gray-500">
-                            <Icon name="user" className="w-3 h-3" />
-                            <span>{deal.assigned_to.username}</span>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Actions */}
-                      <div className="flex items-center justify-end space-x-1 pt-2 border-t border-gray-100">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedDeal(deal);
-                            setDetailModalOpen(true);
-                          }}
-                          className="h-7 w-7 p-0"
-                          title="View Deal"
-                        >
-                          <Icon name="eye" className="w-3 h-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            // Handle edit
-                          }}
-                          className="h-7 w-7 p-0"
-                          title="Edit Deal"
-                        >
-                          <Icon name="edit" className="w-3 h-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            // Handle call
-                          }}
-                          className="h-7 w-7 p-0"
-                          title="Call Contact"
-                        >
-                          <Icon name="phone" className="w-3 h-3" />
-                        </Button>
-                      </div>
+      <div className="overflow-x-auto pb-4" style={{ scrollbarWidth: 'thin' }}>
+        <div className="flex gap-4 min-w-max">
+          {stages.map((stage) => {
+            const stageItems = itemsByStage[stage.name] || [];
+            const stats = getStageStats(stage.name);
+            const isDragOver = dragOverStage === stage.name;
+            return (
+              <div
+                key={stage.name}
+                className={`flex-shrink-0 w-[300px] h-[800px] ${stage.bgColor} rounded-lg border-2 ${isDragOver ? 'border-blue-500 border-dashed' : stage.borderColor} flex flex-col transition-all relative`}
+                onDragOver={(e) => handleDragOver(e, stage.name)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, stage.name)}
+                onMouseEnter={() => setHoveredStage(stage.name)}
+                onMouseLeave={() => setHoveredStage(null)}
+                onFocus={() => setHoveredStage(stage.name)}
+                onBlur={(e) => {
+                  // Only clear hover if focus is moving outside the stage column
+                  if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                    setHoveredStage(null);
+                  }
+                }}
+              >
+                {/* Column Header */}
+                <div className={`p-4 border-b-2 ${stage.borderColor} ${stage.bgColor}`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center space-x-2">
+                      <div
+                        className="w-3 h-3 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: stage.color }}
+                      ></div>
+                      <h3 className="font-semibold text-gray-900 truncate">{stage.name}</h3>
                     </div>
-                  ))
+                    <Badge color={getStageColor(stage.name)}>
+                      {stats.count}
+                    </Badge>
+                  </div>
+                  {stats.value !== undefined && formatCurrency && (
+                    <div className="text-xs text-gray-600 font-medium">
+                      {formatCurrency(stats.value)}
+                    </div>
+                  )}
+                </div>
+
+                {/* Item Cards */}
+                <div className="flex-1 p-3 space-y-3 overflow-y-auto min-h-0">
+                  {stageItems.length === 0 ? (
+                    <div className={`text-center py-8 text-gray-400 text-sm ${isDragOver ? 'border-2 border-dashed border-blue-400 rounded-lg' : ''}`}>
+                      {isDragOver ? `Drop ${itemType} here` : emptyStateText}
+                    </div>
+                  ) : (
+                    stageItems.map((item) => (
+                      <div
+                        key={item.id}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, item)}
+                        onDragEnd={handleDragEnd}
+                        className={`bg-white rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md transition-all cursor-move ${
+                          draggedItem?.id === item.id ? 'opacity-50' : ''
+                        }`}
+                      >
+                        {renderCard(item, stage, (clickedItem) => {
+                          setSelectedItem(clickedItem);
+                          if (itemType === 'deal' || itemType === 'task') {
+                            setDetailModalOpen(true);
+                          }
+                          onItemClick(clickedItem.id);
+                        })}
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Create Item Button - Always takes space at bottom, visible on hover */}
+                {onCreateItem && (
+                  <div 
+                    className={`p-3 border-t-2 border-gray-200 flex-shrink-0 transition-opacity ${
+                      hoveredStage === stage.name ? 'opacity-100' : 'opacity-0'
+                    }`}
+                    onDragOver={(e) => handleDragOver(e, stage.name)}
+                    onDrop={(e) => handleDrop(e, stage.name)}
+                  >
+                    {renderCreateButton 
+                      ? renderCreateButton(stage, () => {
+                          const stageId = getStageIdByName(stage.name);
+                          setCreateModalStageId(stageId);
+                          setCreateModalStageName(stage.name);
+                          setCreateModalOpen(true);
+                        })
+                      : defaultRenderCreateButton(stage, () => {
+                          const stageId = getStageIdByName(stage.name);
+                          setCreateModalStageId(stageId);
+                          setCreateModalStageName(stage.name);
+                          setCreateModalOpen(true);
+                        })
+                    }
+                  </div>
                 )}
               </div>
-
-              {/* Create Deal Button - Only show on hover/focus */}
-              {hoveredStage === stage.name && (
-                <div className="p-3 border-t-2 border-gray-200">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const stageId = getStageIdByName(stage.name);
-                      setCreateModalStageId(stageId);
-                      setCreateModalStageName(stage.name);
-                      setCreateModalOpen(true);
-                    }}
-                    className="w-full justify-center"
-                  >
-                    <Icon name="plus" className="w-4 h-4 mr-2" />
-                    Create Deal
-                  </Button>
-                </div>
-              )}
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
-      {/* Create Deal Modal */}
-      <DealCreateModal
-        isOpen={createModalOpen}
-        onClose={() => {
-          setCreateModalOpen(false);
-          setCreateModalStageId(undefined);
-          setCreateModalStageName('');
-        }}
-        onCreated={() => {
-          if (onDealUpdated) {
-            onDealUpdated();
-          }
-          setCreateModalOpen(false);
-          setCreateModalStageId(undefined);
-          setCreateModalStageName('');
-        }}
-        stageId={createModalStageId}
-        stageName={createModalStageName}
-      />
+      {/* Deal-specific modals - only render if itemType is 'deal' */}
+      {itemType === 'deal' && (
+        <>
+          <DealCreateModal
+            isOpen={createModalOpen}
+            onClose={() => {
+              setCreateModalOpen(false);
+              setCreateModalStageId(undefined);
+              setCreateModalStageName('');
+            }}
+            onCreated={() => {
+              if (onItemUpdated) {
+                onItemUpdated();
+              }
+              setCreateModalOpen(false);
+              setCreateModalStageId(undefined);
+              setCreateModalStageName('');
+            }}
+            stageId={createModalStageId}
+            stageName={createModalStageName}
+          />
 
-      {/* Deal Detail Modal */}
-      <DealDetailModal
-        isOpen={detailModalOpen}
-        onClose={() => {
-          setDetailModalOpen(false);
-          setSelectedDeal(null);
-        }}
-        deal={selectedDeal}
-        onDealUpdated={() => {
-          if (onDealUpdated) {
-            onDealUpdated();
-          }
-        }}
-      />
+          <DealDetailModal
+            isOpen={detailModalOpen}
+            onClose={() => {
+              setDetailModalOpen(false);
+              setSelectedItem(null);
+            }}
+            deal={selectedItem as any}
+            onDealUpdated={() => {
+              if (onItemUpdated) {
+                onItemUpdated();
+              }
+            }}
+          />
+        </>
+      )}
+
+      {/* Task-specific modals - only render if itemType is 'task' */}
+      {itemType === 'task' && (
+        <>
+          <TaskCreateModal
+            isOpen={createModalOpen}
+            onClose={() => {
+              setCreateModalOpen(false);
+              setCreateModalStageId(undefined);
+              setCreateModalStageName('');
+            }}
+            onCreated={() => {
+              if (onItemUpdated) {
+                onItemUpdated();
+              }
+              setCreateModalOpen(false);
+              setCreateModalStageId(undefined);
+              setCreateModalStageName('');
+            }}
+            statusId={createModalStageId}
+            statusName={createModalStageName}
+          />
+
+          <TaskDetailModal
+            isOpen={detailModalOpen}
+            onClose={() => {
+              setDetailModalOpen(false);
+              setSelectedItem(null);
+            }}
+            task={selectedItem as any}
+            onTaskUpdated={() => {
+              if (onItemUpdated) {
+                onItemUpdated();
+              }
+            }}
+          />
+        </>
+      )}
     </div>
   );
-};
-
+}

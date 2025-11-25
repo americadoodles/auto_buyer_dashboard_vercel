@@ -107,11 +107,15 @@ export default function TasksPage() {
       },
       assigned_to: task.assigned_to ? {
         id: task.assigned_to,
-        username: task.assigned_to // This would need to be fetched from user data
+        username: task.assigned_to_user || task.assigned_to // Use assigned_to_user from API if available
       } : {
         id: '',
         username: 'Unassigned'
       },
+      owner: task.owner_user_name ? {
+        id: task.owner_user_id || '',
+        username: task.owner_user_name
+      } : null,
       due_date: task.due_date || new Date().toISOString(), // Ensure due_date is always a string
       completed_at: task.completed_at || null, // Keep as null if not completed
       related_lead: task.related_lead_id ? {
@@ -126,7 +130,7 @@ export default function TasksPage() {
       } : null,
       related_deal: task.related_deal_id ? {
         id: task.related_deal_id,
-        name: 'Deal Name' // This would need to be fetched from deal data
+        name: task.related_deal_name || 'Deal Name' // Use related_deal_name from API
       } : null
     };
   });

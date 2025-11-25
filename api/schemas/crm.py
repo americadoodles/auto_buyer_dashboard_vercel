@@ -410,6 +410,10 @@ class TaskOut(TaskBase):
     status: Optional[TaskStatus] = None  # For backward compatibility
     priority_name: Optional[str] = None
     status_name: Optional[str] = None
+    assigned_to_user: Optional[str] = None  # Username of assigned user
+    owner_user_name: Optional[str] = None  # Username of owner user
+    related_deal_name: Optional[str] = None  # Deal name if related to a deal
+    contact_id: Optional[UUID] = None  # Contact ID from related deal
     created_at: datetime
     updated_at: datetime
 

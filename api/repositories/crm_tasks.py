@@ -63,12 +63,63 @@ def create_task(task_data: TaskCreate, user_id: UUID) -> TaskOut:
                     # Log activity
                     log_task_activity(task_id, 'created', {'user_id': str(user_id)}, user_id)
                     
-                    return TaskOut(
-                        id=task_id,
-                        **task_data.model_dump(),
-                        created_at=created_at,
-                        updated_at=updated_at
-                    )
+                    # Fetch the created task with all joins to get enriched data
+                    cur.execute("""
+                        SELECT t.id, t.related_type, t.related_id, t.title, t.description, 
+                               t.priority_id, t.status_id, t.column_id, t.owner_user_id, t.assigned_to,
+                               t.due_at, t.due_date, t.related_lead_id, t.related_contact_id, t.related_deal_id,
+                               t.created_at, t.updated_at,
+                               tp.name as priority_name, ts.name as status_name,
+                               u_owner.username as owner_user_name,
+                               u_assigned.username as assigned_to_user,
+                               d.name as related_deal_name,
+                               d.contact_id as contact_id
+                        FROM tasks t
+                        LEFT JOIN task_priorities tp ON t.priority_id = tp.id
+                        LEFT JOIN task_statuses ts ON t.status_id = ts.id
+                        LEFT JOIN users u_owner ON t.owner_user_id = u_owner.id
+                        LEFT JOIN users u_assigned ON t.assigned_to = u_assigned.id
+                        LEFT JOIN deals d ON t.related_deal_id = d.id
+                        WHERE t.id = %s
+                    """, (task_id,))
+                    
+                    task_result = cur.fetchone()
+                    if task_result:
+                        # Map priority/status names to enums for backward compatibility
+                        priority_enum = None
+                        status_enum = None
+                        if task_result[17]:  # priority_name
+                            try:
+                                priority_enum = TaskPriority(task_result[17])
+                            except ValueError:
+                                pass
+                        if task_result[18]:  # status_name
+                            try:
+                                status_enum = TaskStatus(task_result[18])
+                            except ValueError:
+                                pass
+                        
+                        return TaskOut(
+                            id=task_result[0], related_type=task_result[1], related_id=task_result[2],
+                            title=task_result[3], description=task_result[4],
+                            priority_id=task_result[5], status_id=task_result[6],
+                            column_id=task_result[7], owner_user_id=task_result[8], assigned_to=task_result[9],
+                            due_at=task_result[10], due_date=task_result[11],
+                            related_lead_id=task_result[12], related_contact_id=task_result[13], related_deal_id=task_result[14],
+                            created_at=task_result[15], updated_at=task_result[16],
+                            priority=priority_enum, status=status_enum,
+                            priority_name=task_result[17], status_name=task_result[18],
+                            owner_user_name=task_result[19], assigned_to_user=task_result[20],
+                            related_deal_name=task_result[21], contact_id=task_result[22]
+                        )
+                    else:
+                        # Fallback to basic task data if fetch fails
+                        return TaskOut(
+                            id=task_id,
+                            **task_data.model_dump(),
+                            created_at=created_at,
+                            updated_at=updated_at
+                        )
                 else:
                     raise Exception("Failed to create task")
                     
@@ -92,10 +143,17 @@ def get_task(task_id: UUID) -> Optional[TaskOut]:
                            t.priority_id, t.status_id, t.column_id, t.owner_user_id, t.assigned_to,
                            t.due_at, t.due_date, t.related_lead_id, t.related_contact_id, t.related_deal_id,
                            t.created_at, t.updated_at,
-                           tp.name as priority_name, ts.name as status_name
+                           tp.name as priority_name, ts.name as status_name,
+                           u_owner.username as owner_user_name,
+                           u_assigned.username as assigned_to_user,
+                           d.name as related_deal_name,
+                           d.contact_id as contact_id
                     FROM tasks t
                     LEFT JOIN task_priorities tp ON t.priority_id = tp.id
                     LEFT JOIN task_statuses ts ON t.status_id = ts.id
+                    LEFT JOIN users u_owner ON t.owner_user_id = u_owner.id
+                    LEFT JOIN users u_assigned ON t.assigned_to = u_assigned.id
+                    LEFT JOIN deals d ON t.related_deal_id = d.id
                     WHERE t.id = %s
                 """, (task_id,))
                 
@@ -124,7 +182,9 @@ def get_task(task_id: UUID) -> Optional[TaskOut]:
                         related_lead_id=result[12], related_contact_id=result[13], related_deal_id=result[14],
                         created_at=result[15], updated_at=result[16],
                         priority=priority_enum, status=status_enum,
-                        priority_name=result[17], status_name=result[18]
+                        priority_name=result[17], status_name=result[18],
+                        owner_user_name=result[19], assigned_to_user=result[20],
+                        related_deal_name=result[21], contact_id=result[22]
                     )
                 return None
                 
@@ -181,10 +241,17 @@ def update_task(task_id: UUID, task_update: TaskUpdate, user_id: UUID) -> Option
                            t.priority_id, t.status_id, t.column_id, t.owner_user_id, t.assigned_to,
                            t.due_at, t.due_date, t.related_lead_id, t.related_contact_id, t.related_deal_id,
                            t.created_at, t.updated_at,
-                           tp.name as priority_name, ts.name as status_name
+                           tp.name as priority_name, ts.name as status_name,
+                           u_owner.username as owner_user_name,
+                           u_assigned.username as assigned_to_user,
+                           d.name as related_deal_name,
+                           d.contact_id as contact_id
                     FROM tasks t
                     LEFT JOIN task_priorities tp ON t.priority_id = tp.id
                     LEFT JOIN task_statuses ts ON t.status_id = ts.id
+                    LEFT JOIN users u_owner ON t.owner_user_id = u_owner.id
+                    LEFT JOIN users u_assigned ON t.assigned_to = u_assigned.id
+                    LEFT JOIN deals d ON t.related_deal_id = d.id
                     WHERE t.id = %s
                 """, (task_id,))
                 
@@ -216,7 +283,9 @@ def update_task(task_id: UUID, task_update: TaskUpdate, user_id: UUID) -> Option
                         related_lead_id=result[12], related_contact_id=result[13], related_deal_id=result[14],
                         created_at=result[15], updated_at=result[16],
                         priority=priority_enum, status=status_enum,
-                        priority_name=result[17], status_name=result[18]
+                        priority_name=result[17], status_name=result[18],
+                        owner_user_name=result[19], assigned_to_user=result[20],
+                        related_deal_name=result[21], contact_id=result[22]
                     )
                 return None
                 
@@ -333,13 +402,20 @@ def list_tasks(
                     from_clause = "FROM tasks t LEFT JOIN task_columns tc ON t.column_id = tc.id"
                 from_clause += " LEFT JOIN task_priorities tp ON t.priority_id = tp.id"
                 from_clause += " LEFT JOIN task_statuses ts ON t.status_id = ts.id"
+                from_clause += " LEFT JOIN users u_owner ON t.owner_user_id = u_owner.id"
+                from_clause += " LEFT JOIN users u_assigned ON t.assigned_to = u_assigned.id"
+                from_clause += " LEFT JOIN deals d ON t.related_deal_id = d.id"
                 
                 cur.execute(f"""
                     SELECT t.id, t.related_type, t.related_id, t.title, t.description, 
                            t.priority_id, t.status_id, t.column_id, t.owner_user_id, t.assigned_to,
                            t.due_at, t.due_date, t.related_lead_id, t.related_contact_id, t.related_deal_id,
                            t.created_at, t.updated_at,
-                           tp.name as priority_name, ts.name as status_name
+                           tp.name as priority_name, ts.name as status_name,
+                           u_owner.username as owner_user_name,
+                           u_assigned.username as assigned_to_user,
+                           d.name as related_deal_name,
+                           d.contact_id as contact_id
                     {from_clause}
                     WHERE {where_clause}
                     ORDER BY t.created_at DESC
@@ -373,7 +449,9 @@ def list_tasks(
                         related_lead_id=result[12], related_contact_id=result[13], related_deal_id=result[14],
                         created_at=result[15], updated_at=result[16],
                         priority=priority_enum, status=status_enum,
-                        priority_name=result[17], status_name=result[18]
+                        priority_name=result[17], status_name=result[18],
+                        owner_user_name=result[19], assigned_to_user=result[20],
+                        related_deal_name=result[21], contact_id=result[22]
                     ))
                 
                 return tasks
@@ -783,10 +861,17 @@ def move_task(task_id: UUID, column_id: UUID, user_id: UUID, admin_override: boo
                            t.priority_id, t.status_id, t.column_id, t.owner_user_id, t.assigned_to,
                            t.due_at, t.due_date, t.related_lead_id, t.related_contact_id, t.related_deal_id,
                            t.created_at, t.updated_at,
-                           tp.name as priority_name, ts.name as status_name
+                           tp.name as priority_name, ts.name as status_name,
+                           u_owner.username as owner_user_name,
+                           u_assigned.username as assigned_to_user,
+                           d.name as related_deal_name,
+                           d.contact_id as contact_id
                     FROM tasks t
                     LEFT JOIN task_priorities tp ON t.priority_id = tp.id
                     LEFT JOIN task_statuses ts ON t.status_id = ts.id
+                    LEFT JOIN users u_owner ON t.owner_user_id = u_owner.id
+                    LEFT JOIN users u_assigned ON t.assigned_to = u_assigned.id
+                    LEFT JOIN deals d ON t.related_deal_id = d.id
                     WHERE t.id = %s
                 """, (task_id,))
                 
@@ -827,7 +912,9 @@ def move_task(task_id: UUID, column_id: UUID, user_id: UUID, admin_override: boo
                         related_lead_id=result[12], related_contact_id=result[13], related_deal_id=result[14],
                         created_at=result[15], updated_at=result[16],
                         priority=priority_enum, status=status_enum,
-                        priority_name=result[17], status_name=result[18]
+                        priority_name=result[17], status_name=result[18],
+                        owner_user_name=result[19], assigned_to_user=result[20],
+                        related_deal_name=result[21], contact_id=result[22]
                     )
                 return None
                 

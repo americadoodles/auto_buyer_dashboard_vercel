@@ -28,6 +28,10 @@ interface Task {
     id: string;
     username: string;
   };
+  owner?: {
+    id: string;
+    username: string;
+  } | null;
   due_date: string;
   completed_at: string | null;
   related_lead: {
@@ -509,12 +513,22 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
               </div>
             </div>
 
+            {/* Owner */}
+            {task.owner && (
+              <div className="mb-3">
+                <div className="flex items-center space-x-1 text-xs text-gray-700 bg-blue-100 rounded-lg px-2 py-1">
+                  <Icon name="user" className="w-3 h-3" />
+                  <span>Owner: {task.owner.username}</span>
+                </div>
+              </div>
+            )}
+            
             {/* Assigned To */}
-            {task.assigned_to && (
+            {task.assigned_to && task.assigned_to.username !== 'Unassigned' && (
               <div className="mb-3">
                 <div className="flex items-center space-x-1 text-xs text-gray-700 bg-yellow-200 rounded-lg px-2 py-1">
                   <Icon name="user" className="w-3 h-3" />
-                  <span>Owner: {task.assigned_to.username}</span>
+                  <span>Assigned: {task.assigned_to.username}</span>
                 </div>
               </div>
             )}

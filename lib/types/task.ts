@@ -17,6 +17,11 @@ export interface Task {
   created_by: string;
   created_at: string;
   updated_at: string;
+  // Enriched fields from API
+  owner_user_name?: string;
+  assigned_to_user?: string;
+  related_deal_name?: string;
+  contact_id?: string;
 }
 
 export interface TaskPriority {

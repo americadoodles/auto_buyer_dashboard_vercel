@@ -324,7 +324,6 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
                       value={dealStageId || ''}
                       onChange={(e) => setDealStageId(e.target.value ? Number(e.target.value) : undefined)}
                     >
-                      <option value="">Select stage</option>
                       {stages.map((stage) => (
                         <option key={stage.id} value={stage.id}>
                           {stage.name}
@@ -342,7 +341,6 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
                       value={dealCategoryId !== undefined ? String(dealCategoryId) : ''}
                       onChange={(e) => setDealCategoryId(e.target.value ? Number(e.target.value) : undefined)}
                     >
-                      <option value="">Select category</option>
                       {categories.map((category) => (
                         <option key={category.id} value={String(category.id)}>
                           {category.name}

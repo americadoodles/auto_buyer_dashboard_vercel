@@ -174,7 +174,6 @@ export const DealCreateModal: React.FC<DealCreateModalProps> = ({
               value={selectedLeadId || ''}
               onChange={(e) => setSelectedLeadId(e.target.value || undefined)}
             >
-              <option value="">No lead selected</option>
               {leads.map((lead) => (
                 <option key={lead.id} value={lead.id}>
                   {lead.contact 
@@ -272,7 +271,6 @@ export const DealCreateModal: React.FC<DealCreateModalProps> = ({
                 onChange={(e) => setSelectedStageId(e.target.value ? Number(e.target.value) : undefined)}
                 required
               >
-                <option value="">Select stage</option>
                 {stages.map((stage) => (
                   <option key={stage.id} value={stage.id}>
                     {stage.name}
@@ -287,7 +285,6 @@ export const DealCreateModal: React.FC<DealCreateModalProps> = ({
                 value={dealCategoryId || ''}
                 onChange={(e) => setDealCategoryId(e.target.value ? Number(e.target.value) : undefined)}
               >
-                <option value="">Select category</option>
                 {categories.map((category) => (
                   <option key={category.id} value={category.id}>
                     {category.name}

@@ -388,7 +388,6 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                       value={assignedToId || ''}
                       onChange={(e) => setAssignedToId(e.target.value || undefined)}
                     >
-                      <option value="">Unassigned</option>
                       {users.map((u) => (
                         <option key={u.id} value={u.id}>
                           {u.username}
@@ -415,7 +414,6 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                       onChange={(e) => setPriorityId(e.target.value ? Number(e.target.value) : undefined)}
                       disabled={prioritiesLoading}
                     >
-                      <option value="">Select priority</option>
                       {priorities.map((priority) => (
                         <option key={priority.id} value={String(priority.id)}>
                           {priority.name}

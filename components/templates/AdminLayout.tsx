@@ -36,7 +36,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
       <AdminNavPanel />
-      <div className="flex-1 overflow-y-auto overflow-x-hidden min-w-0 h-full">
+      <div className="flex-1 overflow-hidden min-w-0 h-full">
         {children}
       </div>
     </div>

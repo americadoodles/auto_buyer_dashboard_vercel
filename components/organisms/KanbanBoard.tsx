@@ -205,9 +205,9 @@ export function KanbanBoard<T extends KanbanItem>({
   );
 
   return (
-    <div className="w-full">
-      <div className="overflow-x-auto pb-4" style={{ scrollbarWidth: 'thin' }}>
-        <div className="flex gap-4 min-w-max">
+    <div className="w-full h-full flex flex-col">
+      <div className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden" style={{ scrollbarWidth: 'thin' }}>
+        <div className="flex gap-2 h-full w-full">
           {stages.map((stage) => {
             const stageItems = itemsByStage[stage.name] || [];
             const stats = getStageStats(stage.name);
@@ -215,7 +215,7 @@ export function KanbanBoard<T extends KanbanItem>({
             return (
               <div
                 key={stage.name}
-                className={` h-full ${stage.bgColor} min-w-[300px] rounded-lg border-2 ${isDragOver ? 'border-blue-500 border-dashed' : stage.borderColor} flex flex-col transition-all relative`}
+                className={`h-full max-h-full flex-1 min-w-[300px] ${stage.bgColor} rounded-lg border-2 ${isDragOver ? 'border-blue-500 border-dashed' : stage.borderColor} flex flex-col transition-all relative`}
                 onDragOver={(e) => handleDragOver(e, stage.name)}
                 onDragLeave={handleDragLeave}
                 onDrop={(e) => handleDrop(e, stage.name)}
@@ -230,8 +230,8 @@ export function KanbanBoard<T extends KanbanItem>({
                 }}
               >
                 {/* Column Header */}
-                <div className={`p-4 border-b-2 ${stage.borderColor} ${stage.bgColor}`}>
-                  <div className="flex items-center justify-between mb-2">
+                <div className={`px-4 py-2 border-b-2 ${stage.borderColor} ${stage.bgColor}`}>
+                  <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <div
                         className="w-3 h-3 rounded-full "
@@ -251,7 +251,7 @@ export function KanbanBoard<T extends KanbanItem>({
                 </div>
 
                 {/* Item Cards */}
-                <div className="flex-1 p-3 space-y-3 overflow-y-auto min-h-0">
+                <div className="flex-1 p-1 space-y-1 overflow-y-auto min-h-0 kanban-scrollbar">
                   {stageItems.length === 0 ? (
                     <div className={`text-center py-8 text-gray-400 text-sm ${isDragOver ? 'border-2 border-dashed border-blue-400 rounded-lg' : ''}`}>
                       {isDragOver ? `Drop ${itemType} here` : emptyStateText}
@@ -263,7 +263,7 @@ export function KanbanBoard<T extends KanbanItem>({
                         draggable
                         onDragStart={(e) => handleDragStart(e, item)}
                         onDragEnd={handleDragEnd}
-                        className={`bg-white rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md transition-all cursor-move ${
+                        className={`bg-white rounded-lg border border-gray-200 p-2 shadow-sm hover:shadow-md transition-all cursor-move ${
                           draggedItem?.id === item.id ? 'opacity-50' : ''
                         }`}
                       >
@@ -279,29 +279,33 @@ export function KanbanBoard<T extends KanbanItem>({
                   )}
                 </div>
 
-                {/* Create Item Button - Always takes space at bottom, visible on hover */}
+                {/* Create Item Button - Hidden by default, slides up on hover */}
                 {onCreateItem && (
                   <div 
-                    className={`p-3 border-t-2 border-gray-200  transition-opacity ${
-                      hoveredStage === stage.name ? 'opacity-100' : 'opacity-0'
+                    className={`border-t-2 border-gray-200 transition-all duration-300 ease-in-out overflow-hidden ${
+                      hoveredStage === stage.name 
+                        ? 'opacity-100 translate-y-0 max-h-32' 
+                        : 'opacity-0 translate-y-4 max-h-0 pointer-events-none'
                     }`}
                     onDragOver={(e) => handleDragOver(e, stage.name)}
                     onDrop={(e) => handleDrop(e, stage.name)}
                   >
-                    {renderCreateButton 
-                      ? renderCreateButton(stage, () => {
-                          const stageId = getStageIdByName(stage.name);
-                          setCreateModalStageId(stageId);
-                          setCreateModalStageName(stage.name);
-                          setCreateModalOpen(true);
-                        })
-                      : defaultRenderCreateButton(stage, () => {
-                          const stageId = getStageIdByName(stage.name);
-                          setCreateModalStageId(stageId);
-                          setCreateModalStageName(stage.name);
-                          setCreateModalOpen(true);
-                        })
-                    }
+                    <div className="p-3">
+                      {renderCreateButton 
+                        ? renderCreateButton(stage, () => {
+                            const stageId = getStageIdByName(stage.name);
+                            setCreateModalStageId(stageId);
+                            setCreateModalStageName(stage.name);
+                            setCreateModalOpen(true);
+                          })
+                        : defaultRenderCreateButton(stage, () => {
+                            const stageId = getStageIdByName(stage.name);
+                            setCreateModalStageId(stageId);
+                            setCreateModalStageName(stage.name);
+                            setCreateModalOpen(true);
+                          })
+                      }
+                    </div>
                   </div>
                 )}
               </div>

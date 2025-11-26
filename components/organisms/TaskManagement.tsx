@@ -293,14 +293,11 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       {/* Header */}
-      <div className="flex justify-between items-center mb-4 flex-shrink-0">
+      <div className="flex justify-between items-center mb-2 flex-shrink-0">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Task Management</h1>
-          <p className="text-gray-600 mt-1">
-            Manage your tasks and activities ({totalTasks} total)
-          </p>
         </div>
         <div className="flex space-x-2">
           <Button variant="outline" onClick={onExportTasks}>
@@ -315,59 +312,59 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
       </div>
 
       {/* Task Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 flex-shrink-0">
-        <Card className="p-4">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <Icon name="check-circle" className="w-4 h-4 text-blue-600" />
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-2 flex-shrink-0">
+        <Card className="px-4 py-2">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <Icon name="check-circle" className="w-4 h-4 text-blue-600" />
+                </div>
               </div>
+              <p className="text-sm font-medium text-gray-500 whitespace-nowrap">Total Tasks</p>
             </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-500">Total Tasks</p>
-              <p className="text-2xl font-semibold text-gray-900">{totalTasks}</p>
-            </div>
+            <p className="text-2xl font-semibold text-gray-900">{totalTasks}</p>
           </div>
         </Card>
-        <Card className="p-4">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                <Icon name="alert-circle" className="w-4 h-4 text-red-600" />
+        <Card className="px-4 py-2">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                  <Icon name="alert-circle" className="w-4 h-4 text-red-600" />
+                </div>
               </div>
+              <p className="text-sm font-medium text-gray-500 whitespace-nowrap">Overdue</p>
             </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-500">Overdue</p>
-              <p className="text-2xl font-semibold text-gray-900">{overdueTasks.length}</p>
-            </div>
+            <p className="text-2xl font-semibold text-gray-900">{overdueTasks.length}</p>
           </div>
         </Card>
-        <Card className="p-4">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                <Icon name="clock" className="w-4 h-4 text-yellow-600" />
+        <Card className="px-4 py-2">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                  <Icon name="clock" className="w-4 h-4 text-yellow-600" />
+                </div>
               </div>
+              <p className="text-sm font-medium text-gray-500 whitespace-nowrap">Due Today</p>
             </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-500">Due Today</p>
-              <p className="text-2xl font-semibold text-gray-900">{dueTodayTasks.length}</p>
-            </div>
+            <p className="text-2xl font-semibold text-gray-900">{dueTodayTasks.length}</p>
           </div>
         </Card>
-        <Card className="p-4">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                <Icon name="check" className="w-4 h-4 text-green-600" />
+        <Card className="px-4 py-2">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                  <Icon name="check" className="w-4 h-4 text-green-600" />
+                </div>
               </div>
+              <p className="text-sm font-medium text-gray-500 whitespace-nowrap">Completed</p>
             </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-500">Completed</p>
-              <p className="text-2xl font-semibold text-gray-900">
-                {tasks.filter(task => task.status.name.toLowerCase() === 'completed').length}
-              </p>
-            </div>
+            <p className="text-2xl font-semibold text-gray-900">
+              {tasks.filter(task => task.status.name.toLowerCase() === 'completed').length}
+            </p>
           </div>
         </Card>
       </div>
@@ -485,7 +482,7 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
             renderCard={(task, stage, onItemClick) => (
           <>
             {/* Task Header */}
-            <div className="mb-3">
+            <div className="mb-1">
               <h4 
                 onClick={(e) => {
                   e.stopPropagation();
@@ -495,51 +492,44 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
               >
                 {task.title}
               </h4>
-              {task.description && (
-                <p className="text-xs text-gray-500 line-clamp-2">
-                  {task.description}
-                </p>
-              )}
             </div>
 
             {/* Priority */}
-            <div className="mb-3">
+            <div className="mb-1">
               <Badge color={getPriorityColor(task.priority.name)}>
                 {task.priority.name}
               </Badge>
             </div>
 
             {/* Due Date */}
-            <div className="mb-3">
+            <div className="mb-1">
               <div className={`flex items-center space-x-1 text-xs ${isOverdue(task.due_date) ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
                 <Icon name="calendar" className="w-3 h-3" />
                 <span>{formatDate(task.due_date)}</span>
               </div>
             </div>
 
-            {/* Owner */}
-            {task.owner && (
-              <div className="mb-3">
-                <div className="flex items-center space-x-1 text-xs text-gray-700 bg-blue-100 rounded-lg px-2 py-1">
-                  <Icon name="user" className="w-3 h-3" />
-                  <span>Owner: {task.owner.username}</span>
-                </div>
-              </div>
-            )}
-            
-            {/* Assigned To */}
-            {task.assigned_to && task.assigned_to.username !== 'Unassigned' && (
-              <div className="mb-3">
-                <div className="flex items-center space-x-1 text-xs text-gray-700 bg-yellow-200 rounded-lg px-2 py-1">
-                  <Icon name="user" className="w-3 h-3" />
-                  <span>Assigned: {task.assigned_to.username}</span>
-                </div>
+            {/* Owner and Assigned To */}
+            {(task.owner || (task.assigned_to && task.assigned_to.username !== 'Unassigned')) && (
+              <div className="mb-1 flex gap-2">
+                {task.owner && (
+                  <div className="flex-1 flex items-center space-x-1 text-xs text-gray-700 bg-blue-100 rounded-lg px-2 py-1">
+                    <Icon name="user" className="w-3 h-3" />
+                    <span className="truncate">Owner: {task.owner.username}</span>
+                  </div>
+                )}
+                {task.assigned_to && task.assigned_to.username !== 'Unassigned' && (
+                  <div className="flex-1 flex items-center space-x-1 text-xs text-gray-700 bg-yellow-200 rounded-lg px-2 py-1">
+                    <Icon name="user" className="w-3 h-3" />
+                    <span className="truncate">Assigned: {task.assigned_to.username}</span>
+                  </div>
+                )}
               </div>
             )}
 
             {/* Related To */}
             {(task.related_lead || task.related_contact || task.related_deal) && (
-              <div className="mb-3">
+              <div className="mb-1">
                 <div className="text-xs text-gray-500 space-y-1">
                   {task.related_lead && (
                     <div>Lead: {task.related_lead.first_name} {task.related_lead.last_name}</div>
@@ -551,26 +541,6 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
                     <div>Deal: {task.related_deal.name}</div>
                   )}
                 </div>
-              </div>
-            )}
-
-            {/* Complete Button */}
-            {task.status.name.toLowerCase() !== 'completed' && (
-              <div className="pt-2 border-t border-gray-100">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onCompleteTask(task.id);
-                  }}
-                  className="w-full flex items-center justify-center"
-                >
-                  <Icon name="check" className="w-4 h-4 mr-2" />
-                  <span>
-                    Complete
-                  </span>
-                </Button>
               </div>
             )}
           </>

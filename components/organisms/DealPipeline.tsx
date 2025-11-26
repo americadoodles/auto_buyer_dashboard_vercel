@@ -367,7 +367,7 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
         renderCard={(deal, stage, onItemClick) => (
           <>
             {/* Deal Header */}
-            <div className="mb-3">
+            <div className="mb-2">
               <h4 
                 onClick={(e) => {
                   e.stopPropagation();
@@ -385,7 +385,7 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
             </div>
 
             {/* Deal Value */}
-            <div className="mb-3">
+            <div className="mb-2">
               <div className="text-lg font-bold text-gray-900">
                 {formatCurrency(deal.deal_value)}
               </div>
@@ -393,7 +393,7 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
 
             {/* Contact */}
             {deal.contact && (
-              <div className="mb-3 flex items-center space-x-2">
+              <div className="mb-2 flex items-center space-x-2">
                 <div className="w-6 h-6 rounded-full bg-blue-300 flex items-center justify-center">
                   <span className="text-xs font-medium text-gray-700">
                     {(deal.contact.first_name?.[0]?.toUpperCase() || '')}{(deal.contact.last_name?.[0]?.toUpperCase() || '')}
@@ -406,7 +406,7 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
             )}
 
             {/* Probability */}
-            <div className="mb-3">
+            <div className="mb-2">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-xs text-gray-500">Probability</span>
                 <span className="text-xs font-medium text-gray-700">{deal.probability}%</span>
@@ -423,7 +423,7 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
             </div>
 
             {/* Expected Close Date */}
-            <div className="mb-3">
+            <div className="mb-2">
               <div className="flex items-center space-x-1 text-xs text-gray-500">
                 <Icon name="calendar" className="w-3 h-3" />
                 <span>{formatDate(deal.expected_close_date)}</span>
@@ -432,7 +432,7 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
 
             {/* Assigned To */}
             {deal.assigned_to && (
-              <div className="mb-3">
+              <div className="mb-2">
                 <div className="flex items-center space-x-1 text-xs text-gray-700 bg-yellow-200 rounded-lg px-2 py-1">
                   <Icon name="user" className="w-3 h-3" />
                   <span>

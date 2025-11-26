@@ -24,7 +24,8 @@ deal_router = APIRouter(prefix="/crm/deals", tags=["crm-deals"])
 # DEAL MANAGEMENT ENDPOINTS
 # ==============================================
 
-@deal_router.post("/", response_model=DealOut)
+@deal_router.post("", response_model=DealOut, include_in_schema=False)  # /api/crm/deals
+@deal_router.post("/", response_model=DealOut)  # /api/crm/deals/
 def create_new_deal(
     deal: DealCreate,
     current_user: UserOut = Depends(get_current_user)

@@ -202,7 +202,6 @@ export const LeadCreateModal: React.FC<LeadCreateModalProps> = ({ isOpen, onClos
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Source</label>
               <select className="w-full border rounded-md h-10 px-3" value={sourceId ?? ''} onChange={(e) => setSourceId(e.target.value ? Number(e.target.value) : undefined)}>
-                <option value="">Select source</option>
                 {sources.map((s) => (
                   <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
@@ -211,7 +210,6 @@ export const LeadCreateModal: React.FC<LeadCreateModalProps> = ({ isOpen, onClos
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
               <select className="w-full border rounded-md h-10 px-3" value={statusId ?? ''} onChange={(e) => setStatusId(e.target.value ? Number(e.target.value) : undefined)}>
-                <option value="">Select status</option>
                 {statuses.map((s) => (
                   <option key={s.id} value={s.id}>{s.name}</option>
                 ))}

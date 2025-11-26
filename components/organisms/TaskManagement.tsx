@@ -293,9 +293,9 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center mb-4 flex-shrink-0">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Task Management</h1>
           <p className="text-gray-600 mt-1">
@@ -315,7 +315,7 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
       </div>
 
       {/* Task Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 flex-shrink-0">
         <Card className="p-4">
           <div className="flex items-center">
             <div className="flex-shrink-0">
@@ -372,113 +372,117 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
         </Card>
       </div>
 
-      {/* Filters */}
-      <Card className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Search
-            </label>
-            <Input
-              type="text"
-              placeholder="Search tasks..."
-              value={searchTerm}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="w-full"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Status
-            </label>
-            <select
-              value={statusFilter}
-              onChange={(e) => handleStatusFilterChange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={loading || statusesLoading}
-            >
-              <option value="all">All Status</option>
-              {statuses.map((status) => (
-                <option key={status.id} value={status.id.toString()}>
-                  {status.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Priority
-            </label>
-            <select
-              value={priorityFilter}
-              onChange={(e) => handlePriorityFilterChange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={loading || prioritiesLoading}
-            >
-              <option value="all">All Priorities</option>
-              {[...priorities]
-                .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-                .map((priority) => (
-                  <option key={priority.id} value={priority.id.toString()}>
-                    {priority.name}
+      {/* Filters and Kanban Layout */}
+      <div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0">
+        {/* Filters - Left Side */}
+        <Card className="p-4 lg:w-72 flex-shrink-0">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Search
+              </label>
+              <Input
+                type="text"
+                placeholder="Search tasks..."
+                value={searchTerm}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="w-full"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Status
+              </label>
+              <select
+                value={statusFilter}
+                onChange={(e) => handleStatusFilterChange(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={loading || statusesLoading}
+              >
+                <option value="all">All Status</option>
+                {statuses.map((status) => (
+                  <option key={status.id} value={status.id.toString()}>
+                    {status.name}
                   </option>
                 ))}
-            </select>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Priority
+              </label>
+              <select
+                value={priorityFilter}
+                onChange={(e) => handlePriorityFilterChange(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={loading || prioritiesLoading}
+              >
+                <option value="all">All Priorities</option>
+                {[...priorities]
+                  .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+                  .map((priority) => (
+                    <option key={priority.id} value={priority.id.toString()}>
+                      {priority.name}
+                    </option>
+                  ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Assigned To
+              </label>
+              <select
+                value={assignedFilter}
+                onChange={(e) => handleAssignedToFilterChange(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={loading}
+              >
+                <option value="all">All Users</option>
+                <option value="me">Me</option>
+                <option value="john">John Doe</option>
+                <option value="jane">Jane Smith</option>
+              </select>
+            </div>
+            <div>
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showOverdue}
+                  onChange={(e) => setShowOverdue(e.target.checked)}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                />
+                <span className="ml-2 text-sm text-gray-700">Show Overdue Only</span>
+              </label>
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Assigned To
-            </label>
-            <select
-              value={assignedFilter}
-              onChange={(e) => handleAssignedToFilterChange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={loading}
-            >
-              <option value="all">All Users</option>
-              <option value="me">Me</option>
-              <option value="john">John Doe</option>
-              <option value="jane">Jane Smith</option>
-            </select>
-          </div>
-          <div className="flex items-end">
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                checked={showOverdue}
-                onChange={(e) => setShowOverdue(e.target.checked)}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <span className="ml-2 text-sm text-gray-700">Show Overdue Only</span>
-            </label>
-          </div>
-        </div>
-      </Card>
+        </Card>
 
-      {/* Kanban Board */}
-      <KanbanBoard
-        items={filteredTasks}
-        stages={kanbanStages}
-        itemsByStage={tasksByStatus}
-        getStageStats={getStatusStats}
-        formatDate={formatDate}
-        getStageColor={(statusName) => {
-          const status = statuses.find(s => s.name.toLowerCase() === statusName.toLowerCase());
-          return getStatusColor(status?.name || statusName);
-        }}
-        onItemClick={onTaskClick}
-        onItemUpdated={onTasksUpdated}
-        onItemMove={async (taskId, newStatusId, newStatusName) => {
-          await tasksApi.updateTask(taskId, {
-            status_id: typeof newStatusId === 'number' ? newStatusId : parseInt(newStatusId.toString(), 10)
-          });
-        }}
-        stagesFromDb={statuses}
-        itemType="task"
-        onCreateItem={(stageName, stageId) => {
-          // Handled by KanbanBoard's create button
-        }}
-        renderCard={(task, stage, onItemClick) => (
+        {/* Kanban Board - Right Side */}
+        <div className="flex-1 min-w-0 min-h-0 flex flex-col">
+          <div className="flex-1 min-h-0">
+            <KanbanBoard
+            items={filteredTasks}
+            stages={kanbanStages}
+            itemsByStage={tasksByStatus}
+            getStageStats={getStatusStats}
+            formatDate={formatDate}
+            getStageColor={(statusName) => {
+              const status = statuses.find(s => s.name.toLowerCase() === statusName.toLowerCase());
+              return getStatusColor(status?.name || statusName);
+            }}
+            onItemClick={onTaskClick}
+            onItemUpdated={onTasksUpdated}
+            onItemMove={async (taskId, newStatusId, newStatusName) => {
+              await tasksApi.updateTask(taskId, {
+                status_id: typeof newStatusId === 'number' ? newStatusId : parseInt(newStatusId.toString(), 10)
+              });
+            }}
+            stagesFromDb={statuses}
+            itemType="task"
+            onCreateItem={(stageName, stageId) => {
+              // Handled by KanbanBoard's create button
+            }}
+            renderCard={(task, stage, onItemClick) => (
           <>
             {/* Task Header */}
             <div className="mb-3">
@@ -571,8 +575,11 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
             )}
           </>
         )}
-        emptyStateText="No tasks in this status"
-      />
+            emptyStateText="No tasks in this status"
+          />
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

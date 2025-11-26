@@ -11,7 +11,7 @@ export default function TasksPage() {
   const [priorityFilter, setPriorityFilter] = useState<number | undefined>(undefined);
   const [statusFilter, setStatusFilter] = useState<number | undefined>(undefined);
   const [assignedToFilter, setAssignedToFilter] = useState<string | undefined>(undefined);
-
+  console.log('------')
   // Fetch all tasks for kanban board (large limit to get all tasks)
   const { tasks, loading, error, refreshTasks } = useTasks({
     skip: 0,
@@ -148,7 +148,7 @@ export default function TasksPage() {
   // Show error state
   if (error) {
     return (
-      <div className="p-6">
+      <div className="p-6 h-full">
         <div className="bg-red-50 border border-red-200 rounded-md p-4">
           <div className="flex">
             <div className="flex-shrink-0">
@@ -180,10 +180,6 @@ export default function TasksPage() {
 
   return (
       <div className="p-6">
-        {/* <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Task Management</h1>
-          <p className="text-gray-600 mt-1">Track and manage your sales tasks and activities</p>
-        </div> */}
         <TaskManagement 
           tasks={transformedTasks}
           totalTasks={tasks.length}

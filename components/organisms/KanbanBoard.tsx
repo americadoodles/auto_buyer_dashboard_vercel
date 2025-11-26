@@ -215,7 +215,7 @@ export function KanbanBoard<T extends KanbanItem>({
             return (
               <div
                 key={stage.name}
-                className={`flex-shrink-0 w-[300px] h-[800px] ${stage.bgColor} rounded-lg border-2 ${isDragOver ? 'border-blue-500 border-dashed' : stage.borderColor} flex flex-col transition-all relative`}
+                className={` h-full ${stage.bgColor} min-w-[300px] rounded-lg border-2 ${isDragOver ? 'border-blue-500 border-dashed' : stage.borderColor} flex flex-col transition-all relative`}
                 onDragOver={(e) => handleDragOver(e, stage.name)}
                 onDragLeave={handleDragLeave}
                 onDrop={(e) => handleDrop(e, stage.name)}
@@ -234,7 +234,7 @@ export function KanbanBoard<T extends KanbanItem>({
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center space-x-2">
                       <div
-                        className="w-3 h-3 rounded-full flex-shrink-0"
+                        className="w-3 h-3 rounded-full "
                         style={{ backgroundColor: stage.color }}
                       ></div>
                       <h3 className="font-semibold text-gray-900 truncate">{stage.name}</h3>
@@ -282,7 +282,7 @@ export function KanbanBoard<T extends KanbanItem>({
                 {/* Create Item Button - Always takes space at bottom, visible on hover */}
                 {onCreateItem && (
                   <div 
-                    className={`p-3 border-t-2 border-gray-200 flex-shrink-0 transition-opacity ${
+                    className={`p-3 border-t-2 border-gray-200  transition-opacity ${
                       hoveredStage === stage.name ? 'opacity-100' : 'opacity-0'
                     }`}
                     onDragOver={(e) => handleDragOver(e, stage.name)}

@@ -17,7 +17,9 @@ import {
   Check,
   Settings,
   X,
-  Trash2
+  Trash2,
+  User,
+  Calendar
 } from 'lucide-react';
 
 interface IconProps {
@@ -45,7 +47,9 @@ const iconMap: Record<string, LucideIcon> = {
   'check': Check,
   'settings': Settings,
   'x': X,
-  'trash-2': Trash2
+  'trash-2': Trash2,
+  'user': User,
+  'calendar': Calendar,
 };
 
 export const Icon: React.FC<IconProps> = ({ 

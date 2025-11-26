@@ -9,7 +9,6 @@ import { KpiGrid } from "../../../components/organisms/KpiGrid";
 import { ExportButton } from "../../../components/molecules/ExportButton";
 import { DateRangePicker } from "../../../components/molecules/DateRangePicker";
 import { Listing } from "../../../lib/types/listing";
-import { AdminLayout } from "../../../components/templates/AdminLayout";
 import { Car, TrendingUp, AlertTriangle, Filter, Search } from "lucide-react";
 import { Input } from "../../../components/atoms/Input";
 import { Button } from "../../../components/atoms/Button";
@@ -120,19 +119,16 @@ export default function AdminListingsPage() {
   // Show loading state while authentication is being determined
   if (authLoading) {
     return (
-      <AdminLayout>
-        <div className="p-6 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading...</p>
-          </div>
+      <div className="p-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
         </div>
-      </AdminLayout>
+      </div>
     );
   }
 
   return (
-    <AdminLayout>
       <div className="p-6 space-y-6">
         {/* Header */}
         <div className="border-b border-gray-200 pb-6">
@@ -345,6 +341,5 @@ export default function AdminListingsPage() {
           </div>
         </div>
       </div>
-    </AdminLayout>
   );
 }

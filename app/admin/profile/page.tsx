@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import { ApiService } from "../../../lib/services/api";
 import { User, UserUpdateRequest, UserUpdatePasswordRequest } from "../../../lib/types/user";
 import { User as UserIcon, Save, Eye, EyeOff } from "lucide-react";
-import { AdminLayout } from "../../../components/templates/AdminLayout";
 
 const AdminProfilePage: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -97,31 +96,26 @@ const AdminProfilePage: React.FC = () => {
 
   if (loading) {
     return (
-      <AdminLayout>
-        <div className="p-6">
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          </div>
+      <div className="p-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
-      </AdminLayout>
+      </div>
     );
   }
 
   if (!user) {
     return (
-      <AdminLayout>
-        <div className="p-6">
-          <div className="text-center py-12">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Profile not found</h2>
-            <p className="text-gray-600">Unable to load your profile information.</p>
-          </div>
+      <div className="p-6">
+        <div className="text-center py-12">
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Profile not found</h2>
+          <p className="text-gray-600">Unable to load your profile information.</p>
         </div>
-      </AdminLayout>
+      </div>
     );
   }
 
   return (
-    <AdminLayout>
       <div className="p-6">
         {/* Header */}
         <div className="mb-8">
@@ -332,7 +326,6 @@ const AdminProfilePage: React.FC = () => {
         </div>
       </div>
       </div>
-    </AdminLayout>
   );
 };
 

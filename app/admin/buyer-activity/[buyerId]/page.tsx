@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { AdminLayout } from "../../../../components/templates/AdminLayout";
 import { ListingsTable } from "../../../../components/organisms/ListingsTable";
 import { BuyerPerformanceKpi } from "../../../../components/organisms/BuyerPerformanceKpi";
 import { DateRangePicker } from "../../../../components/molecules/DateRangePicker";
@@ -275,8 +274,7 @@ export default function BuyerActivityPage() {
   const isIndeterminate = selectedListings.size > 0 && selectedListings.size < sortedListings.length;
 
   return (
-    <AdminLayout>
-      <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6">
         {/* Header */}
         <div className="border-b border-gray-200 pb-6">
           <div className="flex items-center justify-between">
@@ -535,6 +533,5 @@ export default function BuyerActivityPage() {
           </div>
         </div>
       </div>
-    </AdminLayout>
   );
 }

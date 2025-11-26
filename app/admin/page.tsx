@@ -13,7 +13,6 @@ import {
   List
 } from 'lucide-react';
 import { useAuth } from '../auth/useAuth';
-import { AdminLayout } from '../../components/templates/AdminLayout';
 import { useListings } from '../../lib/hooks/useListings';
 import { useAdminStats } from '../../lib/hooks/useAdminStats';
 import UserActivityCard from '../../components/organisms/UserActivityCard';
@@ -105,8 +104,7 @@ export default function AdminDashboardPage() {
   ];
 
   return (
-    <AdminLayout>
-      <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6">
         {/* Header */}
         <div className="border-b border-gray-200 pb-6">
           <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
@@ -261,6 +259,5 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       </div>
-    </AdminLayout>
   );
 }

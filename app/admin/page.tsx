@@ -104,7 +104,7 @@ export default function AdminDashboardPage() {
   ];
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 h-full overflow-y-auto">
         {/* Header */}
         <div className="border-b border-gray-200 pb-6">
           <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>

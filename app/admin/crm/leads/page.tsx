@@ -184,7 +184,7 @@ export default function LeadsPage() {
   }
 
   return (
-      <div className="p-6">
+      <div className="p-6 h-full overflow-y-auto">
         <LeadManagement 
           leads={transformedLeads as any}
           totalLeads={filteredLeads.length}

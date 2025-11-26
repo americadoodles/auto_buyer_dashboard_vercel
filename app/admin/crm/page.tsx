@@ -71,7 +71,7 @@ export default function CRMPage() {
   const leadConversionRate = leadMetrics?.conversion_rate || 0;
 
   return (
-    <div className="p-6">
+    <div className="p-6 h-full overflow-y-auto">
       <CRMDashboard
           stats={stats || {
             total_leads: 0,

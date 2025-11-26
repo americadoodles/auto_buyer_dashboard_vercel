@@ -157,7 +157,7 @@ export default function ContactsPage() {
   }
 
   return (
-      <div className="p-6">
+      <div className="p-6 h-full overflow-y-auto">
         <ContactManagement 
           contacts={paginatedContacts}
           totalContacts={contacts.length}

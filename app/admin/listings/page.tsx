@@ -129,7 +129,7 @@ export default function AdminListingsPage() {
   }
 
   return (
-      <div className="p-6 space-y-6">
+      <div className="p-6 space-y-6 h-full overflow-y-auto">
         {/* Header */}
         <div className="border-b border-gray-200 pb-6">
           <div className="flex items-center space-x-4">

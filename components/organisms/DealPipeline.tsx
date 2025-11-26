@@ -48,7 +48,11 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
   onCreateDeal,
   onExportDeals,
   onDealUpdated,
-  stages
+  stages,
+  onSearch,
+  onStageFilter,
+  onCategoryFilter,
+  loading
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [stageFilter, setStageFilter] = useState('all');
@@ -110,7 +114,8 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
     }
   };
 
-  const dealsToDisplay = deals
+  const dealsToDisplay = deals;
+  
   // Define the Kanban stages from database (moved before dealsByStage to avoid dependency issues)
   const kanbanStages = useMemo(() => {
     // Use database stages from useDealStages hook
@@ -132,6 +137,36 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
 
   const totalPipelineValue = dealStages.reduce((sum, stage) => sum + stage.value, 0);
   const wonDealsValue = dealsToDisplay.filter(deal => deal.is_won).reduce((sum, deal) => sum + deal.deal_value, 0);
+  const closedWonDeals = dealsToDisplay.filter(deal => deal.is_won);
+  const closedLostDeals = dealsToDisplay.filter(deal => deal.deal_stage?.name?.toLowerCase() === 'closed lost');
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    if (onSearch) {
+      onSearch(value);
+    }
+  };
+
+  const handleStageFilterChange = (value: string) => {
+    setStageFilter(value);
+    if (onStageFilter) {
+      const stageId = value === 'all' ? undefined : dealStages.find(s => s.name.toLowerCase() === value.toLowerCase())?.id;
+      onStageFilter(stageId);
+    }
+  };
+
+  const handleCategoryFilterChange = (value: string) => {
+    setCategoryFilter(value);
+    if (onCategoryFilter) {
+      const categoryId = value === 'all' ? undefined : parseInt(value, 10);
+      onCategoryFilter(categoryId);
+    }
+  };
+
+  const handleAssignedToFilterChange = (value: string) => {
+    setAssignedFilter(value);
+    // You might want to add onAssignedToFilter prop if needed
+  };
 
   // Filter deals based on search and filters
   const filteredDeals = useMemo(() => {
@@ -173,7 +208,7 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
 
       return true;
     });
-  }, [deals, searchTerm, stageFilter, categoryFilter, assignedFilter]);
+  }, [dealsToDisplay, searchTerm, stageFilter, categoryFilter, assignedFilter]);
 
   // Group deals by stage
   const dealsByStage = useMemo(() => {
@@ -207,256 +242,248 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
 
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center mb-2 flex-shrink-0">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Deal Pipeline</h1>
-          <p className="text-gray-600 mt-1">
-            Manage your sales opportunities ({totalDeals} total)
-          </p>
         </div>
         <div className="flex space-x-2">
           <Button variant="outline" onClick={onExportDeals}>
             <Icon name="download" className="w-4 h-4 mr-2" />
             Export
           </Button>
-          {/* <Button onClick={onCreateDeal}>
-            <Icon name="plus" className="w-4 h-4 mr-2" />
-            New Deal
-          </Button> */}
         </div>
       </div>
 
-      {/* Pipeline Overview */}
-      {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Pipeline Stages</h2>
-          <div className="space-y-4">
-            {dealStages.map((stage) => (
-              <div key={stage.id} className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className={`w-3 h-3 rounded-full`} style={{ backgroundColor: stage.color }}></div>
-                  <span className="text-sm font-medium text-gray-900">{stage.name}</span>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm font-medium text-gray-900">{stage.count} deals</div>
-                  <div className="text-xs text-gray-500">{formatCurrency(stage.value)}</div>
+      {/* Deal Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-2 flex-shrink-0">
+        <Card className="px-4 py-2">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <Icon name="briefcase" className="w-4 h-4 text-blue-600" />
                 </div>
               </div>
-            ))}
-          </div>
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-gray-900">Total Pipeline</span>
-              <span className="text-sm font-semibold text-gray-900">{formatCurrency(totalPipelineValue)}</span>
+              <p className="text-sm font-medium text-gray-500 whitespace-nowrap">Total Deals</p>
             </div>
+            <p className="text-2xl font-semibold text-gray-900">{totalDeals}</p>
           </div>
         </Card>
-        <Card className="p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Revenue Summary</h2>
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Won Deals</span>
-              <span className="text-sm font-medium text-green-600">{formatCurrency(wonDealsValue)}</span>
+        <Card className="px-4 py-2">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                  <Icon name="check-circle" className="w-4 h-4 text-green-600" />
+                </div>
+              </div>
+              <p className="text-sm font-medium text-gray-500 whitespace-nowrap">Won</p>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Pipeline Value</span>
-              <span className="text-sm font-medium text-blue-600">{formatCurrency(totalPipelineValue)}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Win Rate</span>
-              <span className="text-sm font-medium text-gray-900">
-                {totalDeals > 0 ? Math.round((deals.filter(deal => deal.is_won).length / totalDeals) * 100) : 0}%
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Avg Deal Size</span>
-              <span className="text-sm font-medium text-gray-900">
-                {formatCurrency(totalPipelineValue / Math.max(totalDeals, 1))}
-              </span>
-            </div>
+            <p className="text-2xl font-semibold text-gray-900">{closedWonDeals.length}</p>
           </div>
         </Card>
-      </div> */}
+        <Card className="px-4 py-2">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                  <Icon name="x-circle" className="w-4 h-4 text-red-600" />
+                </div>
+              </div>
+              <p className="text-sm font-medium text-gray-500 whitespace-nowrap">Lost</p>
+            </div>
+            <p className="text-2xl font-semibold text-gray-900">{closedLostDeals.length}</p>
+          </div>
+        </Card>
+        <Card className="px-4 py-2">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                  <Icon name="dollar-sign" className="w-4 h-4 text-purple-600" />
+                </div>
+              </div>
+              <p className="text-sm font-medium text-gray-500 whitespace-nowrap">Pipeline Value</p>
+            </div>
+            <p className="text-2xl font-semibold text-gray-900">{formatCurrency(totalPipelineValue)}</p>
+          </div>
+        </Card>
+      </div>
 
-      {/* Filters */}
-      <Card className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Search
-            </label>
-            <Input
-              type="text"
-              placeholder="Search deals..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full"
-            />
+      {/* Filters and Kanban Layout */}
+      <div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0">
+        {/* Filters - Left Side */}
+        <Card className="p-4 lg:w-72 flex-shrink-0">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Search
+              </label>
+              <Input
+                type="text"
+                placeholder="Search deals..."
+                value={searchTerm}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="w-full"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Stage
+              </label>
+              <select
+                value={stageFilter}
+                onChange={(e) => handleStageFilterChange(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={stagesLoading}
+              >
+                <option value="all">All Stages</option>
+                {dealStages.map((stage) => (
+                  <option key={stage.id} value={stage.name.toLowerCase()}>
+                    {stage.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Category
+              </label>
+              <select
+                value={categoryFilter}
+                onChange={(e) => handleCategoryFilterChange(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={categoriesLoading}
+              >
+                <option value="all">All Categories</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id.toString()}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Assigned To
+              </label>
+              <select
+                value={assignedFilter}
+                onChange={(e) => handleAssignedToFilterChange(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">All Users</option>
+                <option value="me">Me</option>
+                <option value="john">John Doe</option>
+                <option value="jane">Jane Smith</option>
+              </select>
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Stage
-            </label>
-            <select
-              value={stageFilter}
-              onChange={(e) => setStageFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">All Stages</option>
-              {dealStages.map((stage) => (
-                <option key={stage.id} value={stage.name.toLowerCase()}>
-                  {stage.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Category
-            </label>
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={categoriesLoading}
-            >
-              <option value="all">All Categories</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id.toString()}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Assigned To
-            </label>
-            <select
-              value={assignedFilter}
-              onChange={(e) => setAssignedFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">All Users</option>
-              <option value="me">Me</option>
-              <option value="john">John Doe</option>
-              <option value="jane">Jane Smith</option>
-            </select>
+        </Card>
+
+        {/* Kanban Board - Right Side */}
+        <div className="flex-1 min-w-0 min-h-0 flex flex-col">
+          <div className="flex-1 min-h-0">
+            <KanbanBoard
+              items={filteredDeals}
+              stages={kanbanStages}
+              itemsByStage={dealsByStage}
+              getStageStats={getStageStats}
+              formatCurrency={formatCurrency}
+              formatDate={formatDate}
+              getStageColor={getStageColor}
+              onItemClick={onDealClick}
+              onItemUpdated={onDealUpdated}
+              stagesFromDb={stages}
+              itemType="deal"
+              onCreateItem={(stageName, stageId) => {
+                // Handled by KanbanBoard's create button
+              }}
+              renderCard={(deal, stage, onItemClick) => (
+                <>
+                  {/* Deal Header */}
+                  <div className="mb-2">
+                    <h4 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onItemClick(deal);
+                      }}
+                      className="text-lg font-semibold text-gray-900 mb-1 line-clamp-2 cursor-pointer hover:text-blue-600 hover:underline transition-colors"
+                    >
+                      {deal.name}
+                    </h4>
+                  </div>
+
+                  {/* Deal Value */}
+                  <div className="mb-2">
+                    <div className="text-lg font-bold text-gray-900">
+                      {formatCurrency(deal.deal_value)}
+                    </div>
+                  </div>
+
+                  {/* Contact and Owner */}
+                  {(deal.contact || deal.assigned_to) && (
+                    <div className="mb-2 flex gap-2">
+                      {deal.contact && (
+                        <div className="flex-1 flex items-center space-x-2 text-xs text-gray-700 bg-blue-100 rounded-lg px-2 py-1">
+                          <div className="w-5 h-5 rounded-full bg-blue-300 flex items-center justify-center flex-shrink-0">
+                            <span className="text-xs font-medium text-gray-700">
+                              {(deal.contact.first_name?.[0]?.toUpperCase() || '')}{(deal.contact.last_name?.[0]?.toUpperCase() || '')}
+                            </span>
+                          </div>
+                          <span className="truncate text-gray-600">
+                            {deal.contact.first_name?.charAt(0).toUpperCase() + deal.contact.first_name?.slice(1)} {deal.contact.last_name?.charAt(0).toUpperCase() + deal.contact.last_name?.slice(1)}
+                          </span>
+                        </div>
+                      )}
+                      {deal.assigned_to && (
+                        <div className="flex-1 flex items-center space-x-1 text-xs text-gray-700 bg-yellow-200 rounded-lg px-2 py-1">
+                          <Icon name="user" className="w-3 h-3 flex-shrink-0" />
+                          <span className="truncate">
+                            Owner: {typeof deal.assigned_to === 'object' && 
+                            deal.assigned_to !== null && 
+                            'username' in deal.assigned_to 
+                              ? String(deal.assigned_to.username) 
+                              : 'Unassigned'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {/* Probability */}
+                  <div className="mb-2">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs text-gray-500">Probability</span>
+                      <span className="text-xs font-medium text-gray-700">{deal.probability}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-1.5">
+                      <div
+                        className="h-1.5 rounded-full"
+                        style={{ 
+                          width: `${deal.probability}%`,
+                          backgroundColor: stage.color
+                        }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  {/* Expected Close Date */}
+                  <div className="mb-2">
+                    <div className="flex items-center space-x-1 text-xs text-gray-500">
+                      <Icon name="calendar" className="w-3 h-3" />
+                      <span>{formatDate(deal.expected_close_date)}</span>
+                    </div>
+                  </div>
+
+                  
+                </>
+              )}
+            emptyStateText="No deals in this stage"
+          />
           </div>
         </div>
-      </Card>
-
-      {/* Kanban Board */}
-      <KanbanBoard
-        items={filteredDeals}
-        stages={kanbanStages}
-        itemsByStage={dealsByStage}
-        getStageStats={getStageStats}
-        formatCurrency={formatCurrency}
-        formatDate={formatDate}
-        getStageColor={getStageColor}
-        onItemClick={onDealClick}
-        onItemUpdated={onDealUpdated}
-        stagesFromDb={stages}
-        itemType="deal"
-        onCreateItem={(stageName, stageId) => {
-          // Handled by KanbanBoard's create button
-        }}
-        renderCard={(deal, stage, onItemClick) => (
-          <>
-            {/* Deal Header */}
-            <div className="mb-2">
-              <h4 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onItemClick(deal);
-                }}
-                className="text-lg font-semibold text-gray-900 mb-1 line-clamp-2 cursor-pointer hover:text-blue-600 hover:underline transition-colors"
-              >
-                {deal.name}
-              </h4>
-              {deal.description && (
-                <p className="text-xs text-gray-500 line-clamp-2">
-                  {deal.description}
-                </p>
-              )}
-            </div>
-
-            {/* Deal Value */}
-            <div className="mb-2">
-              <div className="text-lg font-bold text-gray-900">
-                {formatCurrency(deal.deal_value)}
-              </div>
-            </div>
-
-            {/* Contact */}
-            {deal.contact && (
-              <div className="mb-2 flex items-center space-x-2">
-                <div className="w-6 h-6 rounded-full bg-blue-300 flex items-center justify-center">
-                  <span className="text-xs font-medium text-gray-700">
-                    {(deal.contact.first_name?.[0]?.toUpperCase() || '')}{(deal.contact.last_name?.[0]?.toUpperCase() || '')}
-                  </span>
-                </div>
-                <span className="text-xs text-gray-600">
-                  {deal.contact.first_name?.charAt(0).toUpperCase() + deal.contact.first_name?.slice(1)} {deal.contact.last_name?.charAt(0).toUpperCase() + deal.contact.last_name?.slice(1)}
-                </span>
-              </div>
-            )}
-
-            {/* Probability */}
-            <div className="mb-2">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs text-gray-500">Probability</span>
-                <span className="text-xs font-medium text-gray-700">{deal.probability}%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-1.5">
-                <div
-                  className="h-1.5 rounded-full"
-                  style={{ 
-                    width: `${deal.probability}%`,
-                    backgroundColor: stage.color
-                  }}
-                ></div>
-              </div>
-            </div>
-
-            {/* Expected Close Date */}
-            <div className="mb-2">
-              <div className="flex items-center space-x-1 text-xs text-gray-500">
-                <Icon name="calendar" className="w-3 h-3" />
-                <span>{formatDate(deal.expected_close_date)}</span>
-              </div>
-            </div>
-
-            {/* Assigned To */}
-            {deal.assigned_to && (
-              <div className="mb-2">
-                <div className="flex items-center space-x-1 text-xs text-gray-700 bg-yellow-200 rounded-lg px-2 py-1">
-                  <Icon name="user" className="w-3 h-3" />
-                  <span>
-                    {'Owner: '}
-                    {typeof deal.assigned_to === 'object' && 
-                     deal.assigned_to !== null && 
-                     'username' in deal.assigned_to 
-                      ? String(deal.assigned_to.username) 
-                      : 'Unassigned'}
-                  </span>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-      />
-
-      {/* Pagination */}
-      <div className="mt-6">
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={onPageChange}
-        />
       </div>
     </div>
   );

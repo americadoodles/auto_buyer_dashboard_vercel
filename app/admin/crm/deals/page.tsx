@@ -157,7 +157,7 @@ export default function DealsPage() {
   }
 
   return (
-      <div className="p-6">
+      <div className="p-6 h-full overflow-hidden flex flex-col">
         {/* <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Deal Pipeline</h1>
           <p className="text-gray-600 mt-1">Track and manage your sales opportunities</p>

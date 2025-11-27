@@ -1,26 +1,48 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { TaskManagement } from '../../../components/organisms/TaskManagement';
 import { useTasks, useTaskPriorities, useTaskStatuses } from '../../../lib/hooks/useTasks';
+import { useAuth } from '../../auth/useAuth';
 
 export default function TasksPage() {
+  const { user } = useAuth();
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
   const [priorityFilter, setPriorityFilter] = useState<number | undefined>(undefined);
   const [statusFilter, setStatusFilter] = useState<number | undefined>(undefined);
   const [assignedToFilter, setAssignedToFilter] = useState<string | undefined>(undefined);
-  console.log('------')
-  // Fetch all tasks for kanban board (large limit to get all tasks)
-  const { tasks, loading, error, refreshTasks } = useTasks({
+  
+  // Determine if user is admin
+  const isAdmin = user?.role?.toLowerCase() === 'admin';
+  
+  // For admins: get all tasks (no owner/assigned_to filter)
+  // For buyers: backend will filter by owner, but we'll also filter on frontend for assigned_to
+  const { tasks: allTasks, loading, error, refreshTasks } = useTasks({
     skip: 0,
     limit: 1000, // Large limit to fetch all tasks for kanban board
     search: searchTerm || undefined,
     priority_id: priorityFilter,
     status_id: statusFilter,
-    assigned_to: assignedToFilter
+    // Only apply assigned_to filter for admins (buyers are already filtered by backend by owner)
+    assigned_to: isAdmin ? assignedToFilter : undefined
   });
+  
+  // Filter tasks for buyers: show tasks where owner_id OR assigned_to matches buyer's ID
+  const tasks = useMemo(() => {
+    if (isAdmin) {
+      return allTasks;
+    }
+    // For buyers, filter tasks where owner_id OR assigned_to matches their ID
+    const buyerId = user?.id;
+    if (!buyerId) return [];
+    
+    return allTasks.filter(task => 
+      task.owner_user_id === buyerId || 
+      task.assigned_to === buyerId
+    );
+  }, [allTasks, isAdmin, user?.id]);
   const { priorities } = useTaskPriorities();
   const { statuses } = useTaskStatuses();
 

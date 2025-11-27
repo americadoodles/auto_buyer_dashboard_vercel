@@ -19,7 +19,10 @@ import {
   X,
   Trash2,
   User,
-  Calendar
+  Calendar,
+  Briefcase,
+  XCircle,
+  DollarSign
 } from 'lucide-react';
 
 interface IconProps {
@@ -50,6 +53,9 @@ const iconMap: Record<string, LucideIcon> = {
   'trash-2': Trash2,
   'user': User,
   'calendar': Calendar,
+  'briefcase': Briefcase,
+  'x-circle': XCircle,
+  'dollar-sign': DollarSign,
 };
 
 export const Icon: React.FC<IconProps> = ({ 

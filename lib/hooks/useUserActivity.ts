@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '../../app/auth/useAuth';
 
 interface UserActivityStats {
   user_id: string;
@@ -20,6 +21,7 @@ interface UserActivityResponse {
 }
 
 export const useUserActivity = () => {
+  const { user } = useAuth();
   const [data, setData] = useState<UserActivityResponse>({
     users: [],
     total_users: 0,
@@ -31,6 +33,21 @@ export const useUserActivity = () => {
 
   useEffect(() => {
     const fetchUserActivity = async () => {
+      // Only fetch from API if user is admin, otherwise return empty data
+      const isAdmin = user?.role?.toLowerCase() === 'admin';
+      
+      if (!isAdmin) {
+        // For non-admin users, return empty data without API call
+        setData({
+          users: [],
+          total_users: 0,
+          active_today: 0,
+          total_listings_today: 0,
+        });
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
         setError(null);
@@ -58,7 +75,7 @@ export const useUserActivity = () => {
     };
 
     fetchUserActivity();
-  }, []);
+  }, [user]);
 
   return { data, loading, error };
 };

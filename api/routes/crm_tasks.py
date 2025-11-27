@@ -100,20 +100,29 @@ def get_all_tasks(
         # Handle related/related_type parameter (related takes precedence)
         related_type_filter = related or related_type
         
-        # Buyers can only see their own tasks
+        # Role-based filtering
         role_lower = (current_user.role or "").lower()
         if role_lower == "buyer":
-            # Force filter to current user's tasks
-            owner_filter = current_user.id
-        
-        return list_tasks(
-            skip=skip, limit=limit, owner_user_id=owner_filter,
-            priority=priority_enum, status=status_enum,
-            due_at_from=due_at_from or (due if due else None),
-            due_at_to=due_at_to or (due if due else None),
-            related_type=related_type_filter, related_id=related_id,
-            search=search
-        )
+            # For buyers: show tasks where owner_id OR assigned_to matches buyer's ID
+            return list_tasks(
+                skip=skip, limit=limit, buyer_user_id=current_user.id,
+                priority=priority_enum, status=status_enum,
+                due_at_from=due_at_from or (due if due else None),
+                due_at_to=due_at_to or (due if due else None),
+                related_type=related_type_filter, related_id=related_id,
+                search=search
+            )
+        else:
+            # For admins: use owner filter if provided, otherwise get all tasks
+            return list_tasks(
+                skip=skip, limit=limit, owner_user_id=owner_filter,
+                assigned_to_user_id=assigned_to if not owner_filter else None,
+                priority=priority_enum, status=status_enum,
+                due_at_from=due_at_from or (due if due else None),
+                due_at_to=due_at_to or (due if due else None),
+                related_type=related_type_filter, related_id=related_id,
+                search=search
+            )
     except Exception as e:
         logging.error(f"Error fetching tasks: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to fetch tasks")

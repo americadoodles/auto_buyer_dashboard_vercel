@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '../../app/auth/useAuth';
 
 interface ActivityData {
   date: string;
@@ -14,6 +15,7 @@ interface ActivityHeatmapResponse {
 }
 
 export const useActivityHeatmap = () => {
+  const { user } = useAuth();
   const [data, setData] = useState<ActivityHeatmapResponse>({
     data: [],
     total_activities: 0,
@@ -25,6 +27,17 @@ export const useActivityHeatmap = () => {
 
   useEffect(() => {
     const fetchActivityHeatmap = async () => {
+      // Only fetch from API if user is admin, otherwise use mock data
+      const isAdmin = user?.role?.toLowerCase() === 'admin';
+      
+      if (!isAdmin) {
+        // For non-admin users, use mock data directly without API call
+        const mockData = generateMockData();
+        setData(mockData);
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
         setError(null);
@@ -56,7 +69,7 @@ export const useActivityHeatmap = () => {
     };
 
     fetchActivityHeatmap();
-  }, []);
+  }, [user]);
 
   return { data, loading, error };
 };

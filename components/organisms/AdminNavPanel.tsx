@@ -90,6 +90,25 @@ const getNavItems = (userRole?: string): NavItem[] => {
     }
   ];
 
+  if (userRole === 'admin') {
+    return baseItems;
+  }
+
+  if (userRole === 'buyer') {
+    // Return only listings, leads, contacts, deals, tasks, my profile
+    return baseItems.filter(item =>
+      [
+        '/listings',
+        '/crm/leads',
+        '/crm/contacts',
+        '/crm/deals',
+        '/crm/tasks',
+        '/profile'
+      ].includes(item.href)
+    );
+  }
+
+  // Default: return all for undefined role, or adjust as needed
   return baseItems;
 };
 

@@ -315,6 +315,8 @@ def list_tasks(
     skip: int = 0,
     limit: int = 100,
     owner_user_id: Optional[UUID] = None,
+    assigned_to_user_id: Optional[UUID] = None,
+    buyer_user_id: Optional[UUID] = None,  # For buyers: show tasks where owner_id OR assigned_to matches
     priority: Optional[TaskPriority] = None,
     status: Optional[TaskStatus] = None,
     due_at_from: Optional[datetime] = None,
@@ -338,9 +340,17 @@ def list_tasks(
                 where_conditions = []
                 query_params = []
                 
-                if owner_user_id:
+                # For buyers: filter by owner_id OR assigned_to
+                if buyer_user_id:
+                    where_conditions.append("(t.owner_user_id = %s OR t.assigned_to = %s)")
+                    query_params.extend([buyer_user_id, buyer_user_id])
+                elif owner_user_id:
                     where_conditions.append("t.owner_user_id = %s")
                     query_params.append(owner_user_id)
+                
+                if assigned_to_user_id and not buyer_user_id:
+                    where_conditions.append("t.assigned_to = %s")
+                    query_params.append(assigned_to_user_id)
                 
                 # Lookup priority_id and status_id from enum values if provided
                 priority_id_filter = None

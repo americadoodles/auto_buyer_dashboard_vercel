@@ -30,68 +30,74 @@ interface NavItem {
   description?: string;
 }
 
-const navItems: NavItem[] = [
-  {
-    href: '/admin',
-    label: 'Dashboard',
-    icon: Home,
-  },
-  {
-    href: '/admin/listings',
-    label: 'Vehicle Listings',
-    icon: List,
-  },
-  {
-    href: '/admin/crm',
-    label: 'CRM Dashboard',
-    icon: BarChart3,
-  },
-  {
-    href: '/admin/crm/leads',
-    label: 'Leads',
-    icon: Target,
-  },
-  {
-    href: '/admin/crm/contacts',
-    label: 'Contacts',
-    icon: Phone,
-  },
-  {
-    href: '/admin/crm/deals',
-    label: 'Deals',
-    icon: Handshake,
-  },
-  {
-    href: '/admin/crm/tasks',
-    label: 'Tasks',
-    icon: CheckSquare,
-  },
-  {
-    href: '/admin/user-management/signup-requests',
-    label: 'Signup Requests',
-    icon: UserPlus,
-  },
-  {
-    href: '/admin/user-management',
-    label: 'Current Users',
-    icon: Users,
-  },
-  {
-    href: '/admin/user-management/roles',
-    label: 'Role Management',
-    icon: Shield,
-  },
-  {
-    href: '/admin/profile',
-    label: 'My Profile',
-    icon: User,
-  }
-];
+// Get navigation items based on user role
+const getNavItems = (userRole?: string): NavItem[] => {
+  const baseItems: NavItem[] = [
+    {
+      href: '/',
+      label: 'Dashboard',
+      icon: Home,
+    },
+    {
+      href: '/listings',
+      label: 'Vehicle Listings',
+      icon: List,
+    },
+    {
+      href: '/crm',
+      label: 'CRM Dashboard',
+      icon: BarChart3,
+    },
+    {
+      href: '/crm/leads',
+      label: 'Leads',
+      icon: Target,
+    },
+    {
+      href: '/crm/contacts',
+      label: 'Contacts',
+      icon: Phone,
+    },
+    {
+      href: '/crm/deals',
+      label: 'Deals',
+      icon: Handshake,
+    },
+    {
+      href: '/crm/tasks',
+      label: 'Tasks',
+      icon: CheckSquare,
+    },
+    {
+      href: '/user-management/signup-requests',
+      label: 'Signup Requests',
+      icon: UserPlus,
+    },
+    {
+      href: '/user-management',
+      label: 'Current Users',
+      icon: Users,
+    },
+    {
+      href: '/user-management/roles',
+      label: 'Role Management',
+      icon: Shield,
+    },
+    {
+      href: '/profile',
+      label: 'My Profile',
+      icon: User,
+    }
+  ];
+
+  return baseItems;
+};
 
 export const AdminNavPanel = () => {
   const [isExpanded, setIsExpanded] = useState(true);
   const pathname = usePathname();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
+  const navItems = getNavItems(user?.role);
 
   const toggleExpanded = () => {
     setIsExpanded(!isExpanded);
@@ -102,11 +108,14 @@ export const AdminNavPanel = () => {
   };
 
   const isActiveRoute = (href: string) => {
-    if (href === '/admin') {
-      return pathname === '/admin';
+    if (href === '/') {
+      return pathname === '/';
     }
-    if (href === '/admin/profile') {
-      return pathname === '/admin/profile';
+    if (href === '/profile') {
+      return pathname === '/profile';
+    }
+    if (href === '/dashboard') {
+      return pathname === '/dashboard';
     }
     return pathname.startsWith(href);
   };
@@ -125,7 +134,7 @@ export const AdminNavPanel = () => {
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                 <Car className="h-5 w-5 text-white" />
               </div>
-              <span className="text-lg font-bold text-gray-900">Admin</span>
+              <span className="text-lg font-bold text-gray-900">Dashboard</span>
             </div>
           )}
           <button
@@ -213,10 +222,10 @@ export const AdminNavPanel = () => {
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-gray-900 truncate">
-                Admin Panel
+                {user?.role === 'admin' ? 'Admin Panel' : user?.role === 'buyer' ? 'Buyer Dashboard' : 'Dashboard'}
               </p>
               <p className="text-xs text-gray-500 truncate">
-                Full access control
+                {user?.role === 'admin' ? 'Full access control' : user?.role === 'buyer' ? 'Buyer access' : 'User access'}
               </p>
             </div>
           </div>

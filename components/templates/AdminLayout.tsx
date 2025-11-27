@@ -16,8 +16,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && (!user || user.role !== 'admin')) {
-      router.replace('/');
+    if (!loading && !user) {
+      router.replace('/auth');
     }
   }, [user, loading, router]);
 
@@ -29,7 +29,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     );
   }
 
-  if (!user || user.role !== 'admin') {
+  if (!user) {
     return null;
   }
 

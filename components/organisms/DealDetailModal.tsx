@@ -371,7 +371,7 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => router.push(`/admin/crm/contacts`)}
+                        onClick={() => router.push(`/crm/contacts`)}
                       >
                         <Icon name="user" className="w-4 h-4 mr-2" />
                         View Contact
@@ -381,7 +381,7 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => router.push(`/admin/crm/leads`)}
+                        onClick={() => router.push(`/crm/leads`)}
                       >
                         <Icon name="file-text" className="w-4 h-4 mr-2" />
                         View Lead

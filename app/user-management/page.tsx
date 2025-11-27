@@ -1,6 +1,6 @@
 
 import CurrentUsersTable from "components/organisms/CurrentUsersTable";
-import { ExportButton } from "../../../components/molecules/ExportButton";
+import { ExportButton } from "components/molecules/ExportButton";
 
 export default function AdminUserManagementPage() {
   return (

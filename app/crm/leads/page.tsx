@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { LeadManagement } from '../../../../components/organisms/LeadManagement';
-import { useLeads, useLeadStatuses, useLeadSources } from '../../../../lib/hooks/useLeads';
-import { LeadCreateModal } from '../../../../components/organisms/LeadCreateModal';
-import { exportApi } from '../../../../lib/services/exportApi';
+import { LeadManagement } from '../../../components/organisms/LeadManagement';
+import { useLeads, useLeadStatuses, useLeadSources } from '../../../lib/hooks/useLeads';
+import { LeadCreateModal } from '../../../components/organisms/LeadCreateModal';
+import { exportApi } from '../../../lib/services/exportApi';
 
 export default function LeadsPage() {
   const [currentPage, setCurrentPage] = useState(1);

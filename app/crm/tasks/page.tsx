@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { TaskManagement } from '../../../../components/organisms/TaskManagement';
-import { useTasks, useTaskPriorities, useTaskStatuses } from '../../../../lib/hooks/useTasks';
+import { TaskManagement } from '../../../components/organisms/TaskManagement';
+import { useTasks, useTaskPriorities, useTaskStatuses } from '../../../lib/hooks/useTasks';
 
 export default function TasksPage() {
   const [currentPage, setCurrentPage] = useState(1);

@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { DealPipeline } from '../../../../components/organisms/DealPipeline';
-import { useDeals, useDealStages, useDealPipeline } from '../../../../lib/hooks/useDeals';
+import { DealPipeline } from '../../../components/organisms/DealPipeline';
+import { useDeals, useDealStages, useDealPipeline } from '../../../lib/hooks/useDeals';
 
 export default function DealsPage() {
   const [currentPage, setCurrentPage] = useState(1);

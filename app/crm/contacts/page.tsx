@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { ContactManagement } from '../../../../components/organisms/ContactManagement';
-import { useLeads, useLeadStatuses } from '../../../../lib/hooks/useLeads';
+import { ContactManagement } from '../../../components/organisms/ContactManagement';
+import { useLeads, useLeadStatuses } from '../../../lib/hooks/useLeads';
 
 export default function ContactsPage() {
   const [currentPage, setCurrentPage] = useState(1);
@@ -172,3 +172,4 @@ export default function ContactsPage() {
       </div>
   );
 }
+

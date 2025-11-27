@@ -1,19 +1,19 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useListings } from "../../../lib/hooks/useListings";
-import { useAuth } from "../../auth/useAuth";
-import { Header } from "../../../components/organisms/Header";
-import { ListingsTable } from "../../../components/organisms/ListingsTable";
-import { KpiGrid } from "../../../components/organisms/KpiGrid";
-import { ExportButton } from "../../../components/molecules/ExportButton";
-import { DateRangePicker } from "../../../components/molecules/DateRangePicker";
-import { Listing } from "../../../lib/types/listing";
+import { useListings } from "../../lib/hooks/useListings";
+import { useAuth } from "../auth/useAuth";
+import { Header } from "../../components/organisms/Header";
+import { ListingsTable } from "../../components/organisms/ListingsTable";
+import { KpiGrid } from "../../components/organisms/KpiGrid";
+import { ExportButton } from "../../components/molecules/ExportButton";
+import { DateRangePicker } from "../../components/molecules/DateRangePicker";
+import { Listing } from "../../lib/types/listing";
 import { Car, TrendingUp, AlertTriangle, Filter, Search } from "lucide-react";
-import { Input } from "../../../components/atoms/Input";
-import { Button } from "../../../components/atoms/Button";
+import { Input } from "../../components/atoms/Input";
+import { Button } from "../../components/atoms/Button";
 
-export default function AdminListingsPage() {
+export default function ListingsPage() {
   const { user, loading: authLoading } = useAuth();
   const {
     data,
@@ -343,3 +343,4 @@ export default function AdminListingsPage() {
       </div>
   );
 }
+

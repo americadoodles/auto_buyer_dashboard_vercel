@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { CRMDashboard } from '../../../components/organisms/CRMDashboard';
-import { useCrmDashboard } from '../../../lib/hooks/useCrmDashboard';
+import { CRMDashboard } from '../../components/organisms/CRMDashboard';
+import { useCrmDashboard } from '../../lib/hooks/useCrmDashboard';
 
 export default function CRMPage() {
   const {
@@ -91,3 +91,4 @@ export default function CRMPage() {
     </div>
   );
 }
+

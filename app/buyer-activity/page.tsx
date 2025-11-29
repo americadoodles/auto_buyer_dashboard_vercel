@@ -2,18 +2,18 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ListingsTable } from "../../../components/organisms/ListingsTable";
-import { BuyerPerformanceKpi } from "../../../components/organisms/BuyerPerformanceKpi";
-import { DateRangePicker } from "../../../components/molecules/DateRangePicker";
-import { ExportButton } from "../../../components/molecules/ExportButton";
-import { Listing } from "../../../lib/types/listing";
-import { SortConfig } from "../../../lib/types/listing";
+import { ListingsTable } from "../../components/organisms/ListingsTable";
+import { BuyerPerformanceKpi } from "../../components/organisms/BuyerPerformanceKpi";
+import { DateRangePicker } from "../../components/molecules/DateRangePicker";
+import { ExportButton } from "../../components/molecules/ExportButton";
+import { Listing } from "../../lib/types/listing";
+import { SortConfig } from "../../lib/types/listing";
 import { Car, ArrowLeft, Calendar, TrendingUp, User, Search, Filter } from "lucide-react";
-import { Button } from "../../../components/atoms/Button";
-import { Input } from "../../../components/atoms/Input";
-import { useAuth } from "../../auth/useAuth";
-import { useToast } from "../../../hooks/useToast";
-import { ApiService } from "../../../lib/services/api";
+import { Button } from "../../components/atoms/Button";
+import { Input } from "../../components/atoms/Input";
+import { useAuth } from "../auth/useAuth";
+import { useToast } from "../../hooks/useToast";
+import { ApiService } from "../../lib/services/api";
 
 interface BuyerStats {
   total_listings: number;

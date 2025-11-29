@@ -1,11 +1,13 @@
 {
   "functions": {
     "api/index.py": {
+      "runtime": "python3.12",
       "excludeFiles": "{.next,.git,node_modules}/**",
       "includeFiles": "db/schema.sql"
     }
   },
   "routes": [
     { "src": "^/api/(.*)", "dest": "/api/index.py" }
-  ]
+  ],
+  "buildCommand": "npm run build"
 }

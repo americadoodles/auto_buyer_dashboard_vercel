@@ -464,7 +464,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => router.push(`/admin/crm/deals`)}
+                      onClick={() => router.push(`/crm/deals`)}
                     >
                       <Icon name="briefcase" className="w-4 h-4 mr-2" />
                       View Deal

@@ -1,27 +1,48 @@
 'use client';
 
-import React, { useState } from 'react';
-import { TaskManagement } from '../../../../components/organisms/TaskManagement';
-import { AdminLayout } from '../../../../components/templates/AdminLayout';
-import { useTasks, useTaskPriorities, useTaskStatuses } from '../../../../lib/hooks/useTasks';
+import React, { useState, useMemo } from 'react';
+import { TaskManagement } from '../../../components/organisms/TaskManagement';
+import { useTasks, useTaskPriorities, useTaskStatuses } from '../../../lib/hooks/useTasks';
+import { useAuth } from '../../auth/useAuth';
 
 export default function TasksPage() {
+  const { user } = useAuth();
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
   const [priorityFilter, setPriorityFilter] = useState<number | undefined>(undefined);
   const [statusFilter, setStatusFilter] = useState<number | undefined>(undefined);
   const [assignedToFilter, setAssignedToFilter] = useState<string | undefined>(undefined);
-
-  // Fetch all tasks for kanban board (large limit to get all tasks)
-  const { tasks, loading, error, refreshTasks } = useTasks({
+  
+  // Determine if user is admin
+  const isAdmin = user?.role?.toLowerCase() === 'admin';
+  
+  // For admins: get all tasks (no owner/assigned_to filter)
+  // For buyers: backend will filter by owner, but we'll also filter on frontend for assigned_to
+  const { tasks: allTasks, loading, error, refreshTasks } = useTasks({
     skip: 0,
     limit: 1000, // Large limit to fetch all tasks for kanban board
     search: searchTerm || undefined,
     priority_id: priorityFilter,
     status_id: statusFilter,
-    assigned_to: assignedToFilter
+    // Only apply assigned_to filter for admins (buyers are already filtered by backend by owner)
+    assigned_to: isAdmin ? assignedToFilter : undefined
   });
+  
+  // Filter tasks for buyers: show tasks where owner_id OR assigned_to matches buyer's ID
+  const tasks = useMemo(() => {
+    if (isAdmin) {
+      return allTasks;
+    }
+    // For buyers, filter tasks where owner_id OR assigned_to matches their ID
+    const buyerId = user?.id;
+    if (!buyerId) return [];
+    
+    return allTasks.filter(task => 
+      task.owner_user_id === buyerId || 
+      task.assigned_to === buyerId
+    );
+  }, [allTasks, isAdmin, user?.id]);
   const { priorities } = useTaskPriorities();
   const { statuses } = useTaskStatuses();
 
@@ -138,58 +159,49 @@ export default function TasksPage() {
   // Show loading state
   if (loading && tasks.length === 0) {
     return (
-      <AdminLayout>
-        <div className="p-6">
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          </div>
+      <div className="p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         </div>
-      </AdminLayout>
+      </div>
     );
   }
 
   // Show error state
   if (error) {
     return (
-      <AdminLayout>
-        <div className="p-6">
-          <div className="bg-red-50 border border-red-200 rounded-md p-4">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
+      <div className="p-6 h-full">
+        <div className="bg-red-50 border border-red-200 rounded-md p-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">
+                Error loading tasks
+              </h3>
+              <div className="mt-2 text-sm text-red-700">
+                <p>{error}</p>
               </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800">
-                  Error loading tasks
-                </h3>
-                <div className="mt-2 text-sm text-red-700">
-                  <p>{error}</p>
-                </div>
-                <div className="mt-4">
-                  <button
-                    onClick={refreshTasks}
-                    className="bg-red-100 px-3 py-2 rounded-md text-sm font-medium text-red-800 hover:bg-red-200"
-                  >
-                    Try again
-                  </button>
-                </div>
+              <div className="mt-4">
+                <button
+                  onClick={refreshTasks}
+                  className="bg-red-100 px-3 py-2 rounded-md text-sm font-medium text-red-800 hover:bg-red-200"
+                >
+                  Try again
+                </button>
               </div>
             </div>
           </div>
         </div>
-      </AdminLayout>
+      </div>
     );
   }
 
   return (
-    <AdminLayout>
-      <div className="p-6">
-        {/* <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Task Management</h1>
-          <p className="text-gray-600 mt-1">Track and manage your sales tasks and activities</p>
-        </div> */}
+      <div className="p-6 h-full overflow-hidden flex flex-col">
         <TaskManagement 
           tasks={transformedTasks}
           totalTasks={tasks.length}
@@ -210,6 +222,5 @@ export default function TasksPage() {
           onTasksUpdated={refreshTasks}
         />
       </div>
-    </AdminLayout>
   );
 }

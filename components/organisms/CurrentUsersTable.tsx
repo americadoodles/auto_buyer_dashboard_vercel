@@ -180,7 +180,7 @@ const CurrentUsersTable: React.FC = () => {
                           Edit
                         </button>
                         <button
-                          onClick={() => router.push(`/admin/buyer-activity/${user.id}`)}
+                          onClick={() => router.push(`/buyer-activity/${user.id}`)}
                           className="inline-flex items-center px-3 py-1.5 border border-blue-300 text-xs font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                         >
                           <Activity className="w-3 h-3 mr-1" />

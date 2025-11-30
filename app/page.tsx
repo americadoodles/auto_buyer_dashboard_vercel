@@ -1,178 +1,121 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useAuth } from "./auth/useAuth";
-import { useRouter } from "next/navigation";
-import { useListings } from "../lib/hooks/useListings";
-import { Header } from "../components/organisms/Header";
-import { ListingsTable } from "../components/organisms/ListingsTable";
-import { KpiGrid } from "../components/organisms/KpiGrid";
-import { Listing } from "../lib/types/listing";
-import { Button } from "../components/atoms/Button";
-import { Input } from "../components/atoms/Input";
-import { ExportButton } from "../components/molecules/ExportButton";
-import { Search, Filter } from "lucide-react";
+import React from 'react';
+import { 
+  Users, 
+  UserPlus, 
+  Shield, 
+  Car, 
+  TrendingUp, 
+  Activity,
+  BarChart3,
+  Settings,
+  List
+} from 'lucide-react';
+import { useAuth } from './auth/useAuth';
+import { useListings } from '../lib/hooks/useListings';
+import { useAdminStats } from '../lib/hooks/useAdminStats';
+import UserActivityCard from '../components/organisms/UserActivityCard';
+import ActivityHeatmap from '../components/organisms/ActivityHeatmap';
+import { useActivityHeatmap } from '../lib/hooks/useActivityHeatmap';
 
-export const preferredRegion = ["iad1"];
+interface StatCard {
+  title: string;
+  value: string | number;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+  color: string;
+}
 
 export default function Page() {
-  const { user, loading: authLoading, logout } = useAuth();
-  const router = useRouter();
-  const {
-    data,
-    sortedRows,
-    paginatedRows,
-    sort,
-    setSort,
-    loading: listingsLoading,
-    backendOk,
-    currentPage,
-    setCurrentPage,
-    rowsPerPage,
-    setRowsPerPage,
-    totalPages,
-    rescoreVisible,
-    seedBackend,
-    loadFromBackend,
-    notify,
-    notifySlack,
-    triggerWorkflow,
-  } = useListings();
+  const { user } = useAuth();
+  const { data: listings, backendOk } = useListings();
+  const { totalUsers, pendingRequests, activeRoles, totalListings, loading: statsLoading, error: statsError } = useAdminStats();
+  const { data: heatmapData, loading: heatmapLoading, error: heatmapError } = useActivityHeatmap();
 
-  // Filtering and search state
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [makeFilter, setMakeFilter] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
-  
-  // Selection state
-  const [selectedListings, setSelectedListings] = useState<Set<string>>(new Set());
-
-  const handleSort = (key: keyof Listing | 'decision_status' | 'decision_reasons') => {
-    setSort((prev) => ({
-      key,
-      dir: prev.key === key && prev.dir === "asc" ? "desc" : "asc",
-    }));
-  };
-
-  // Filter listings based on search and filter criteria
-  const filteredListings = sortedRows.filter((listing) => {
-    const matchesSearch = searchTerm === "" || 
-      listing.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      listing.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      listing.vin?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      listing.location?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === "" || 
-      (statusFilter === "scored" && listing.score !== undefined) ||
-      (statusFilter === "pending" && listing.score === undefined) ||
-      (statusFilter === "decided" && listing.decision?.status) ||
-      (statusFilter === "undecided" && !listing.decision?.status);
-    
-    const matchesMake = makeFilter === "" || 
-      listing.make.toLowerCase() === makeFilter.toLowerCase();
-    
-    return matchesSearch && matchesStatus && matchesMake;
-  });
-
-  // Paginate filtered listings
-  const totalFilteredPages = Math.ceil(filteredListings.length / rowsPerPage);
-  const startIndex = (currentPage - 1) * rowsPerPage;
-  const paginatedFilteredListings = filteredListings.slice(startIndex, startIndex + rowsPerPage);
-
-  // Get unique makes for filter dropdown
-  const uniqueMakes = Array.from(new Set(data.map(l => l.make))).sort();
-
-  // Reset filters
-  const resetFilters = () => {
-    setSearchTerm("");
-    setStatusFilter("");
-    setMakeFilter("");
-  };
-
-  // Selection handlers
-  const handleSelectListing = (listingId: string, selected: boolean) => {
-    setSelectedListings(prev => {
-      const newSet = new Set(prev);
-      if (selected) {
-        newSet.add(listingId);
-      } else {
-        newSet.delete(listingId);
-      }
-      return newSet;
-    });
-  };
-
-  const handleSelectAll = (selected: boolean) => {
-    if (selected) {
-      const allIds = new Set(filteredListings.map(listing => listing.id));
-      setSelectedListings(allIds);
-    } else {
-      setSelectedListings(new Set());
+  // Dynamic stats based on real data
+  const statCards: StatCard[] = [
+    {
+      title: 'Total Users',
+      value: statsLoading ? '...' : totalUsers,
+      description: 'Active registered users',
+      icon: Users,
+      color: 'bg-blue-500'
+    },
+    {
+      title: 'Pending Requests',
+      value: statsLoading ? '...' : pendingRequests,
+      description: 'Awaiting approval',
+      icon: UserPlus,
+      color: 'bg-yellow-500'
+    },
+    {
+      title: 'Active Roles',
+      value: statsLoading ? '...' : activeRoles,
+      description: 'User role types',
+      icon: Shield,
+      color: 'bg-green-500'
+    },
+    {
+      title: 'Total Listings',
+      value: statsLoading ? '...' : totalListings,
+      description: 'Vehicle listings',
+      icon: Car,
+      color: 'bg-purple-500'
     }
-  };
+  ];
 
-  // Calculate selection state for header checkbox
-  const isAllSelected = filteredListings.length > 0 && filteredListings.every(listing => selectedListings.has(listing.id));
-  const isIndeterminate = selectedListings.size > 0 && selectedListings.size < filteredListings.length;
-
-  // Show nothing while loading auth state
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.replace('/auth');
+  const quickActions = [
+    {
+      title: 'Vehicle Listings',
+      description: 'View and manage all vehicle listings',
+      href: '/listings',
+      icon: List,
+      color: 'bg-green-100 text-green-700'
+    },
+    {
+      title: 'Buyer Activity Monitor',
+      description: 'Monitor individual buyer performance and listings',
+      href: '/buyer-activity',
+      icon: Activity,
+      color: 'bg-orange-100 text-orange-700'
+    },
+    {
+      title: 'Review Signup Requests',
+      description: 'Approve or decline new user registrations',
+      href: '/user-management/signup-requests',
+      icon: UserPlus,
+      color: 'bg-blue-100 text-blue-700'
+    },
+    {
+      title: 'Manage Users',
+      description: 'View and manage existing users',
+      href: '/user-management',
+      icon: Users,
+      color: 'bg-green-100 text-green-700'
+    },
+    {
+      title: 'Configure Roles',
+      description: 'Set up user roles and permissions',
+      href: '/user-management/roles',
+      icon: Shield,
+      color: 'bg-purple-100 text-purple-700'
     }
-  }, [authLoading, user, router]);
+  ];
 
-  // Admin users should go to admin dashboard
-  useEffect(() => {
-    if (user && user.role === 'admin') {
-      router.replace('/admin');
-    }
-  }, [user, router]);
-
-  // Show loading state
-  if (authLoading || !user) return null;
-
-  // Role-based access: Only allow access for confirmed users
-  if (user.role === 'buyer' && !user.is_confirmed) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="max-w-md mx-auto p-6 bg-white border rounded-lg shadow-sm">
-          <h2 className="text-xl font-bold mb-4 text-gray-900">Account Pending Confirmation</h2>
-          <p className="text-gray-600 mb-6">Your account is awaiting admin approval. Please check back later.</p>
-          <button 
-            className="w-full bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors" 
-            onClick={logout}
-          >
-            Logout
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Admin users should go to admin dashboard (return null while redirecting)
-  if (user.role === 'admin') {
-    return null;
-  }
-
-  // Buyer, Analyst dashboards (default: show main dashboard)
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto p-6">
-        <Header
-          onLoadFromBackend={loadFromBackend}
-          onSeedBackend={seedBackend}
-          onRescoreVisible={rescoreVisible}
-          loading={listingsLoading}
-          userRole={user.role}
-          buyerId={user.id}
-        />
-        <div className="mt-6">
-          <KpiGrid />
+    <div className="p-6 space-y-6 h-full overflow-y-auto">
+        {/* Header */}
+        <div className="border-b border-gray-200 pb-6">
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600 mt-2">
+            Welcome back, {user?.email}. Manage your application from here.
+          </p>
         </div>
+
+        {/* Backend Status */}
         {backendOk === false && (
-          <div className="mt-6 rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-900">
+          <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-900">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <svg className="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
@@ -181,178 +124,140 @@ export default function Page() {
               </div>
               <div className="ml-3">
                 <p className="text-sm font-medium">
-                  Backend not reachable. Using in-memory demo data.
+                  Backend not reachable. Some features may be limited.
                 </p>
               </div>
             </div>
           </div>
         )}
 
-        {/* Search and Filter Controls */}
-        <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-            {/* Search Bar */}
-            <div className="flex-1 max-w-md">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  type="text"
-                  placeholder="Search by make, model, VIN, or location..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+        {/* Stats Error */}
+        {statsError && (
+          <div className="rounded-xl border border-red-300 bg-red-50 p-4 text-red-900">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
               </div>
-            </div>
-
-            {/* Filter Controls */}
-            <div className="flex items-center space-x-3">
-              <Button
-                onClick={() => setShowFilters(!showFilters)}
-                variant="outline"
-                size="sm"
-                className="flex items-center space-x-2"
-              >
-                <Filter className="w-4 h-4" />
-                <span>Filters</span>
-              </Button>
-
-              <ExportButton
-                exportType="listings"
-                userRole={user?.role || "buyer"}
-                variant="success"
-                size="sm"
-                buyerId={user?.id}
-                selectedListings={selectedListings}
-              />
-
-              {selectedListings.size > 0 && (
-                <Button
-                  onClick={() => setSelectedListings(new Set())}
-                  variant="outline"
-                  size="sm"
-                  className="text-blue-600 hover:text-blue-700"
-                >
-                  Clear Selection ({selectedListings.size})
-                </Button>
-              )}
-
-              {(searchTerm || statusFilter || makeFilter) && (
-                <Button
-                  onClick={resetFilters}
-                  variant="outline"
-                  size="sm"
-                  className="text-red-600 hover:text-red-700"
-                >
-                  Clear Filters
-                </Button>
-              )}
+              <div className="ml-3">
+                <p className="text-sm font-medium">
+                  {statsError}
+                </p>
+              </div>
             </div>
           </div>
+        )}
 
-          {/* Advanced Filters */}
-          {showFilters && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Status
-                  </label>
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">All Status</option>
-                    <option value="scored">Scored</option>
-                    <option value="pending">Pending Score</option>
-                    <option value="decided">Decided</option>
-                    <option value="undecided">Undecided</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Make
-                  </label>
-                  <select
-                    value={makeFilter}
-                    onChange={(e) => setMakeFilter(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">All Makes</option>
-                    {uniqueMakes.map((make) => (
-                      <option key={make} value={make}>
-                        {make}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="mt-6">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">Vehicle Listings</h2>
-                  <p className="text-sm text-gray-600">
-                    {filteredListings.length} filtered listings • {paginatedFilteredListings.length} showing
-                    {selectedListings.size > 0 && (
-                      <span className="ml-2 text-blue-600 font-medium">
-                        • {selectedListings.size} selected
-                      </span>
-                    )}
-                  </p>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="text-sm text-gray-500">
-                    Page {currentPage} of {totalFilteredPages}
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {statCards.map((card, index) => {
+            const Icon = card.icon;
+            return (
+              <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center">
+                  <div className={`p-3 rounded-lg ${card.color}`}>
+                    <Icon className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600">{card.title}</p>
+                    <p className="text-2xl font-bold text-gray-900">{card.value}</p>
                   </div>
                 </div>
+                <p className="text-sm text-gray-500 mt-2">{card.description}</p>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Quick Actions */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {quickActions.map((action, index) => {
+              const Icon = action.icon;
+              return (
+                <a
+                  key={index}
+                  href={action.href}
+                  className="group p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className={`p-2 rounded-lg ${action.color}`}>
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-medium text-gray-900 group-hover:text-blue-600 transition-colors">
+                        {action.title}
+                      </h3>
+                      <p className="text-sm text-gray-500">{action.description}</p>
+                    </div>
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Activity Heatmap */}
+        <ActivityHeatmap 
+          title="Historical Activity Heatmap"
+          subtitle="Daily activity patterns over the last year"
+          data={heatmapData.data}
+          loading={heatmapLoading}
+          error={heatmapError}
+          year="last"
+        />
+
+        {/* User Activity Overview */}
+        <UserActivityCard />
+
+        {/* System Overview */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">System Overview</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="text-sm text-gray-900">Backend Status</span>
+                </div>
+                <span className={`text-sm font-medium ${backendOk ? 'text-green-600' : 'text-red-600'}`}>
+                  {backendOk ? 'Connected' : 'Disconnected'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span className="text-sm text-gray-900">Data Loading</span>
+                </div>
+                <span className={`text-sm font-medium ${statsLoading ? 'text-yellow-600' : 'text-green-600'}`}>
+                  {statsLoading ? 'Loading...' : 'Ready'}
+                </span>
               </div>
             </div>
-            <div className="p-6">
-              <ListingsTable
-                listings={paginatedFilteredListings}
-                sort={sort}
-                onSort={handleSort}
-                onNotify={notify}
-                onNotifySlack={notifySlack}
-                onTriggerWorkflow={triggerWorkflow}
-                currentPage={currentPage}
-                totalPages={totalFilteredPages}
-                rowsPerPage={rowsPerPage}
-                totalRows={filteredListings.length}
-                onPageChange={setCurrentPage}
-                onRowsPerPageChange={setRowsPerPage}
-                selectedListings={selectedListings}
-                onSelectListing={handleSelectListing}
-                onSelectAll={handleSelectAll}
-                isAllSelected={isAllSelected}
-                isIndeterminate={isIndeterminate}
-              />
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  <span className="text-sm text-gray-900">Listings Data</span>
+                </div>
+                <span className={`text-sm font-medium ${listings ? 'text-green-600' : 'text-yellow-600'}`}>
+                  {listings ? `${listings.length} items` : 'Loading...'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                  <span className="text-sm text-gray-900">User Session</span>
+                </div>
+                <span className="text-sm font-medium text-green-600">
+                  {user?.email || 'Not logged in'}
+                </span>
+              </div>
             </div>
           </div>
         </div>
-        <div className="mt-8 flex justify-center space-x-4">
-          <button 
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors" 
-            onClick={() => router.push('/profile')}
-          >
-            My Profile
-          </button>
-          <button 
-            className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors" 
-            onClick={logout}
-          >
-            Logout
-          </button>
-        </div>
       </div>
-    </div>
   );
 }

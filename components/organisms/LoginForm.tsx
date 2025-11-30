@@ -30,16 +30,8 @@ export const LoginForm: React.FC = () => {
       // Small delay to show success message
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Route based on role
-      if (user.role === 'admin') {
-        router.replace('/admin'); // Admin dashboard
-      } else if (user.role === 'buyer') {
-        router.replace('/'); // Buyer dashboard (same as main for now)
-      } else if (user.role === 'analyst') {
-        router.replace('/'); // Analyst dashboard (same as main for now)
-      } else {
-        router.replace('/'); // Default to main dashboard
-      }
+      // Route all users to main dashboard
+      router.replace('/');
     } catch (err: any) {
       console.error('Login error:', err);
       if (err instanceof ApiError) {

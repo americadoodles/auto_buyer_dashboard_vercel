@@ -31,45 +31,95 @@ def get_crm_stats() -> CRMStats:
         try:
             with conn.cursor() as cur:
                 # Get lead statistics
-                cur.execute("SELECT COUNT(*) FROM leads")
-                total_leads = cur.fetchone()[0]
+                try:
+                    cur.execute("SELECT COUNT(*) FROM leads")
+                    total_leads = cur.fetchone()[0] or 0
+                except Exception as e:
+                    logging.warning(f"Error counting leads: {str(e)}")
+                    total_leads = 0
                 
                 # Get contact statistics
-                cur.execute("SELECT COUNT(*) FROM contacts WHERE is_active = true")
-                total_contacts = cur.fetchone()[0]
+                try:
+                    cur.execute("SELECT COUNT(*) FROM contacts WHERE is_active = true")
+                    total_contacts = cur.fetchone()[0] or 0
+                except Exception as e:
+                    logging.warning(f"Error counting contacts: {str(e)}")
+                    total_contacts = 0
                 
                 # Get deal statistics
-                cur.execute("""
-                    SELECT COUNT(*) FROM deals 
-                    WHERE is_won = false AND is_lost = false
-                """)
-                active_deals = cur.fetchone()[0]
-                
-                cur.execute("SELECT COUNT(*) FROM deals WHERE is_won = true")
-                won_deals = cur.fetchone()[0]
-                
-                cur.execute("SELECT COUNT(*) FROM deals WHERE is_lost = true")
-                lost_deals = cur.fetchone()[0]
+                try:
+                    cur.execute("""
+                        SELECT COUNT(*) FROM deals 
+                        WHERE is_won = false AND is_lost = false
+                    """)
+                    active_deals = cur.fetchone()[0] or 0
+                    
+                    cur.execute("SELECT COUNT(*) FROM deals WHERE is_won = true")
+                    won_deals = cur.fetchone()[0] or 0
+                    
+                    cur.execute("SELECT COUNT(*) FROM deals WHERE is_lost = true")
+                    lost_deals = cur.fetchone()[0] or 0
+                except Exception as e:
+                    logging.warning(f"Error counting deals: {str(e)}")
+                    active_deals = 0
+                    won_deals = 0
+                    lost_deals = 0
                 
                 # Get revenue statistics
-                cur.execute("""
-                    SELECT COALESCE(SUM(deal_value), 0) FROM deals 
-                    WHERE is_won = true AND deal_value IS NOT NULL
-                """)
-                total_revenue = cur.fetchone()[0] or Decimal('0')
+                try:
+                    cur.execute("""
+                        SELECT COALESCE(SUM(deal_value), 0) FROM deals 
+                        WHERE is_won = true AND deal_value IS NOT NULL
+                    """)
+                    revenue_result = cur.fetchone()[0]
+                    total_revenue = Decimal(str(revenue_result)) if revenue_result else Decimal('0')
+                except Exception as e:
+                    logging.warning(f"Error calculating revenue: {str(e)}")
+                    total_revenue = Decimal('0')
                 
                 # Get task statistics
-                cur.execute("""
-                    SELECT COUNT(*) FROM tasks 
-                    WHERE status != 'Done'
-                """)
-                pending_tasks = cur.fetchone()[0]
-                
-                cur.execute("""
-                    SELECT COUNT(*) FROM tasks 
-                    WHERE due_at < NOW() AND status != 'Done'
-                """)
-                overdue_tasks = cur.fetchone()[0]
+                pending_tasks = 0
+                overdue_tasks = 0
+                try:
+                    # First, find the "Done" status_id
+                    done_status_id = None
+                    try:
+                        cur.execute("""
+                            SELECT id FROM task_statuses 
+                            WHERE LOWER(name) = LOWER('Done') 
+                            LIMIT 1
+                        """)
+                        done_status_result = cur.fetchone()
+                        done_status_id = done_status_result[0] if done_status_result else None
+                    except Exception as e:
+                        logging.warning(f"Error finding Done status: {str(e)}")
+                    
+                    if done_status_id:
+                        cur.execute("""
+                            SELECT COUNT(*) FROM tasks 
+                            WHERE status_id != %s OR status_id IS NULL
+                        """, (done_status_id,))
+                    else:
+                        # If no "Done" status exists, count all tasks
+                        cur.execute("SELECT COUNT(*) FROM tasks")
+                    pending_tasks = cur.fetchone()[0] or 0
+                    
+                    if done_status_id:
+                        cur.execute("""
+                            SELECT COUNT(*) FROM tasks 
+                            WHERE due_at < NOW() 
+                            AND (status_id != %s OR status_id IS NULL)
+                        """, (done_status_id,))
+                    else:
+                        cur.execute("""
+                            SELECT COUNT(*) FROM tasks 
+                            WHERE due_at < NOW()
+                        """)
+                    overdue_tasks = cur.fetchone()[0] or 0
+                except Exception as e:
+                    logging.warning(f"Error counting tasks: {str(e)}")
+                    pending_tasks = 0
+                    overdue_tasks = 0
                 
                 return CRMStats(
                     total_leads=total_leads,
@@ -312,19 +362,47 @@ def get_upcoming_tasks(user_id: UUID) -> List[TaskDashboard]:
         
         try:
             with conn.cursor() as cur:
+                # Find the "Done" status_id
                 cur.execute("""
-                    SELECT t.id, t.title, t.due_at, t.priority as priority_name,
-                           NULL as priority_color, t.status as status_name,
-                           NULL as status_color, u.username as assigned_to_name,
-                           t.created_at
-                    FROM tasks t
-                    LEFT JOIN users u ON t.owner_user_id = u.id
-                    WHERE t.owner_user_id = %s 
-                    AND (t.due_at IS NULL OR t.due_at >= NOW())
-                    AND t.status != 'Done'
-                    ORDER BY t.due_at ASC NULLS LAST, t.created_at DESC
-                    LIMIT 10
-                """, (user_id,))
+                    SELECT id FROM task_statuses 
+                    WHERE LOWER(name) = LOWER('Done') 
+                    LIMIT 1
+                """)
+                done_status_result = cur.fetchone()
+                done_status_id = done_status_result[0] if done_status_result else None
+                
+                # Build query based on whether Done status exists
+                if done_status_id:
+                    cur.execute("""
+                        SELECT t.id, t.title, t.due_at, tp.name as priority_name,
+                               tp.color_code as priority_color, ts.name as status_name,
+                               ts.color_code as status_color, u.username as assigned_to_name,
+                               t.created_at
+                        FROM tasks t
+                        LEFT JOIN users u ON t.owner_user_id = u.id
+                        LEFT JOIN task_priorities tp ON t.priority_id = tp.id
+                        LEFT JOIN task_statuses ts ON t.status_id = ts.id
+                        WHERE t.owner_user_id = %s 
+                        AND (t.due_at IS NULL OR t.due_at >= NOW())
+                        AND (t.status_id != %s OR t.status_id IS NULL)
+                        ORDER BY t.due_at ASC NULLS LAST, t.created_at DESC
+                        LIMIT 10
+                    """, (user_id, done_status_id))
+                else:
+                    cur.execute("""
+                        SELECT t.id, t.title, t.due_at, tp.name as priority_name,
+                               tp.color_code as priority_color, ts.name as status_name,
+                               ts.color_code as status_color, u.username as assigned_to_name,
+                               t.created_at
+                        FROM tasks t
+                        LEFT JOIN users u ON t.owner_user_id = u.id
+                        LEFT JOIN task_priorities tp ON t.priority_id = tp.id
+                        LEFT JOIN task_statuses ts ON t.status_id = ts.id
+                        WHERE t.owner_user_id = %s 
+                        AND (t.due_at IS NULL OR t.due_at >= NOW())
+                        ORDER BY t.due_at ASC NULLS LAST, t.created_at DESC
+                        LIMIT 10
+                    """, (user_id,))
                 
                 results = cur.fetchall()
                 tasks = []

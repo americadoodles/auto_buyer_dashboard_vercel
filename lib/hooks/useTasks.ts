@@ -20,7 +20,7 @@ export const useTasks = (params?: UseTasksParams) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
+  console.log('param: ', params)
   const fetchTasks = async () => {
     try {
       setLoading(true);

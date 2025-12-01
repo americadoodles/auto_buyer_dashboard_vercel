@@ -278,7 +278,6 @@ export const LeadEditModal: React.FC<LeadEditModalProps> = ({
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   disabled={loadingStatuses}
                 >
-                  <option value="">Select status</option>
                   {availableStatuses.map((status) => (
                     <option key={status.id} value={status.id}>
                       {status.name}
@@ -297,7 +296,6 @@ export const LeadEditModal: React.FC<LeadEditModalProps> = ({
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   disabled={loadingSources}
                 >
-                  <option value="">Select source</option>
                   {availableSources.map((source) => (
                     <option key={source.id} value={source.id}>
                       {source.name}

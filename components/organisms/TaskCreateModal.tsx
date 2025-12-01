@@ -101,7 +101,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
         title: title.trim(),
         description: description.trim() || undefined,
         owner_user_id: ownerUserId || undefined,
-        priority_id: priorityId || undefined,
+        priority_id: priorityId !== undefined ? priorityId : undefined,
         status_id: selectedStatusId,
         due_date: dueDate || undefined,
         related_deal_id: relatedDealId || undefined,
@@ -181,7 +181,6 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
                 required
                 disabled={statusesLoading}
               >
-                <option value="">Select status</option>
                 {statuses.map((status) => (
                   <option key={status.id} value={status.id}>
                     {status.name}
@@ -193,11 +192,11 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
               <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
               <select
                 className="w-full border rounded-md h-10 px-3"
-                value={priorityId || ''}
+                value={priorityId ?? ''}
                 onChange={(e) => setPriorityId(e.target.value ? Number(e.target.value) : undefined)}
                 disabled={prioritiesLoading}
               >
-                <option value="">Select priority</option>
+                <option value="">Select Priority</option>
                 {[...priorities]
                   .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
                   .map((priority) => (
@@ -217,7 +216,6 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
                 value={ownerUserId || ''}
                 onChange={(e) => setOwnerUserId(e.target.value || undefined)}
               >
-                <option value="">Unassigned</option>
                 {users.map((u) => (
                   <option key={u.id} value={u.id}>
                     {u.username}

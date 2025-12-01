@@ -113,7 +113,7 @@ const UserActivityCard: React.FC<UserActivityCardProps> = ({ className = "" }) =
   ];
 
   const handleUserClick = (userId: string) => {
-    router.push(`/admin/buyer-activity/${userId}`);
+    router.push(`/buyer-activity/${userId}`);
   };
 
   if (loading) {

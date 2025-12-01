@@ -324,7 +324,6 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
                       value={dealStageId || ''}
                       onChange={(e) => setDealStageId(e.target.value ? Number(e.target.value) : undefined)}
                     >
-                      <option value="">Select stage</option>
                       {stages.map((stage) => (
                         <option key={stage.id} value={stage.id}>
                           {stage.name}
@@ -342,7 +341,6 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
                       value={dealCategoryId !== undefined ? String(dealCategoryId) : ''}
                       onChange={(e) => setDealCategoryId(e.target.value ? Number(e.target.value) : undefined)}
                     >
-                      <option value="">Select category</option>
                       {categories.map((category) => (
                         <option key={category.id} value={String(category.id)}>
                           {category.name}
@@ -373,7 +371,7 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => router.push(`/admin/crm/contacts`)}
+                        onClick={() => router.push(`/crm/contacts`)}
                       >
                         <Icon name="user" className="w-4 h-4 mr-2" />
                         View Contact
@@ -383,7 +381,7 @@ export const DealDetailModal: React.FC<DealDetailModalProps> = ({
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => router.push(`/admin/crm/leads`)}
+                        onClick={() => router.push(`/crm/leads`)}
                       >
                         <Icon name="file-text" className="w-4 h-4 mr-2" />
                         View Lead

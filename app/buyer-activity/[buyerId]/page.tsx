@@ -40,10 +40,15 @@ export default function BuyerActivityPage() {
   const [sort, setSort] = useState<SortConfig>({ key: 'created_at', dir: 'desc' });
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(25);
-  const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>({
-    start: null,
-    end: null
-  });
+  // Set initial date range to current year
+  const getCurrentYearRange = () => {
+    const now = new Date();
+    const startOfYear = new Date(now.getFullYear(), 0, 1); // January 1st
+    const endOfYear = new Date(now.getFullYear(), 11, 31); // December 31st
+    return { start: startOfYear, end: endOfYear };
+  };
+
+  const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>(getCurrentYearRange());
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [makeFilter, setMakeFilter] = useState("");
@@ -57,6 +62,12 @@ export default function BuyerActivityPage() {
 
   // Fetch buyer listings and stats
   const fetchBuyerData = async () => {
+    if (!buyerId) {
+      console.warn('No buyerId provided');
+      setLoading(false);
+      return;
+    }
+    
     setLoading(true);
     try {
       const baseUrl = (process.env.NEXT_PUBLIC_BACKEND_URL ?? '/api').replace(/\/+$/, '');
@@ -70,27 +81,64 @@ export default function BuyerActivityPage() {
         queryParams.append('end_date', dateRange.end.toISOString());
       }
       
-      // Fetch listings
-      const listingsResponse = await fetch(
-        `${baseUrl}/listings/buyer/${buyerId}?${queryParams.toString()}`
-      );
-      
-      if (!listingsResponse.ok) {
-        throw new Error(`HTTP error! status: ${listingsResponse.status}`);
+      // Use ApiService for listings (handles auth automatically)
+      try {
+        const listingsData = await ApiService.getBuyerListings(buyerId, {
+          start_date: dateRange.start?.toISOString(),
+          end_date: dateRange.end?.toISOString()
+        });
+        console.log('Fetched listings via ApiService:', listingsData.length, 'listings');
+        setListings(Array.isArray(listingsData) ? listingsData : []);
+      } catch (listingsError) {
+        console.error('Error fetching listings via ApiService:', listingsError);
+        // Fallback to direct fetch
+        const token = typeof window !== 'undefined' ? localStorage.getItem('auth.token') : null;
+        const headers: HeadersInit = {
+          'Content-Type': 'application/json',
+        };
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+        
+        const listingsResponse = await fetch(
+          `${baseUrl}/listings/buyer/${buyerId}?${queryParams.toString()}`,
+          { headers }
+        );
+        
+        if (listingsResponse.ok) {
+          const listingsData = await listingsResponse.json();
+          console.log('Fetched listings via fallback:', Array.isArray(listingsData) ? listingsData.length : 'non-array');
+          setListings(Array.isArray(listingsData) ? listingsData : []);
+        } else {
+          console.error('Failed to fetch listings:', listingsResponse.status, listingsResponse.statusText);
+          setListings([]);
+        }
       }
       
-      const listingsData = await listingsResponse.json();
-      setListings(Array.isArray(listingsData) ? listingsData : []);
-      
       // Fetch stats
-      const statsResponse = await fetch(
-        `${baseUrl}/listings/buyer/${buyerId}/stats?${queryParams.toString()}`
-      );
-      
-      if (statsResponse.ok) {
-        const statsData = await statsResponse.json();
-        setBuyerStats(statsData || null);
-      } else {
+      try {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('auth.token') : null;
+        const headers: HeadersInit = {
+          'Content-Type': 'application/json',
+        };
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+        
+        const statsResponse = await fetch(
+          `${baseUrl}/listings/buyer/${buyerId}/stats?${queryParams.toString()}`,
+          { headers }
+        );
+        
+        if (statsResponse.ok) {
+          const statsData = await statsResponse.json();
+          setBuyerStats(statsData || null);
+        } else {
+          console.warn('Failed to fetch stats:', statsResponse.status);
+          setBuyerStats(null);
+        }
+      } catch (statsError) {
+        console.warn('Error fetching stats:', statsError);
         setBuyerStats(null);
       }
       
@@ -274,7 +322,8 @@ export default function BuyerActivityPage() {
   const isIndeterminate = selectedListings.size > 0 && selectedListings.size < sortedListings.length;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="h-full overflow-y-auto">
+      <div className="p-6 space-y-6">
         {/* Header */}
         <div className="border-b border-gray-200 pb-6">
           <div className="flex items-center justify-between">
@@ -496,7 +545,7 @@ export default function BuyerActivityPage() {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 <span className="ml-3 text-gray-600">Loading buyer data...</span>
               </div>
-            ) : sortedListings.length === 0 ? (
+            ) : listings.length === 0 ? (
               <div className="text-center py-12">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Car className="w-8 h-8 text-gray-400" />
@@ -505,9 +554,38 @@ export default function BuyerActivityPage() {
                 <p className="text-gray-500">
                   {backendOk === false 
                     ? "Cannot load data - backend server is not running."
+                    : sortedListings.length === 0 && (searchTerm || statusFilter || makeFilter)
+                    ? "No listings match your current filters. Try clearing the filters."
                     : "This buyer hasn't sourced any vehicle listings yet."
                   }
                 </p>
+                {sortedListings.length === 0 && (searchTerm || statusFilter || makeFilter) && (
+                  <Button
+                    onClick={resetFilters}
+                    variant="outline"
+                    size="sm"
+                    className="mt-4"
+                  >
+                    Clear Filters
+                  </Button>
+                )}
+              </div>
+            ) : sortedListings.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Car className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No listings match your filters</h3>
+                <p className="text-gray-500 mb-4">
+                  {listings.length} listing{listings.length !== 1 ? 's' : ''} found, but none match your current search or filter criteria.
+                </p>
+                <Button
+                  onClick={resetFilters}
+                  variant="outline"
+                  size="sm"
+                >
+                  Clear Filters
+                </Button>
               </div>
             ) : (
               <ListingsTable
@@ -533,6 +611,7 @@ export default function BuyerActivityPage() {
           </div>
         </div>
       </div>
+    </div>
   );
 }
 

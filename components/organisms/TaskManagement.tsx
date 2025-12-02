@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card } from '../molecules/Card';
 import { Badge } from '../atoms/Badge';
 import { Button } from '../atoms/Button';
@@ -10,6 +10,8 @@ import { KanbanBoard } from './KanbanBoard';
 import { useTaskStatuses, useTaskPriorities } from '../../lib/hooks/useTasks';
 import { tasksApi } from '../../lib/services/tasksApi';
 import { useAuth } from '../../app/auth/useAuth';
+import { ApiService } from '../../lib/services/api';
+import { User } from '../../lib/types/user';
 
 interface Task {
   id: string;
@@ -97,6 +99,8 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [assignedFilter, setAssignedFilter] = useState('all');
   const [showOverdue, setShowOverdue] = useState(false);
+  const [users, setUsers] = useState<User[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
   
   // Get current user for role-based filtering
   const { user } = useAuth();
@@ -105,6 +109,32 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
   // Fetch task statuses and priorities from database
   const { statuses: dbStatuses, loading: statusesLoading } = useTaskStatuses();
   const { priorities: dbPriorities, loading: prioritiesLoading } = useTaskPriorities();
+  
+  // Fetch users for the assigned to filter
+  useEffect(() => {
+    const fetchUsers = async () => {
+      if (isAdmin) {
+        // Only admins can fetch all users
+        setUsersLoading(true);
+        try {
+          const usersData = await ApiService.getUsers().catch(() => []);
+          setUsers(usersData);
+        } catch (error) {
+          console.error('Error fetching users:', error);
+          setUsers([]);
+        } finally {
+          setUsersLoading(false);
+        }
+      } else {
+        // For buyers, just show themselves
+        if (user) {
+          setUsers([user]);
+        }
+      }
+    };
+    
+    fetchUsers();
+  }, [isAdmin, user]);
   
   // Filter tasks based on user role
   // Admin: show all tasks
@@ -266,15 +296,17 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
       filtered = filtered.filter(task => task.priority.id === priorityId);
     }
 
-    // Assigned filter
+    // Assigned filter (filter by owner)
     if (assignedFilter !== 'all') {
       if (assignedFilter === 'me') {
-        // You might want to check against current user
-        // For now, just pass through
+        // Filter by current user
+        const currentUserId = user?.id;
+        if (currentUserId) {
+          filtered = filtered.filter(task => task.owner?.id === currentUserId);
+        }
       } else {
-        filtered = filtered.filter(task =>
-          task.assigned_to?.username.toLowerCase() === assignedFilter.toLowerCase()
-        );
+        // Filter by selected user ID
+        filtered = filtered.filter(task => task.owner?.id === assignedFilter);
       }
     }
 
@@ -452,12 +484,19 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
                 value={assignedFilter}
                 onChange={(e) => handleAssignedToFilterChange(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={loading}
+                disabled={loading || usersLoading}
               >
                 <option value="all">All Users</option>
-                <option value="me">Me</option>
-                <option value="john">John Doe</option>
-                <option value="jane">Jane Smith</option>
+                {user && (
+                  <option key={user.id} value={user.id}>Me ({user.username})</option>
+                )}
+                {users
+                  .filter(userOption => userOption.id !== user?.id) // Don't show current user twice
+                  .map((userOption) => (
+                    <option key={userOption.id} value={userOption.id}>
+                      {userOption.username}
+                    </option>
+                  ))}
               </select>
             </div>
             <div>

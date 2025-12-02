@@ -40,7 +40,6 @@ export default function ListingsPage() {
     triggerWorkflow,
     updateListingInState,
   } = useListings();
-
   // Filtering and search state
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");

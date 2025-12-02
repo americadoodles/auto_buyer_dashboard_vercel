@@ -1,12 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { LeadManagement } from '../../../components/organisms/LeadManagement';
 import { useLeads, useLeadStatuses, useLeadSources } from '../../../lib/hooks/useLeads';
 import { LeadCreateModal } from '../../../components/organisms/LeadCreateModal';
 import { exportApi } from '../../../lib/services/exportApi';
+import { useAuth } from '../../../app/auth/useAuth';
 
 export default function LeadsPage() {
+  const { user } = useAuth();
+  const isAdmin = user?.role?.toLowerCase() === 'admin';
+  
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
@@ -16,14 +20,33 @@ export default function LeadsPage() {
   const [locationFilter, setLocationFilter] = useState<string | undefined>(undefined);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
-  const { leads, loading, error, refreshLeads } = useLeads({
-    skip: (currentPage - 1) * pageSize,
-    limit: pageSize,
-    search: searchTerm || undefined,
-    status_id: statusFilter,
-    source_id: sourceFilter,
-    assigned_to: assignedToFilter
-  });
+  // For non-admin users, automatically filter by their user ID
+  // Ensure the filter is always set for non-admin users
+  const effectiveAssignedToFilter = useMemo(() => {
+    if (!isAdmin && user?.id) {
+      return user.id;
+    }
+    return assignedToFilter;
+  }, [isAdmin, user?.id, assignedToFilter]);
+
+  // Only fetch leads when we have the necessary information
+  // For non-admin users, wait until we have their user ID to ensure filter is applied
+  const shouldFetchLeads = isAdmin || (user?.id !== undefined);
+
+  const { leads, loading, error, refreshLeads } = useLeads(
+    shouldFetchLeads ? {
+      skip: (currentPage - 1) * pageSize,
+      limit: pageSize,
+      search: searchTerm || undefined,
+      status_id: statusFilter,
+      source_id: sourceFilter,
+      assigned_to: effectiveAssignedToFilter // This will be user.id for non-admin users
+    } : {
+      skip: 0,
+      limit: 0,
+      assigned_to: undefined // This will prevent fetching until user is loaded
+    }
+  );
 
   const { statuses } = useLeadStatuses();
   const { sources } = useLeadSources();
@@ -209,6 +232,7 @@ export default function LeadsPage() {
           locations={uniqueLocations}
           loading={loading}
           onLeadUpdated={refreshLeads}
+          isAdmin={isAdmin}
         />
         <LeadCreateModal
           isOpen={isCreateOpen}

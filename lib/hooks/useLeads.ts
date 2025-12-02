@@ -18,6 +18,12 @@ export const useLeads = (params?: UseLeadsParams) => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchLeads = async () => {
+    // Don't fetch if params is undefined or limit is 0 (indicates we're waiting for user info)
+    if (!params || params.limit === 0) {
+      setLoading(false);
+      return;
+    }
+    
     try {
       setLoading(true);
       setError(null);

@@ -14,6 +14,7 @@ import { Input } from "../../../components/atoms/Input";
 import { useAuth } from "../../auth/useAuth";
 import { useToast } from "../../../hooks/useToast";
 import { ApiService } from "../../../lib/services/api";
+import { getCurrentYearRange } from "lib/services/helper";
 
 interface BuyerStats {
   total_listings: number;
@@ -40,13 +41,6 @@ export default function BuyerActivityPage() {
   const [sort, setSort] = useState<SortConfig>({ key: 'created_at', dir: 'desc' });
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(25);
-  // Set initial date range to current year
-  const getCurrentYearRange = () => {
-    const now = new Date();
-    const startOfYear = new Date(now.getFullYear(), 0, 1); // January 1st
-    const endOfYear = new Date(now.getFullYear(), 11, 31); // December 31st
-    return { start: startOfYear, end: endOfYear };
-  };
 
   const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>(getCurrentYearRange());
   const [searchTerm, setSearchTerm] = useState("");

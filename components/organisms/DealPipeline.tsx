@@ -188,8 +188,11 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
       });
   }, [dbStages]);
 
-  const totalPipelineValue = dealStages.reduce((sum, stage) => sum + stage.value, 0);
-  const wonDealsValue = dealsToDisplay.filter(deal => deal.is_won).reduce((sum, deal) => sum + deal.deal_value, 0);
+  // Calculate total pipeline value from actual deals (excluding won/lost deals)
+  const totalPipelineValue = dealsToDisplay
+    .filter(deal => !deal.is_won && !deal.is_lost)
+    .reduce((sum, deal) => sum + Number(deal.deal_value || 0), 0);
+  const wonDealsValue = dealsToDisplay.filter(deal => deal.is_won).reduce((sum, deal) => sum + Number(deal.deal_value || 0), 0);
   const closedWonDeals = dealsToDisplay.filter(deal => deal.is_won);
   const closedLostDeals = dealsToDisplay.filter(deal => deal.deal_stage?.name?.toLowerCase() === 'closed lost');
 

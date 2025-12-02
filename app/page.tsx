@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import Link from 'next/link';
 import { 
   Users, 
   UserPlus, 
@@ -177,7 +178,7 @@ export default function Page() {
             {quickActions.map((action, index) => {
               const Icon = action.icon;
               return (
-                <a
+                <Link
                   key={index}
                   href={action.href}
                   className="group p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200"
@@ -193,7 +194,7 @@ export default function Page() {
                       <p className="text-sm text-gray-500">{action.description}</p>
                     </div>
                   </div>
-                </a>
+                </Link>
               );
             })}
           </div>

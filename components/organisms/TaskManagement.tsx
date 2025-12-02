@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card } from '../molecules/Card';
 import { Badge } from '../atoms/Badge';
 import { Button } from '../atoms/Button';
@@ -9,6 +9,9 @@ import { Icon } from '../atoms/Icon';
 import { KanbanBoard } from './KanbanBoard';
 import { useTaskStatuses, useTaskPriorities } from '../../lib/hooks/useTasks';
 import { tasksApi } from '../../lib/services/tasksApi';
+import { useAuth } from '../../app/auth/useAuth';
+import { ApiService } from '../../lib/services/api';
+import { User } from '../../lib/types/user';
 
 interface Task {
   id: string;
@@ -96,10 +99,57 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [assignedFilter, setAssignedFilter] = useState('all');
   const [showOverdue, setShowOverdue] = useState(false);
-  console.log('tasks: ', tasks)
+  const [users, setUsers] = useState<User[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  
+  // Get current user for role-based filtering
+  const { user } = useAuth();
+  const isAdmin = user?.role?.toLowerCase() === 'admin';
+  
   // Fetch task statuses and priorities from database
   const { statuses: dbStatuses, loading: statusesLoading } = useTaskStatuses();
   const { priorities: dbPriorities, loading: prioritiesLoading } = useTaskPriorities();
+  
+  // Fetch users for the assigned to filter
+  useEffect(() => {
+    const fetchUsers = async () => {
+      if (isAdmin) {
+        // Only admins can fetch all users
+        setUsersLoading(true);
+        try {
+          const usersData = await ApiService.getUsers().catch(() => []);
+          setUsers(usersData);
+        } catch (error) {
+          console.error('Error fetching users:', error);
+          setUsers([]);
+        } finally {
+          setUsersLoading(false);
+        }
+      } else {
+        // For buyers, just show themselves
+        if (user) {
+          setUsers([user]);
+        }
+      }
+    };
+    
+    fetchUsers();
+  }, [isAdmin, user]);
+  
+  // Filter tasks based on user role
+  // Admin: show all tasks
+  // Buyer: show only tasks where buyer is the owner
+  const roleFilteredTasks = useMemo(() => {
+    if (isAdmin) {
+      return tasks;
+    }
+    
+    // For buyers, filter tasks where they are the owner
+    const buyerId = user?.id;
+    if (!buyerId) return [];
+    
+    return tasks.filter(task => task.owner?.id === buyerId);
+  }, [tasks, isAdmin, user?.id]);
 
   // Use database statuses/priorities if available, otherwise fall back to prop
   const statuses = dbStatuses.length > 0 ? dbStatuses : (statusesProp || []);
@@ -188,13 +238,21 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
 
   const isOverdue = (dueDate: string) => {
     if (!dueDate) return false;
-    const date = new Date(dueDate);
-    const now = new Date();
-    return date < now;
+    try {
+      const date = new Date(dueDate);
+      const now = new Date();
+      // Compare dates at start of day (ignore time)
+      const dueDateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const todayOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      return dueDateOnly < todayOnly;
+    } catch (error) {
+      console.error('Error parsing due date:', dueDate, error);
+      return false;
+    }
   };
 
-  const overdueTasks = tasks.filter(task => isOverdue(task.due_date));
-  const dueTodayTasks = tasks.filter(task => {
+  const overdueTasks = roleFilteredTasks.filter(task => isOverdue(task.due_date));
+  const dueTodayTasks = roleFilteredTasks.filter(task => {
     if (!task.due_date) return false;
     const date = new Date(task.due_date);
     const today = new Date();
@@ -222,7 +280,7 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
 
   // Filter tasks based on search and filters
   const filteredTasks = useMemo(() => {
-    let filtered = tasks;
+    let filtered = roleFilteredTasks;
 
     // Search filter
     if (searchTerm) {
@@ -246,16 +304,10 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
       filtered = filtered.filter(task => task.priority.id === priorityId);
     }
 
-    // Assigned filter
+    // Assigned filter (filter by owner)
     if (assignedFilter !== 'all') {
-      if (assignedFilter === 'me') {
-        // You might want to check against current user
-        // For now, just pass through
-      } else {
-        filtered = filtered.filter(task =>
-          task.assigned_to?.username.toLowerCase() === assignedFilter.toLowerCase()
-        );
-      }
+      // Filter by selected user ID (including "Me" which uses user.id)
+      filtered = filtered.filter(task => task.owner?.id === assignedFilter);
     }
 
     // Overdue filter
@@ -264,7 +316,7 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
     }
 
     return filtered;
-  }, [tasks, searchTerm, statusFilter, priorityFilter, assignedFilter, showOverdue]);
+  }, [roleFilteredTasks, searchTerm, statusFilter, priorityFilter, assignedFilter, showOverdue, user?.id]);
 
   // Group tasks by status
   const tasksByStatus = useMemo(() => {
@@ -323,7 +375,7 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
               </div>
               <p className="text-sm font-medium text-gray-500 whitespace-nowrap">Total Tasks</p>
             </div>
-            <p className="text-2xl font-semibold text-gray-900">{totalTasks}</p>
+            <p className="text-2xl font-semibold text-gray-900">{roleFilteredTasks.length}</p>
           </div>
         </Card>
         <Card className="px-4 py-2">
@@ -363,7 +415,7 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
               <p className="text-sm font-medium text-gray-500 whitespace-nowrap">Completed</p>
             </div>
             <p className="text-2xl font-semibold text-gray-900">
-              {tasks.filter(task => task.status.name.toLowerCase() === 'completed').length}
+              {roleFilteredTasks.filter(task => task.status.name.toLowerCase() === 'completed').length}
             </p>
           </div>
         </Card>
@@ -424,22 +476,31 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
                   ))}
               </select>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Assigned To
-              </label>
-              <select
-                value={assignedFilter}
-                onChange={(e) => handleAssignedToFilterChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={loading}
-              >
-                <option value="all">All Users</option>
-                <option value="me">Me</option>
-                <option value="john">John Doe</option>
-                <option value="jane">Jane Smith</option>
-              </select>
-            </div>
+            {isAdmin && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Assigned To
+                </label>
+                <select
+                  value={assignedFilter}
+                  onChange={(e) => handleAssignedToFilterChange(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={loading || usersLoading}
+                >
+                  <option value="all">All Users</option>
+                  {user && (
+                    <option key={user.id} value={user.id}>Me ({user.username})</option>
+                  )}
+                  {users
+                    .filter(userOption => userOption.id !== user?.id) // Don't show current user twice
+                    .map((userOption) => (
+                      <option key={userOption.id} value={userOption.id}>
+                        {userOption.username}
+                      </option>
+                    ))}
+                </select>
+              </div>
+            )}
             <div>
               <label className="flex items-center cursor-pointer">
                 <input
@@ -518,12 +579,12 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
                     <span className="truncate">Owner: {task.owner.username}</span>
                   </div>
                 )}
-                {task.assigned_to && task.assigned_to.username !== 'Unassigned' && (
+                {/* {task.assigned_to && task.assigned_to.username !== 'Unassigned' && (
                   <div className="flex-1 flex items-center space-x-1 text-xs text-gray-700 bg-yellow-200 rounded-lg px-2 py-1">
                     <Icon name="user" className="w-3 h-3" />
                     <span className="truncate">Assigned: {task.assigned_to.username}</span>
                   </div>
-                )}
+                )} */}
               </div>
             )}
 

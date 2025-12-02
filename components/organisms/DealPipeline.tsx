@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card } from '../molecules/Card';
 import { Badge } from '../atoms/Badge';
 import { Button } from '../atoms/Button';
@@ -10,6 +10,9 @@ import { Pagination } from '../molecules/Pagination';
 import { KanbanBoard } from './KanbanBoard';
 import { useDealStages, useDealCategories } from '../../lib/hooks/useDeals';
 import { Deal } from '../../lib/types/deal';
+import { useAuth } from '../../app/auth/useAuth';
+import { ApiService } from '../../lib/services/api';
+import { User } from '../../lib/types/user';
 
 interface DealStage {
   id: number;
@@ -58,10 +61,42 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
   const [stageFilter, setStageFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [assignedFilter, setAssignedFilter] = useState('all');
+  const [users, setUsers] = useState<User[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  
+  // Get current user for role-based filtering
+  const { user } = useAuth();
+  const isAdmin = user?.role?.toLowerCase() === 'admin';
   
   // Fetch deal stages and categories from database
   const { stages: dbStages, loading: stagesLoading } = useDealStages();
   const { categories, loading: categoriesLoading } = useDealCategories();
+  
+  // Fetch users for the assigned to filter
+  useEffect(() => {
+    const fetchUsers = async () => {
+      if (isAdmin) {
+        // Only admins can fetch all users
+        setUsersLoading(true);
+        try {
+          const usersData = await ApiService.getUsers().catch(() => []);
+          setUsers(usersData);
+        } catch (error) {
+          console.error('Error fetching users:', error);
+          setUsers([]);
+        } finally {
+          setUsersLoading(false);
+        }
+      } else {
+        // For buyers, just show themselves
+        if (user) {
+          setUsers([user]);
+        }
+      }
+    };
+    
+    fetchUsers();
+  }, [isAdmin, user]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -114,7 +149,25 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
     }
   };
 
-  const dealsToDisplay = deals;
+  // Filter deals based on user role
+  // Admin: show all deals
+  // Buyer: show only deals where buyer is assigned_to
+  const dealsToDisplay = useMemo(() => {
+    if (isAdmin) {
+      return deals;
+    }
+    
+    // For buyers, filter deals where they are assigned_to
+    const buyerId = user?.id;
+    if (!buyerId) return [];
+    
+    return deals.filter(deal => {
+      const assignedToId = typeof deal.assigned_to === 'object' && deal.assigned_to !== null && 'id' in deal.assigned_to
+        ? deal.assigned_to.id
+        : null;
+      return assignedToId === buyerId;
+    });
+  }, [deals, isAdmin, user?.id]);
   
   // Define the Kanban stages from database (moved before dealsByStage to avoid dependency issues)
   const kanbanStages = useMemo(() => {
@@ -135,8 +188,11 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
       });
   }, [dbStages]);
 
-  const totalPipelineValue = dealStages.reduce((sum, stage) => sum + stage.value, 0);
-  const wonDealsValue = dealsToDisplay.filter(deal => deal.is_won).reduce((sum, deal) => sum + deal.deal_value, 0);
+  // Calculate total pipeline value from actual deals (excluding won/lost deals)
+  const totalPipelineValue = dealsToDisplay
+    .filter(deal => !deal.is_won && !deal.is_lost)
+    .reduce((sum, deal) => sum + Number(deal.deal_value || 0), 0);
+  const wonDealsValue = dealsToDisplay.filter(deal => deal.is_won).reduce((sum, deal) => sum + Number(deal.deal_value || 0), 0);
   const closedWonDeals = dealsToDisplay.filter(deal => deal.is_won);
   const closedLostDeals = dealsToDisplay.filter(deal => deal.deal_stage?.name?.toLowerCase() === 'closed lost');
 
@@ -194,21 +250,17 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
         if (dealCategoryId !== categoryFilter) return false;
       }
 
-      // Assigned filter
+      // Assigned filter (filter by assigned_to user ID)
       if (assignedFilter !== 'all') {
-        if (assignedFilter === 'me') {
-          // You might want to check against current user
-          return true; // Placeholder
-        }
-        const assignedUsername = typeof deal.assigned_to === 'object' && deal.assigned_to !== null && 'username' in deal.assigned_to
-          ? deal.assigned_to.username.toLowerCase()
-          : '';
-        if (assignedUsername !== assignedFilter.toLowerCase()) return false;
+        const assignedToId = typeof deal.assigned_to === 'object' && deal.assigned_to !== null && 'id' in deal.assigned_to
+          ? deal.assigned_to.id
+          : null;
+        if (assignedToId !== assignedFilter) return false;
       }
 
       return true;
     });
-  }, [dealsToDisplay, searchTerm, stageFilter, categoryFilter, assignedFilter]);
+  }, [dealsToDisplay, searchTerm, stageFilter, categoryFilter, assignedFilter, user?.id]);
 
   // Group deals by stage
   const dealsByStage = useMemo(() => {
@@ -268,7 +320,7 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
               </div>
               <p className="text-sm font-medium text-gray-500 whitespace-nowrap">Total Deals</p>
             </div>
-            <p className="text-2xl font-semibold text-gray-900">{totalDeals}</p>
+              <p className="text-2xl font-semibold text-gray-900">{dealsToDisplay.length}</p>
           </div>
         </Card>
         <Card className="px-4 py-2">
@@ -365,21 +417,31 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
                 ))}
               </select>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Assigned To
-              </label>
-              <select
-                value={assignedFilter}
-                onChange={(e) => handleAssignedToFilterChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">All Users</option>
-                <option value="me">Me</option>
-                <option value="john">John Doe</option>
-                <option value="jane">Jane Smith</option>
-              </select>
-            </div>
+            {isAdmin && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Assigned To
+                </label>
+                <select
+                  value={assignedFilter}
+                  onChange={(e) => handleAssignedToFilterChange(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={loading || usersLoading}
+                >
+                  <option value="all">All Users</option>
+                  {user && (
+                    <option key={user.id} value={user.id}>Me ({user.username})</option>
+                  )}
+                  {users
+                    .filter(userOption => userOption.id !== user?.id) // Don't show current user twice
+                    .map((userOption) => (
+                      <option key={userOption.id} value={userOption.id}>
+                        {userOption.username}
+                      </option>
+                    ))}
+                </select>
+              </div>
+            )}
           </div>
         </Card>
 

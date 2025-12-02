@@ -4,6 +4,7 @@ import { MOCK_DATA } from '../data/mockData';
 import { ApiService } from '../services/api';
 import { useAuth } from '../../app/auth/useAuth';
 import { useToast } from '../../hooks/useToast';
+import { getCurrentYearRange } from 'lib/services/helper';
 
 export const useListings = () => {
   const { user } = useAuth();
@@ -14,8 +15,12 @@ export const useListings = () => {
   const [backendOk, setBackendOk] = useState<boolean | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [rowsPerPage, setRowsPerPage] = useState<number>(10);
-  const [startDate, setStartDate] = useState<Date | null>(null);
-  const [endDate, setEndDate] = useState<Date | null>(null);
+  
+
+  
+  const initialDateRange = getCurrentYearRange();
+  const [startDate, setStartDate] = useState<Date | null>(initialDateRange.start);
+  const [endDate, setEndDate] = useState<Date | null>(initialDateRange.end);
 
   const sortedRows = useMemo(() => {
     const dir = sort.dir === 'asc' ? 1 : -1;
@@ -64,17 +69,15 @@ export const useListings = () => {
         setBackendOk(isHealthy);
         
         if (isHealthy) {
-          // Default to today's listings on first load
-          const today = new Date();
-          const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
-          const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
-          setStartDate(startOfToday);
-          setEndDate(endOfToday);
+          // Use current year date range
+          const yearRange = getCurrentYearRange();
+          setStartDate(yearRange.start);
+          setEndDate(yearRange.end);
           // Use appropriate API call based on user role
           const listings = user?.role === 'admin' 
-            ? await ApiService.getListings({ start_date: startOfToday.toISOString(), end_date: endOfToday.toISOString() })
+            ? await ApiService.getListings({ start_date: yearRange.start.toISOString(), end_date: yearRange.end.toISOString() })
             : user?.id 
-              ? await ApiService.getBuyerListings(user.id, { start_date: startOfToday.toISOString(), end_date: endOfToday.toISOString() })
+              ? await ApiService.getBuyerListings(user.id, { start_date: yearRange.start.toISOString(), end_date: yearRange.end.toISOString() })
               : [];
           if (mounted && Array.isArray(listings) && listings.length > 0) {
             setData(listings);

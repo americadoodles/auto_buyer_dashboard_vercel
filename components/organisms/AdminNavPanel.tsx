@@ -98,6 +98,7 @@ const getNavItems = (userRole?: string): NavItem[] => {
     // Return only listings, leads, contacts, deals, tasks, my profile
     return baseItems.filter(item =>
       [
+        '/',
         '/listings',
         '/crm/leads',
         '/crm/contacts',

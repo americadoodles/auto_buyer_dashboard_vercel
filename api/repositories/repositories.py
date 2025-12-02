@@ -430,6 +430,7 @@ def list_listings_by_buyer(
     limit: Optional[int] = None
 ) -> list[ListingOut]:
     """Get listings for a specific buyer with optional date filtering"""
+    print('======')
     if DB_ENABLED:
         with get_db_connection() as conn:
             if not conn:

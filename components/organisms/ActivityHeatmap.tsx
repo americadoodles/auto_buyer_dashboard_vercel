@@ -123,20 +123,6 @@ const ActivityHeatmap = forwardRef<HTMLElement, ActivityHeatmapProps>(
                 <p className="text-sm text-gray-600">{subtitle}</p>
               </div>
             </div>
-            <div className="flex items-center space-x-4 text-sm text-gray-500">
-              <span>Less</span>
-              <div className="flex space-x-1">
-                {gitHubTheme.light?.map((color, level) => (
-                  <div
-                    key={level}
-                    className="w-3 h-3 rounded-sm border border-gray-200"
-                    style={{ backgroundColor: color }}
-                    title={`Level ${level}`}
-                  />
-                ))}
-              </div>
-              <span>More</span>
-            </div>
           </div>
         </div>
 

@@ -1,12 +1,14 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { TaskManagement } from '../../../components/organisms/TaskManagement';
 import { useTasks, useTaskPriorities, useTaskStatuses } from '../../../lib/hooks/useTasks';
 import { useAuth } from '../../auth/useAuth';
 
 export default function TasksPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
@@ -51,7 +53,7 @@ export default function TasksPage() {
   };
 
   const handleTaskClick = (taskId: string) => {
-    console.log('Task clicked:', taskId);
+    router.push(`/crm/tasks/${taskId}`);
   };
 
   const handleCreateTask = async () => {

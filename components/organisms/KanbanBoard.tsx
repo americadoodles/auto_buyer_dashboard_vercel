@@ -8,7 +8,6 @@ import { dealsApi } from '../../lib/services/dealsApi';
 import { DealCreateModal } from './DealCreateModal';
 import { DealDetailModal } from './DealDetailModal';
 import { TaskCreateModal } from './TaskCreateModal';
-import { TaskDetailModal } from './TaskDetailModal';
 
 // Generic types
 export interface KanbanStage {
@@ -268,10 +267,11 @@ export function KanbanBoard<T extends KanbanItem>({
                         }`}
                       >
                         {renderCard(item, stage, (clickedItem) => {
-                          setSelectedItem(clickedItem);
-                          if (itemType === 'deal' || itemType === 'task') {
+                          if (itemType === 'deal') {
+                            setSelectedItem(clickedItem);
                             setDetailModalOpen(true);
                           }
+                          // For tasks, just call onItemClick which will navigate to the page
                           onItemClick(clickedItem.id);
                         })}
                       </div>
@@ -354,40 +354,24 @@ export function KanbanBoard<T extends KanbanItem>({
 
       {/* Task-specific modals - only render if itemType is 'task' */}
       {itemType === 'task' && (
-        <>
-          <TaskCreateModal
-            isOpen={createModalOpen}
-            onClose={() => {
-              setCreateModalOpen(false);
-              setCreateModalStageId(undefined);
-              setCreateModalStageName('');
-            }}
-            onCreated={() => {
-              if (onItemUpdated) {
-                onItemUpdated();
-              }
-              setCreateModalOpen(false);
-              setCreateModalStageId(undefined);
-              setCreateModalStageName('');
-            }}
-            statusId={createModalStageId}
-            statusName={createModalStageName}
-          />
-
-          <TaskDetailModal
-            isOpen={detailModalOpen}
-            onClose={() => {
-              setDetailModalOpen(false);
-              setSelectedItem(null);
-            }}
-            task={selectedItem as any}
-            onTaskUpdated={() => {
-              if (onItemUpdated) {
-                onItemUpdated();
-              }
-            }}
-          />
-        </>
+        <TaskCreateModal
+          isOpen={createModalOpen}
+          onClose={() => {
+            setCreateModalOpen(false);
+            setCreateModalStageId(undefined);
+            setCreateModalStageName('');
+          }}
+          onCreated={() => {
+            if (onItemUpdated) {
+              onItemUpdated();
+            }
+            setCreateModalOpen(false);
+            setCreateModalStageId(undefined);
+            setCreateModalStageName('');
+          }}
+          statusId={createModalStageId}
+          statusName={createModalStageName}
+        />
       )}
     </div>
   );

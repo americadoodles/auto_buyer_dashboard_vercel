@@ -9,6 +9,7 @@ import { Icon } from '../atoms/Icon';
 import { KanbanBoard } from './KanbanBoard';
 import { useTaskStatuses, useTaskPriorities } from '../../lib/hooks/useTasks';
 import { tasksApi } from '../../lib/services/tasksApi';
+import { useAuth } from '../../app/auth/useAuth';
 
 interface Task {
   id: string;
@@ -96,10 +97,29 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [assignedFilter, setAssignedFilter] = useState('all');
   const [showOverdue, setShowOverdue] = useState(false);
-  console.log('tasks: ', tasks)
+  
+  // Get current user for role-based filtering
+  const { user } = useAuth();
+  const isAdmin = user?.role?.toLowerCase() === 'admin';
+  
   // Fetch task statuses and priorities from database
   const { statuses: dbStatuses, loading: statusesLoading } = useTaskStatuses();
   const { priorities: dbPriorities, loading: prioritiesLoading } = useTaskPriorities();
+  
+  // Filter tasks based on user role
+  // Admin: show all tasks
+  // Buyer: show only tasks where buyer is the owner
+  const roleFilteredTasks = useMemo(() => {
+    if (isAdmin) {
+      return tasks;
+    }
+    
+    // For buyers, filter tasks where they are the owner
+    const buyerId = user?.id;
+    if (!buyerId) return [];
+    
+    return tasks.filter(task => task.owner?.id === buyerId);
+  }, [tasks, isAdmin, user?.id]);
 
   // Use database statuses/priorities if available, otherwise fall back to prop
   const statuses = dbStatuses.length > 0 ? dbStatuses : (statusesProp || []);
@@ -193,8 +213,8 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
     return date < now;
   };
 
-  const overdueTasks = tasks.filter(task => isOverdue(task.due_date));
-  const dueTodayTasks = tasks.filter(task => {
+  const overdueTasks = roleFilteredTasks.filter(task => isOverdue(task.due_date));
+  const dueTodayTasks = roleFilteredTasks.filter(task => {
     if (!task.due_date) return false;
     const date = new Date(task.due_date);
     const today = new Date();
@@ -222,7 +242,7 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
 
   // Filter tasks based on search and filters
   const filteredTasks = useMemo(() => {
-    let filtered = tasks;
+    let filtered = roleFilteredTasks;
 
     // Search filter
     if (searchTerm) {
@@ -264,7 +284,7 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
     }
 
     return filtered;
-  }, [tasks, searchTerm, statusFilter, priorityFilter, assignedFilter, showOverdue]);
+  }, [roleFilteredTasks, searchTerm, statusFilter, priorityFilter, assignedFilter, showOverdue]);
 
   // Group tasks by status
   const tasksByStatus = useMemo(() => {
@@ -323,7 +343,7 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
               </div>
               <p className="text-sm font-medium text-gray-500 whitespace-nowrap">Total Tasks</p>
             </div>
-            <p className="text-2xl font-semibold text-gray-900">{totalTasks}</p>
+            <p className="text-2xl font-semibold text-gray-900">{roleFilteredTasks.length}</p>
           </div>
         </Card>
         <Card className="px-4 py-2">
@@ -363,7 +383,7 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
               <p className="text-sm font-medium text-gray-500 whitespace-nowrap">Completed</p>
             </div>
             <p className="text-2xl font-semibold text-gray-900">
-              {tasks.filter(task => task.status.name.toLowerCase() === 'completed').length}
+              {roleFilteredTasks.filter(task => task.status.name.toLowerCase() === 'completed').length}
             </p>
           </div>
         </Card>
@@ -518,12 +538,12 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
                     <span className="truncate">Owner: {task.owner.username}</span>
                   </div>
                 )}
-                {task.assigned_to && task.assigned_to.username !== 'Unassigned' && (
+                {/* {task.assigned_to && task.assigned_to.username !== 'Unassigned' && (
                   <div className="flex-1 flex items-center space-x-1 text-xs text-gray-700 bg-yellow-200 rounded-lg px-2 py-1">
                     <Icon name="user" className="w-3 h-3" />
                     <span className="truncate">Assigned: {task.assigned_to.username}</span>
                   </div>
-                )}
+                )} */}
               </div>
             )}
 

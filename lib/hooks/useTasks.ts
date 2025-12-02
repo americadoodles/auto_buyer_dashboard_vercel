@@ -20,13 +20,11 @@ export const useTasks = (params?: UseTasksParams) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  console.log('param: ', params)
   const fetchTasks = async () => {
     try {
       setLoading(true);
       setError(null);
       const data = await tasksApi.getTasks(params);
-      console.log('data: ', data)
       setTasks(data);
     } catch (err) {
       console.error('Error fetching tasks:', err);

@@ -210,20 +210,6 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Owner</label>
-              <select
-                className="w-full border rounded-md h-10 px-3"
-                value={ownerUserId || ''}
-                onChange={(e) => setOwnerUserId(e.target.value || undefined)}
-              >
-                {users.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.username}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
               <Input
                 type="date"

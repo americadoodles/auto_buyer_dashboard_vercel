@@ -389,10 +389,9 @@ export default function TaskDetailPage() {
   const isCompleted = task.completed_at !== null && task.completed_at !== undefined;
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="p-6 space-y-6">
+    <div className="h-full flex flex-col">
+      <div className="p-6 border-b border-gray-200 pb-6 flex-shrink-0">
         {/* Header */}
-        <div className="border-b border-gray-200 pb-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Button
@@ -455,60 +454,36 @@ export default function TaskDetailPage() {
               )}
             </div>
           </div>
-        </div>
-
         {error && (
-          <div className="text-red-600 text-sm bg-red-50 p-3 rounded-md">{error}</div>
+          <div className="text-red-600 text-sm bg-red-50 p-3 rounded-md mt-4">{error}</div>
         )}
+      </div>
 
-        {/* Status and Priority Badges */}
-        <div className="flex items-center space-x-4">
-          {task.status && (
-            <Badge color="blue">
-              Status: {task.status.name}
-            </Badge>
-          )}
-          {task.priority && (
-            <Badge color="orange">
-              Priority: {task.priority.name}
-            </Badge>
-          )}
-          {isCompleted && (
-            <Badge color="green">
-              Completed
-            </Badge>
-          )}
-        </div>
+      {/* Main Content Layout */}
+      <div className="flex-1 flex gap-6 overflow-hidden px-6 pb-6">
+        {/* Left Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto space-y-6 pr-4">
+            {/* Status and Priority Badges */}
+            <div className="flex items-center space-x-4">
+              {task.status && (
+                <Badge color="blue">
+                  Status: {task.status.name}
+                </Badge>
+              )}
+              {task.priority && (
+                <Badge color="orange">
+                  Priority: {task.priority.name}
+                </Badge>
+              )}
+              {isCompleted && (
+                <Badge color="green">
+                  Completed
+                </Badge>
+              )}
+            </div>
 
-        {/* Vehicle and Contact Information from Deal's Listing and Task's Contact */}
-        <VehicleContactCard
-          title="Vehicle & Contact Information"
-          vehicle={listing ? {
-            year: listing.year,
-            make: listing.make,
-            model: listing.model,
-            trim: listing.trim,
-            vin: listing.vin
-          } : null}
-          contact={taskContact ? {
-            first_name: taskContact.first_name,
-            last_name: taskContact.last_name,
-            company: taskContact.company,
-            email: taskContact.email,
-            phone: taskContact.phone,
-            mobile: taskContact.mobile
-          } : null}
-        />
-
-        {/* Deal Information Section - Vehicle and Contact */}
-        <VehicleContactCard
-          title="Deal Information"
-          vehicle={deal?.vehicle_requirements || null}
-          contact={deal?.contact || null}
-        />
-
-        {/* Edit Fields Section */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-4">
+            {/* Edit Fields Section */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-4">
           <h4 className="text-md font-semibold text-gray-900 border-b pb-2">Edit Fields</h4>
           
           <div>
@@ -595,25 +570,25 @@ export default function TaskDetailPage() {
           </div>
         </div>
 
-        {/* Related Deal Section */}
-        {relatedDealId && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-2">
-            <h4 className="text-md font-semibold text-gray-900 border-b pb-2">Related Deal</h4>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => router.push(`/crm/deals`)}
-              >
-                <Icon name="briefcase" className="w-4 h-4 mr-2" />
-                View Deal
-              </Button>
-            </div>
-          </div>
-        )}
+            {/* Related Deal Section */}
+            {relatedDealId && (
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-2">
+                <h4 className="text-md font-semibold text-gray-900 border-b pb-2">Related Deal</h4>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => router.push(`/crm/deals/${relatedDealId}`)}
+                  >
+                    <Icon name="briefcase" className="w-4 h-4 mr-2" />
+                    View Deal
+                  </Button>
+                </div>
+              </div>
+            )}
 
-        {/* Task Metadata */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-2">
+            {/* Task Metadata */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-2">
           <h4 className="text-md font-semibold text-gray-900 border-b pb-2">Task Information</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div>
@@ -633,16 +608,41 @@ export default function TaskDetailPage() {
           </div>
         </div>
 
-        {/* Footer Actions */}
-        <div className="flex justify-end space-x-2 pb-6">
-          <Button variant="outline" onClick={() => router.push('/crm/tasks')} disabled={saving || deleting}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave} disabled={!title.trim() || saving || deleting}>
-            {saving ? 'Saving...' : 'Save Changes'}
-          </Button>
+            {/* Footer Actions */}
+            <div className="flex justify-end space-x-2 pb-6">
+              <Button variant="outline" onClick={() => router.push('/crm/tasks')} disabled={saving || deleting}>
+                Cancel
+              </Button>
+              <Button onClick={handleSave} disabled={!title.trim() || saving || deleting} className="bg-blue-400 hover:bg-blue-500 text-white">
+                {saving ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
+          </div>
+
+          {/* Right Sidebar - Vehicle and Contact Information - Fixed Height */}
+          <div className="w-[400px] flex-shrink-0 flex flex-col">
+            <div className="bg-white shadow-sm border border-gray-200 p-6 h-full overflow-y-auto">
+              <VehicleContactCard
+                title="Vehicle & Contact Information"
+                vehicle={listing ? {
+                  year: listing.year,
+                  make: listing.make,
+                  model: listing.model,
+                  trim: listing.trim,
+                  vin: listing.vin
+                } : null}
+                contact={taskContact ? {
+                  first_name: taskContact.first_name,
+                  last_name: taskContact.last_name,
+                  company: taskContact.company,
+                  email: taskContact.email,
+                  phone: taskContact.phone,
+                  mobile: taskContact.mobile
+                } : null}
+              />
+            </div>
+          </div>
         </div>
-      </div>
     </div>
   );
 }

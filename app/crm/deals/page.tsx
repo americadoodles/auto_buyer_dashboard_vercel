@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { DealPipeline } from '../../../components/organisms/DealPipeline';
 import { useDeals, useDealStages, useDealPipeline } from '../../../lib/hooks/useDeals';
 
 export default function DealsPage() {
+  const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
@@ -26,7 +28,7 @@ export default function DealsPage() {
   };
 
   const handleDealClick = (dealId: string) => {
-    console.log('Deal clicked:', dealId);
+    router.push(`/crm/deals/${dealId}`);
   };
 
   const handleCreateDeal = async () => {

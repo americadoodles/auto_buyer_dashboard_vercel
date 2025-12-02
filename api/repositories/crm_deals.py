@@ -87,21 +87,96 @@ def get_deal(deal_id: UUID) -> Optional[DealOut]:
         try:
             with conn.cursor() as cur:
                 cur.execute("""
-                    SELECT id, name, description, contact_id, lead_id, assigned_to, deal_stage_id,
-                           deal_category_id, expected_close_date, actual_close_date,
-                           deal_value, probability, notes, is_won, is_lost, created_by, created_at, updated_at
-                    FROM deals WHERE id = %s
+                    SELECT 
+                        d.id, d.name, d.description, d.contact_id, d.lead_id, d.assigned_to, d.deal_stage_id,
+                        d.deal_category_id, d.expected_close_date, d.actual_close_date,
+                        d.deal_value, d.probability, d.vehicle_requirements, d.financing_requirements,
+                        d.trade_in_info, d.notes, d.is_won, d.is_lost, d.lost_reason,
+                        d.created_by, d.created_at, d.updated_at,
+                        -- Contact fields
+                        c.id as contact_obj_id, c.first_name, c.last_name,
+                        -- Assigned to user fields
+                        u.id as user_obj_id, u.username, u.email as user_email,
+                        -- Deal category fields
+                        dc.id as category_obj_id, dc.name as category_name, dc.description as category_description, dc.created_at as category_created_at
+                    FROM deals d
+                    LEFT JOIN contacts c ON d.contact_id = c.id
+                    LEFT JOIN users u ON d.assigned_to = u.id
+                    LEFT JOIN deal_categories dc ON d.deal_category_id = dc.id
+                    WHERE d.id = %s
                 """, (deal_id,))
                 
                 result = cur.fetchone()
                 if result:
-                    return DealOut(
-                        id=result[0], title=result[1], description=result[2], contact_id=result[3],
-                        lead_id=result[4], assigned_to=result[5], deal_stage_id=result[6], deal_category_id=result[7],
-                        expected_close_date=result[8], actual_close_date=result[9],
-                        deal_value=result[10], probability=result[11], notes=result[12],
-                        is_won=result[13], is_lost=result[14], created_by=result[15], created_at=result[16], updated_at=result[17]
-                    )
+                    from ..schemas.crm import ContactBasic, UserBasic, DealCategoryOut
+                    
+                    deal_data = {
+                        "id": result[0],
+                        "title": result[1] or "",
+                        "description": result[2],
+                        "contact_id": result[3],
+                        "lead_id": result[4],
+                        "assigned_to": result[5],
+                        "deal_stage_id": result[6],
+                        "deal_category_id": result[7],
+                        "expected_close_date": result[8],
+                        "actual_close_date": result[9],
+                        "deal_value": result[10],
+                        "probability": result[11] or 0,
+                        "vehicle_requirements": result[12],
+                        "financing_requirements": result[13],
+                        "trade_in_info": result[14],
+                        "notes": result[15],
+                        "is_active": True,
+                        "is_won": result[16] or False,
+                        "is_lost": result[17] or False,
+                        "lost_reason": result[18],
+                        "created_by": result[19],
+                        "created_at": result[20],
+                        "updated_at": result[21]
+                    }
+                    
+                    # Add nested objects if they exist
+                    if result[22]:  # contact_obj_id
+                        deal_data["contact"] = ContactBasic(
+                            id=result[22],
+                            first_name=result[23] or "",
+                            last_name=result[24] or ""
+                        )
+                    
+                    # Set assigned_to as UserBasic object if user exists, otherwise keep UUID
+                    if result[25] and result[26]:  # user_obj_id and username exist
+                        try:
+                            # Get raw values from database
+                            user_id_raw = result[25]
+                            user_username_raw = result[26]
+                            
+                            # Convert to proper types
+                            if not isinstance(user_id_raw, UUID):
+                                user_id_raw = UUID(str(user_id_raw))
+                            if not isinstance(user_username_raw, str):
+                                user_username_raw = str(user_username_raw)
+                            
+                            # Create UserBasic with explicit parameters
+                            user_basic = UserBasic(id=user_id_raw, username=user_username_raw)
+                            
+                            deal_data["assigned_to"] = user_basic
+                        except (ValueError, TypeError, AttributeError) as e:
+                            logging.error(f"Failed to create UserBasic object: {e}, using UUID instead")
+                            deal_data["assigned_to"] = result[5]
+                    # If no user object, assigned_to is already set to UUID (result[5]) above
+                    
+                    # Add deal_category if it exists
+                    if result[28]:  # category_obj_id (index 28: after 22 deal fields + 3 contact fields + 3 user fields)
+                        deal_data["deal_category"] = DealCategoryOut(
+                            id=result[28],
+                            name=result[29] or "",
+                            description=result[30],
+                            is_active=True,
+                            created_at=result[31] if result[31] else datetime.now()
+                        )
+                    
+                    return DealOut(**deal_data)
                 return None
                 
         except Exception as e:

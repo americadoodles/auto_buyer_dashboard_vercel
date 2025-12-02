@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card } from "../molecules/Card";
 import { TableHeader } from "../molecules/TableHeader";
 import { TableRow } from "../molecules/TableRow";
@@ -9,7 +10,6 @@ import { Button } from "../atoms/Button";
 import { Input } from "../atoms/Input";
 import { Icon } from "../atoms/Icon";
 import { Pagination } from "../molecules/Pagination";
-import { LeadEditModal } from "./LeadEditModal";
 import { Lead as BaseLead, LeadStatus, LeadSource } from "../../lib/types/lead";
 import { useLeadSources, useLeadStatuses } from "../../lib/hooks/useLeads";
 
@@ -91,8 +91,8 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
   // Use database statuses if available, otherwise fall back to prop
   const statuses = dbStatuses.length > 0 ? dbStatuses : (statusesProp || []);
   
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
-  const [editingLead, setEditingLead] = useState<Lead | null>(null);
   
   // Derive filter values from parent props
   const statusFilter = currentStatusFilter === undefined ? "all" : currentStatusFilter.toString();
@@ -136,7 +136,7 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
   };
 
   const handleEditLead = (lead: Lead) => {
-    setEditingLead(lead);
+    router.push(`/crm/leads/${lead.id}`);
   };
 
   const getScoreColor = (score: number) => {
@@ -479,23 +479,6 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
           </div>
         </Card>
       </div>
-      {/* Edit Lead Modal */}
-      {editingLead && (
-        <LeadEditModal
-          lead={editingLead as any}
-          isOpen={!!editingLead}
-          onClose={() => setEditingLead(null)}
-          onSave={(updatedLead) => {
-            setEditingLead(null);
-            // Call the parent callback to refresh leads
-            if (onLeadUpdated) {
-              onLeadUpdated();
-            }
-          }}
-          statuses={statuses}
-          sources={sources}
-        />
-      )}
     </div>
   );
 };

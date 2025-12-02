@@ -476,29 +476,31 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
                   ))}
               </select>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Assigned To
-              </label>
-              <select
-                value={assignedFilter}
-                onChange={(e) => handleAssignedToFilterChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={loading || usersLoading}
-              >
-                <option value="all">All Users</option>
-                {user && (
-                  <option key={user.id} value={user.id}>Me ({user.username})</option>
-                )}
-                {users
-                  .filter(userOption => userOption.id !== user?.id) // Don't show current user twice
-                  .map((userOption) => (
-                    <option key={userOption.id} value={userOption.id}>
-                      {userOption.username}
-                    </option>
-                  ))}
-              </select>
-            </div>
+            {isAdmin && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Assigned To
+                </label>
+                <select
+                  value={assignedFilter}
+                  onChange={(e) => handleAssignedToFilterChange(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={loading || usersLoading}
+                >
+                  <option value="all">All Users</option>
+                  {user && (
+                    <option key={user.id} value={user.id}>Me ({user.username})</option>
+                  )}
+                  {users
+                    .filter(userOption => userOption.id !== user?.id) // Don't show current user twice
+                    .map((userOption) => (
+                      <option key={userOption.id} value={userOption.id}>
+                        {userOption.username}
+                      </option>
+                    ))}
+                </select>
+              </div>
+            )}
             <div>
               <label className="flex items-center cursor-pointer">
                 <input

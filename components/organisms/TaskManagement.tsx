@@ -238,9 +238,17 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
 
   const isOverdue = (dueDate: string) => {
     if (!dueDate) return false;
-    const date = new Date(dueDate);
-    const now = new Date();
-    return date < now;
+    try {
+      const date = new Date(dueDate);
+      const now = new Date();
+      // Compare dates at start of day (ignore time)
+      const dueDateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const todayOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      return dueDateOnly < todayOnly;
+    } catch (error) {
+      console.error('Error parsing due date:', dueDate, error);
+      return false;
+    }
   };
 
   const overdueTasks = roleFilteredTasks.filter(task => isOverdue(task.due_date));
@@ -298,16 +306,8 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
 
     // Assigned filter (filter by owner)
     if (assignedFilter !== 'all') {
-      if (assignedFilter === 'me') {
-        // Filter by current user
-        const currentUserId = user?.id;
-        if (currentUserId) {
-          filtered = filtered.filter(task => task.owner?.id === currentUserId);
-        }
-      } else {
-        // Filter by selected user ID
-        filtered = filtered.filter(task => task.owner?.id === assignedFilter);
-      }
+      // Filter by selected user ID (including "Me" which uses user.id)
+      filtered = filtered.filter(task => task.owner?.id === assignedFilter);
     }
 
     // Overdue filter
@@ -316,7 +316,7 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
     }
 
     return filtered;
-  }, [roleFilteredTasks, searchTerm, statusFilter, priorityFilter, assignedFilter, showOverdue]);
+  }, [roleFilteredTasks, searchTerm, statusFilter, priorityFilter, assignedFilter, showOverdue, user?.id]);
 
   // Group tasks by status
   const tasksByStatus = useMemo(() => {

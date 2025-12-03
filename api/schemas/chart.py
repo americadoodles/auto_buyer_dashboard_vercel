@@ -12,3 +12,14 @@ class ChartDistributionResponse(BaseModel):
     success: bool = True
     message: Optional[str] = None
 
+class TimeSeriesDataPoint(BaseModel):
+    """Single data point in a time series chart"""
+    date: str
+    value: int
+
+class ChartTimeSeriesResponse(BaseModel):
+    """Response for chart time series data"""
+    data: List[TimeSeriesDataPoint]
+    success: bool = True
+    message: Optional[str] = None
+

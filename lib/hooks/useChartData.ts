@@ -59,21 +59,36 @@ export const useChartData = (timeRange: TimeRange = '1w') => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Normalize timeRange to ensure it always has a value
+  const normalizedTimeRange = timeRange || '1w';
+
   useEffect(() => {
     const fetchChartData = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        const { startDate, endDate } = getDateRangeFromTimeRange(timeRange);
+        const { startDate, endDate } = getDateRangeFromTimeRange(normalizedTimeRange);
         const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
         const days = Math.max(7, daysDiff); // Minimum 7 days
 
+        // Format dates for API calls
+        const startDateStr = startDate.toISOString().split('T')[0];
+        const endDateStr = endDate.toISOString().split('T')[0];
+
         // Fetch real distribution data from API
-        const [sourcingActivities, carCategories, statesRegions] = await Promise.all([
+        const [
+          sourcingActivities,
+          carCategories,
+          statesRegions,
+          leadSourcePerformance,
+          leadToPurchaseFunnel
+        ] = await Promise.all([
           ApiService.getChartDistribution('sourcing-activities').catch(() => ({ data: [], success: false })),
           ApiService.getChartDistribution('car-categories').catch(() => ({ data: [], success: false })),
           ApiService.getChartDistribution('states-regions').catch(() => ({ data: [], success: false })),
+          ApiService.getChartDistribution('lead-source-performance').catch(() => ({ data: [], success: false })),
+          ApiService.getChartTimeSeries('lead-to-purchase-funnel', startDateStr, endDateStr).catch(() => ({ data: [], success: false })),
         ]);
 
         // Generate mock data for time-series (TODO: Replace with actual API calls)
@@ -95,17 +110,11 @@ export const useChartData = (timeRange: TimeRange = '1w') => {
           profitOverTime: profitOverTimeData,
           weeklyListingsVolume: weeklyListingsData,
           buyerActivityPerDay: generateMockDataPoints(startDate, endDate, 35, 0.2),
-          leadToPurchaseFunnel: generateMockDataPoints(startDate, endDate, 15, 0.25),
+          leadToPurchaseFunnel: leadToPurchaseFunnel.data || [],
 
           // Distribution data - from real API
           sourcingActivitiesPerAgent: sourcingActivities.data || [],
-          leadSourcePerformance: [
-            { name: 'Website', value: 245 },
-            { name: 'Referral', value: 189 },
-            { name: 'Social Media', value: 156 },
-            { name: 'Email Campaign', value: 134 },
-            { name: 'Direct', value: 98 },
-          ],
+          leadSourcePerformance: leadSourcePerformance.data || [],
           carCategoriesPerformance: carCategories.data || [],
           statesRegions: statesRegions.data || [],
         };
@@ -120,7 +129,7 @@ export const useChartData = (timeRange: TimeRange = '1w') => {
     };
 
     fetchChartData();
-  }, []);
+  }, [normalizedTimeRange]);
 
   return { data, loading, error };
 };

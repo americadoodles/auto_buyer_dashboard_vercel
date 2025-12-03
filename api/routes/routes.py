@@ -5,10 +5,10 @@ from ..schemas.listing import ListingIn, ListingOut, ListingScoreIn
 from ..schemas.notify import NotifyItem, NotifyResponse
 from ..schemas.scoring import ScoreResponse
 from ..schemas.kpi import KpiResponse, KpiMetrics
-from ..schemas.chart import ChartDistributionResponse, DistributionItem
+from ..schemas.chart import ChartDistributionResponse, DistributionItem, ChartTimeSeriesResponse, TimeSeriesDataPoint
 from ..repositories.repositories import ingest_listings, list_listings, list_listings_by_buyer, get_buyer_stats, update_cached_score, insert_score
 from ..repositories.kpi_repository import get_trends_data, get_kpi_metrics
-from ..repositories.chart_repository import get_sourcing_activities_per_agent, get_car_categories_performance, get_states_regions_performance
+from ..repositories.chart_repository import get_sourcing_activities_per_agent, get_car_categories_performance, get_states_regions_performance, get_lead_to_purchase_funnel, get_lead_source_performance
 from ..core.auth import get_current_user
 from ..schemas.user import UserOut
 from ..services.services import score_listing, notify as do_notify
@@ -153,4 +153,51 @@ def get_states_regions_chart(current_user: UserOut = Depends(get_current_user)):
             data=[],
             success=False,
             message=f"Error fetching states/regions: {str(e)}"
+        )
+
+@chart_router.get("/lead-to-purchase-funnel", response_model=ChartTimeSeriesResponse)
+def get_lead_to_purchase_funnel_chart(
+    start_date: Optional[str] = Query(None, description="Start date in ISO format (YYYY-MM-DD)"),
+    end_date: Optional[str] = Query(None, description="End date in ISO format (YYYY-MM-DD)"),
+    current_user: UserOut = Depends(get_current_user)
+):
+    """Get lead to purchase funnel data (conversions over time)"""
+    try:
+        # Parse date strings (YYYY-MM-DD) to datetime objects
+        start = None
+        end = None
+        if start_date:
+            try:
+                start = datetime.fromisoformat(start_date)
+            except ValueError:
+                # If it's just a date (YYYY-MM-DD), add time component
+                start = datetime.fromisoformat(f"{start_date}T00:00:00")
+        if end_date:
+            try:
+                end = datetime.fromisoformat(end_date)
+            except ValueError:
+                # If it's just a date (YYYY-MM-DD), add time component and set to end of day
+                end = datetime.fromisoformat(f"{end_date}T23:59:59")
+        data = get_lead_to_purchase_funnel(start_date=start, end_date=end)
+        time_series_items = [TimeSeriesDataPoint(date=item["date"], value=item["value"]) for item in data]
+        return ChartTimeSeriesResponse(data=time_series_items, success=True)
+    except Exception as e:
+        return ChartTimeSeriesResponse(
+            data=[],
+            success=False,
+            message=f"Error fetching lead to purchase funnel: {str(e)}"
+        )
+
+@chart_router.get("/lead-source-performance", response_model=ChartDistributionResponse)
+def get_lead_source_performance_chart(current_user: UserOut = Depends(get_current_user)):
+    """Get lead source performance for chart"""
+    try:
+        data = get_lead_source_performance()
+        distribution_items = [DistributionItem(name=item["name"], value=item["value"]) for item in data]
+        return ChartDistributionResponse(data=distribution_items, success=True)
+    except Exception as e:
+        return ChartDistributionResponse(
+            data=[],
+            success=False,
+            message=f"Error fetching lead source performance: {str(e)}"
         )

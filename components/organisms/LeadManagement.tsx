@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card } from "../molecules/Card";
 import { TableHeader } from "../molecules/TableHeader";
 import { TableRow } from "../molecules/TableRow";
@@ -9,7 +10,6 @@ import { Button } from "../atoms/Button";
 import { Input } from "../atoms/Input";
 import { Icon } from "../atoms/Icon";
 import { Pagination } from "../molecules/Pagination";
-import { LeadEditModal } from "./LeadEditModal";
 import { Lead as BaseLead, LeadStatus, LeadSource } from "../../lib/types/lead";
 import { useLeadSources, useLeadStatuses } from "../../lib/hooks/useLeads";
 
@@ -55,6 +55,7 @@ interface LeadManagementProps {
   locations?: string[];
   loading?: boolean;
   onLeadUpdated?: () => void;
+  isAdmin?: boolean;
 }
 
 export const LeadManagement: React.FC<LeadManagementProps> = ({
@@ -81,6 +82,7 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
   locations,
   loading,
   onLeadUpdated,
+  isAdmin = true,
 }) => {
   // Fetch lead sources and statuses from database
   const { sources: dbSources, loading: sourcesLoading } = useLeadSources();
@@ -91,8 +93,8 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
   // Use database statuses if available, otherwise fall back to prop
   const statuses = dbStatuses.length > 0 ? dbStatuses : (statusesProp || []);
   
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
-  const [editingLead, setEditingLead] = useState<Lead | null>(null);
   
   // Derive filter values from parent props
   const statusFilter = currentStatusFilter === undefined ? "all" : currentStatusFilter.toString();
@@ -136,7 +138,7 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
   };
 
   const handleEditLead = (lead: Lead) => {
-    setEditingLead(lead);
+    router.push(`/crm/leads/${lead.id}`);
   };
 
   const getScoreColor = (score: number) => {
@@ -233,32 +235,34 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
                 ))}
               </select>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Assigned To
-              </label>
-              <select
-                value={assignedFilter}
-                onChange={(e) => handleAssignedToFilterChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={loading}
-              >
-                <option value="all">All Users</option>
-                {assignedToUsers ? (
-                  assignedToUsers.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.username}
-                    </option>
-                  ))
-                ) : (
-                  <>
-                    <option value="me">Me</option>
-                    <option value="john">John Doe</option>
-                    <option value="jane">Jane Smith</option>
-                  </>
-                )}
-              </select>
-            </div>
+            {isAdmin && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Assigned To
+                </label>
+                <select
+                  value={assignedFilter}
+                  onChange={(e) => handleAssignedToFilterChange(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={loading}
+                >
+                  <option value="all">All Users</option>
+                  {assignedToUsers ? (
+                    assignedToUsers.map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.username}
+                      </option>
+                    ))
+                  ) : (
+                    <>
+                      <option value="me">Me</option>
+                      <option value="john">John Doe</option>
+                      <option value="jane">Jane Smith</option>
+                    </>
+                  )}
+                </select>
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Location
@@ -479,23 +483,6 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
           </div>
         </Card>
       </div>
-      {/* Edit Lead Modal */}
-      {editingLead && (
-        <LeadEditModal
-          lead={editingLead as any}
-          isOpen={!!editingLead}
-          onClose={() => setEditingLead(null)}
-          onSave={(updatedLead) => {
-            setEditingLead(null);
-            // Call the parent callback to refresh leads
-            if (onLeadUpdated) {
-              onLeadUpdated();
-            }
-          }}
-          statuses={statuses}
-          sources={sources}
-        />
-      )}
     </div>
   );
 };

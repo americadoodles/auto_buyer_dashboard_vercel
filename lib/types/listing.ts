@@ -39,6 +39,7 @@ export type Listing = {
   updated_at?: string;
   updated_by?: string;
   images?: string[];
+  mmr?: number;
 };
 
 export type SortConfig = {
@@ -64,6 +65,7 @@ export type ListingUpdate = {
   miles?: number;
   location?: string;
   images?: string[];
+  mmr?: number;
 };
 
 export type ListingActivity = {

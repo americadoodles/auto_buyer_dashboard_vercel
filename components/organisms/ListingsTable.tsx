@@ -52,7 +52,7 @@ export const ListingsTable: React.FC<ListingsTableProps> = ({
   const handleSort = (key: keyof Listing | 'decision_status' | 'decision_reasons') => {
     onSort(key);
   };
-
+  console.log('listings: ', listings)
   const handleEditListing = (listing: Listing) => {
     setEditingListing(listing);
   };

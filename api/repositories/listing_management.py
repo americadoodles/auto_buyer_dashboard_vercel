@@ -124,7 +124,7 @@ def get_listing_by_id(listing_id: int) -> Optional[ListingOut]:
                         l.location, l.buyer_id, l.payload, l.created_at,
                         l.notes, l.condition_rating, l.interior_color, l.exterior_color,
                         l.transmission, l.fuel_type, l.drivetrain, l.engine_size, l.body_style,
-                        l.updated_at, l.updated_by,
+                        l.updated_at, l.updated_by, l.mmr,
                         COALESCE(l.images, ARRAY[]::text[]) as images,
                         v.year, v.make, v.model, v.trim,
                         u.username as buyer_username,
@@ -166,15 +166,16 @@ def get_listing_by_id(listing_id: int) -> Optional[ListingOut]:
                         body_style=result[19],
                         updated_at=result[20],
                         updated_by=result[21],
-                        images=result[22] or [],
-                        year=result[23],
-                        make=result[24],
-                        model=result[25],
-                        trim=result[26],
-                        buyer_username=result[27],
-                        score=result[28],
-                        buyMax=result[29],
-                        reasonCodes=result[30] or []
+                        mmr=float(result[22]) if result[22] is not None else None,
+                        images=result[23] or [],
+                        year=result[24],
+                        make=result[25],
+                        model=result[26],
+                        trim=result[27],
+                        buyer_username=result[28],
+                        score=result[29],
+                        buyMax=result[30],
+                        reasonCodes=result[31] or []
                     )
                 
         except Exception as e:

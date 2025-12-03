@@ -507,6 +507,22 @@ export class ApiService {
       message?: string;
     }>(response);
   }
+
+  static async getChartDistribution(type: 'sourcing-activities' | 'car-categories' | 'states-regions'): Promise<{
+    data: Array<{ name: string; value: number }>;
+    success: boolean;
+    message?: string;
+  }> {
+    const response = await fetch(`${BACKEND_URL}/chart/${type}`, {
+      headers: this.authHeaders(),
+    });
+
+    return this.handleResponse<{
+      data: Array<{ name: string; value: number }>;
+      success: boolean;
+      message?: string;
+    }>(response);
+  }
 }
 
 // Helper function to make API calls using unified ApiService

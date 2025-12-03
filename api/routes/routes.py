@@ -5,7 +5,10 @@ from ..schemas.listing import ListingIn, ListingOut, ListingScoreIn
 from ..schemas.notify import NotifyItem, NotifyResponse
 from ..schemas.scoring import ScoreResponse
 from ..schemas.kpi import KpiResponse, KpiMetrics
-from ..repositories.repositories import ingest_listings, list_listings, list_listings_by_buyer, get_buyer_stats, update_cached_score, insert_score, get_trends_data, get_kpi_metrics
+from ..schemas.chart import ChartDistributionResponse, DistributionItem
+from ..repositories.repositories import ingest_listings, list_listings, list_listings_by_buyer, get_buyer_stats, update_cached_score, insert_score
+from ..repositories.kpi_repository import get_trends_data, get_kpi_metrics
+from ..repositories.chart_repository import get_sourcing_activities_per_agent, get_car_categories_performance, get_states_regions_performance
 from ..core.auth import get_current_user
 from ..schemas.user import UserOut
 from ..services.services import score_listing, notify as do_notify
@@ -18,6 +21,7 @@ score_router = APIRouter(prefix="/score", tags=["score"])
 notify_router = APIRouter(prefix="/notify", tags=["notify"])
 trends_router = APIRouter(prefix="/trends", tags=["trends"])
 kpi_router = APIRouter(prefix="/kpi", tags=["kpi"])
+chart_router = APIRouter(prefix="/chart", tags=["chart"])
 
 # Ingest routes
 @ingest_router.post("", include_in_schema=False, response_model=List[ListingOut])  # /api/ingest
@@ -106,4 +110,47 @@ def get_kpi_metrics_endpoint(current_user: UserOut = Depends(get_current_user)):
             ),
             success=False,
             message=f"Error calculating KPI metrics: {str(e)}"
+        )
+
+# Chart distribution routes
+@chart_router.get("/sourcing-activities", response_model=ChartDistributionResponse)
+def get_sourcing_activities_chart(current_user: UserOut = Depends(get_current_user)):
+    """Get sourcing activities per agent for chart"""
+    try:
+        data = get_sourcing_activities_per_agent()
+        distribution_items = [DistributionItem(name=item["name"], value=item["value"]) for item in data]
+        return ChartDistributionResponse(data=distribution_items, success=True)
+    except Exception as e:
+        return ChartDistributionResponse(
+            data=[],
+            success=False,
+            message=f"Error fetching sourcing activities: {str(e)}"
+        )
+
+@chart_router.get("/car-categories", response_model=ChartDistributionResponse)
+def get_car_categories_chart(current_user: UserOut = Depends(get_current_user)):
+    """Get car categories performance for chart"""
+    try:
+        data = get_car_categories_performance()
+        distribution_items = [DistributionItem(name=item["name"], value=item["value"]) for item in data]
+        return ChartDistributionResponse(data=distribution_items, success=True)
+    except Exception as e:
+        return ChartDistributionResponse(
+            data=[],
+            success=False,
+            message=f"Error fetching car categories: {str(e)}"
+        )
+
+@chart_router.get("/states-regions", response_model=ChartDistributionResponse)
+def get_states_regions_chart(current_user: UserOut = Depends(get_current_user)):
+    """Get states/regions performance for chart"""
+    try:
+        data = get_states_regions_performance()
+        distribution_items = [DistributionItem(name=item["name"], value=item["value"]) for item in data]
+        return ChartDistributionResponse(data=distribution_items, success=True)
+    except Exception as e:
+        return ChartDistributionResponse(
+            data=[],
+            success=False,
+            message=f"Error fetching states/regions: {str(e)}"
         )

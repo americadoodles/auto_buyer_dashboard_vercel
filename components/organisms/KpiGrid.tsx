@@ -88,6 +88,8 @@ export const KpiGrid: React.FC = () => {
         trend={isLoading || !trendsData ? undefined : formatTrend(trendsData.average_profit.trend)}
         trendUp={trendsData?.average_profit.trend_up}
         color="blue"
+        sparklineData={chartData?.averageProfitPerUnit}
+        sparklineColor="#3b82f6"
       />
       <KpiCard 
         label="Lead to Purchase Time" 
@@ -96,6 +98,8 @@ export const KpiGrid: React.FC = () => {
         trend={isLoading || !trendsData ? undefined : formatTrend(trendsData.total_listings.trend)}
         trendUp={!trendsData?.total_listings.trend_up} // Inverted: more listings = longer lead time
         color="green"
+        sparklineData={chartData?.leadToPurchaseTime}
+        sparklineColor="#10b981"
       />
       <KpiCard 
         label="Aged Inventory" 
@@ -104,6 +108,8 @@ export const KpiGrid: React.FC = () => {
         trend={isLoading || !trendsData ? undefined : formatTrend(trendsData.aged_inventory.trend)}
         trendUp={trendsData?.aged_inventory.trend_up}
         color="amber"
+        sparklineData={chartData?.agedInventory}
+        sparklineColor="#f59e0b"
       />
       <KpiCard 
         label="Total Listings" 
@@ -112,6 +118,8 @@ export const KpiGrid: React.FC = () => {
         trend={isLoading || !trendsData ? undefined : formatTrend(trendsData.total_listings.trend)}
         trendUp={trendsData?.total_listings.trend_up}
         color="purple"
+        sparklineData={chartData?.totalListings}
+        sparklineColor="#8b5cf6"
       />
     </div>
   );

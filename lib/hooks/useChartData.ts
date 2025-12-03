@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { TimeRange, getDateRangeFromTimeRange } from '../../components/charts/ChartTimeRangePicker';
+import { ApiService } from '../services/api';
 
 interface ChartDataPoint {
   date: string;
@@ -11,6 +12,10 @@ interface ChartData {
   conversionRate: number[];
   activeBuyersGrowth: number[];
   leadsToPurchases: number[];
+  averageProfitPerUnit: number[];
+  leadToPurchaseTime: number[];
+  agedInventory: number[];
+  totalListings: number[];
   profitOverTime: ChartDataPoint[];
   weeklyListingsVolume: ChartDataPoint[];
   buyerActivityPerDay: ChartDataPoint[];
@@ -64,29 +69,36 @@ export const useChartData = (timeRange: TimeRange = '1w') => {
         const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
         const days = Math.max(7, daysDiff); // Minimum 7 days
 
-        // TODO: Replace with actual API calls
-        // For now, generate mock data
+        // Fetch real distribution data from API
+        const [sourcingActivities, carCategories, statesRegions] = await Promise.all([
+          ApiService.getChartDistribution('sourcing-activities').catch(() => ({ data: [], success: false })),
+          ApiService.getChartDistribution('car-categories').catch(() => ({ data: [], success: false })),
+          ApiService.getChartDistribution('states-regions').catch(() => ({ data: [], success: false })),
+        ]);
+
+        // Generate mock data for time-series (TODO: Replace with actual API calls)
+        const profitOverTimeData = generateMockDataPoints(startDate, endDate, 50000, 0.25);
+        const weeklyListingsData = generateMockDataPoints(startDate, endDate, 120, 0.3);
+        
         const chartData: ChartData = {
           // Sparkline data (based on time range)
           dailyActivities: generateMockTimeSeries(days, 45, 0.3),
           conversionRate: generateMockTimeSeries(days, 12, 0.15).map(v => Math.min(100, Math.round(v))),
           activeBuyersGrowth: generateMockTimeSeries(days, 25, 0.25),
           leadsToPurchases: generateMockTimeSeries(days, 8, 0.3),
+          averageProfitPerUnit: profitOverTimeData.map(d => Math.round(d.value)),
+          leadToPurchaseTime: generateMockTimeSeries(days, 12, 0.2).map(v => Math.round(v * 10) / 10), // Days with decimal
+          agedInventory: generateMockTimeSeries(days, 15, 0.3),
+          totalListings: weeklyListingsData.map(d => Math.round(d.value)),
 
           // Time-series data (based on time range)
-          profitOverTime: generateMockDataPoints(startDate, endDate, 50000, 0.25),
-          weeklyListingsVolume: generateMockDataPoints(startDate, endDate, 120, 0.3),
+          profitOverTime: profitOverTimeData,
+          weeklyListingsVolume: weeklyListingsData,
           buyerActivityPerDay: generateMockDataPoints(startDate, endDate, 35, 0.2),
           leadToPurchaseFunnel: generateMockDataPoints(startDate, endDate, 15, 0.25),
 
-          // Distribution data
-          sourcingActivitiesPerAgent: [
-            { name: 'John Doe', value: 145 },
-            { name: 'Jane Smith', value: 132 },
-            { name: 'Mike Johnson', value: 128 },
-            { name: 'Sarah Williams', value: 115 },
-            { name: 'Tom Brown', value: 98 },
-          ],
+          // Distribution data - from real API
+          sourcingActivitiesPerAgent: sourcingActivities.data || [],
           leadSourcePerformance: [
             { name: 'Website', value: 245 },
             { name: 'Referral', value: 189 },
@@ -94,20 +106,8 @@ export const useChartData = (timeRange: TimeRange = '1w') => {
             { name: 'Email Campaign', value: 134 },
             { name: 'Direct', value: 98 },
           ],
-          carCategoriesPerformance: [
-            { name: 'Sedan', value: 342 },
-            { name: 'SUV', value: 298 },
-            { name: 'Truck', value: 187 },
-            { name: 'Coupe', value: 134 },
-            { name: 'Convertible', value: 89 },
-          ],
-          statesRegions: [
-            { name: 'California', value: 456 },
-            { name: 'Texas', value: 389 },
-            { name: 'Florida', value: 312 },
-            { name: 'New York', value: 267 },
-            { name: 'Arizona', value: 198 },
-          ],
+          carCategoriesPerformance: carCategories.data || [],
+          statesRegions: statesRegions.data || [],
         };
 
         setData(chartData);

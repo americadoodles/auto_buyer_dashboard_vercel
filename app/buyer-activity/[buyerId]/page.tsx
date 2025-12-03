@@ -548,9 +548,38 @@ export default function BuyerActivityPage() {
                 <p className="text-gray-500">
                   {backendOk === false 
                     ? "Cannot load data - backend server is not running."
+                    : sortedListings.length === 0 && (searchTerm || statusFilter || makeFilter)
+                    ? "No listings match your current filters. Try clearing the filters."
                     : "This buyer hasn't sourced any vehicle listings yet."
                   }
                 </p>
+                {sortedListings.length === 0 && (searchTerm || statusFilter || makeFilter) && (
+                  <Button
+                    onClick={resetFilters}
+                    variant="outline"
+                    size="sm"
+                    className="mt-4"
+                  >
+                    Clear Filters
+                  </Button>
+                )}
+              </div>
+            ) : sortedListings.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Car className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No listings match your filters</h3>
+                <p className="text-gray-500 mb-4">
+                  {listings.length} listing{listings.length !== 1 ? 's' : ''} found, but none match your current search or filter criteria.
+                </p>
+                <Button
+                  onClick={resetFilters}
+                  variant="outline"
+                  size="sm"
+                >
+                  Clear Filters
+                </Button>
               </div>
             ) : sortedListings.length === 0 ? (
               <div className="text-center py-12">
@@ -594,5 +623,6 @@ export default function BuyerActivityPage() {
           </div>
         </div>
       </div>
+    </div>
   );
 }

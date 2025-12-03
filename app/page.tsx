@@ -155,18 +155,21 @@ export default function Page() {
             {statCards.map((card, index) => {
               const Icon = card.icon;
               return (
-                <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                  <div className="flex items-center">
-                    <div className={`p-3 rounded-lg ${card.color}`}>
-                      <Icon className="w-6 h-6 text-white" />
+                <Link
+                  key={index}
+                  href={action.href}
+                  className="group p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className={`p-2 rounded-lg ${action.color}`}>
+                      <Icon className="w-5 h-5" />
                     </div>
                     <div className="ml-4">
                       <p className="text-sm font-medium text-gray-600">{card.title}</p>
                       <p className="text-2xl font-bold text-gray-900">{card.value}</p>
                     </div>
                   </div>
-                  <p className="text-sm text-gray-500 mt-2">{card.description}</p>
-                </div>
+                </Link>
               );
             })}
           </div>
@@ -202,6 +205,142 @@ export default function Page() {
             </div>
           </div>
         )}
+
+        {/* Time-Series Charts (Spline Area) */}
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-bold text-gray-900">Analytics</h2>
+            <ChartTimeRangePicker value={timeRange} onChange={setTimeRange} />
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Profit Over Time</h3>
+            {chartLoading ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              </div>
+            ) : chartData?.profitOverTime ? (
+              <SplineAreaChart
+                series={[{
+                  name: 'Profit',
+                  data: chartData.profitOverTime.map(d => d.value)
+                }]}
+                categories={chartData.profitOverTime.map(d => {
+                  const date = new Date(d.date);
+                  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                })}
+                height={300}
+                colors={['#3b82f6']}
+              />
+            ) : null}
+          </Card>
+
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Weekly Listings Volume</h3>
+            {chartLoading ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              </div>
+            ) : chartData?.weeklyListingsVolume ? (
+              <SplineAreaChart
+                series={[{
+                  name: 'Listings',
+                  data: chartData.weeklyListingsVolume.map(d => d.value)
+                }]}
+                categories={chartData.weeklyListingsVolume.map(d => {
+                  const date = new Date(d.date);
+                  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                })}
+                height={300}
+                colors={['#10b981']}
+              />
+            ) : null}
+          </Card>
+
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Buyer Activity Per Day</h3>
+            {chartLoading ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              </div>
+            ) : chartData?.buyerActivityPerDay ? (
+              <SplineAreaChart
+                series={[{
+                  name: 'Activity',
+                  data: chartData.buyerActivityPerDay.map(d => d.value)
+                }]}
+                categories={chartData.buyerActivityPerDay.map(d => {
+                  const date = new Date(d.date);
+                  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                })}
+                height={300}
+                colors={['#8b5cf6']}
+              />
+            ) : null}
+            </Card>
+          </div>
+        </div>
+
+        {/* Distribution Charts (Bar) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Sourcing Activities per Agent</h3>
+            {chartLoading ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              </div>
+            ) : chartData?.sourcingActivitiesPerAgent ? (
+              <BarChart
+                series={[{
+                  name: 'Activities',
+                  data: chartData.sourcingActivitiesPerAgent.map(item => item.value)
+                }]}
+                categories={chartData.sourcingActivitiesPerAgent.map(item => item.name)}
+                height={300}
+                colors={['#3b82f6']}
+              />
+            ) : null}
+          </Card>
+
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Car Categories Performance</h3>
+            {chartLoading ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              </div>
+            ) : chartData?.carCategoriesPerformance ? (
+              <BarChart
+                series={[{
+                  name: 'Count',
+                  data: chartData.carCategoriesPerformance.map(item => item.value)
+                }]}
+                categories={chartData.carCategoriesPerformance.map(item => item.name)}
+                height={300}
+                colors={['#10b981']}
+              />
+            ) : null}
+          </Card>
+
+          <Card className="p-6 lg:col-span-2">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">States/Regions Performance</h3>
+            {chartLoading ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              </div>
+            ) : chartData?.statesRegions ? (
+              <BarChart
+                series={[{
+                  name: 'Count',
+                  data: chartData.statesRegions.map(item => item.value)
+                }]}
+                categories={chartData.statesRegions.map(item => item.name)}
+                height={300}
+                colors={['#8b5cf6']}
+              />
+            ) : null}
+          </Card>
+        </div>
 
         {/* Time-Series Charts (Spline Area) */}
         <div className="space-y-6">

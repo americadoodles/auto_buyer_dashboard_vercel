@@ -8,7 +8,7 @@ import { TableRow } from '../molecules/TableRow';
 import { Badge } from '../atoms/Badge';
 import { Button } from '../atoms/Button';
 import { Icon } from '../atoms/Icon';
-import { SplineAreaChart, BarChart } from '../charts';
+import { SplineAreaChart, BarChart, ChartTimeRangePicker, TimeRange } from '../charts';
 import { useChartData } from '../../lib/hooks/useChartData';
 
 interface CRMStats {
@@ -56,7 +56,8 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
   highScoringVehicles,
   leadConversionRate
 }) => {
-  const { data: chartData, loading: chartLoading } = useChartData();
+  const [timeRange, setTimeRange] = React.useState<TimeRange>('1w');
+  const { data: chartData, loading: chartLoading } = useChartData(timeRange);
   const kpiData: Array<{
     title: string;
     value: string | number;
@@ -148,9 +149,15 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Lead → Purchase Funnel</h2>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-bold text-gray-900">Analytics</h2>
+          <ChartTimeRangePicker value={timeRange} onChange={setTimeRange} />
+        </div>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Lead → Purchase Funnel</h3>
           {chartLoading ? (
             <div className="flex items-center justify-center h-64">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -171,8 +178,8 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
           ) : null}
         </Card>
 
-        <Card className="p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Lead Source Performance</h2>
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Lead Source Performance</h3>
           {chartLoading ? (
             <div className="flex items-center justify-center h-64">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -187,8 +194,9 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
               height={300}
               colors={['#10b981']}
             />
-          ) : null}
-        </Card>
+            ) : null}
+          </Card>
+        </div>
       </div>
 
       {/* Main Content Grid */}

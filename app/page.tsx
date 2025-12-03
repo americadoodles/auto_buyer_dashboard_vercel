@@ -20,7 +20,7 @@ import UserActivityCard from '../components/organisms/UserActivityCard';
 import ActivityHeatmap from '../components/organisms/ActivityHeatmap';
 import { useActivityHeatmap } from '../lib/hooks/useActivityHeatmap';
 import { useChartData } from '../lib/hooks/useChartData';
-import { SplineAreaChart, BarChart } from '../components/charts';
+import { SplineAreaChart, BarChart, ChartTimeRangePicker, TimeRange } from '../components/charts';
 import { Card } from '../components/molecules/Card';
 
 interface StatCard {
@@ -36,7 +36,8 @@ export default function Page() {
   const { data: listings, backendOk } = useListings();
   const { totalUsers, pendingRequests, activeRoles, totalListings, loading: statsLoading, error: statsError } = useAdminStats();
   const { data: heatmapData, loading: heatmapLoading, error: heatmapError } = useActivityHeatmap();
-  const { data: chartData, loading: chartLoading } = useChartData();
+  const [timeRange, setTimeRange] = React.useState<TimeRange>('1w');
+  const { data: chartData, loading: chartLoading } = useChartData(timeRange);
 
   // Dynamic stats based on real data
   const statCards: StatCard[] = [
@@ -198,9 +199,15 @@ export default function Page() {
         </div>
 
         {/* Time-Series Charts (Spline Area) */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Profit Over Time</h2>
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-bold text-gray-900">Analytics</h2>
+            <ChartTimeRangePicker value={timeRange} onChange={setTimeRange} />
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Profit Over Time</h3>
             {chartLoading ? (
               <div className="flex items-center justify-center h-64">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -221,8 +228,8 @@ export default function Page() {
             ) : null}
           </Card>
 
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Weekly Listings Volume</h2>
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Weekly Listings Volume</h3>
             {chartLoading ? (
               <div className="flex items-center justify-center h-64">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -243,8 +250,8 @@ export default function Page() {
             ) : null}
           </Card>
 
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Buyer Activity Per Day</h2>
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Buyer Activity Per Day</h3>
             {chartLoading ? (
               <div className="flex items-center justify-center h-64">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -263,13 +270,14 @@ export default function Page() {
                 colors={['#8b5cf6']}
               />
             ) : null}
-          </Card>
+            </Card>
+          </div>
         </div>
 
         {/* Distribution Charts (Bar) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Sourcing Activities per Agent</h2>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Sourcing Activities per Agent</h3>
             {chartLoading ? (
               <div className="flex items-center justify-center h-64">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -288,7 +296,7 @@ export default function Page() {
           </Card>
 
           <Card className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Car Categories Performance</h2>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Car Categories Performance</h3>
             {chartLoading ? (
               <div className="flex items-center justify-center h-64">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -307,7 +315,7 @@ export default function Page() {
           </Card>
 
           <Card className="p-6 lg:col-span-2">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">States/Regions Performance</h2>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">States/Regions Performance</h3>
             {chartLoading ? (
               <div className="flex items-center justify-center h-64">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>

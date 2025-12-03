@@ -20,5 +20,9 @@ export { getSplineAreaConfig } from './config/splineArea';
 export { getBarConfig } from './config/bar';
 export { getDonutConfig } from './config/donut';
 export { getSparklineConfig } from './config/sparkline';
-export { chartTheme, chartColors, baseChartOptions } from './config/theme';
+export { chartTheme, chartColors, baseChartOptions, formatInteger, formatCurrencyInteger } from './config/theme';
+
+// Export time range picker
+export { ChartTimeRangePicker, getDateRangeFromTimeRange } from './ChartTimeRangePicker';
+export type { TimeRange } from './ChartTimeRangePicker';
 

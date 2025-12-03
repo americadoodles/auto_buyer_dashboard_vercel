@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { TimeRange, getDateRangeFromTimeRange } from '../../components/charts/ChartTimeRangePicker';
 
 interface ChartDataPoint {
   date: string;
@@ -20,33 +21,35 @@ interface ChartData {
   statesRegions: { name: string; value: number }[];
 }
 
-// Generate mock data for charts
+// Generate mock data for charts (returns integers only)
 const generateMockTimeSeries = (days: number, baseValue: number, variance: number = 0.2): number[] => {
   return Array.from({ length: days }, (_, i) => {
     const trend = Math.sin((i / days) * Math.PI * 2) * variance;
     const random = (Math.random() - 0.5) * variance;
-    return Math.max(0, baseValue * (1 + trend + random));
+    return Math.round(Math.max(0, baseValue * (1 + trend + random)));
   });
 };
 
-const generateMockDataPoints = (days: number, baseValue: number, variance: number = 0.2): ChartDataPoint[] => {
-  const dates = Array.from({ length: days }, (_, i) => {
-    const date = new Date();
-    date.setDate(date.getDate() - (days - i - 1));
-    return date.toISOString().split('T')[0];
-  });
+const generateMockDataPoints = (startDate: Date, endDate: Date, baseValue: number, variance: number = 0.2): ChartDataPoint[] => {
+  const dates: string[] = [];
+  const currentDate = new Date(startDate);
+  
+  while (currentDate <= endDate) {
+    dates.push(currentDate.toISOString().split('T')[0]);
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
 
   return dates.map((date, i) => {
-    const trend = Math.sin((i / days) * Math.PI * 2) * variance;
+    const trend = Math.sin((i / dates.length) * Math.PI * 2) * variance;
     const random = (Math.random() - 0.5) * variance;
     return {
       date,
-      value: Math.max(0, baseValue * (1 + trend + random)),
+      value: Math.round(Math.max(0, baseValue * (1 + trend + random))),
     };
   });
 };
 
-export const useChartData = () => {
+export const useChartData = (timeRange: TimeRange = '1w') => {
   const [data, setData] = useState<ChartData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -57,20 +60,24 @@ export const useChartData = () => {
         setLoading(true);
         setError(null);
 
+        const { startDate, endDate } = getDateRangeFromTimeRange(timeRange);
+        const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+        const days = Math.max(7, daysDiff); // Minimum 7 days
+
         // TODO: Replace with actual API calls
         // For now, generate mock data
         const chartData: ChartData = {
-          // Sparkline data (last 30 days)
-          dailyActivities: generateMockTimeSeries(30, 45, 0.3),
-          conversionRate: generateMockTimeSeries(30, 12, 0.15).map(v => Math.min(100, v)),
-          activeBuyersGrowth: generateMockTimeSeries(30, 25, 0.25),
-          leadsToPurchases: generateMockTimeSeries(30, 8, 0.3),
+          // Sparkline data (based on time range)
+          dailyActivities: generateMockTimeSeries(days, 45, 0.3),
+          conversionRate: generateMockTimeSeries(days, 12, 0.15).map(v => Math.min(100, Math.round(v))),
+          activeBuyersGrowth: generateMockTimeSeries(days, 25, 0.25),
+          leadsToPurchases: generateMockTimeSeries(days, 8, 0.3),
 
-          // Time-series data (last 90 days)
-          profitOverTime: generateMockDataPoints(90, 50000, 0.25),
-          weeklyListingsVolume: generateMockDataPoints(90, 120, 0.3),
-          buyerActivityPerDay: generateMockDataPoints(90, 35, 0.2),
-          leadToPurchaseFunnel: generateMockDataPoints(90, 15, 0.25),
+          // Time-series data (based on time range)
+          profitOverTime: generateMockDataPoints(startDate, endDate, 50000, 0.25),
+          weeklyListingsVolume: generateMockDataPoints(startDate, endDate, 120, 0.3),
+          buyerActivityPerDay: generateMockDataPoints(startDate, endDate, 35, 0.2),
+          leadToPurchaseFunnel: generateMockDataPoints(startDate, endDate, 15, 0.25),
 
           // Distribution data
           sourcingActivitiesPerAgent: [

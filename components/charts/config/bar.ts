@@ -1,5 +1,5 @@
 import { ApexOptions } from 'apexcharts';
-import { baseChartOptions, chartColors } from './theme';
+import { baseChartOptions, chartColors, formatInteger } from './theme';
 
 /**
  * Base configuration for Bar charts
@@ -25,12 +25,12 @@ export const getBarConfig = (customOptions?: Partial<ApexOptions>): ApexOptions 
     },
     dataLabels: {
       ...baseChartOptions.dataLabels,
-      enabled: false,
-      offsetY: -20,
-      style: {
-        ...baseChartOptions.dataLabels?.style,
-        fontSize: '12px',
-        colors: [chartColors.text.primary],
+      enabled: false, // Keep disabled for clean look
+    },
+    tooltip: {
+      ...baseChartOptions.tooltip,
+      y: {
+        formatter: (value: number) => formatInteger(value),
       },
     },
     ...customOptions,

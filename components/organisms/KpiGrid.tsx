@@ -5,12 +5,14 @@ import { useListings } from '../../lib/hooks/useListings';
 import { useKpiMetrics } from '../../lib/hooks/useKpiMetrics';
 import { useTrendsApi } from '../../lib/hooks/useTrendsApi';
 import { useChartData } from '../../lib/hooks/useChartData';
+import { TimeRange } from '../charts';
 
 export const KpiGrid: React.FC = () => {
   const { data: listings, backendOk } = useListings();
   const { metrics, loading: kpiLoading, error: kpiError } = useKpiMetrics();
   const { trends: trendsData, loading: trendsLoading, error: trendsError } = useTrendsApi(30);
-  const { data: chartData, loading: chartLoading } = useChartData();
+  // Use 1 week default for sparklines
+  const { data: chartData, loading: chartLoading } = useChartData('1w');
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {

@@ -76,12 +76,21 @@ export const baseChartOptions = {
       fontSize: '12px',
       fontFamily: 'inherit',
     },
+    y: {
+      formatter: (value: number) => {
+        return Math.round(value).toString();
+      },
+    },
   },
   dataLabels: {
+    enabled: false, // Disable data labels by default for cleaner charts
     style: {
       fontSize: '12px',
       fontFamily: 'inherit',
       fontWeight: 500,
+    },
+    formatter: (value: number) => {
+      return Math.round(value).toString();
     },
   },
   xaxis: {
@@ -91,6 +100,8 @@ export const baseChartOptions = {
         fontSize: '12px',
         fontFamily: 'inherit',
       },
+      rotate: -45,
+      rotateAlways: false,
     },
     axisBorder: {
       color: chartColors.grid,
@@ -106,7 +117,30 @@ export const baseChartOptions = {
         fontSize: '12px',
         fontFamily: 'inherit',
       },
+      formatter: (value: number) => {
+        // Format as integer (no decimals)
+        return Math.round(value).toString();
+      },
     },
   },
+};
+
+/**
+ * Integer formatter for tooltips and data labels
+ */
+export const formatInteger = (value: number): string => {
+  return Math.round(value).toString();
+};
+
+/**
+ * Currency formatter for tooltips (integers only)
+ */
+export const formatCurrencyInteger = (value: number): string => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(Math.round(value));
 };
 

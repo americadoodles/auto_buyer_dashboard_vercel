@@ -1,5 +1,5 @@
 import { ApexOptions } from 'apexcharts';
-import { baseChartOptions, chartColors } from './theme';
+import { baseChartOptions, chartColors, formatInteger } from './theme';
 
 /**
  * Base configuration for Sparkline charts
@@ -46,6 +46,7 @@ export const getSparklineConfig = (customOptions?: Partial<ApexOptions>): ApexOp
         title: {
           formatter: () => '',
         },
+        formatter: (value: number) => formatInteger(value),
       },
     },
     xaxis: {

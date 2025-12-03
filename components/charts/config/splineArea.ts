@@ -1,5 +1,5 @@
 import { ApexOptions } from 'apexcharts';
-import { baseChartOptions, chartColors } from './theme';
+import { baseChartOptions, chartColors, formatInteger } from './theme';
 
 /**
  * Base configuration for Spline Area charts
@@ -30,10 +30,16 @@ export const getSplineAreaConfig = (customOptions?: Partial<ApexOptions>): ApexO
       },
     },
     markers: {
-      size: 4,
-      strokeWidth: 2,
+      size: 0, // Hide markers for cleaner look
+      strokeWidth: 0,
       hover: {
-        size: 6,
+        size: 4,
+      },
+    },
+    tooltip: {
+      ...baseChartOptions.tooltip,
+      y: {
+        formatter: (value: number) => formatInteger(value),
       },
     },
     ...customOptions,

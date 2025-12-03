@@ -13,7 +13,7 @@ export interface SparklineChartProps {
   height?: string | number;
   width?: string | number;
   colors?: string[];
-  type?: 'line' | 'area' | 'column';
+  type?: 'line' | 'area' | 'bar';
   customOptions?: Partial<ApexOptions>;
   className?: string;
 }

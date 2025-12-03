@@ -27,13 +27,8 @@ export const useActivityHeatmap = () => {
 
   useEffect(() => {
     const fetchActivityHeatmap = async () => {
-      // Only fetch from API if user is admin, otherwise use mock data
-      const isAdmin = user?.role?.toLowerCase() === 'admin';
-      
-      if (!isAdmin) {
-        // For non-admin users, use mock data directly without API call
-        const mockData = generateMockData();
-        setData(mockData);
+      // Don't fetch if user is not loaded yet
+      if (!user) {
         setLoading(false);
         return;
       }
@@ -43,8 +38,17 @@ export const useActivityHeatmap = () => {
         setError(null);
         
         const baseUrl = (process.env.NEXT_PUBLIC_BACKEND_URL ?? '/api').replace(/\/+$/, '');
+        const isAdmin = user?.role?.toLowerCase() === 'admin';
         
-        const response = await fetch(`${baseUrl}/activity_heatmap`, {
+        // Build URL with buyer_id parameter for non-admin users
+        let url = `${baseUrl}/activity_heatmap`;
+        if (!isAdmin && user?.id) {
+          // For buyers, the backend will automatically filter by their user ID
+          // but we can explicitly pass it for clarity
+          url += `?buyer_id=${user.id}`;
+        }
+        
+        const response = await fetch(url, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('auth.token')}`,
           },
@@ -55,12 +59,13 @@ export const useActivityHeatmap = () => {
         }
 
         const result = await response.json();
+        console.log('result: ', result)
         setData(result);
       } catch (err: any) {
         console.error('Error fetching activity heatmap:', err);
         setError(err.message || 'Failed to fetch activity heatmap data');
         
-        // Generate mock data for development
+        // Generate mock data as fallback for development
         const mockData = generateMockData();
         setData(mockData);
       } finally {

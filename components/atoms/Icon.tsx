@@ -22,7 +22,9 @@ import {
   Calendar,
   Briefcase,
   XCircle,
-  DollarSign
+  DollarSign,
+  Car,
+  FileText
 } from 'lucide-react';
 
 interface IconProps {
@@ -56,6 +58,8 @@ const iconMap: Record<string, LucideIcon> = {
   'briefcase': Briefcase,
   'x-circle': XCircle,
   'dollar-sign': DollarSign,
+  'car': Car,
+  'file-text': FileText
 };
 
 export const Icon: React.FC<IconProps> = ({ 

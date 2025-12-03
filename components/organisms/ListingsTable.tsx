@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+'use client';
+
+import React from 'react';
+import { useRouter } from 'next/navigation';
 import { Listing } from '../../lib/types/listing';
 import { ListingsTableContent } from '../molecules/ListingsTableContent';
 import { Pagination } from '../molecules/Pagination';
 import { Badge } from '../atoms/Badge';
-import { ListingEditModal } from './ListingEditModal';
 import { formatCurrency, formatNumber } from '../../lib/utils/formatters';
 import { Gauge, Clock, Bell, Send, Workflow, Edit } from 'lucide-react';
 
@@ -48,20 +50,14 @@ export const ListingsTable: React.FC<ListingsTableProps> = ({
   isIndeterminate = false,
   onListingUpdated
 }) => {
-  const [editingListing, setEditingListing] = useState<Listing | null>(null);
+  const router = useRouter();
+  
   const handleSort = (key: keyof Listing | 'decision_status' | 'decision_reasons') => {
     onSort(key);
   };
-
+  
   const handleEditListing = (listing: Listing) => {
-    setEditingListing(listing);
-  };
-
-  const handleSaveListing = (updatedListing: Listing) => {
-    // Update the listing in parent state (no refetch needed)
-    if (onListingUpdated) {
-      onListingUpdated(updatedListing);
-    }
+    router.push(`/listings/${listing.id}`);
   };
 
   return (
@@ -190,16 +186,6 @@ export const ListingsTable: React.FC<ListingsTableProps> = ({
         onPageChange={onPageChange}
         onRowsPerPageChange={onRowsPerPageChange}
       />
-      
-      {/* Edit Modal */}
-      {editingListing && (
-        <ListingEditModal
-          listing={editingListing}
-          isOpen={!!editingListing}
-          onClose={() => setEditingListing(null)}
-          onSave={handleSaveListing}
-        />
-      )}
     </div>
   );
 };

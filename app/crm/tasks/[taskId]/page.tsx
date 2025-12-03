@@ -405,7 +405,6 @@ export default function TaskDetailPage() {
               </Button>
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">Task Details</h1>
-                <p className="text-gray-600 mt-2">View and manage task information</p>
               </div>
             </div>
             <div className="flex items-center space-x-2">

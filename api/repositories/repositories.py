@@ -355,7 +355,8 @@ def list_listings(
                         l.engine_size,
                         l.body_style,
                         l.updated_at,
-                        l.updated_by
+                        l.updated_by,
+                        l.mmr
                         FROM (
                         SELECT * FROM listings """ + where_clause + """
                         ) l
@@ -386,7 +387,7 @@ def list_listings(
                     results = cur.fetchall()
                     logging.info(f"Query returned {len(results)} raw results")
                     out: list[ListingOut] = []
-                    for rid, vehicle_key, vin, year, make, model, trim, miles, price, dom, source, location, buyer_id, images, buyer_username, score, buy_max, reason_codes, payload, notes, condition_rating, interior_color, exterior_color, transmission, fuel_type, drivetrain, engine_size, body_style, updated_at, updated_by in results:
+                    for rid, vehicle_key, vin, year, make, model, trim, miles, price, dom, source, location, buyer_id, images, buyer_username, score, buy_max, reason_codes, payload, notes, condition_rating, interior_color, exterior_color, transmission, fuel_type, drivetrain, engine_size, body_style, updated_at, updated_by, mmr in results:
                         # Extract decision data from payload if available
                         decision = None
                         status = ""
@@ -412,7 +413,8 @@ def list_listings(
                             engine_size=engine_size,
                             body_style=body_style,
                             updated_at=updated_at,
-                            updated_by=updated_by
+                            updated_by=updated_by,
+                            mmr=float(mmr) if mmr is not None else None
                         ))
                     logging.info(f"Returning {len(out)} processed listings")
                     return out
@@ -466,7 +468,8 @@ def list_listings_by_buyer(
                             l.engine_size,
                             l.body_style,
                             l.updated_at,
-                            l.updated_by
+                            l.updated_by,
+                            l.mmr
                         FROM listings l
                         LEFT JOIN vehicles v ON v.vehicle_key = l.vehicle_key
                         LEFT JOIN (
@@ -508,7 +511,7 @@ def list_listings_by_buyer(
                         source, location, buyer_id, images, buyer_username, score, buy_max,
                         reason_codes, created_at, payload, notes, condition_rating, interior_color,
                         exterior_color, transmission, fuel_type, drivetrain, engine_size,
-                        body_style, updated_at, updated_by
+                        body_style, updated_at, updated_by, mmr
                     ) in results:
                         
                         # Extract decision data from payload if available
@@ -551,7 +554,8 @@ def list_listings_by_buyer(
                             engine_size=engine_size,
                             body_style=body_style,
                             updated_at=updated_at,
-                            updated_by=updated_by
+                            updated_by=updated_by,
+                            mmr=float(mmr) if mmr is not None else None
                         ))
                     logging.info(f"Returning {len(out)} processed listings for buyer {buyer_id}")
                     return out

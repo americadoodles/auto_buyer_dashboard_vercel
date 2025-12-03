@@ -94,15 +94,15 @@ export default function BuyerActivityPage() {
           headers['Authorization'] = `Bearer ${token}`;
         }
         
-        const listingsResponse = await fetch(
+      const listingsResponse = await fetch(
           `${baseUrl}/listings/buyer/${buyerId}?${queryParams.toString()}`,
           { headers }
-        );
-        
+      );
+      
         if (listingsResponse.ok) {
           const listingsData = await listingsResponse.json();
           console.log('Fetched listings via fallback:', Array.isArray(listingsData) ? listingsData.length : 'non-array');
-          setListings(Array.isArray(listingsData) ? listingsData : []);
+      setListings(Array.isArray(listingsData) ? listingsData : []);
         } else {
           console.error('Failed to fetch listings:', listingsResponse.status, listingsResponse.statusText);
           setListings([]);
@@ -119,15 +119,15 @@ export default function BuyerActivityPage() {
           headers['Authorization'] = `Bearer ${token}`;
         }
         
-        const statsResponse = await fetch(
+      const statsResponse = await fetch(
           `${baseUrl}/listings/buyer/${buyerId}/stats?${queryParams.toString()}`,
           { headers }
-        );
-        
-        if (statsResponse.ok) {
-          const statsData = await statsResponse.json();
-          setBuyerStats(statsData || null);
-        } else {
+      );
+      
+      if (statsResponse.ok) {
+        const statsData = await statsResponse.json();
+        setBuyerStats(statsData || null);
+      } else {
           console.warn('Failed to fetch stats:', statsResponse.status);
           setBuyerStats(null);
         }
@@ -317,7 +317,7 @@ export default function BuyerActivityPage() {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6">
         {/* Header */}
         <div className="border-b border-gray-200 pb-6">
           <div className="flex items-center justify-between">
@@ -563,6 +563,23 @@ export default function BuyerActivityPage() {
                     Clear Filters
                   </Button>
                 )}
+              </div>
+            ) : sortedListings.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Car className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No listings match your filters</h3>
+                <p className="text-gray-500 mb-4">
+                  {listings.length} listing{listings.length !== 1 ? 's' : ''} found, but none match your current search or filter criteria.
+                </p>
+                <Button
+                  onClick={resetFilters}
+                  variant="outline"
+                  size="sm"
+                >
+                  Clear Filters
+                </Button>
               </div>
             ) : sortedListings.length === 0 ? (
               <div className="text-center py-12">

@@ -150,26 +150,24 @@ export default function Page() {
         )}
 
         {/* Stats Grid - Admin Only */}
+        {/* Stats Grid - Admin Only */}
         {isAdmin && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {statCards.map((card, index) => {
               const Icon = card.icon;
               return (
-                <Link
-                  key={index}
-                  href={action.href}
-                  className="group p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200"
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className={`p-2 rounded-lg ${action.color}`}>
-                      <Icon className="w-5 h-5" />
+                <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                  <div className="flex items-center">
+                    <div className={`p-3 rounded-lg ${card.color}`}>
+                      <Icon className="w-6 h-6 text-white" />
                     </div>
                     <div className="ml-4">
                       <p className="text-sm font-medium text-gray-600">{card.title}</p>
                       <p className="text-2xl font-bold text-gray-900">{card.value}</p>
                     </div>
                   </div>
-                </Link>
+                  <p className="text-sm text-gray-500 mt-2">{card.description}</p>
+                </div>
               );
             })}
           </div>

@@ -53,11 +53,24 @@ def update_listing(listing_id: int, update_data: ListingUpdate, updated_by: str)
                     
                     # Log the activity (don't fail if logging fails)
                     try:
+                        # Fetch username from users table
+                        username = updated_by  # Default to UUID if username not found
+                        try:
+                            cur.execute(
+                                "SELECT username FROM users WHERE id::text = %s",
+                                (updated_by,)
+                            )
+                            user_result = cur.fetchone()
+                            if user_result and user_result[0]:
+                                username = user_result[0]
+                        except Exception as username_error:
+                            logging.warning(f"Failed to fetch username for user {updated_by}: {str(username_error)}")
+                        
                         log_listing_activity(
                             listing_id=listing_id,
                             activity_type="edit",
                             created_by=updated_by,
-                            description=f"Listing updated by {updated_by}"
+                            description=f"Listing updated by {username}"
                         )
                     except Exception as log_error:
                         logging.warning(f"Failed to log activity for listing {listing_id}: {str(log_error)}")

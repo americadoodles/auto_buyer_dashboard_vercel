@@ -369,9 +369,6 @@ export default function DealDetailPage() {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Deal: {deal.name}</h1>
-              <p className="text-gray-600 mt-2">
-                Details and management for deal ID: {dealId}
-              </p>
             </div>
           </div>
           <div className="flex items-center space-x-2">

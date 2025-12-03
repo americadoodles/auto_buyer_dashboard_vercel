@@ -49,16 +49,16 @@ export const KpiCard: React.FC<KpiCardProps> = ({
      '#ef4444');
 
   return (
-    <div className={`rounded-xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-200 ${className}`}>
+    <div className={`rounded-xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden ${className}`}>
       <div className="flex items-center justify-between">
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <div className="flex items-center space-x-3 mb-3">
             {Icon && (
               <div className={`p-2 rounded-lg border ${colorClasses[color]}`}>
                 <Icon className="w-5 h-5" />
               </div>
             )}
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <div className="text-sm font-medium text-gray-600 mb-1">{label}</div>
               <div className="text-2xl font-bold text-gray-900">{String(value)}</div>
             </div>
@@ -80,12 +80,13 @@ export const KpiCard: React.FC<KpiCardProps> = ({
 
           {/* Sparkline Chart */}
           {sparklineData && sparklineData.length > 0 && (
-            <div className="mt-3 -mx-2">
+            <div className="mt-3 w-full overflow-hidden">
               <SparklineChart
                 series={sparklineSeries}
                 height={60}
                 width="100%"
                 colors={[defaultSparklineColor]}
+                className="w-full"
                 customOptions={{
                   chart: {
                     sparkline: {

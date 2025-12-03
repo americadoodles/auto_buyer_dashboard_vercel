@@ -53,11 +53,24 @@ def update_listing(listing_id: int, update_data: ListingUpdate, updated_by: str)
                     
                     # Log the activity (don't fail if logging fails)
                     try:
+                        # Fetch username from users table
+                        username = updated_by  # Default to UUID if username not found
+                        try:
+                            cur.execute(
+                                "SELECT username FROM users WHERE id::text = %s",
+                                (updated_by,)
+                            )
+                            user_result = cur.fetchone()
+                            if user_result and user_result[0]:
+                                username = user_result[0]
+                        except Exception as username_error:
+                            logging.warning(f"Failed to fetch username for user {updated_by}: {str(username_error)}")
+                        
                         log_listing_activity(
                             listing_id=listing_id,
                             activity_type="edit",
                             created_by=updated_by,
-                            description=f"Listing updated by {updated_by}"
+                            description=f"Listing updated by {username}"
                         )
                     except Exception as log_error:
                         logging.warning(f"Failed to log activity for listing {listing_id}: {str(log_error)}")
@@ -124,7 +137,7 @@ def get_listing_by_id(listing_id: int) -> Optional[ListingOut]:
                         l.location, l.buyer_id, l.payload, l.created_at,
                         l.notes, l.condition_rating, l.interior_color, l.exterior_color,
                         l.transmission, l.fuel_type, l.drivetrain, l.engine_size, l.body_style,
-                        l.updated_at, l.updated_by,
+                        l.updated_at, l.updated_by, l.mmr,
                         COALESCE(l.images, ARRAY[]::text[]) as images,
                         v.year, v.make, v.model, v.trim,
                         u.username as buyer_username,
@@ -166,15 +179,16 @@ def get_listing_by_id(listing_id: int) -> Optional[ListingOut]:
                         body_style=result[19],
                         updated_at=result[20],
                         updated_by=result[21],
-                        images=result[22] or [],
-                        year=result[23],
-                        make=result[24],
-                        model=result[25],
-                        trim=result[26],
-                        buyer_username=result[27],
-                        score=result[28],
-                        buyMax=result[29],
-                        reasonCodes=result[30] or []
+                        mmr=float(result[22]) if result[22] is not None else None,
+                        images=result[23] or [],
+                        year=result[24],
+                        make=result[25],
+                        model=result[26],
+                        trim=result[27],
+                        buyer_username=result[28],
+                        score=result[29],
+                        buyMax=result[30],
+                        reasonCodes=result[31] or []
                     )
                 
         except Exception as e:

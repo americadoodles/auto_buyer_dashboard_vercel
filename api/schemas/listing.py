@@ -63,6 +63,7 @@ class ListingOut(BaseModel):
     updated_at: Optional[datetime] = None
     updated_by: Optional[str] = None
     images: Optional[List[str]] = None
+    mmr: Optional[float] = None
 
 class ListingScoreIn(BaseModel):
     vehicle_key: str
@@ -88,6 +89,7 @@ class ListingUpdate(BaseModel):
     miles: Optional[int] = None
     location: Optional[str] = None
     images: Optional[List[str]] = None
+    mmr: Optional[float] = None
 
 class ListingActivityOut(BaseModel):
     """Schema for listing activity history"""

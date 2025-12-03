@@ -11,7 +11,7 @@ import { updateContact } from '../../../../lib/services/listingManagementApi';
 import { Lead, LeadStatus, LeadSource } from '../../../../lib/types/lead';
 import { useLeadStatuses, useLeadSources } from '../../../../lib/hooks/useLeads';
 import { VehicleContactCard } from '../../../../components/molecules/VehicleContactCard';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { useToast } from '../../../../hooks/useToast';
 
 export default function LeadDetailPage() {
@@ -176,9 +176,6 @@ export default function LeadDetailPage() {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Lead Details</h1>
-              <p className="text-gray-600 mt-2">
-                Lead ID: {leadId}
-              </p>
             </div>
           </div>
         </div>
@@ -356,6 +353,22 @@ export default function LeadDetailPage() {
               />
             </div>
           </div>
+          {lead.listing_id && (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-2">
+              <h4 className="text-md font-semibold text-gray-900 border-b pb-2">Related Listing</h4>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  onClick={() => router.push(`/listings/${lead.listing_id}`)}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-black border-blue-600"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  View Listing
+                </Button>
+                </div>
+            </div>
+          )}
 
           {/* Lead Metadata */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-2">
@@ -377,6 +390,7 @@ export default function LeadDetailPage() {
               </div>
             </div>
           </div>
+          
 
           {/* Footer Actions */}
           <div className="flex justify-end space-x-2 pb-6">

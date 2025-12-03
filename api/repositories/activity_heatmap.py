@@ -1,12 +1,17 @@
-from typing import List
+from typing import List, Optional
 from datetime import datetime, timezone, date, timedelta
 from ..core.db import DB_ENABLED
 from ..core.db_helpers import get_db_connection
 from ..schemas.activity_heatmap import ActivityData, ActivityHeatmapResponse
 
 
-def get_activity_heatmap_data() -> ActivityHeatmapResponse:
-    """Get historical activity data for the heatmap visualization."""
+def get_activity_heatmap_data(buyer_id: Optional[str] = None) -> ActivityHeatmapResponse:
+    """Get historical activity data for the heatmap visualization.
+    
+    Args:
+        buyer_id: Optional buyer ID to filter activities for a specific buyer.
+                  If None, returns all activities (admin only).
+    """
     if not DB_ENABLED:
         return ActivityHeatmapResponse(
             data=[],
@@ -36,17 +41,29 @@ def get_activity_heatmap_data() -> ActivityHeatmapResponse:
                 # End of today (end of day) to include all of today's activities
                 today = datetime.combine(today_date, datetime.max.time()).replace(tzinfo=timezone.utc)
                 
-                # Query to get daily activity counts
-                cur.execute("""
+                # Build query with optional buyer_id filter
+                query = """
                     SELECT 
                         DATE(l.created_at) as activity_date,
                         COUNT(*) as daily_count
                     FROM listings l
                     WHERE l.created_at >= %s 
                     AND l.created_at <= %s
+                """
+                params = [one_year_ago, today]
+                
+                # Add buyer_id filter if provided
+                if buyer_id:
+                    query += " AND l.buyer_id = %s"
+                    params.append(buyer_id)
+                
+                query += """
                     GROUP BY DATE(l.created_at)
                     ORDER BY activity_date
-                """, (one_year_ago, today))
+                """
+                
+                # Query to get daily activity counts
+                cur.execute(query, params)
                 
                 # Create a map of date -> count
                 activity_map = {}

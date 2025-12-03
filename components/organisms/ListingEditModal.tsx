@@ -64,7 +64,8 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
         body_style: listing.body_style || '',
         price: listing.price,
         miles: listing.miles,
-        location: listing.location || ''
+        location: listing.location || '',
+        mmr: listing.mmr || undefined
       });
       setImages(listing.images || []);
     }
@@ -183,6 +184,12 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
       if (formData.condition_rating !== undefined) {
         const ratingNum = typeof formData.condition_rating === 'string' ? parseInt(formData.condition_rating) : formData.condition_rating;
         cleanedFormData.condition_rating = isNaN(ratingNum) ? undefined : ratingNum;
+      }
+      
+      // Handle mmr - convert to number or undefined
+      if (formData.mmr !== undefined) {
+        const mmrNum = typeof formData.mmr === 'string' ? parseFloat(formData.mmr) : formData.mmr;
+        cleanedFormData.mmr = isNaN(mmrNum) ? undefined : mmrNum;
       }
       
       const updateData: ListingUpdate = {
@@ -322,6 +329,21 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
                     placeholder="Enter miles"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  MMR (Manheim Market Report)
+                </label>
+                <Input
+                  type="number"
+                  value={formData.mmr || ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    handleFieldChange('mmr', value === '' ? undefined : parseFloat(value));
+                  }}
+                  placeholder="Enter MMR value"
+                />
               </div>
 
               <div>
@@ -497,17 +519,9 @@ export const ListingEditModal: React.FC<ListingEditModalProps> = ({
                   <Plus className="h-4 w-4" />
                   {hasExistingContact ? 'Update Contact' : 'Create Contact'}
                 </Button>
-                {/* <Button
-                  onClick={() => setIsCreateContactOpen(true)}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  Create Contact
-                </Button> */}
               </div>
             </div>
+            
           </div>
 
           {/* Image Carousel at the bottom of the modal */}

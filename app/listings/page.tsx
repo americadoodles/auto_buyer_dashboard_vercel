@@ -3,13 +3,12 @@
 import React, { useEffect, useState } from "react";
 import { useListings } from "../../lib/hooks/useListings";
 import { useAuth } from "../auth/useAuth";
-import { Header } from "../../components/organisms/Header";
 import { ListingsTable } from "../../components/organisms/ListingsTable";
 import { KpiGrid } from "../../components/organisms/KpiGrid";
 import { ExportButton } from "../../components/molecules/ExportButton";
 import { DateRangePicker } from "../../components/molecules/DateRangePicker";
 import { Listing } from "../../lib/types/listing";
-import { Car, TrendingUp, AlertTriangle, Filter, Search } from "lucide-react";
+import { Car, TrendingUp, AlertTriangle, Filter, Search, RefreshCw } from "lucide-react";
 import { Input } from "../../components/atoms/Input";
 import { Button } from "../../components/atoms/Button";
 
@@ -143,15 +142,6 @@ export default function ListingsPage() {
             </div>
           </div>
         </div>
-
-        {/* Action Header */}
-        <Header
-          onLoadFromBackend={loadFromBackend}
-          onSeedBackend={seedBackend}
-          onRescoreVisible={rescoreVisible}
-          loading={listingsLoading}
-        />
-
         {/* KPI Grid */}
         <div className="mt-6">
           <KpiGrid />
@@ -205,7 +195,7 @@ export default function ListingsPage() {
                 <Filter className="w-4 h-4" />
                 <span>Filters</span>
               </Button>
-
+            
               <ExportButton
                 exportType="listings"
                 userRole={userRole}
@@ -213,6 +203,17 @@ export default function ListingsPage() {
                 size="sm"
                 selectedListings={selectedListings}
               />
+
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={rescoreVisible}
+                disabled={listingsLoading}
+                className="flex items-center space-x-2"
+              >
+                <RefreshCw className={`w-4 h-4 ${listingsLoading ? 'animate-spin' : ''}`} />
+                <span>Re-score Visible</span>
+              </Button>
 
               {selectedListings.size > 0 && (
                 <Button

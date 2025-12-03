@@ -8,6 +8,8 @@ import { TableRow } from '../molecules/TableRow';
 import { Badge } from '../atoms/Badge';
 import { Button } from '../atoms/Button';
 import { Icon } from '../atoms/Icon';
+import { SplineAreaChart, BarChart, ChartTimeRangePicker, TimeRange } from '../charts';
+import { useChartData } from '../../lib/hooks/useChartData';
 
 interface CRMStats {
   total_leads: number;
@@ -54,6 +56,8 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
   highScoringVehicles,
   leadConversionRate
 }) => {
+  const [timeRange, setTimeRange] = React.useState<TimeRange>('1w');
+  const { data: chartData, loading: chartLoading } = useChartData(timeRange);
   const kpiData: Array<{
     title: string;
     value: string | number;
@@ -110,16 +114,89 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {kpiData.map((kpi, index) => (
-          <KpiCard
-            key={index}
-            label={kpi.title}
-            value={kpi.value}
-            change={kpi.change}
-            trend={kpi.trend}
-            color={kpi.color}
-          />
-        ))}
+        {kpiData.map((kpi, index) => {
+          // Map KPI cards to sparkline data
+          let sparklineData: number[] | undefined;
+          let sparklineColor: string | undefined;
+          
+          if (kpi.title === 'Total Leads' && chartData?.dailyActivities) {
+            sparklineData = chartData.dailyActivities;
+            sparklineColor = '#3b82f6';
+          } else if (kpi.title === 'Qualified Leads' && chartData?.leadsToPurchases) {
+            sparklineData = chartData.leadsToPurchases;
+            sparklineColor = '#10b981';
+          } else if (kpi.title === 'Active Deals' && chartData?.activeBuyersGrowth) {
+            sparklineData = chartData.activeBuyersGrowth;
+            sparklineColor = '#8b5cf6';
+          } else if (kpi.title === 'Revenue' && chartData?.profitOverTime) {
+            sparklineData = chartData.profitOverTime.map(d => d.value / 1000); // Scale down for sparkline
+            sparklineColor = '#10b981';
+          }
+
+          return (
+            <KpiCard
+              key={index}
+              label={kpi.title}
+              value={kpi.value}
+              change={kpi.change}
+              trend={kpi.trend}
+              color={kpi.color}
+              sparklineData={sparklineData}
+              sparklineColor={sparklineColor}
+            />
+          );
+        })}
+      </div>
+
+      {/* Charts Section */}
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-bold text-gray-900">Analytics</h2>
+          <ChartTimeRangePicker value={timeRange} onChange={setTimeRange} />
+        </div>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Lead → Purchase Funnel</h3>
+          {chartLoading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          ) : chartData?.leadToPurchaseFunnel ? (
+            <SplineAreaChart
+              series={[{
+                name: 'Conversions',
+                data: chartData.leadToPurchaseFunnel.map(d => d.value)
+              }]}
+              categories={chartData.leadToPurchaseFunnel.map(d => {
+                const date = new Date(d.date);
+                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+              })}
+              height={300}
+              colors={['#3b82f6']}
+            />
+          ) : null}
+        </Card>
+
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Lead Source Performance</h3>
+          {chartLoading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          ) : chartData?.leadSourcePerformance ? (
+            <BarChart
+              series={[{
+                name: 'Leads',
+                data: chartData.leadSourcePerformance.map(item => item.value)
+              }]}
+              categories={chartData.leadSourcePerformance.map(item => item.name)}
+              height={300}
+              colors={['#10b981']}
+            />
+            ) : null}
+          </Card>
+        </div>
       </div>
 
       {/* Main Content Grid */}

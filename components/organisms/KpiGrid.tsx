@@ -1,14 +1,18 @@
 import React from 'react';
 import { KpiCard } from '../molecules/KpiCard';
-import { TrendingUp, Clock, AlertTriangle, DollarSign, Car, Users } from 'lucide-react';
+import { TrendingUp, Clock, AlertTriangle, DollarSign, Car, Users, Activity } from 'lucide-react';
 import { useListings } from '../../lib/hooks/useListings';
 import { useKpiMetrics } from '../../lib/hooks/useKpiMetrics';
 import { useTrendsApi } from '../../lib/hooks/useTrendsApi';
+import { useChartData } from '../../lib/hooks/useChartData';
+import { TimeRange } from '../charts';
 
 export const KpiGrid: React.FC = () => {
   const { data: listings, backendOk } = useListings();
   const { metrics, loading: kpiLoading, error: kpiError } = useKpiMetrics();
   const { trends: trendsData, loading: trendsLoading, error: trendsError } = useTrendsApi(30);
+  // Use 1 week default for sparklines
+  const { data: chartData, loading: chartLoading } = useChartData('1w');
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -33,48 +37,19 @@ export const KpiGrid: React.FC = () => {
 
   // Show loading state when data is loading
   const isLoading = kpiLoading || trendsLoading;
+  const isChartLoading = chartLoading;
 
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
       <KpiCard 
-        label="Average Profit per Unit" 
-        value={isLoading ? "..." : formatCurrency(metrics.averageProfitPerUnit)}
-        icon={DollarSign}
-        trend={isLoading || !trendsData ? undefined : formatTrend(trendsData.average_profit.trend)}
-        trendUp={trendsData?.average_profit.trend_up}
-        color="blue"
-      />
-      <KpiCard 
-        label="Lead to Purchase Time" 
-        value={isLoading ? "..." : formatDays(metrics.leadToPurchaseTime)}
-        icon={Clock}
-        trend={isLoading || !trendsData ? undefined : formatTrend(trendsData.total_listings.trend)}
-        trendUp={!trendsData?.total_listings.trend_up} // Inverted: more listings = longer lead time
-        color="green"
-      />
-      <KpiCard 
-        label="Aged Inventory" 
-        value={isLoading ? "..." : `${metrics.agedInventory} units`}
-        icon={AlertTriangle}
-        trend={isLoading || !trendsData ? undefined : formatTrend(trendsData.aged_inventory.trend)}
-        trendUp={trendsData?.aged_inventory.trend_up}
-        color="amber"
-      />
-      <KpiCard 
-        label="Total Listings" 
-        value={isLoading ? "..." : metrics.totalListings.toString()}
-        icon={Car}
+        label="Daily Activities" 
+        value={isChartLoading ? "..." : chartData?.dailyActivities[chartData.dailyActivities.length - 1]?.toFixed(0) || "0"}
+        icon={Activity}
         trend={isLoading || !trendsData ? undefined : formatTrend(trendsData.total_listings.trend)}
         trendUp={trendsData?.total_listings.trend_up}
-        color="purple"
-      />
-      <KpiCard 
-        label="Active Buyers" 
-        value={isLoading ? "..." : metrics.activeBuyers.toString()}
-        icon={Users}
-        trend={isLoading || !trendsData ? undefined : formatTrend(trendsData.active_buyers.trend)}
-        trendUp={trendsData?.active_buyers.trend_up}
-        color="indigo"
+        color="blue"
+        sparklineData={chartData?.dailyActivities}
+        sparklineColor="#3b82f6"
       />
       <KpiCard 
         label="Conversion Rate" 
@@ -83,6 +58,68 @@ export const KpiGrid: React.FC = () => {
         trend={isLoading || !trendsData ? undefined : formatTrend(trendsData.conversion_rate.trend)}
         trendUp={trendsData?.conversion_rate.trend_up}
         color="emerald"
+        sparklineData={chartData?.conversionRate}
+        sparklineColor="#10b981"
+      />
+      <KpiCard 
+        label="Active Buyers Growth" 
+        value={isLoading ? "..." : metrics.activeBuyers.toString()}
+        icon={Users}
+        trend={isLoading || !trendsData ? undefined : formatTrend(trendsData.active_buyers.trend)}
+        trendUp={trendsData?.active_buyers.trend_up}
+        color="indigo"
+        sparklineData={chartData?.activeBuyersGrowth}
+        sparklineColor="#6366f1"
+      />
+      <KpiCard 
+        label="Leads → Purchases" 
+        value={isChartLoading ? "..." : chartData?.leadsToPurchases[chartData.leadsToPurchases.length - 1]?.toFixed(0) || "0"}
+        icon={Car}
+        trend={isLoading || !trendsData ? undefined : formatTrend(trendsData.conversion_rate.trend)}
+        trendUp={trendsData?.conversion_rate.trend_up}
+        color="purple"
+        sparklineData={chartData?.leadsToPurchases}
+        sparklineColor="#8b5cf6"
+      />
+      <KpiCard 
+        label="Average Profit per Unit" 
+        value={isLoading ? "..." : formatCurrency(metrics.averageProfitPerUnit)}
+        icon={DollarSign}
+        trend={isLoading || !trendsData ? undefined : formatTrend(trendsData.average_profit.trend)}
+        trendUp={trendsData?.average_profit.trend_up}
+        color="blue"
+        sparklineData={chartData?.averageProfitPerUnit}
+        sparklineColor="#3b82f6"
+      />
+      <KpiCard 
+        label="Lead to Purchase Time" 
+        value={isLoading ? "..." : formatDays(metrics.leadToPurchaseTime)}
+        icon={Clock}
+        trend={isLoading || !trendsData ? undefined : formatTrend(trendsData.total_listings.trend)}
+        trendUp={!trendsData?.total_listings.trend_up} // Inverted: more listings = longer lead time
+        color="green"
+        sparklineData={chartData?.leadToPurchaseTime}
+        sparklineColor="#10b981"
+      />
+      <KpiCard 
+        label="Aged Inventory" 
+        value={isLoading ? "..." : `${metrics.agedInventory} units`}
+        icon={AlertTriangle}
+        trend={isLoading || !trendsData ? undefined : formatTrend(trendsData.aged_inventory.trend)}
+        trendUp={trendsData?.aged_inventory.trend_up}
+        color="amber"
+        sparklineData={chartData?.agedInventory}
+        sparklineColor="#f59e0b"
+      />
+      <KpiCard 
+        label="Total Listings" 
+        value={isLoading ? "..." : metrics.totalListings.toString()}
+        icon={Car}
+        trend={isLoading || !trendsData ? undefined : formatTrend(trendsData.total_listings.trend)}
+        trendUp={trendsData?.total_listings.trend_up}
+        color="purple"
+        sparklineData={chartData?.totalListings}
+        sparklineColor="#8b5cf6"
       />
     </div>
   );

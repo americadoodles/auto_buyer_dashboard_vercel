@@ -507,6 +507,47 @@ export class ApiService {
       message?: string;
     }>(response);
   }
+
+  static async getChartDistribution(type: 'sourcing-activities' | 'car-categories' | 'states-regions' | 'lead-source-performance'): Promise<{
+    data: Array<{ name: string; value: number }>;
+    success: boolean;
+    message?: string;
+  }> {
+    const response = await fetch(`${BACKEND_URL}/chart/${type}`, {
+      headers: this.authHeaders(),
+    });
+
+    return this.handleResponse<{
+      data: Array<{ name: string; value: number }>;
+      success: boolean;
+      message?: string;
+    }>(response);
+  }
+
+  static async getChartTimeSeries(
+    type: 'lead-to-purchase-funnel',
+    startDate?: string,
+    endDate?: string
+  ): Promise<{
+    data: Array<{ date: string; value: number }>;
+    success: boolean;
+    message?: string;
+  }> {
+    const params = new URLSearchParams();
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+    
+    const url = `${BACKEND_URL}/chart/${type}${params.toString() ? `?${params.toString()}` : ''}`;
+    const response = await fetch(url, {
+      headers: this.authHeaders(),
+    });
+
+    return this.handleResponse<{
+      data: Array<{ date: string; value: number }>;
+      success: boolean;
+      message?: string;
+    }>(response);
+  }
 }
 
 // Helper function to make API calls using unified ApiService

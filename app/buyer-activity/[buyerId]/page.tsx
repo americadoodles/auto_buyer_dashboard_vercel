@@ -620,7 +620,6 @@ export default function BuyerActivityPage() {
               />
             )}
           </div>
-          </div>
         </div>
       </div>
     </div>

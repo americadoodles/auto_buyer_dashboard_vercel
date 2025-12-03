@@ -59,7 +59,6 @@ export const useActivityHeatmap = () => {
         }
 
         const result = await response.json();
-        console.log('result: ', result)
         setData(result);
       } catch (err: any) {
         console.error('Error fetching activity heatmap:', err);

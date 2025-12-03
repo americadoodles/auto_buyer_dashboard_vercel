@@ -19,6 +19,9 @@ import { useAdminStats } from '../lib/hooks/useAdminStats';
 import UserActivityCard from '../components/organisms/UserActivityCard';
 import ActivityHeatmap from '../components/organisms/ActivityHeatmap';
 import { useActivityHeatmap } from '../lib/hooks/useActivityHeatmap';
+import { useChartData } from '../lib/hooks/useChartData';
+import { SplineAreaChart, BarChart } from '../components/charts';
+import { Card } from '../components/molecules/Card';
 
 interface StatCard {
   title: string;
@@ -33,6 +36,7 @@ export default function Page() {
   const { data: listings, backendOk } = useListings();
   const { totalUsers, pendingRequests, activeRoles, totalListings, loading: statsLoading, error: statsError } = useAdminStats();
   const { data: heatmapData, loading: heatmapLoading, error: heatmapError } = useActivityHeatmap();
+  const { data: chartData, loading: chartLoading } = useChartData();
 
   // Dynamic stats based on real data
   const statCards: StatCard[] = [
@@ -191,6 +195,135 @@ export default function Page() {
               );
             })}
           </div>
+        </div>
+
+        {/* Time-Series Charts (Spline Area) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Profit Over Time</h2>
+            {chartLoading ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              </div>
+            ) : chartData?.profitOverTime ? (
+              <SplineAreaChart
+                series={[{
+                  name: 'Profit',
+                  data: chartData.profitOverTime.map(d => d.value)
+                }]}
+                categories={chartData.profitOverTime.map(d => {
+                  const date = new Date(d.date);
+                  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                })}
+                height={300}
+                colors={['#3b82f6']}
+              />
+            ) : null}
+          </Card>
+
+          <Card className="p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Weekly Listings Volume</h2>
+            {chartLoading ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              </div>
+            ) : chartData?.weeklyListingsVolume ? (
+              <SplineAreaChart
+                series={[{
+                  name: 'Listings',
+                  data: chartData.weeklyListingsVolume.map(d => d.value)
+                }]}
+                categories={chartData.weeklyListingsVolume.map(d => {
+                  const date = new Date(d.date);
+                  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                })}
+                height={300}
+                colors={['#10b981']}
+              />
+            ) : null}
+          </Card>
+
+          <Card className="p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Buyer Activity Per Day</h2>
+            {chartLoading ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              </div>
+            ) : chartData?.buyerActivityPerDay ? (
+              <SplineAreaChart
+                series={[{
+                  name: 'Activity',
+                  data: chartData.buyerActivityPerDay.map(d => d.value)
+                }]}
+                categories={chartData.buyerActivityPerDay.map(d => {
+                  const date = new Date(d.date);
+                  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                })}
+                height={300}
+                colors={['#8b5cf6']}
+              />
+            ) : null}
+          </Card>
+        </div>
+
+        {/* Distribution Charts (Bar) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Sourcing Activities per Agent</h2>
+            {chartLoading ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              </div>
+            ) : chartData?.sourcingActivitiesPerAgent ? (
+              <BarChart
+                series={[{
+                  name: 'Activities',
+                  data: chartData.sourcingActivitiesPerAgent.map(item => item.value)
+                }]}
+                categories={chartData.sourcingActivitiesPerAgent.map(item => item.name)}
+                height={300}
+                colors={['#3b82f6']}
+              />
+            ) : null}
+          </Card>
+
+          <Card className="p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Car Categories Performance</h2>
+            {chartLoading ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              </div>
+            ) : chartData?.carCategoriesPerformance ? (
+              <BarChart
+                series={[{
+                  name: 'Count',
+                  data: chartData.carCategoriesPerformance.map(item => item.value)
+                }]}
+                categories={chartData.carCategoriesPerformance.map(item => item.name)}
+                height={300}
+                colors={['#10b981']}
+              />
+            ) : null}
+          </Card>
+
+          <Card className="p-6 lg:col-span-2">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">States/Regions Performance</h2>
+            {chartLoading ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              </div>
+            ) : chartData?.statesRegions ? (
+              <BarChart
+                series={[{
+                  name: 'Count',
+                  data: chartData.statesRegions.map(item => item.value)
+                }]}
+                categories={chartData.statesRegions.map(item => item.name)}
+                height={300}
+                colors={['#8b5cf6']}
+              />
+            ) : null}
+          </Card>
         </div>
 
         {/* Activity Heatmap */}

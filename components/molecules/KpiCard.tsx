@@ -1,5 +1,7 @@
 import React from 'react';
 import { LucideIcon, TrendingUp, TrendingDown } from 'lucide-react';
+import { SparklineChart } from '../charts/SparklineChart';
+import { ApexOptions } from 'apexcharts';
 
 interface KpiCardProps {
   label: string;
@@ -10,6 +12,8 @@ interface KpiCardProps {
   trendUp?: boolean;
   change?: string;
   color?: 'blue' | 'green' | 'amber' | 'purple' | 'indigo' | 'emerald' | 'red';
+  sparklineData?: number[];
+  sparklineColor?: string;
 }
 
 const colorClasses = {
@@ -30,8 +34,20 @@ export const KpiCard: React.FC<KpiCardProps> = ({
   trend,
   trendUp,
   change,
-  color = 'blue'
+  color = 'blue',
+  sparklineData,
+  sparklineColor
 }) => {
+  const sparklineSeries = sparklineData ? [{ name: label, data: sparklineData }] : undefined;
+  const defaultSparklineColor = sparklineColor || 
+    (color === 'blue' ? '#3b82f6' :
+     color === 'green' ? '#10b981' :
+     color === 'amber' ? '#f59e0b' :
+     color === 'purple' ? '#8b5cf6' :
+     color === 'indigo' ? '#6366f1' :
+     color === 'emerald' ? '#10b981' :
+     '#ef4444');
+
   return (
     <div className={`rounded-xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-200 ${className}`}>
       <div className="flex items-center justify-between">
@@ -49,7 +65,7 @@ export const KpiCard: React.FC<KpiCardProps> = ({
           </div>
           
           {(trend || change) && (
-            <div className="flex items-center space-x-1">
+            <div className="flex items-center space-x-1 mb-2">
               {trendUp ? (
                 <TrendingUp className="w-4 h-4 text-green-500" />
               ) : (
@@ -59,6 +75,38 @@ export const KpiCard: React.FC<KpiCardProps> = ({
                 {change || trend}
               </span>
               <span className="text-xs text-gray-500">vs last month</span>
+            </div>
+          )}
+
+          {/* Sparkline Chart */}
+          {sparklineData && sparklineData.length > 0 && (
+            <div className="mt-3 -mx-2">
+              <SparklineChart
+                series={sparklineSeries}
+                height={60}
+                width="100%"
+                colors={[defaultSparklineColor]}
+                customOptions={{
+                  chart: {
+                    sparkline: {
+                      enabled: true,
+                    },
+                  },
+                  stroke: {
+                    curve: 'smooth',
+                    width: 2,
+                  },
+                  fill: {
+                    type: 'gradient',
+                    gradient: {
+                      shadeIntensity: 1,
+                      opacityFrom: 0.4,
+                      opacityTo: 0.1,
+                      stops: [0, 100],
+                    },
+                  },
+                }}
+              />
             </div>
           )}
         </div>

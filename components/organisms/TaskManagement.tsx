@@ -109,7 +109,6 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
   // Fetch task statuses and priorities from database
   const { statuses: dbStatuses, loading: statusesLoading } = useTaskStatuses();
   const { priorities: dbPriorities, loading: prioritiesLoading } = useTaskPriorities();
-  console.log('tasks: ', tasks);
   // Fetch users for the assigned to filter
   useEffect(() => {
     const fetchUsers = async () => {

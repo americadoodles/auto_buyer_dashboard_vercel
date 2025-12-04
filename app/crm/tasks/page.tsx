@@ -30,7 +30,6 @@ export default function TasksPage() {
     // Only apply assigned_to filter for admins (buyers are already filtered by backend by owner)
     assigned_to: isAdmin ? assignedToFilter : undefined
   });
-  console.log('allTasks: ', allTasks);
   // Filter tasks for buyers: show tasks where owner_id OR assigned_to matches buyer's ID
   const tasks = useMemo(() => {
     if (isAdmin) {

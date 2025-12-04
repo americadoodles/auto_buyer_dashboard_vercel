@@ -51,19 +51,13 @@ export const DonutChart: React.FC<DonutChartProps> = ({
             labels: {
               show: showLabels,
               name: {
-                style: {
-                  colors: isDark ? '#f9fafb' : undefined, // gray-50 for dark mode
-                },
+                color: isDark ? '#f9fafb' : undefined, // gray-50 for dark mode
               },
               value: {
-                style: {
-                  colors: isDark ? '#ffffff' : undefined, // white for dark mode
-                },
+                color: isDark ? '#ffffff' : undefined, // white for dark mode
               },
               total: {
-                style: {
-                  colors: isDark ? '#e5e7eb' : undefined, // gray-200 for dark mode
-                },
+                color: isDark ? '#e5e7eb' : undefined, // gray-200 for dark mode
               },
             },
           },

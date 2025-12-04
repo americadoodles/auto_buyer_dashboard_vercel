@@ -30,6 +30,7 @@ export default function TasksPage() {
     // Only apply assigned_to filter for admins (buyers are already filtered by backend by owner)
     assigned_to: isAdmin ? assignedToFilter : undefined
   });
+  console.log('allTasks: ', allTasks);
   // Filter tasks for buyers: show tasks where owner_id OR assigned_to matches buyer's ID
   const tasks = useMemo(() => {
     if (isAdmin) {
@@ -90,7 +91,6 @@ export default function TasksPage() {
           task.assigned_to === user.id
         );
       }
-      
       if (tasksToExport.length === 0) {
         alert('No completed tasks found to export.');
         return;
@@ -108,12 +108,9 @@ export default function TasksPage() {
           'Status': foundStatus?.name || 'Unknown',
           'Priority': foundPriority?.name || 'Unknown',
           'Owner': task.owner_user_name || 'Unassigned',
-          'Assigned To': task.assigned_to_user || 'Unassigned',
           'Due Date': task.due_date ? new Date(task.due_date).toLocaleDateString() : '',
           'Completed At': task.completed_at ? new Date(task.completed_at).toLocaleDateString() : '',
-          'Related Lead': task.related_lead_id || '',
-          'Related Contact': task.related_contact_id || '',
-          'Related Deal': task.related_deal_name || task.related_deal_id || '',
+          'Related Deal': task.related_deal_name || '',
           'Created At': task.created_at ? new Date(task.created_at).toLocaleDateString() : '',
         };
       });

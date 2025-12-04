@@ -83,7 +83,11 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
       setOwnerUserId(user?.id);
       setPriorityId(undefined);
       setSelectedStatusId(statusId);
-      setDueDate('');
+      // Calculate default date (7 days from now) when modal opens
+      const defaultDate = new Date();
+      defaultDate.setDate(defaultDate.getDate() + 7);
+      const defaultDateString = defaultDate.toISOString().split('T')[0];
+      setDueDate(defaultDateString);
       setRelatedDealId(undefined);
       setError(null);
       setLoading(false);
@@ -97,6 +101,11 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
     setLoading(true);
     setError(null);
     try {
+      
+      // Check if the selected status is "Completed"
+      const selectedStatus = statuses.find(s => s.id === selectedStatusId);
+      const isCompleted = selectedStatus?.name?.toLowerCase() === 'completed';
+      
       const newTask = await tasksApi.createTask({
         title: title.trim(),
         description: description.trim() || undefined,
@@ -105,6 +114,8 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
         status_id: selectedStatusId,
         due_date: dueDate || undefined,
         related_deal_id: relatedDealId || undefined,
+        // Set completed_at if creating in Completed status
+        completed_at: isCompleted ? new Date().toISOString() : undefined,
       });
       
       // Close modal first
@@ -213,7 +224,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
               <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
               <Input
                 type="date"
-                value={dueDate || defaultDateString}
+                value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
               />
             </div>

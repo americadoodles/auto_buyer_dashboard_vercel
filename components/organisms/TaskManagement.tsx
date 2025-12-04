@@ -109,7 +109,7 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
   // Fetch task statuses and priorities from database
   const { statuses: dbStatuses, loading: statusesLoading } = useTaskStatuses();
   const { priorities: dbPriorities, loading: prioritiesLoading } = useTaskPriorities();
-  
+  console.log('tasks: ', tasks);
   // Fetch users for the assigned to filter
   useEffect(() => {
     const fetchUsers = async () => {
@@ -527,9 +527,27 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
             onItemClick={onTaskClick}
             onItemUpdated={onTasksUpdated}
             onItemMove={async (taskId, newStatusId, newStatusName) => {
-              await tasksApi.updateTask(taskId, {
-                status_id: typeof newStatusId === 'number' ? newStatusId : parseInt(newStatusId.toString(), 10)
-              });
+              const statusId = typeof newStatusId === 'number' ? newStatusId : parseInt(newStatusId.toString(), 10);
+              const isCompleted = newStatusName.toLowerCase() === 'completed';
+              
+              // Find the current task to check if it was previously completed
+              const currentTask = filteredTasks.find(t => t.id === taskId);
+              const wasCompleted = currentTask?.status?.name?.toLowerCase() === 'completed';
+              
+              // If moving to Completed, set completed_at. If moving away from Completed, clear it.
+              const updateData: any = {
+                status_id: statusId
+              };
+              
+              if (isCompleted && !wasCompleted) {
+                // Moving to Completed - set completed_at to now
+                updateData.completed_at = new Date().toISOString();
+              } else if (!isCompleted && wasCompleted) {
+                // Moving away from Completed - clear completed_at
+                updateData.completed_at = null;
+              }
+              
+              await tasksApi.updateTask(taskId, updateData);
             }}
             stagesFromDb={statuses}
             itemType="task"

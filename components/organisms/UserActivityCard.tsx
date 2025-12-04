@@ -39,26 +39,26 @@ const UserActivityCard: React.FC<UserActivityCardProps> = ({ className = "" }) =
   };
 
   const getActivityStatus = (lastActivity: string | null, todayListings: number) => {
-    if (todayListings > 0) return { status: 'active', color: 'text-green-600', bg: 'bg-green-100' };
+    if (todayListings > 0) return { status: 'active', color: 'text-green-600 dark:text-green-400', bg: 'bg-green-100 dark:bg-green-900/20' };
     if (lastActivity) {
       const lastActivityDate = new Date(lastActivity);
       const now = new Date();
       const diffInDays = Math.floor((now.getTime() - lastActivityDate.getTime()) / (1000 * 60 * 60 * 24));
       
-      if (diffInDays <= 7) return { status: 'recent', color: 'text-yellow-600', bg: 'bg-yellow-100' };
-      if (diffInDays <= 30) return { status: 'inactive', color: 'text-orange-600', bg: 'bg-orange-100' };
+      if (diffInDays <= 7) return { status: 'recent', color: 'text-yellow-600 dark:text-yellow-400', bg: 'bg-yellow-100 dark:bg-yellow-900/20' };
+      if (diffInDays <= 30) return { status: 'inactive', color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-100 dark:bg-orange-900/20' };
     }
-    return { status: 'dormant', color: 'text-red-600', bg: 'bg-red-100' };
+    return { status: 'dormant', color: 'text-red-600 dark:text-red-400', bg: 'bg-red-100 dark:bg-red-900/20' };
   };
 
   const getRoleBadge = (role: string) => {
     const roleConfig = {
-      admin: { bg: 'bg-red-100', text: 'text-red-800', label: 'Admin' },
-      buyer: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Buyer' },
-      analyst: { bg: 'bg-green-100', text: 'text-green-800', label: 'Analyst' }
+      admin: { bg: 'bg-red-100 dark:bg-transparent', text: 'text-red-800 dark:text-red-300', label: 'Admin' },
+      buyer: { bg: 'bg-blue-100 dark:bg-transparent', text: 'text-blue-800 dark:text-blue-300', label: 'Buyer' },
+      analyst: { bg: 'bg-green-100 dark:bg-transparent', text: 'text-green-800 dark:text-green-300', label: 'Analyst' }
     };
     
-    const config = roleConfig[role as keyof typeof roleConfig] || { bg: 'bg-gray-100', text: 'text-gray-800', label: role };
+    const config = roleConfig[role as keyof typeof roleConfig] || { bg: 'bg-gray-100 dark:bg-transparent', text: 'text-gray-800 dark:text-gray-300', label: role };
     
     return (
       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
@@ -118,9 +118,9 @@ const UserActivityCard: React.FC<UserActivityCardProps> = ({ className = "" }) =
 
   if (loading) {
     return (
-      <div className={`bg-white rounded-lg shadow-sm border border-gray-200 p-6 ${className}`}>
+      <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 ${className}`}>
         <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
         </div>
       </div>
     );
@@ -128,8 +128,8 @@ const UserActivityCard: React.FC<UserActivityCardProps> = ({ className = "" }) =
 
   if (error) {
     return (
-      <div className={`bg-white rounded-lg shadow-sm border border-gray-200 p-6 ${className}`}>
-        <div className="flex items-center space-x-3 text-red-600">
+      <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 ${className}`}>
+        <div className="flex items-center space-x-3 text-red-600 dark:text-red-400">
           <AlertCircle className="w-5 h-5" />
           <span className="text-sm font-medium">Error loading user activity: {error}</span>
         </div>
@@ -138,17 +138,17 @@ const UserActivityCard: React.FC<UserActivityCardProps> = ({ className = "" }) =
   }
 
   return (
-    <div className={`bg-white rounded-lg shadow-sm border border-gray-200 ${className}`}>
+    <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 ${className}`}>
       {/* Header */}
-      <div className="px-6 py-4 border-b border-gray-200">
+      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Activity className="w-5 h-5 text-blue-600" />
+            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
+              <Activity className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">User Activity Overview</h2>
-              <p className="text-sm text-gray-600">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">User Activity Overview</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 {data.total_users} users • {data.active_today} active today • {data.total_listings_today} listings today
               </p>
             </div>
@@ -157,36 +157,36 @@ const UserActivityCard: React.FC<UserActivityCardProps> = ({ className = "" }) =
       </div>
 
       {/* Summary Stats */}
-      <div className="px-6 py-4 border-b border-gray-200">
+      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-            <Users className="w-5 h-5 text-blue-600" />
+          <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+            <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             <div>
-              <p className="text-sm font-medium text-gray-900">{data.total_users}</p>
-              <p className="text-xs text-gray-500">Total Users</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">{data.total_users}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Total Users</p>
             </div>
           </div>
-          <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
-            <UserCheck className="w-5 h-5 text-green-600" />
+          <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+            <UserCheck className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             <div>
-              <p className="text-sm font-medium text-gray-900">{data.active_today}</p>
-              <p className="text-xs text-gray-500">Active Today</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">{data.active_today}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Active Today</p>
             </div>
           </div>
-          <div className="flex items-center space-x-3 p-3 bg-purple-50 rounded-lg">
-            <Car className="w-5 h-5 text-purple-600" />
+          <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+            <Car className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             <div>
-              <p className="text-sm font-medium text-gray-900">{data.total_listings_today}</p>
-              <p className="text-xs text-gray-500">Listings Today</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">{data.total_listings_today}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Listings Today</p>
             </div>
           </div>
-          <div className="flex items-center space-x-3 p-3 bg-orange-50 rounded-lg">
-            <TrendingUp className="w-5 h-5 text-orange-600" />
+          <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+            <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             <div>
-              <p className="text-sm font-medium text-gray-900">
+              <p className="text-sm font-medium text-gray-900 dark:text-white">
                 {data.total_users > 0 ? Math.round((data.active_today / data.total_users) * 100) : 0}%
               </p>
-              <p className="text-xs text-gray-500">Activity Rate</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Activity Rate</p>
             </div>
           </div>
         </div>
@@ -194,12 +194,12 @@ const UserActivityCard: React.FC<UserActivityCardProps> = ({ className = "" }) =
 
       {/* User Activity Table */}
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <TableHeader 
             columns={tableColumns} 
             onColumnSort={handleSort}
           />
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
             {getSortedUsers().map((user) => {
               const activityStatus = getActivityStatus(user.last_activity, user.today_listings);
               
@@ -207,21 +207,21 @@ const UserActivityCard: React.FC<UserActivityCardProps> = ({ className = "" }) =
                 <TableRow 
                   key={user.user_id}
                   onClick={() => handleUserClick(user.user_id)}
-                  className="cursor-pointer hover:bg-gray-50 transition-colors duration-200"
+                  className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200"
                 >
                   {/* User */}
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10">
-                        <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                          <span className="text-sm font-medium text-gray-700">
+                        <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             {user.username.charAt(0).toUpperCase()}
                           </span>
                         </div>
                       </div>
                       <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{user.username}</div>
-                        <div className="text-sm text-gray-500">{user.email}</div>
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">{user.username}</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">{user.email}</div>
                       </div>
                     </div>
                   </td>
@@ -235,11 +235,11 @@ const UserActivityCard: React.FC<UserActivityCardProps> = ({ className = "" }) =
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center space-x-2">
                       {user.is_confirmed ? (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-transparent text-green-800 dark:text-green-300">
                           Confirmed
                         </span>
                       ) : (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 dark:bg-transparent text-yellow-800 dark:text-yellow-300">
                           Pending
                         </span>
                       )}
@@ -247,22 +247,22 @@ const UserActivityCard: React.FC<UserActivityCardProps> = ({ className = "" }) =
                   </td>
                   
                   {/* Total Listings */}
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                     {user.total_listings}
                   </td>
                   
                   {/* Today Listings */}
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                     {user.today_listings}
                   </td>
                   
                   {/* Last Login */}
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                     {formatDate(user.last_login)}
                   </td>
                   
                   {/* Last Activity */}
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                     {formatDate(user.last_activity)}
                   </td>
                   
@@ -285,9 +285,9 @@ const UserActivityCard: React.FC<UserActivityCardProps> = ({ className = "" }) =
         
         {data.users.length === 0 && (
           <div className="text-center py-8">
-            <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No users found</h3>
-            <p className="text-gray-500">No user activity data available.</p>
+            <Users className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No users found</h3>
+            <p className="text-gray-500 dark:text-gray-400">No user activity data available.</p>
           </div>
         )}
       </div>

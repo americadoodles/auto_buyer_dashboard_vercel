@@ -43,7 +43,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Start Date */}
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Start Date
           </label>
           <div className="relative">
@@ -51,12 +51,12 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
               type="date"
               value={formatDateForInput(startDate)}
               onChange={handleStartDateChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400"
             />
             {startDate && (
               <button
                 onClick={clearStartDate}
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -66,7 +66,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
 
         {/* End Date */}
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             End Date
           </label>
           <div className="relative">
@@ -74,12 +74,12 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
               type="date"
               value={formatDateForInput(endDate)}
               onChange={handleEndDateChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400"
             />
             {endDate && (
               <button
                 onClick={clearEndDate}
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -90,7 +90,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
 
       {/* Quick Date Presets */}
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
           Quick Presets
         </label>
         <div className="flex flex-wrap gap-2">
@@ -217,10 +217,10 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
 
       {/* Current Selection Display */}
       {(startDate || endDate) && (
-        <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-3">
           <div className="flex items-center space-x-2">
-            <Calendar className="h-4 w-4 text-blue-600" />
-            <span className="text-sm text-blue-800">
+            <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <span className="text-sm text-blue-800 dark:text-blue-300">
               Showing listings from{' '}
               {startDate ? startDate.toLocaleDateString() : 'beginning'} to{' '}
               {endDate ? endDate.toLocaleDateString() : 'now'}

@@ -14,12 +14,10 @@ import {
   BarChart3,
   Car,
   List,
-  User,
   Target,
   Phone,
   Handshake,
-  CheckSquare,
-  LogOut
+  CheckSquare
 } from 'lucide-react';
 import { useAuth } from '../../app/auth/useAuth';
 
@@ -82,11 +80,6 @@ const getNavItems = (userRole?: string): NavItem[] => {
       href: '/user-management/roles',
       label: 'Role Management',
       icon: Shield,
-    },
-    {
-      href: '/profile',
-      label: 'My Profile',
-      icon: User,
     }
   ];
 
@@ -94,20 +87,19 @@ const getNavItems = (userRole?: string): NavItem[] => {
     return baseItems;
   }
 
-  if (userRole === 'buyer') {
-    // Return only listings, leads, contacts, deals, tasks, my profile
-    return baseItems.filter(item =>
-      [
-        '/',
-        '/listings',
-        '/crm/leads',
-        '/crm/contacts',
-        '/crm/deals',
-        '/crm/tasks',
-        '/profile'
-      ].includes(item.href)
-    );
-  }
+      if (userRole === 'buyer') {
+        // Return only listings, leads, contacts, deals, tasks
+        return baseItems.filter(item =>
+          [
+            '/',
+            '/listings',
+            '/crm/leads',
+            '/crm/contacts',
+            '/crm/deals',
+            '/crm/tasks'
+          ].includes(item.href)
+        );
+      }
 
   // Default: return all for undefined role, or adjust as needed
   return baseItems;
@@ -116,23 +108,16 @@ const getNavItems = (userRole?: string): NavItem[] => {
 export const AdminNavPanel = () => {
   const [isExpanded, setIsExpanded] = useState(true);
   const pathname = usePathname();
-  const { logout, user } = useAuth();
+  const { user } = useAuth();
   const navItems = getNavItems(user?.role);
 
   const toggleExpanded = () => {
     setIsExpanded(!isExpanded);
   };
 
-  const handleLogout = () => {
-    logout();
-  };
-
   const isActiveRoute = (href: string) => {
     if (href === '/') {
       return pathname === '/';
-    }
-    if (href === '/profile') {
-      return pathname === '/profile';
     }
     if (href === '/dashboard') {
       return pathname === '/dashboard';
@@ -142,30 +127,30 @@ export const AdminNavPanel = () => {
 
   return (
     <nav 
-      className={`h-full bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out ${
+      className={`h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col transition-all duration-300 ease-in-out ${
         isExpanded ? 'w-48' : 'w-14'
       }`}
     >
       {/* Header */}
-      <div className="p-4 border-b border-gray-200">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between">
           {isExpanded && (
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                 <Car className="h-5 w-5 text-white" />
               </div>
-              <span className="text-lg font-bold text-gray-900">Dashboard</span>
+              <span className="text-lg font-bold text-gray-900 dark:text-white">Dashboard</span>
             </div>
           )}
           <button
             onClick={toggleExpanded}
-            className="p-1 rounded-md hover:bg-gray-100 transition-colors"
+            className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             title={isExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
           >
             {isExpanded ? (
-              <ChevronLeft className="w-4 h-4 text-gray-600" />
+              <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-gray-300" />
             ) : (
-              <ChevronRight className="w-4 h-4 text-gray-600" />
+              <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-300" />
             )}
           </button>
         </div>
@@ -184,14 +169,14 @@ export const AdminNavPanel = () => {
                   href={item.href}
                   className={`group flex items-center px-2 py-1 rounded-lg transition-all duration-200 ${
                     isActive
-                      ? 'bg-blue-50 text-blue-700 border-blue-700'
-                      : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                      ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-700 dark:border-blue-400'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
                   }`}
                   title={!isExpanded ? item.label : undefined}
                 >
                   <Icon 
                     className={`w-5 h-5 flex-shrink-0 ${
-                      isActive ? 'text-blue-700' : 'text-gray-500 group-hover:text-gray-700'
+                      isActive ? 'text-blue-700 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-200'
                     }`}
                   />
                   {isExpanded && (
@@ -211,40 +196,20 @@ export const AdminNavPanel = () => {
             );
           })}
         </ul>
-
-        {/* Logout Button */}
-        <div className="p-2 border-t border-gray-200">
-          <div>
-            <button
-              onClick={handleLogout}
-              className="group flex items-center px-2 py-1 rounded-lg transition-all duration-200 text-red-600 hover:bg-red-50 hover:text-red-700 w-full"
-              title={!isExpanded ? 'Logout' : undefined}
-            >
-              <LogOut 
-                className="w-5 h-5 flex-shrink-0 text-red-600 group-hover:text-red-700"
-              />
-              {isExpanded && (
-                <span className="ml-3 text-sm font-medium">
-                  Logout
-                </span>
-              )}
-            </button>
-          </div>
-        </div>
       </div>
 
       {/* Footer */}
       {isExpanded && (
-        <div className="p-4 border-t border-gray-200">
-          <div className="flex items-center space-x-3 p-2 rounded-lg bg-gray-50">
-            <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
+        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex items-center space-x-3 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+            <div className="w-8 h-8 bg-gray-600 dark:bg-gray-600 rounded-full flex items-center justify-center">
               <Settings className="w-4 h-4 text-white" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-gray-900 truncate">
+              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                 {user?.role === 'admin' ? 'Admin Panel' : user?.role === 'buyer' ? 'Buyer Dashboard' : 'Dashboard'}
               </p>
-              <p className="text-xs text-gray-500 truncate">
+              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                 {user?.role === 'admin' ? 'Full access control' : user?.role === 'buyer' ? 'Buyer access' : 'User access'}
               </p>
             </div>

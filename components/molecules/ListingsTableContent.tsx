@@ -51,7 +51,7 @@ export const ListingsTableContent: React.FC<ListingsTableContentProps> = ({
   return (
     <table className="w-full border-collapse">
       <thead>
-        <tr className="bg-slate-50 border-b-2 border-slate-200">
+        <tr className="bg-slate-50 dark:bg-gray-700/50 border-b-2 border-slate-200 dark:border-gray-600">
           {listingsColumns.map(col => {
             const isActionColumn = ['notify', 'slack', 'workflow', 'edit'].includes(col.key);
             const visibilityClass = col.priority === 'low' ? 'hidden lg:table-cell' : 
@@ -61,7 +61,7 @@ export const ListingsTableContent: React.FC<ListingsTableContentProps> = ({
               return (
                 <th
                   key={col.key}
-                  className="px-4 py-2 text-xs font-medium uppercase tracking-wide text-slate-600 text-center"
+                  className="px-4 py-2 text-xs font-medium uppercase tracking-wide text-slate-600 dark:text-gray-300 dark:text-gray-300 text-center"
                 >
                   <input
                     type="checkbox"
@@ -80,13 +80,13 @@ export const ListingsTableContent: React.FC<ListingsTableContentProps> = ({
             return (
               <th
                 key={col.key}
-                className={`px-4 py-2 text-xs font-medium uppercase tracking-wide text-slate-600 ${visibilityClass} ${
+                className={`px-4 py-2 text-xs font-medium uppercase tracking-wide text-slate-600 dark:text-gray-300 dark:text-gray-300 ${visibilityClass} ${
                   isActionColumn ? 'text-center' : 'text-left'
                 }`}
               >
                 {!isActionColumn ? (
                   <button
-                    className="flex items-center gap-1 hover:text-slate-800 transition-colors"
+                    className="flex items-center gap-1 hover:text-slate-800 dark:hover:text-gray-100 transition-colors"
                     onClick={() => onSort?.(col.key as keyof Listing | 'decision_status' | 'decision_reasons')}
                   >
                     <span className="truncate">{col.label}</span>
@@ -107,7 +107,7 @@ export const ListingsTableContent: React.FC<ListingsTableContentProps> = ({
           return (
             <tr
               key={listing.id}
-              className="border-t border-slate-200 hover:bg-slate-50 transition-colors"
+              className="border-t border-slate-200 dark:border-gray-700 hover:bg-slate-50 dark:hover:bg-gray-700/50 transition-colors"
             >
               {/* Select checkbox */}
               <td className="px-4 py-3 text-center">
@@ -125,7 +125,7 @@ export const ListingsTableContent: React.FC<ListingsTableContentProps> = ({
               </td>
               
               {/* VIN */}
-              <td className="px-4 py-3 text-xs text-slate-600 font-mono max-w-[120px]">
+              <td className="px-4 py-3 text-xs text-slate-600 dark:text-gray-300 dark:text-gray-300 font-mono max-w-[120px]">
                 <span title={listing.vin} className="truncate block">{listing.vin}</span>
               </td>
               
@@ -173,7 +173,7 @@ export const ListingsTableContent: React.FC<ListingsTableContentProps> = ({
                 {parsedSource ? (
                   <div className="flex items-center gap-2">
                     <span
-                      className="text-xs text-slate-600 truncate"
+                      className="text-xs text-slate-600 dark:text-gray-300 truncate"
                       title={parsedSource.href}
                     >
                       {parsedSource.host}
@@ -183,26 +183,26 @@ export const ListingsTableContent: React.FC<ListingsTableContentProps> = ({
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label="Open source link"
-                      className="shrink-0 text-slate-500 hover:text-blue-600"
+                      className="shrink-0 text-slate-500 dark:text-gray-400 hover:text-blue-600"
                       title="Open source"
                     >
                       <ExternalLink className="h-4 w-4" />
                     </a>
                   </div>
                 ) : (
-                  <span className="text-xs text-slate-600 truncate" title={listing.source || ""}>
+                  <span className="text-xs text-slate-600 dark:text-gray-300 truncate" title={listing.source || ""}>
                     {listing.source || "—"}
                   </span>
                 )}
               </td>
               
               {/* Location */}
-              <td className="px-4 py-3 hidden md:table-cell text-xs text-slate-600">
+              <td className="px-4 py-3 hidden md:table-cell text-xs text-slate-600 dark:text-gray-300">
                 <span title={listing.location} className="truncate block">{listing.location}</span>
               </td>
               
               {/* Buyer */}
-              <td className="px-4 py-3 hidden lg:table-cell text-xs text-slate-600">
+              <td className="px-4 py-3 hidden lg:table-cell text-xs text-slate-600 dark:text-gray-300">
                 <span title={listing.buyer_username || listing.buyer_id} className="truncate block">
                   {listing.buyer_username || listing.buyer_id}
                 </span>
@@ -225,7 +225,7 @@ export const ListingsTableContent: React.FC<ListingsTableContentProps> = ({
                     {listing.status}
                   </Badge>
                 ) : (
-                  <span className="text-slate-400">—</span>
+                  <span className="text-slate-400 dark:text-gray-500">—</span>
                 )}
               </td>
               
@@ -245,7 +245,7 @@ export const ListingsTableContent: React.FC<ListingsTableContentProps> = ({
                     )}
                   </div>
                 ) : (
-                  <span className="text-slate-400">—</span>
+                  <span className="text-slate-400 dark:text-gray-500">—</span>
                 )}
               </td>
               
@@ -275,7 +275,7 @@ export const ListingsTableContent: React.FC<ListingsTableContentProps> = ({
                     <Send className="h-3.5 w-3.5" />
                   </button>
                 ) : (
-                  <span className="text-slate-400 text-xs">—</span>
+                  <span className="text-slate-400 dark:text-gray-500 text-xs">—</span>
                 )}
               </td>
               
@@ -292,7 +292,7 @@ export const ListingsTableContent: React.FC<ListingsTableContentProps> = ({
                     <Workflow className="h-3.5 w-3.5" />
                   </button>
                 ) : (
-                  <span className="text-slate-400 text-xs">—</span>
+                  <span className="text-slate-400 dark:text-gray-500 text-xs">—</span>
                 )}
               </td>
               
@@ -308,7 +308,7 @@ export const ListingsTableContent: React.FC<ListingsTableContentProps> = ({
                     <Edit className="h-3.5 w-3.5" />
                   </button>
                 ) : (
-                  <span className="text-slate-400 text-xs">—</span>
+                  <span className="text-slate-400 dark:text-gray-500 text-xs">—</span>
                 )}
               </td>
             </tr>

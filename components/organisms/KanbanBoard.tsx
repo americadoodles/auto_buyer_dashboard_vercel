@@ -226,21 +226,21 @@ export function KanbanBoard<T extends KanbanItem>({
                 }}
               >
                 {/* Column Header */}
-                <div className={`px-4 py-2 border-b-2 ${stage.borderColor} ${stage.bgColor}`}>
+                <div className={`px-4 py-2 border-b-2 ${stage.borderColor} ${stage.bgColor} dark:border-gray-700`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <div
                         className="w-3 h-3 rounded-full "
                         style={{ backgroundColor: stage.color }}
                       ></div>
-                      <h3 className="font-semibold text-gray-900 truncate">{stage.name}</h3>
+                      <h3 className="font-semibold text-gray-900 dark:text-white truncate">{stage.name}</h3>
                     </div>
                     <Badge color={getStageColor(stage.name)}>
                       {stats.count}
                     </Badge>
                   </div>
                   {stats.value !== undefined && formatCurrency && (
-                    <div className="text-xs text-gray-600 font-medium">
+                    <div className="text-xs text-gray-600 dark:text-gray-300 font-medium">
                       {formatCurrency(stats.value)}
                     </div>
                   )}
@@ -249,7 +249,7 @@ export function KanbanBoard<T extends KanbanItem>({
                 {/* Item Cards */}
                 <div className="flex-1 p-1 space-y-1 overflow-y-auto min-h-0 kanban-scrollbar">
                   {stageItems.length === 0 ? (
-                    <div className={`text-center py-8 text-gray-400 text-sm ${isDragOver ? 'border-2 border-dashed border-blue-400 rounded-lg' : ''}`}>
+                    <div className={`text-center py-8 text-gray-400 dark:text-gray-500 text-sm ${isDragOver ? 'border-2 border-dashed border-blue-400 dark:border-blue-500 rounded-lg' : ''}`}>
                       {isDragOver ? `Drop ${itemType} here` : emptyStateText}
                     </div>
                   ) : (
@@ -259,7 +259,7 @@ export function KanbanBoard<T extends KanbanItem>({
                         draggable
                         onDragStart={(e) => handleDragStart(e, item)}
                         onDragEnd={handleDragEnd}
-                        className={`bg-white rounded-lg border border-gray-200 p-2 shadow-sm hover:shadow-md transition-all cursor-move ${
+                        className={`bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-2 shadow-sm hover:shadow-md transition-all cursor-move ${
                           draggedItem?.id === item.id ? 'opacity-50' : ''
                         }`}
                       >
@@ -275,7 +275,7 @@ export function KanbanBoard<T extends KanbanItem>({
                 {/* Create Item Button - Hidden by default, slides up on hover */}
                 {onCreateItem && (
                   <div 
-                    className={`border-t-2 border-gray-200 transition-all duration-300 ease-in-out overflow-hidden ${
+                    className={`border-t-2 border-gray-200 dark:border-gray-700 transition-all duration-300 ease-in-out overflow-hidden ${
                       hoveredStage === stage.name 
                         ? 'opacity-100 translate-y-0 max-h-32' 
                         : 'opacity-0 translate-y-4 max-h-0 pointer-events-none'

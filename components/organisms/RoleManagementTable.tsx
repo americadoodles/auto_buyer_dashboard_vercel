@@ -78,14 +78,14 @@ const RoleManagementTable: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex items-center space-x-3 mb-6">
-          <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-            <Shield className="w-5 h-5 text-purple-600" />
+          <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
+            <Shield className="w-5 h-5 text-purple-600 dark:text-purple-300" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">Role Management</h2>
-            <p className="text-sm text-gray-600">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Role Management</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-200">
               Configure user roles and permissions for your application
             </p>
           </div>
@@ -93,10 +93,10 @@ const RoleManagementTable: React.FC = () => {
 
         {/* Message */}
         {message && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
             <div className="flex items-center space-x-2">
-              <CheckCircle className="w-4 h-4 text-green-600" />
-              <span className="text-sm text-green-800">{message}</span>
+              <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
+              <span className="text-sm text-green-800 dark:text-green-200">{message}</span>
             </div>
           </div>
         )}
@@ -111,40 +111,40 @@ const RoleManagementTable: React.FC = () => {
       </div>
 
       {/* Roles Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">Existing Roles</h3>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Existing Roles</h3>
         </div>
         
         <div className="p-6">
           {loading ? (
             <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
             </div>
           ) : roles.length > 0 ? (
             <div className="overflow-hidden">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Role Name
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Description
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {roles.map((role) => (
-                    <tr key={role.id} className="hover:bg-gray-50">
+                    <tr key={role.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{role.name}</div>
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">{role.name}</div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-gray-500 dark:text-gray-300">
                           {role.description || "No description provided"}
                         </div>
                       </td>
@@ -153,7 +153,7 @@ const RoleManagementTable: React.FC = () => {
                           <button
                             onClick={() => setEditing(role)}
                             disabled={loading}
-                            className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <Edit className="w-3 h-3 mr-1" />
                             Edit
@@ -161,7 +161,7 @@ const RoleManagementTable: React.FC = () => {
                           <button
                             onClick={() => handleDelete(role.id)}
                             disabled={loading}
-                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <Trash2 className="w-3 h-3 mr-1" />
                             Delete
@@ -175,11 +175,11 @@ const RoleManagementTable: React.FC = () => {
             </div>
           ) : (
             <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Shield className="w-8 h-8 text-gray-400" />
+              <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Shield className="w-8 h-8 text-gray-400 dark:text-gray-500" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No roles found</h3>
-              <p className="text-gray-500">Create your first role to get started.</p>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No roles found</h3>
+              <p className="text-gray-500 dark:text-gray-300">Create your first role to get started.</p>
             </div>
           )}
         </div>

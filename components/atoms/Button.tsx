@@ -16,11 +16,11 @@ export const Button: React.FC<ButtonProps> = ({
   const baseClasses = 'inline-flex items-center justify-center rounded-xl font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2';
   
   const variantClasses = {
-    primary: 'bg-slate-900 text-white hover:bg-slate-800 focus:ring-slate-500',
-    secondary: 'bg-slate-100 text-slate-900 hover:bg-slate-200 focus:ring-slate-500',
-    outline: 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus:ring-slate-500',
-    success: 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500',
-    ghost: 'bg-transparent text-slate-700 hover:bg-slate-100 focus:ring-slate-500'
+    primary: 'bg-slate-900 dark:bg-gray-700 text-white hover:bg-slate-800 dark:hover:bg-gray-600 focus:ring-slate-500 dark:focus:ring-gray-500',
+    secondary: 'bg-slate-100 dark:bg-gray-700 text-slate-900 dark:text-gray-100 hover:bg-slate-200 dark:hover:bg-gray-600 focus:ring-slate-500 dark:focus:ring-gray-500',
+    outline: 'border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-slate-700 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-gray-700 focus:ring-slate-500 dark:focus:ring-gray-500',
+    success: 'bg-green-600 dark:bg-green-700 text-white hover:bg-green-700 dark:hover:bg-green-600 focus:ring-green-500 dark:focus:ring-green-400',
+    ghost: 'bg-transparent text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 focus:ring-slate-500 dark:focus:ring-gray-500'
   };
   
   const sizeClasses = {

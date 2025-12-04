@@ -143,8 +143,8 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Contact Management</h1>
-            <p className="text-gray-600 mt-1">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Contact Management</h1>
+            <p className="text-gray-600 dark:text-gray-300 mt-1">
               Manage your contacts and customer relationships ({totalContacts} total)
             </p>
           </div>
@@ -164,7 +164,7 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
         <Card className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Search
               </label>
               <Input
@@ -176,13 +176,13 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Type
               </label>
               <select
                 value={typeFilter}
                 onChange={(e) => setTypeFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
                 <option value="all">All Types</option>
                 <option value="customer">Customer</option>
@@ -192,13 +192,13 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Status
               </label>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
                 <option value="all">All Status</option>
                 <option value="active">Active</option>
@@ -206,13 +206,13 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Assigned To
               </label>
               <select
                 value={assignedFilter}
                 onChange={(e) => setAssignedFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
                 <option value="all">All Users</option>
                 <option value="me">Me</option>
@@ -228,26 +228,26 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
           <Card className="p-4">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <Icon name="users" className="w-4 h-4 text-blue-600" />
+                <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+                  <Icon name="users" className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 </div>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-500">Total Contacts</p>
-                <p className="text-2xl font-semibold text-gray-900">{totalContacts}</p>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Contacts</p>
+                <p className="text-2xl font-semibold text-gray-900 dark:text-white">{totalContacts}</p>
               </div>
             </div>
           </Card>
           <Card className="p-4">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                  <Icon name="user-check" className="w-4 h-4 text-green-600" />
+                <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                  <Icon name="user-check" className="w-4 h-4 text-green-600 dark:text-green-400" />
                 </div>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-500">Customers</p>
-                <p className="text-2xl font-semibold text-gray-900">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Customers</p>
+                <p className="text-2xl font-semibold text-gray-900 dark:text-white">
                   {contacts.filter(contact => contact.contact_type.name === 'Customer').length}
                 </p>
               </div>
@@ -256,13 +256,13 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
           <Card className="p-4">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                  <Icon name="user-plus" className="w-4 h-4 text-yellow-600" />
+                <div className="w-8 h-8 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
+                  <Icon name="user-plus" className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
                 </div>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-500">Prospects</p>
-                <p className="text-2xl font-semibold text-gray-900">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Prospects</p>
+                <p className="text-2xl font-semibold text-gray-900 dark:text-white">
                   {contacts.filter(contact => contact.contact_type.name === 'Prospect').length}
                 </p>
               </div>
@@ -271,13 +271,13 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
           <Card className="p-4">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                  <Icon name="activity" className="w-4 h-4 text-purple-600" />
+                <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
+                  <Icon name="activity" className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                 </div>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-500">Active</p>
-                <p className="text-2xl font-semibold text-gray-900">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Active</p>
+                <p className="text-2xl font-semibold text-gray-900 dark:text-white">
                   {contacts.filter(contact => contact.is_active).length}
                 </p>
               </div>
@@ -288,7 +288,7 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
         {/* Contact List */}
         <Card className="p-6">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <TableHeader
                 columns={[
                   { key: 'updated_at', label: 'Updated At', sortable: true },
@@ -301,41 +301,41 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
                   { key: 'actions', label: 'Actions', sortable: false }
                 ]}
               />
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {contacts.map((contact) => (
-                  <TableRow key={contact.id} onClick={() => onContactClick(contact.id)} className="cursor-pointer hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <TableRow key={contact.id} onClick={() => onContactClick(contact.id)} className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {formatCalendarDate(contact.updated_at)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
-                          <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                            <span className="text-sm font-medium text-gray-700">
+                          <div className="h-10 w-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                               {contact.first_name?.[0] || ''}{contact.last_name?.[0] || ''}
                             </span>
                           </div>
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">
                             {contact.first_name} {contact.last_name}
                           </div>
                           {contact.job_title && (
-                            <div className="text-sm text-gray-500">{contact.job_title}</div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">{contact.job_title}</div>
                           )}
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {contact.company || '-'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {contact.email || '-'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {contact.phone || contact.mobile || '-'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {contact.assigned_to?.username || 'Unassigned'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

@@ -104,21 +104,21 @@ export default function Page() {
   ];
 
   return (
-    <div className="p-6 space-y-6 h-full overflow-y-auto">
+    <div className="p-6 space-y-6 h-full overflow-y-auto bg-gray-50 dark:bg-gray-900">
         {/* Header */}
-        <div className="border-b border-gray-200 pb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-2">
+        <div className="border-b border-gray-200 dark:border-gray-700 pb-6">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
             Welcome back, {user?.email}. Manage your application from here.
           </p>
         </div>
 
         {/* Backend Status */}
         {backendOk === false && (
-          <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-900">
+          <div className="rounded-xl border border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/20 p-4 text-amber-900 dark:text-amber-200">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
+                <svg className="h-5 w-5 text-amber-400 dark:text-amber-500" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
               </div>
@@ -133,10 +133,10 @@ export default function Page() {
 
         {/* Stats Error */}
         {statsError && (
-          <div className="rounded-xl border border-red-300 bg-red-50 p-4 text-red-900">
+          <div className="rounded-xl border border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20 p-4 text-red-900 dark:text-red-200">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                <svg className="h-5 w-5 text-red-400 dark:text-red-500" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                 </svg>
               </div>
@@ -156,17 +156,17 @@ export default function Page() {
             {statCards.map((card, index) => {
               const Icon = card.icon;
               return (
-                <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div key={index} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
                   <div className="flex items-center">
                     <div className={`p-3 rounded-lg ${card.color}`}>
                       <Icon className="w-6 h-6 text-white" />
                     </div>
                     <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-600">{card.title}</p>
-                      <p className="text-2xl font-bold text-gray-900">{card.value}</p>
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{card.title}</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">{card.value}</p>
                     </div>
                   </div>
-                  <p className="text-sm text-gray-500 mt-2">{card.description}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{card.description}</p>
                 </div>
               );
             })}
@@ -175,8 +175,8 @@ export default function Page() {
 
         {/* Quick Actions - Admin Only */}
         {isAdmin && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {quickActions.map((action, index) => {
                 const Icon = action.icon;
@@ -184,17 +184,17 @@ export default function Page() {
                   <Link
                     key={index}
                     href={action.href}
-                    className="group p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200"
+                    className="group p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md transition-all duration-200"
                   >
                     <div className="flex items-center space-x-3">
-                      <div className={`p-2 rounded-lg ${action.color}`}>
+                      <div className={`p-2 rounded-lg ${action.color} dark:opacity-80`}>
                         <Icon className="w-5 h-5" />
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-medium text-gray-900 group-hover:text-blue-600 transition-colors">
+                        <h3 className="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                           {action.title}
                         </h3>
-                        <p className="text-sm text-gray-500">{action.description}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{action.description}</p>
                       </div>
                     </div>
                   </Link>
@@ -207,13 +207,13 @@ export default function Page() {
         {/* Time-Series Charts (Spline Area) */}
         <div className="space-y-6">
           <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold text-gray-900">Analytics</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Analytics</h2>
             <ChartTimeRangePicker value={timeRange} onChange={setTimeRange} />
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Profit Over Time</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Profit Over Time</h3>
             {chartLoading ? (
               <div className="flex items-center justify-center h-64">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -235,7 +235,7 @@ export default function Page() {
           </Card>
 
             <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Weekly Listings Volume</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Weekly Listings Volume</h3>
             {chartLoading ? (
               <div className="flex items-center justify-center h-64">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -257,7 +257,7 @@ export default function Page() {
           </Card>
 
             <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Buyer Activity Per Day</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Buyer Activity Per Day</h3>
             {chartLoading ? (
               <div className="flex items-center justify-center h-64">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -283,7 +283,7 @@ export default function Page() {
         {/* Distribution Charts (Bar) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Sourcing Activities per Agent</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Sourcing Activities per Agent</h3>
             {chartLoading ? (
               <div className="flex items-center justify-center h-64">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -302,7 +302,7 @@ export default function Page() {
           </Card>
 
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Car Categories Performance</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Car Categories Performance</h3>
             {chartLoading ? (
               <div className="flex items-center justify-center h-64">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -321,143 +321,7 @@ export default function Page() {
           </Card>
 
           <Card className="p-6 lg:col-span-2">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">States/Regions Performance</h3>
-            {chartLoading ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              </div>
-            ) : chartData?.statesRegions ? (
-              <BarChart
-                series={[{
-                  name: 'Count',
-                  data: chartData.statesRegions.map(item => item.value)
-                }]}
-                categories={chartData.statesRegions.map(item => item.name)}
-                height={300}
-                colors={['#8b5cf6']}
-              />
-            ) : null}
-          </Card>
-        </div>
-
-        {/* Time-Series Charts (Spline Area) */}
-        <div className="space-y-6">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold text-gray-900">Analytics</h2>
-            <ChartTimeRangePicker value={timeRange} onChange={setTimeRange} />
-          </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Profit Over Time</h3>
-            {chartLoading ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              </div>
-            ) : chartData?.profitOverTime ? (
-              <SplineAreaChart
-                series={[{
-                  name: 'Profit',
-                  data: chartData.profitOverTime.map(d => d.value)
-                }]}
-                categories={chartData.profitOverTime.map(d => {
-                  const date = new Date(d.date);
-                  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                })}
-                height={300}
-                colors={['#3b82f6']}
-              />
-            ) : null}
-          </Card>
-
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Weekly Listings Volume</h3>
-            {chartLoading ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              </div>
-            ) : chartData?.weeklyListingsVolume ? (
-              <SplineAreaChart
-                series={[{
-                  name: 'Listings',
-                  data: chartData.weeklyListingsVolume.map(d => d.value)
-                }]}
-                categories={chartData.weeklyListingsVolume.map(d => {
-                  const date = new Date(d.date);
-                  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                })}
-                height={300}
-                colors={['#10b981']}
-              />
-            ) : null}
-          </Card>
-
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Buyer Activity Per Day</h3>
-            {chartLoading ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              </div>
-            ) : chartData?.buyerActivityPerDay ? (
-              <SplineAreaChart
-                series={[{
-                  name: 'Activity',
-                  data: chartData.buyerActivityPerDay.map(d => d.value)
-                }]}
-                categories={chartData.buyerActivityPerDay.map(d => {
-                  const date = new Date(d.date);
-                  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                })}
-                height={300}
-                colors={['#8b5cf6']}
-              />
-            ) : null}
-            </Card>
-          </div>
-        </div>
-
-        {/* Distribution Charts (Bar) */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Sourcing Activities per Agent</h3>
-            {chartLoading ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              </div>
-            ) : chartData?.sourcingActivitiesPerAgent ? (
-              <BarChart
-                series={[{
-                  name: 'Activities',
-                  data: chartData.sourcingActivitiesPerAgent.map(item => item.value)
-                }]}
-                categories={chartData.sourcingActivitiesPerAgent.map(item => item.name)}
-                height={300}
-                colors={['#3b82f6']}
-              />
-            ) : null}
-          </Card>
-
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Car Categories Performance</h3>
-            {chartLoading ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              </div>
-            ) : chartData?.carCategoriesPerformance ? (
-              <BarChart
-                series={[{
-                  name: 'Count',
-                  data: chartData.carCategoriesPerformance.map(item => item.value)
-                }]}
-                categories={chartData.carCategoriesPerformance.map(item => item.name)}
-                height={300}
-                colors={['#10b981']}
-              />
-            ) : null}
-          </Card>
-
-          <Card className="p-6 lg:col-span-2">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">States/Regions Performance</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">States/Regions Performance</h3>
             {chartLoading ? (
               <div className="flex items-center justify-center h-64">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -490,45 +354,45 @@ export default function Page() {
         <UserActivityCard />
 
         {/* System Overview */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">System Overview</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">System Overview</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                 <div className="flex items-center space-x-3">
                   <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span className="text-sm text-gray-900">Backend Status</span>
+                  <span className="text-sm text-gray-900 dark:text-white">Backend Status</span>
                 </div>
-                <span className={`text-sm font-medium ${backendOk ? 'text-green-600' : 'text-red-600'}`}>
+                <span className={`text-sm font-medium ${backendOk ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                   {backendOk ? 'Connected' : 'Disconnected'}
                 </span>
               </div>
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                 <div className="flex items-center space-x-3">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-gray-900">Data Loading</span>
+                  <span className="text-sm text-gray-900 dark:text-white">Data Loading</span>
                 </div>
-                <span className={`text-sm font-medium ${statsLoading ? 'text-yellow-600' : 'text-green-600'}`}>
+                <span className={`text-sm font-medium ${statsLoading ? 'text-yellow-600 dark:text-yellow-400' : 'text-green-600 dark:text-green-400'}`}>
                   {statsLoading ? 'Loading...' : 'Ready'}
                 </span>
               </div>
             </div>
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                 <div className="flex items-center space-x-3">
                   <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                  <span className="text-sm text-gray-900">Listings Data</span>
+                  <span className="text-sm text-gray-900 dark:text-white">Listings Data</span>
                 </div>
-                <span className={`text-sm font-medium ${listings ? 'text-green-600' : 'text-yellow-600'}`}>
+                <span className={`text-sm font-medium ${listings ? 'text-green-600 dark:text-green-400' : 'text-yellow-600 dark:text-yellow-400'}`}>
                   {listings ? `${listings.length} items` : 'Loading...'}
                 </span>
               </div>
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                 <div className="flex items-center space-x-3">
                   <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
-                  <span className="text-sm text-gray-900">User Session</span>
+                  <span className="text-sm text-gray-900 dark:text-white">User Session</span>
                 </div>
-                <span className="text-sm font-medium text-green-600">
+                <span className="text-sm font-medium text-green-600 dark:text-green-400">
                   {user?.email || 'Not logged in'}
                 </span>
               </div>

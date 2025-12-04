@@ -165,10 +165,10 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
               Lead Management
             </h1>
-            <p className="text-gray-600 mt-1">
+            <p className="text-gray-600 dark:text-gray-300 mt-1">
               Manage and track your leads ({totalLeads} total)
             </p>
           </div>
@@ -188,7 +188,7 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
         <Card className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Search
               </label>
               <Input
@@ -200,13 +200,13 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Status
               </label>
               <select
                 value={statusFilter}
                 onChange={(e) => handleStatusFilterChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 disabled={loading || statusesLoading}
               >
                 <option value="all">All Status</option>
@@ -218,13 +218,13 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Source
               </label>
               <select
                 value={sourceFilter}
                 onChange={(e) => handleSourceFilterChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 disabled={loading || sourcesLoading}
               >
                 <option value="all">All Sources</option>
@@ -237,13 +237,13 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
             </div>
             {isAdmin && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Assigned To
                 </label>
                 <select
                   value={assignedFilter}
                   onChange={(e) => handleAssignedToFilterChange(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   disabled={loading}
                 >
                   <option value="all">All Users</option>
@@ -264,13 +264,13 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
               </div>
             )}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Location
               </label>
               <select
                 value={locationFilter}
                 onChange={(e) => handleLocationFilterChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 disabled={loading}
               >
                 <option value="all">All Locations</option>
@@ -293,13 +293,13 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
           <Card className="p-4">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <Icon name="users" className="w-4 h-4 text-blue-600" />
+                <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+                  <Icon name="users" className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 </div>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-500">Total Leads</p>
-                <p className="text-2xl font-semibold text-gray-900">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Leads</p>
+                <p className="text-2xl font-semibold text-gray-900 dark:text-white">
                   {totalLeads}
                 </p>
               </div>
@@ -308,16 +308,16 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
           <Card className="p-4">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
                   <Icon
                     name="check-circle"
-                    className="w-4 h-4 text-green-600"
+                    className="w-4 h-4 text-green-600 dark:text-green-400"
                   />
                 </div>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-500">Qualified</p>
-                <p className="text-2xl font-semibold text-gray-900">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Qualified</p>
+                <p className="text-2xl font-semibold text-gray-900 dark:text-white">
                   {
                     leads.filter((lead) => lead.status.name === "Qualified")
                       .length
@@ -329,15 +329,15 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
           <Card className="p-4">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                  <Icon name="clock" className="w-4 h-4 text-yellow-600" />
+                <div className="w-8 h-8 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
+                  <Icon name="clock" className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
                 </div>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-500">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                   New This Week
                 </p>
-                <p className="text-2xl font-semibold text-gray-900">
+                <p className="text-2xl font-semibold text-gray-900 dark:text-white">
                   {
                     leads.filter((lead) => {
                       const leadDate = new Date(lead.created_at);
@@ -353,16 +353,16 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
           <Card className="p-4">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
                   <Icon
                     name="trending-up"
-                    className="w-4 h-4 text-purple-600"
+                    className="w-4 h-4 text-purple-600 dark:text-purple-400"
                   />
                 </div>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-500">Avg Score</p>
-                <p className="text-2xl font-semibold text-gray-900">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Avg Score</p>
+                <p className="text-2xl font-semibold text-gray-900 dark:text-white">
                   {Math.round(
                     leads.reduce((sum, lead) => sum + lead.lead_score, 0) /
                       leads.length
@@ -376,7 +376,7 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
         {/* Lead List */}
         <Card className="p-6">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <TableHeader
                 columns={[
                   { key: "name", label: "Name", sortable: true },
@@ -396,7 +396,7 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
                   { key: "created", label: "Created", sortable: true },
                 ]}
               />
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {leads.map((lead) => (
                   <TableRow
                     key={lead.id}
@@ -406,25 +406,25 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
-                          <div className="h-10 w-10 rounded-full bg-gray-300 group-hover:bg-blue-500 transition-colors duration-150 flex items-center justify-center">
-                            <span className="text-sm font-medium text-gray-700 group-hover:text-white transition-colors duration-150">
+                          <div className="h-10 w-10 rounded-full bg-gray-300 dark:bg-gray-600 group-hover:bg-blue-500 dark:group-hover:bg-blue-600 transition-colors duration-150 flex items-center justify-center">
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-white transition-colors duration-150">
                               {lead.contact?.first_name?.[0] || "?"}
                               {lead.contact?.last_name?.[0] || "?"}
                             </span>
                           </div>
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors duration-150">
+                          <div className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">
                             {lead.contact?.first_name || "Unknown"}{" "}
                             {lead.contact?.last_name || ""}
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                       {lead.contact?.email || "N/A"}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                       {lead.contact?.phone || "N/A"}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -432,31 +432,31 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
                         {lead.status.name}
                       </Badge>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                       {lead.source?.name || "N/A"}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                       {lead.assigned_to?.username || "Unassigned"}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                       {lead.listing?.location || "N/A"}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                       {lead.listing?.vin || "N/A"}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                       {lead.listing?.year || "N/A"}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                       {lead.listing?.make || "N/A"}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                       {lead.listing?.model || "N/A"}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                       {lead.listing?.trim || "N/A"}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                       {lead.listing?.miles?.toLocaleString() || "N/A"}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -464,7 +464,7 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
                         {lead.lead_score}
                       </Badge>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {formatDate(lead.created_at)}
                     </td>
                   </TableRow>

@@ -99,7 +99,7 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">CRM Dashboard</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">CRM Dashboard</h1>
         <div className="flex space-x-2">
           <Button variant="outline" size="sm">
             <Icon name="download" className="w-4 h-4 mr-2" />
@@ -151,16 +151,16 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
       {/* Charts Section */}
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-gray-900">Analytics</h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Analytics</h2>
           <ChartTimeRangePicker value={timeRange} onChange={setTimeRange} />
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Lead → Purchase Funnel</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Lead → Purchase Funnel</h3>
           {chartLoading ? (
             <div className="flex items-center justify-center h-64">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
             </div>
           ) : chartData?.leadToPurchaseFunnel ? (
             <SplineAreaChart
@@ -179,10 +179,10 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
         </Card>
 
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Lead Source Performance</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Lead Source Performance</h3>
           {chartLoading ? (
             <div className="flex items-center justify-center h-64">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
             </div>
           ) : chartData?.leadSourcePerformance ? (
             <BarChart
@@ -204,7 +204,7 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
         {/* Recent Activities */}
         <Card className="p-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-gray-900">Recent Activities</h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Recent Activities</h2>
             <Button variant="ghost" size="sm">
               View All
             </Button>
@@ -214,10 +214,10 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
               <div key={activity.id} className="flex items-start space-x-3">
                 <div className="flex-shrink-0">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                    activity.type === 'lead' ? 'bg-blue-100 text-blue-600' :
-                    activity.type === 'contact' ? 'bg-green-100 text-green-600' :
-                    activity.type === 'deal' ? 'bg-purple-100 text-purple-600' :
-                    'bg-orange-100 text-orange-600'
+                    activity.type === 'lead' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' :
+                    activity.type === 'contact' ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' :
+                    activity.type === 'deal' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' :
+                    'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400'
                   }`}>
                     <Icon name={
                       activity.type === 'lead' ? 'users' :
@@ -228,8 +228,8 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-900">{activity.description}</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-sm text-gray-900 dark:text-gray-100">{activity.description}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     {activity.user} • {activity.timestamp}
                   </p>
                 </div>
@@ -241,42 +241,42 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
         {/* Lead Pipeline */}
         <Card className="p-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-gray-900">Lead Pipeline</h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Lead Pipeline</h2>
             <Button variant="ghost" size="sm">
               View All
             </Button>
           </div>
           <div className="space-y-4">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">New</span>
-              <span className="font-medium">45</span>
+              <span className="text-gray-600 dark:text-gray-300">New</span>
+              <span className="font-medium text-gray-900 dark:text-white">45</span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div className="bg-blue-600 h-2 rounded-full" style={{ width: '45%' }}></div>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Contacted</span>
-              <span className="font-medium">23</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div className="bg-green-600 h-2 rounded-full" style={{ width: '23%' }}></div>
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div className="bg-blue-600 dark:bg-blue-500 h-2 rounded-full" style={{ width: '45%' }}></div>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Qualified</span>
-              <span className="font-medium">12</span>
+              <span className="text-gray-600 dark:text-gray-300">Contacted</span>
+              <span className="font-medium text-gray-900 dark:text-white">23</span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div className="bg-yellow-600 h-2 rounded-full" style={{ width: '12%' }}></div>
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div className="bg-green-600 dark:bg-green-500 h-2 rounded-full" style={{ width: '23%' }}></div>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Converted</span>
-              <span className="font-medium">8</span>
+              <span className="text-gray-600 dark:text-gray-300">Qualified</span>
+              <span className="font-medium text-gray-900 dark:text-white">12</span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div className="bg-green-600 h-2 rounded-full" style={{ width: '8%' }}></div>
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div className="bg-yellow-600 dark:bg-yellow-500 h-2 rounded-full" style={{ width: '12%' }}></div>
             </div>
-            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-600">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600 dark:text-gray-300">Converted</span>
+              <span className="font-medium text-gray-900 dark:text-white">8</span>
+            </div>
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div className="bg-green-600 dark:bg-green-500 h-2 rounded-full" style={{ width: '8%' }}></div>
+            </div>
+            <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <p className="text-sm text-gray-600 dark:text-gray-300">
                 <span className="font-medium">Conversion Rate:</span> {leadConversionRate}%
               </p>
             </div>
@@ -287,13 +287,13 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
       {/* High-Scoring Vehicles */}
       <Card className="p-6">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-gray-900">High-Scoring Vehicles</h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">High-Scoring Vehicles</h2>
           <Button variant="ghost" size="sm">
             View All
           </Button>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <TableHeader
               columns={[
                 { key: 'vehicle', label: 'Vehicle', sortable: true },
@@ -304,12 +304,12 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
                 { key: 'actions', label: 'Actions', sortable: false }
               ]}
             />
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {highScoringVehicles.map((vehicle) => (
                 <TableRow key={vehicle.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">
                         {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.trim}
                       </div>
                     </div>
@@ -321,13 +321,13 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
                       {vehicle.score}
                     </Badge>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                     ${vehicle.price.toLocaleString()}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                     {vehicle.miles.toLocaleString()}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {vehicle.location}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">

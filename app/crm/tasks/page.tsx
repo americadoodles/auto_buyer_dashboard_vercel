@@ -30,7 +30,6 @@ export default function TasksPage() {
     // Only apply assigned_to filter for admins (buyers are already filtered by backend by owner)
     assigned_to: isAdmin ? assignedToFilter : undefined
   });
-  
   // Filter tasks for buyers: show tasks where owner_id OR assigned_to matches buyer's ID
   const tasks = useMemo(() => {
     if (isAdmin) {
@@ -68,7 +67,91 @@ export default function TasksPage() {
   };
 
   const handleExportTasks = () => {
-    console.log('Export tasks clicked');
+    try {
+      // Filter to only completed tasks (status_name === 'Completed')
+      // Check status_name directly on task, or look it up from statuses array
+      const completedTasks = tasks.filter(task => {
+        // Check if task has status_name property directly
+        const taskStatusName = (task as any).status_name;
+        if (taskStatusName) {
+          return taskStatusName.toLowerCase() === 'completed';
+        }
+        // Fallback: look up status name from statuses array
+        const foundStatus = statuses.find(s => s.id === task.status_id);
+        return foundStatus?.name?.toLowerCase() === 'completed';
+      });
+      
+      // Filter by user role
+      let tasksToExport = completedTasks;
+      if (!isAdmin && user?.id) {
+        // For buyers: only export tasks where owner_id OR assigned_to matches buyer's ID
+        tasksToExport = completedTasks.filter(task => 
+          task.owner_user_id === user.id || 
+          task.assigned_to === user.id
+        );
+      }
+      
+      if (tasksToExport.length === 0) {
+        alert('No completed tasks found to export.');
+        return;
+      }
+      
+      // Get status and priority names for export
+      const exportData = tasksToExport.map(task => {
+        const foundPriority = priorities.find(p => p.id === task.priority_id);
+        const foundStatus = statuses.find(s => s.id === task.status_id);
+        
+        return {
+          'Task ID': task.id,
+          'Title': task.title || '',
+          'Description': task.description || '',
+          'Status': foundStatus?.name || 'Unknown',
+          'Priority': foundPriority?.name || 'Unknown',
+          'Owner': task.owner_user_name || 'Unassigned',
+          'Assigned To': task.assigned_to_user || 'Unassigned',
+          'Due Date': task.due_date ? new Date(task.due_date).toLocaleDateString() : '',
+          'Completed At': task.completed_at ? new Date(task.completed_at).toLocaleDateString() : '',
+          'Related Lead': task.related_lead_id || '',
+          'Related Contact': task.related_contact_id || '',
+          'Related Deal': task.related_deal_name || task.related_deal_id || '',
+          'Created At': task.created_at ? new Date(task.created_at).toLocaleDateString() : '',
+        };
+      });
+      
+      // Convert to CSV
+      const headers = Object.keys(exportData[0]);
+      const csvRows = [
+        headers.join(','),
+        ...exportData.map(row => 
+          headers.map(header => {
+            const value = row[header as keyof typeof row];
+            // Escape commas and quotes in CSV
+            if (value === null || value === undefined) return '';
+            const stringValue = String(value);
+            if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+              return `"${stringValue.replace(/"/g, '""')}"`;
+            }
+            return stringValue;
+          }).join(',')
+        )
+      ];
+      
+      const csvContent = csvRows.join('\n');
+      
+      // Create download link
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `completed_tasks_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error exporting tasks:', error);
+      alert('Failed to export tasks. Please try again.');
+    }
   };
 
   const handleCompleteTask = async (taskId: string) => {

@@ -356,10 +356,6 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
             <Icon name="download" className="w-4 h-4 mr-2" />
             Export
           </Button>
-          <Button onClick={onCreateTask}>
-            <Icon name="plus" className="w-4 h-4 mr-2" />
-            New Task
-          </Button>
         </div>
       </div>
 

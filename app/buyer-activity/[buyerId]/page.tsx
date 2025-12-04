@@ -316,10 +316,10 @@ export default function BuyerActivityPage() {
   const isIndeterminate = selectedListings.size > 0 && selectedListings.size < sortedListings.length;
 
   return (
-    <div className="h-full overflow-y-auto">
+    <div className="h-full overflow-y-auto bg-gray-50 dark:bg-gray-900">
     <div className="p-6 space-y-6">
         {/* Header */}
-        <div className="border-b border-gray-200 pb-6">
+        <div className="border-b border-gray-200 dark:border-gray-700 pb-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Button
@@ -335,10 +335,7 @@ export default function BuyerActivityPage() {
                 <User className="h-7 w-7 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Buyer Activity</h1>
-                <p className="text-gray-600 mt-2">
-                  Vehicle listings and performance for buyer ID: {buyerId}
-                </p>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Buyer Activity</h1>
               </div>
             </div>
             <div className="flex items-center space-x-3">
@@ -355,11 +352,11 @@ export default function BuyerActivityPage() {
         </div>
 
         {/* Date Range Filter */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-2">
-              <Calendar className="h-5 w-5 text-gray-500" />
-              <h2 className="text-lg font-semibold text-gray-900">Time Range Filter</h2>
+              <Calendar className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Time Range Filter</h2>
             </div>
             {(dateRange.start || dateRange.end) && (
               <Button
@@ -380,10 +377,10 @@ export default function BuyerActivityPage() {
 
         {/* Backend Status */}
         {backendOk === false && (
-          <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-900">
+          <div className="rounded-xl border border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/20 p-4 text-amber-900 dark:text-amber-200">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
+                <svg className="h-5 w-5 text-amber-400 dark:text-amber-500" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
               </div>
@@ -391,8 +388,8 @@ export default function BuyerActivityPage() {
                 <p className="text-sm font-medium">
                   Backend not reachable. Please start the API server to view buyer data.
                 </p>
-                <p className="text-xs text-amber-700 mt-1">
-                  Run: <code className="bg-amber-100 px-1 rounded">cd api && python -m uvicorn index:app --reload --host 0.0.0.0 --port 8001</code>
+                <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                  Run: <code className="bg-amber-100 dark:bg-amber-900/40 px-1 rounded">cd api && python -m uvicorn index:app --reload --host 0.0.0.0 --port 8001</code>
                 </p>
               </div>
             </div>
@@ -405,12 +402,12 @@ export default function BuyerActivityPage() {
         )}
 
         {/* Search and Filter Controls */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
             {/* Search Bar */}
             <div className="flex-1 max-w-md">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
                 <Input
                   type="text"
                   placeholder="Search by make, model, VIN, or location..."
@@ -438,7 +435,7 @@ export default function BuyerActivityPage() {
                   onClick={() => setSelectedListings(new Set())}
                   variant="outline"
                   size="sm"
-                  className="text-blue-600 hover:text-blue-700"
+                  className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
                 >
                   Clear Selection ({selectedListings.size})
                 </Button>
@@ -449,7 +446,7 @@ export default function BuyerActivityPage() {
                   onClick={resetFilters}
                   variant="outline"
                   size="sm"
-                  className="text-red-600 hover:text-red-700"
+                  className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
                 >
                   Clear Filters
                 </Button>
@@ -459,16 +456,16 @@ export default function BuyerActivityPage() {
 
           {/* Advanced Filters */}
           {showFilters && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Status
                   </label>
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
                   >
                     <option value="">All Status</option>
                     <option value="scored">Scored</option>
@@ -479,13 +476,13 @@ export default function BuyerActivityPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Make
                   </label>
                   <select
                     value={makeFilter}
                     onChange={(e) => setMakeFilter(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
                   >
                     <option value="">All Makes</option>
                     {uniqueMakes.map((make) => (
@@ -501,32 +498,32 @@ export default function BuyerActivityPage() {
         </div>
 
         {/* Listings Table */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="px-6 py-4 border-b border-gray-200">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Vehicle Listings</h2>
-                <p className="text-sm text-gray-600">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Vehicle Listings</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   {sortedListings.length} filtered listings • {paginatedListings.length} showing
                   {selectedListings.size > 0 && (
-                    <span className="ml-2 text-blue-600 font-medium">
+                    <span className="ml-2 text-blue-600 dark:text-blue-400 font-medium">
                       • {selectedListings.size} selected
                     </span>
                   )}
                   {(dateRange.start || dateRange.end) && (
-                    <span className="ml-2 text-blue-600">
+                    <span className="ml-2 text-blue-600 dark:text-blue-400">
                       (filtered by date range)
                     </span>
                   )}
                   {(searchTerm || statusFilter || makeFilter) && (
-                    <span className="ml-2 text-green-600">
+                    <span className="ml-2 text-green-600 dark:text-green-400">
                       (filtered by search/filters)
                     </span>
                   )}
                 </p>
               </div>
               <div className="flex items-center space-x-2">
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-gray-500 dark:text-gray-400">
                   Page {currentPage} of {totalPages}
                 </div>
               </div>
@@ -536,16 +533,16 @@ export default function BuyerActivityPage() {
           <div className="p-6">
             {loading ? (
               <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <span className="ml-3 text-gray-600">Loading buyer data...</span>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
+                <span className="ml-3 text-gray-600 dark:text-gray-400">Loading buyer data...</span>
               </div>
             ) : listings.length === 0 ? (
               <div className="text-center py-12">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Car className="w-8 h-8 text-gray-400" />
+                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Car className="w-8 h-8 text-gray-400 dark:text-gray-500" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No listings found</h3>
-                <p className="text-gray-500">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No listings found</h3>
+                <p className="text-gray-500 dark:text-gray-400">
                   {backendOk === false 
                     ? "Cannot load data - backend server is not running."
                     : sortedListings.length === 0 && (searchTerm || statusFilter || makeFilter)
@@ -566,28 +563,11 @@ export default function BuyerActivityPage() {
               </div>
             ) : sortedListings.length === 0 ? (
               <div className="text-center py-12">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Car className="w-8 h-8 text-gray-400" />
+                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Car className="w-8 h-8 text-gray-400 dark:text-gray-500" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No listings match your filters</h3>
-                <p className="text-gray-500 mb-4">
-                  {listings.length} listing{listings.length !== 1 ? 's' : ''} found, but none match your current search or filter criteria.
-                </p>
-                <Button
-                  onClick={resetFilters}
-                  variant="outline"
-                  size="sm"
-                >
-                  Clear Filters
-                </Button>
-              </div>
-            ) : sortedListings.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Car className="w-8 h-8 text-gray-400" />
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No listings match your filters</h3>
-                <p className="text-gray-500 mb-4">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No listings match your filters</h3>
+                <p className="text-gray-500 dark:text-gray-400 mb-4">
                   {listings.length} listing{listings.length !== 1 ? 's' : ''} found, but none match your current search or filter criteria.
                 </p>
                 <Button

@@ -142,7 +142,7 @@ def get_task(task_id: UUID) -> Optional[TaskOut]:
                     SELECT t.id, t.related_type, t.related_id, t.title, t.description, 
                            t.priority_id, t.status_id, t.column_id, t.owner_user_id, t.assigned_to,
                            t.due_at, t.due_date, t.related_lead_id, t.related_contact_id, t.related_deal_id,
-                           t.created_at, t.updated_at,
+                           t.created_at, t.updated_at, t.completed_at,
                            tp.name as priority_name, ts.name as status_name,
                            u_owner.username as owner_user_name,
                            u_assigned.username as assigned_to_user,
@@ -162,14 +162,14 @@ def get_task(task_id: UUID) -> Optional[TaskOut]:
                     # Map priority/status names to enums for backward compatibility
                     priority_enum = None
                     status_enum = None
-                    if result[17]:  # priority_name
+                    if result[18]:  # priority_name
                         try:
-                            priority_enum = TaskPriority(result[17])
+                            priority_enum = TaskPriority(result[18])
                         except ValueError:
                             pass
-                    if result[18]:  # status_name
+                    if result[19]:  # status_name
                         try:
-                            status_enum = TaskStatus(result[18])
+                            status_enum = TaskStatus(result[19])
                         except ValueError:
                             pass
                     
@@ -180,11 +180,11 @@ def get_task(task_id: UUID) -> Optional[TaskOut]:
                         column_id=result[7], owner_user_id=result[8], assigned_to=result[9],
                         due_at=result[10], due_date=result[11],
                         related_lead_id=result[12], related_contact_id=result[13], related_deal_id=result[14],
-                        created_at=result[15], updated_at=result[16],
+                        created_at=result[15], updated_at=result[16], completed_at=result[17],
                         priority=priority_enum, status=status_enum,
-                        priority_name=result[17], status_name=result[18],
-                        owner_user_name=result[19], assigned_to_user=result[20],
-                        related_deal_name=result[21], contact_id=result[22]
+                        priority_name=result[18], status_name=result[19],
+                        owner_user_name=result[20], assigned_to_user=result[21],
+                        related_deal_name=result[22], contact_id=result[23]
                     )
                 return None
                 
@@ -215,7 +215,13 @@ def update_task(task_id: UUID, task_update: TaskUpdate, user_id: UUID) -> Option
                 
                 update_dict = task_update.model_dump(exclude_unset=True)
                 for field, value in update_dict.items():
-                    if value is not None:
+                    # Handle None values for fields that can be cleared (like completed_at)
+                    # If field is explicitly set to None, we want to clear it
+                    if field == 'completed_at' and value is None:
+                        update_fields.append(f"{field} = %s")
+                        update_values.append(None)
+                        changes[field] = None
+                    elif value is not None:
                         # Map field names to database columns
                         db_field = field
                         if field == 'due_at' or field == 'due_date':
@@ -240,7 +246,7 @@ def update_task(task_id: UUID, task_update: TaskUpdate, user_id: UUID) -> Option
                     SELECT t.id, t.related_type, t.related_id, t.title, t.description, 
                            t.priority_id, t.status_id, t.column_id, t.owner_user_id, t.assigned_to,
                            t.due_at, t.due_date, t.related_lead_id, t.related_contact_id, t.related_deal_id,
-                           t.created_at, t.updated_at,
+                           t.created_at, t.updated_at, t.completed_at,
                            tp.name as priority_name, ts.name as status_name,
                            u_owner.username as owner_user_name,
                            u_assigned.username as assigned_to_user,
@@ -263,14 +269,14 @@ def update_task(task_id: UUID, task_update: TaskUpdate, user_id: UUID) -> Option
                     # Map priority/status names to enums for backward compatibility
                     priority_enum = None
                     status_enum = None
-                    if result[17]:  # priority_name
+                    if result[18]:  # priority_name
                         try:
-                            priority_enum = TaskPriority(result[17])
+                            priority_enum = TaskPriority(result[18])
                         except ValueError:
                             pass
-                    if result[18]:  # status_name
+                    if result[19]:  # status_name
                         try:
-                            status_enum = TaskStatus(result[18])
+                            status_enum = TaskStatus(result[19])
                         except ValueError:
                             pass
                     
@@ -281,11 +287,11 @@ def update_task(task_id: UUID, task_update: TaskUpdate, user_id: UUID) -> Option
                         column_id=result[7], owner_user_id=result[8], assigned_to=result[9],
                         due_at=result[10], due_date=result[11],
                         related_lead_id=result[12], related_contact_id=result[13], related_deal_id=result[14],
-                        created_at=result[15], updated_at=result[16],
+                        created_at=result[15], updated_at=result[16], completed_at=result[17],
                         priority=priority_enum, status=status_enum,
-                        priority_name=result[17], status_name=result[18],
-                        owner_user_name=result[19], assigned_to_user=result[20],
-                        related_deal_name=result[21], contact_id=result[22]
+                        priority_name=result[18], status_name=result[19],
+                        owner_user_name=result[20], assigned_to_user=result[21],
+                        related_deal_name=result[22], contact_id=result[23]
                     )
                 return None
                 
@@ -420,7 +426,7 @@ def list_tasks(
                     SELECT t.id, t.related_type, t.related_id, t.title, t.description, 
                            t.priority_id, t.status_id, t.column_id, t.owner_user_id, t.assigned_to,
                            t.due_at, t.due_date, t.related_lead_id, t.related_contact_id, t.related_deal_id,
-                           t.created_at, t.updated_at,
+                           t.created_at, t.updated_at, t.completed_at,
                            tp.name as priority_name, ts.name as status_name,
                            u_owner.username as owner_user_name,
                            u_assigned.username as assigned_to_user,
@@ -439,14 +445,14 @@ def list_tasks(
                     # Map priority/status names to enums for backward compatibility
                     priority_enum = None
                     status_enum = None
-                    if result[17]:  # priority_name
+                    if result[18]:  # priority_name
                         try:
-                            priority_enum = TaskPriority(result[17])
+                            priority_enum = TaskPriority(result[18])
                         except ValueError:
                             pass
-                    if result[18]:  # status_name
+                    if result[19]:  # status_name
                         try:
-                            status_enum = TaskStatus(result[18])
+                            status_enum = TaskStatus(result[19])
                         except ValueError:
                             pass
                     
@@ -457,11 +463,11 @@ def list_tasks(
                         column_id=result[7], owner_user_id=result[8], assigned_to=result[9],
                         due_at=result[10], due_date=result[11],
                         related_lead_id=result[12], related_contact_id=result[13], related_deal_id=result[14],
-                        created_at=result[15], updated_at=result[16],
+                        created_at=result[15], updated_at=result[16], completed_at=result[17],
                         priority=priority_enum, status=status_enum,
-                        priority_name=result[17], status_name=result[18],
-                        owner_user_name=result[19], assigned_to_user=result[20],
-                        related_deal_name=result[21], contact_id=result[22]
+                        priority_name=result[18], status_name=result[19],
+                        owner_user_name=result[20], assigned_to_user=result[21],
+                        related_deal_name=result[22], contact_id=result[23]
                     ))
                 
                 return tasks

@@ -2,6 +2,7 @@
 
 import React, { useMemo } from 'react';
 import dynamic from 'next/dynamic';
+import { useTheme } from 'next-themes';
 import { ApexOptions } from 'apexcharts';
 import { getSparklineConfig } from './config/sparkline';
 
@@ -27,16 +28,22 @@ export const SparklineChart: React.FC<SparklineChartProps> = ({
   customOptions,
   className = '',
 }) => {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
   const options = useMemo(() => {
     const config = getSparklineConfig({
       colors,
       chart: {
         type,
       },
+      tooltip: {
+        theme: isDark ? 'dark' : 'light',
+      },
       ...customOptions,
     });
     return config;
-  }, [colors, type, customOptions]);
+  }, [colors, type, customOptions, isDark]);
 
   return (
     <div className={className}>

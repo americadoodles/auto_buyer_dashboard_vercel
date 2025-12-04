@@ -4,12 +4,12 @@ import { ExportButton } from "components/molecules/ExportButton";
 
 export default function AdminUserManagementPage() {
   return (
-    <div className="p-6">
+    <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Current Users</h1>
-            <p className="text-gray-600 mt-2">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Current Users</h1>
+            <p className="text-gray-600 dark:text-gray-300 mt-2">
               View and manage all registered users in your application.
             </p>
           </div>

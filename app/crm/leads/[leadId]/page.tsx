@@ -130,10 +130,10 @@ export default function LeadDetailPage() {
 
   if (loading || statusesLoading || sourcesLoading) {
     return (
-      <div className="h-full overflow-y-auto">
+      <div className="h-full overflow-y-auto bg-gray-50 dark:bg-gray-900">
         <div className="p-6 flex items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="ml-3 text-gray-600">Loading lead details...</span>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
+          <span className="ml-3 text-gray-600 dark:text-gray-300">Loading lead details...</span>
         </div>
       </div>
     );
@@ -141,11 +141,11 @@ export default function LeadDetailPage() {
 
   if (!lead) {
     return (
-      <div className="h-full overflow-y-auto">
+      <div className="h-full overflow-y-auto bg-gray-50 dark:bg-gray-900">
         <div className="p-6">
           <div className="text-center py-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Lead Not Found</h2>
-            <p className="text-gray-600 mb-4">{error || 'The lead you are looking for does not exist.'}</p>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Lead Not Found</h2>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">{error || 'The lead you are looking for does not exist.'}</p>
             <Button onClick={() => router.push('/crm/leads')} variant="outline">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Leads
@@ -157,8 +157,8 @@ export default function LeadDetailPage() {
   }
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="p-6 border-b border-gray-200 pb-6 flex-shrink-0">
+    <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-900">
+      <div className="p-6 border-b border-gray-200 dark:border-gray-700 pb-6 flex-shrink-0">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
@@ -175,12 +175,12 @@ export default function LeadDetailPage() {
               <Icon name="user-plus" className="h-7 w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Lead Details</h1>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Lead Details</h1>
             </div>
           </div>
         </div>
         {error && (
-          <div className="text-red-600 text-sm bg-red-50 p-3 rounded-md mt-4">{error}</div>
+          <div className="text-red-600 dark:text-red-300 text-sm bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3 rounded-md mt-4">{error}</div>
         )}
       </div>
 
@@ -208,12 +208,12 @@ export default function LeadDetailPage() {
           </div>
 
           {/* Edit Fields Section */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-4">
-            <h4 className="text-md font-semibold text-gray-900 border-b pb-2">Contact Information</h4>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-4">
+            <h4 className="text-md font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Contact Information</h4>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   First Name
                 </label>
                 <Input
@@ -224,7 +224,7 @@ export default function LeadDetailPage() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Last Name
                 </label>
                 <Input
@@ -236,7 +236,7 @@ export default function LeadDetailPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Email
               </label>
               <Input
@@ -248,7 +248,7 @@ export default function LeadDetailPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Phone
               </label>
               <Input
@@ -260,7 +260,7 @@ export default function LeadDetailPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Job Title
               </label>
               <Input
@@ -272,30 +272,30 @@ export default function LeadDetailPage() {
 
             {lead.contact?.company && (
               <div>
-                <label className="block text-sm font-medium text-gray-500 mb-1">
+                <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                   Company (Read-only)
                 </label>
                 <Input
                   value={lead.contact.company}
                   disabled
-                  className="bg-gray-50"
+                  className="bg-gray-50 dark:bg-gray-700"
                 />
               </div>
             )}
           </div>
 
           {/* Lead Information Section */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-4">
-            <h4 className="text-md font-semibold text-gray-900 border-b pb-2">Lead Information</h4>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-4">
+            <h4 className="text-md font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Lead Information</h4>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Status
               </label>
               <select
                 value={statusId || ''}
                 onChange={(e) => setStatusId(e.target.value ? parseInt(e.target.value) : undefined)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 disabled={statusesLoading}
               >
                 <option value="">Select status</option>
@@ -308,13 +308,13 @@ export default function LeadDetailPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Source
               </label>
               <select
                 value={sourceId || ''}
                 onChange={(e) => setSourceId(e.target.value ? parseInt(e.target.value) : undefined)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 disabled={sourcesLoading}
               >
                 <option value="">Select source</option>
@@ -327,7 +327,7 @@ export default function LeadDetailPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Lead Score
               </label>
               <Input
@@ -341,27 +341,27 @@ export default function LeadDetailPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Notes
               </label>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Add notes about this lead..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 rows={4}
               />
             </div>
           </div>
           {lead.listing_id && (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-2">
-              <h4 className="text-md font-semibold text-gray-900 border-b pb-2">Related Listing</h4>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-2">
+              <h4 className="text-md font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Related Listing</h4>
               <div className="flex flex-wrap gap-2">
                 <Button
                   onClick={() => router.push(`/listings/${lead.listing_id}`)}
                   variant="outline"
                   size="sm"
-                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-black border-blue-600"
+                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white border-blue-600 dark:border-blue-500"
                 >
                   <ExternalLink className="h-4 w-4" />
                   View Listing
@@ -371,22 +371,22 @@ export default function LeadDetailPage() {
           )}
 
           {/* Lead Metadata */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-2">
-            <h4 className="text-md font-semibold text-gray-900 border-b pb-2">Lead Information</h4>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-2">
+            <h4 className="text-md font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Lead Information</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div>
-                <span className="font-medium text-gray-700">Assigned To:</span>
-                <span className="ml-2 text-gray-600">
+                <span className="font-medium text-gray-700 dark:text-gray-300">Assigned To:</span>
+                <span className="ml-2 text-gray-600 dark:text-gray-300">
                   {lead.assigned_to_user?.username || 'Unassigned'}
                 </span>
               </div>
               <div>
-                <span className="font-medium text-gray-700">Created:</span>
-                <span className="ml-2 text-gray-600">{formatDate(lead.created_at)}</span>
+                <span className="font-medium text-gray-700 dark:text-gray-300">Created:</span>
+                <span className="ml-2 text-gray-600 dark:text-gray-300">{formatDate(lead.created_at)}</span>
               </div>
               <div>
-                <span className="font-medium text-gray-700">Last Updated:</span>
-                <span className="ml-2 text-gray-600">{formatDate(lead.updated_at)}</span>
+                <span className="font-medium text-gray-700 dark:text-gray-300">Last Updated:</span>
+                <span className="ml-2 text-gray-600 dark:text-gray-300">{formatDate(lead.updated_at)}</span>
               </div>
             </div>
           </div>
@@ -403,7 +403,7 @@ export default function LeadDetailPage() {
 
         {/* Right Sidebar - Vehicle and Contact Information - Fixed Width, Full Height */}
         <div className="w-[400px] flex-shrink-0 flex flex-col">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 h-full overflow-y-auto">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 h-full overflow-y-auto">
             <VehicleContactCard
               title="Vehicle of Interest"
               vehicle={lead.listing ? {

@@ -384,6 +384,7 @@ class TaskBase(BaseModel):
     related_lead_id: Optional[UUID] = None
     related_contact_id: Optional[UUID] = None
     related_deal_id: Optional[UUID] = None
+    completed_at: Optional[datetime] = None
 
 class TaskCreate(TaskBase):
     pass
@@ -403,6 +404,7 @@ class TaskUpdate(BaseModel):
     related_lead_id: Optional[UUID] = None
     related_contact_id: Optional[UUID] = None
     related_deal_id: Optional[UUID] = None
+    completed_at: Optional[datetime] = None
 
 class TaskOut(TaskBase):
     id: UUID

@@ -50,7 +50,7 @@ export const TableRow: React.FC<TableRowProps> = ({
   if (children) {
     return (
       <tr 
-        className={`${className || ''} ${onClick ? 'cursor-pointer hover:bg-gray-50' : ''}`}
+        className={`${className || ''} ${onClick ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50' : ''}`}
         onClick={onClick}
       >
         {children}

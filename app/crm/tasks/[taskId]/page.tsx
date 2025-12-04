@@ -360,10 +360,10 @@ export default function TaskDetailPage() {
 
   if (loading || statusesLoading || prioritiesLoading) {
     return (
-      <div className="h-full overflow-y-auto">
+      <div className="h-full overflow-y-auto bg-gray-50 dark:bg-gray-900">
         <div className="p-6 flex items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="ml-3 text-gray-600">Loading task details...</span>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
+          <span className="ml-3 text-gray-600 dark:text-gray-300">Loading task details...</span>
         </div>
       </div>
     );
@@ -371,11 +371,11 @@ export default function TaskDetailPage() {
 
   if (!task) {
     return (
-      <div className="h-full overflow-y-auto">
+      <div className="h-full overflow-y-auto bg-gray-50 dark:bg-gray-900">
         <div className="p-6">
           <div className="text-center py-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Task Not Found</h2>
-            <p className="text-gray-600 mb-4">{error || 'The task you are looking for does not exist.'}</p>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Task Not Found</h2>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">{error || 'The task you are looking for does not exist.'}</p>
             <Button onClick={() => router.push('/crm/tasks')} variant="outline">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Tasks
@@ -389,8 +389,8 @@ export default function TaskDetailPage() {
   const isCompleted = task.completed_at !== null && task.completed_at !== undefined;
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="p-6 border-b border-gray-200 pb-6 flex-shrink-0">
+    <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-900">
+      <div className="p-6 border-b border-gray-200 dark:border-gray-700 pb-6 flex-shrink-0">
         {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -404,7 +404,7 @@ export default function TaskDetailPage() {
                 <span>Back</span>
               </Button>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Task Details</h1>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Task Details</h1>
               </div>
             </div>
             <div className="flex items-center space-x-2">
@@ -414,7 +414,7 @@ export default function TaskDetailPage() {
                     variant="outline" 
                     onClick={() => setShowDeleteConfirm(true)}
                     disabled={saving || deleting}
-                    className="text-red-600 border-red-300 hover:bg-red-50 flex items-center"
+                    className="text-red-600 dark:text-red-400 border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center"
                   >
                     <Icon name="trash-2" className="w-4 h-4 mr-2" />
                     <span>Delete Task</span>
@@ -424,7 +424,7 @@ export default function TaskDetailPage() {
                       variant="outline" 
                       onClick={handleComplete}
                       disabled={saving || deleting}
-                      className="text-green-600 border-green-300 hover:bg-green-50 flex items-center"
+                      className="text-green-600 dark:text-green-400 border-green-300 dark:border-green-700 hover:bg-green-50 dark:hover:bg-green-900/30 flex items-center"
                     >
                       <Icon name="check" className="w-4 h-4 mr-2" />
                       <span>Complete Task</span>
@@ -433,7 +433,7 @@ export default function TaskDetailPage() {
                 </>
               ) : (
                 <>
-                  <span className="text-sm text-gray-700">Are you sure?</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Are you sure?</span>
                   <Button 
                     variant="outline" 
                     size="sm"
@@ -445,7 +445,7 @@ export default function TaskDetailPage() {
                   <Button 
                     onClick={handleDelete}
                     disabled={deleting}
-                    className="bg-red-400 hover:bg-red-500 text-white"
+                    className="bg-red-400 dark:bg-red-600 hover:bg-red-500 dark:hover:bg-red-700 text-white"
                   >
                     {deleting ? 'Deleting...' : 'Confirm Delete'}
                   </Button>
@@ -454,14 +454,14 @@ export default function TaskDetailPage() {
             </div>
           </div>
         {error && (
-          <div className="text-red-600 text-sm bg-red-50 p-3 rounded-md mt-4">{error}</div>
+          <div className="text-red-600 dark:text-red-400 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-md mt-4 border border-red-200 dark:border-red-800">{error}</div>
         )}
       </div>
 
       {/* Main Content Layout */}
       <div className="flex-1 flex gap-6 overflow-hidden px-6 pb-6">
         {/* Left Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto space-y-6 pr-4">
+        <div className="mt-4 flex-1 overflow-y-auto space-y-6 pr-4">
             {/* Status and Priority Badges */}
             <div className="flex items-center space-x-4">
               {task.status && (
@@ -482,12 +482,12 @@ export default function TaskDetailPage() {
             </div>
 
             {/* Edit Fields Section */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-4">
-          <h4 className="text-md font-semibold text-gray-900 border-b pb-2">Edit Fields</h4>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-4">
+          <h4 className="text-md font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Edit Fields</h4>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Title <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Title <span className="text-red-500 dark:text-red-400">*</span>
             </label>
             <Input
               value={title}
@@ -498,9 +498,9 @@ export default function TaskDetailPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
             <textarea
-              className="w-full border rounded-md px-3 py-2"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -509,7 +509,7 @@ export default function TaskDetailPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Due Date</label>
             <Input
               type="date"
               value={dueDate}
@@ -519,9 +519,9 @@ export default function TaskDetailPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priority</label>
               <select
-                className="w-full border rounded-md h-10 px-3"
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-md h-10 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 value={priorityId !== undefined ? String(priorityId) : ''}
                 onChange={(e) => setPriorityId(e.target.value ? Number(e.target.value) : undefined)}
                 disabled={prioritiesLoading}
@@ -535,9 +535,9 @@ export default function TaskDetailPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
               <select
-                className="w-full border rounded-md h-10 px-3"
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-md h-10 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 value={statusId !== undefined ? String(statusId) : ''}
                 onChange={(e) => setStatusId(e.target.value ? Number(e.target.value) : undefined)}
                 disabled={statusesLoading}
@@ -553,9 +553,9 @@ export default function TaskDetailPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Related Deal</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Related Deal</label>
             <select
-              className="w-full border rounded-md h-10 px-3"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-md h-10 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               value={relatedDealId || ''}
               onChange={(e) => setRelatedDealId(e.target.value || undefined)}
             >
@@ -571,8 +571,8 @@ export default function TaskDetailPage() {
 
             {/* Related Deal Section */}
             {relatedDealId && (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-2">
-                <h4 className="text-md font-semibold text-gray-900 border-b pb-2">Related Deal</h4>
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-2">
+                <h4 className="text-md font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Related Deal</h4>
                 <div className="flex flex-wrap gap-2">
                   <Button
                     variant="outline"
@@ -587,21 +587,21 @@ export default function TaskDetailPage() {
             )}
 
             {/* Task Metadata */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-2">
-          <h4 className="text-md font-semibold text-gray-900 border-b pb-2">Task Information</h4>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-2">
+          <h4 className="text-md font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Task Information</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="font-medium text-gray-700">Created:</span>
-              <span className="ml-2 text-gray-600">{formatDate(task.created_at)}</span>
+              <span className="font-medium text-gray-700 dark:text-gray-300">Created:</span>
+              <span className="ml-2 text-gray-600 dark:text-gray-400">{formatDate(task.created_at)}</span>
             </div>
             <div>
-              <span className="font-medium text-gray-700">Last Updated:</span>
-              <span className="ml-2 text-gray-600">{formatDate(task.updated_at)}</span>
+              <span className="font-medium text-gray-700 dark:text-gray-300">Last Updated:</span>
+              <span className="ml-2 text-gray-600 dark:text-gray-400">{formatDate(task.updated_at)}</span>
             </div>
             {task.completed_at && (
               <div>
-                <span className="font-medium text-gray-700">Completed:</span>
-                <span className="ml-2 text-gray-600">{formatDate(task.completed_at)}</span>
+                <span className="font-medium text-gray-700 dark:text-gray-300">Completed:</span>
+                <span className="ml-2 text-gray-600 dark:text-gray-400">{formatDate(task.completed_at)}</span>
               </div>
             )}
           </div>
@@ -612,7 +612,7 @@ export default function TaskDetailPage() {
               <Button variant="outline" onClick={() => router.push('/crm/tasks')} disabled={saving || deleting}>
                 Cancel
               </Button>
-              <Button onClick={handleSave} disabled={!title.trim() || saving || deleting} className="bg-blue-400 hover:bg-blue-500 text-white">
+              <Button onClick={handleSave} disabled={!title.trim() || saving || deleting} className="bg-blue-400 dark:bg-blue-600 hover:bg-blue-500 dark:hover:bg-blue-700 text-white">
                 {saving ? 'Saving...' : 'Save Changes'}
               </Button>
             </div>
@@ -620,7 +620,7 @@ export default function TaskDetailPage() {
 
           {/* Right Sidebar - Vehicle and Contact Information - Fixed Height */}
           <div className="w-[400px] flex-shrink-0 flex flex-col">
-            <div className="bg-white shadow-sm border border-gray-200 p-6 h-full overflow-y-auto">
+            <div className="bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 p-6 h-full overflow-y-auto">
               <VehicleContactCard
                 title="Vehicle & Contact Information"
                 vehicle={listing ? {

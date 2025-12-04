@@ -323,10 +323,10 @@ export default function DealDetailPage() {
 
   if (loading || stagesLoading || categoriesLoading || prioritiesLoading || statusesLoading) {
     return (
-      <div className="h-full overflow-y-auto">
+      <div className="h-full overflow-y-auto bg-gray-50 dark:bg-gray-900">
         <div className="p-6 flex items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="ml-3 text-gray-600">Loading deal details...</span>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
+          <span className="ml-3 text-gray-600 dark:text-gray-300">Loading deal details...</span>
         </div>
       </div>
     );
@@ -334,11 +334,11 @@ export default function DealDetailPage() {
 
   if (!deal) {
     return (
-      <div className="h-full overflow-y-auto">
+      <div className="h-full overflow-y-auto bg-gray-50 dark:bg-gray-900">
         <div className="p-6">
           <div className="text-center py-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Deal Not Found</h2>
-            <p className="text-gray-600 mb-4">{error || 'The deal you are looking for does not exist.'}</p>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Deal Not Found</h2>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">{error || 'The deal you are looking for does not exist.'}</p>
             <Button onClick={() => router.push('/crm/deals')} variant="outline">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Deals
@@ -350,8 +350,8 @@ export default function DealDetailPage() {
   }
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="p-6 border-b border-gray-200 pb-6 flex-shrink-0">
+    <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-900">
+      <div className="p-6 border-b border-gray-200 dark:border-gray-700 pb-6 flex-shrink-0">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
@@ -368,7 +368,7 @@ export default function DealDetailPage() {
               <Icon name="briefcase" className="h-7 w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Deal: {deal.name}</h1>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Deal: {deal.name}</h1>
             </div>
           </div>
           <div className="flex items-center space-x-2">
@@ -378,7 +378,7 @@ export default function DealDetailPage() {
                   variant="outline" 
                   onClick={() => setShowDeleteConfirm(true)}
                   disabled={saving || deleting}
-                  className="text-red-600 border-red-300 hover:bg-red-50 flex items-center"
+                  className="text-red-600 dark:text-red-400 border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center"
                 >
                   <Icon name="trash-2" className="w-4 h-4 mr-2" />
                   <span>Delete Deal</span>
@@ -386,7 +386,7 @@ export default function DealDetailPage() {
               </>
             ) : (
               <>
-                <span className="text-sm text-gray-700">Are you sure?</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Are you sure?</span>
                 <Button 
                   variant="outline" 
                   size="sm"
@@ -398,7 +398,7 @@ export default function DealDetailPage() {
                 <Button 
                   onClick={handleDelete}
                   disabled={deleting}
-                  className="bg-red-400 hover:bg-red-500 text-white"
+                  className="bg-red-400 dark:bg-red-600 hover:bg-red-500 dark:hover:bg-red-700 text-white"
                 >
                   {deleting ? 'Deleting...' : 'Confirm Delete'}
                 </Button>
@@ -407,7 +407,7 @@ export default function DealDetailPage() {
           </div>
         </div>
         {error && (
-          <div className="text-red-600 text-sm bg-red-50 p-3 rounded-md mt-4">{error}</div>
+          <div className="text-red-600 dark:text-red-400 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-md mt-4 border border-red-200 dark:border-red-800">{error}</div>
         )}
       </div>
 
@@ -440,12 +440,12 @@ export default function DealDetailPage() {
           </div>
 
           {/* Edit Fields Section */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-4">
-          <h4 className="text-md font-semibold text-gray-900 border-b pb-2">Edit Fields</h4>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-4">
+          <h4 className="text-md font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Edit Fields</h4>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Title <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Title <span className="text-red-500 dark:text-red-400">*</span>
             </label>
             <Input
               value={title}
@@ -456,9 +456,9 @@ export default function DealDetailPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
             <textarea
-              className="w-full border rounded-md px-3 py-2"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -468,15 +468,15 @@ export default function DealDetailPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Owner (Assigned To)</label>
-              <div className="w-full border rounded-md h-10 px-3 flex items-center bg-gray-50">
-                <span className="text-sm text-gray-700">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Owner (Assigned To)</label>
+              <div className="w-full border border-gray-300 dark:border-gray-600 rounded-md h-10 px-3 flex items-center bg-gray-50 dark:bg-gray-700">
+                <span className="text-sm text-gray-700 dark:text-gray-300">
                   {deal.assigned_to?.username || 'Unassigned'}
                 </span>
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Expected Close Date</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expected Close Date</label>
               <Input
                 type="date"
                 value={expectedCloseDate}
@@ -487,7 +487,7 @@ export default function DealDetailPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Probability (%)</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Probability (%)</label>
               <Input
                 type="number"
                 value={probability}
@@ -503,9 +503,9 @@ export default function DealDetailPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status (Stage)</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status (Stage)</label>
               <select
-                className="w-full border rounded-md h-10 px-3"
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-md h-10 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 value={dealStageId || ''}
                 onChange={(e) => setDealStageId(e.target.value ? Number(e.target.value) : undefined)}
               >
@@ -521,9 +521,9 @@ export default function DealDetailPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
               <select
-                className="w-full border rounded-md h-10 px-3"
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-md h-10 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 value={dealCategoryId !== undefined ? String(dealCategoryId) : ''}
                 onChange={(e) => setDealCategoryId(e.target.value ? Number(e.target.value) : undefined)}
               >
@@ -536,7 +536,7 @@ export default function DealDetailPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Deal Value ($)</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Deal Value ($)</label>
               <Input
                 type="number"
                 value={dealValue}
@@ -550,18 +550,18 @@ export default function DealDetailPage() {
         </div>
         {/* Related Tasks Section */}
         {relatedTasks.length > 0 && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-4">
-            <h4 className="text-md font-semibold text-gray-900 border-b pb-2">Related Tasks</h4>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-4">
+            <h4 className="text-md font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Related Tasks</h4>
             <div className="space-y-3">
               {relatedTasks.map((task) => {
                 const priority = task.priority && typeof task.priority === 'object' ? task.priority : undefined;
                 const status = task.status && typeof task.status === 'object' ? task.status : undefined;
                 return (
-                  <div key={task.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                  <div key={task.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center space-x-2 mb-2">
-                          <h5 className="font-medium text-gray-900">{task.title}</h5>
+                          <h5 className="font-medium text-gray-900 dark:text-white">{task.title}</h5>
                           {priority && (
                             <Badge color="orange">Priority: {priority.name}</Badge>
                           )}
@@ -570,9 +570,9 @@ export default function DealDetailPage() {
                           )}
                         </div>
                         {task.description && (
-                          <p className="text-sm text-gray-600 mb-2">{task.description}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">{task.description}</p>
                         )}
-                        <div className="flex items-center space-x-4 text-xs text-gray-500">
+                        <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
                           {task.due_date && (
                             <span>Due: {formatDate(task.due_date)}</span>
                           )}
@@ -598,8 +598,8 @@ export default function DealDetailPage() {
         )}
         {/* Related Entities Section */}
         {(contactId || leadId) && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-2">
-            <h4 className="text-md font-semibold text-gray-900 border-b pb-2">Related Entities</h4>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-2">
+            <h4 className="text-md font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Related Entities</h4>
             <div className="flex flex-wrap gap-2">
               {contactId && (
                 <Button
@@ -626,10 +626,10 @@ export default function DealDetailPage() {
         )}
 
         {/* Activity Log Timeline */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-2">
-          <h4 className="text-md font-semibold text-gray-900 border-b pb-2">Activity Log</h4>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-2">
+          <h4 className="text-md font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Activity Log</h4>
           {activities.length === 0 ? (
-            <div className="text-center py-8 text-gray-400 text-sm">
+            <div className="text-center py-8 text-gray-400 dark:text-gray-500 text-sm">
               No activities yet
             </div>
           ) : (
@@ -638,29 +638,29 @@ export default function DealDetailPage() {
                 <div key={activity.id} className="relative flex items-start space-x-3 pb-4">
                   {/* Timeline line */}
                   {index < activities.length - 1 && (
-                    <div className="absolute left-4 top-8 bottom-0 w-0.5 bg-gray-200"></div>
+                    <div className="absolute left-4 top-8 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-700"></div>
                   )}
                   {/* Icon */}
                   <div className="relative flex-shrink-0 mt-1 z-10">
-                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                      <Icon name={getActivityIcon(activity.activity_type)} className="w-4 h-4 text-blue-600" />
+                    <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                      <Icon name={getActivityIcon(activity.activity_type)} className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     </div>
                   </div>
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        <span className="text-sm font-medium text-gray-900">
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">
                           {activity.subject || activity.activity_type}
                         </span>
                         <Badge color="blue">{activity.activity_type}</Badge>
                       </div>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
                         {formatDate(activity.activity_date || activity.created_at)}
                       </span>
                     </div>
                     {activity.description && (
-                      <p className="text-sm text-gray-600 mt-1">{activity.description}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{activity.description}</p>
                     )}
                   </div>
                 </div>
@@ -670,16 +670,16 @@ export default function DealDetailPage() {
         </div>
 
         {/* Deal Metadata */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-2">
-          <h4 className="text-md font-semibold text-gray-900 border-b pb-2">Deal Information</h4>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-2">
+          <h4 className="text-md font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Deal Information</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="font-medium text-gray-700">Created:</span>
-              <span className="ml-2 text-gray-600">{formatDate(deal.created_at)}</span>
+              <span className="font-medium text-gray-700 dark:text-gray-300">Created:</span>
+              <span className="ml-2 text-gray-600 dark:text-gray-400">{formatDate(deal.created_at)}</span>
             </div>
             <div>
-              <span className="font-medium text-gray-700">Last Updated:</span>
-              <span className="ml-2 text-gray-600">{formatDate(deal.updated_at)}</span>
+              <span className="font-medium text-gray-700 dark:text-gray-300">Last Updated:</span>
+              <span className="ml-2 text-gray-600 dark:text-gray-400">{formatDate(deal.updated_at)}</span>
             </div>
           </div>
         </div>
@@ -689,7 +689,7 @@ export default function DealDetailPage() {
             <Button variant="outline" onClick={() => router.push('/crm/deals')} disabled={saving || deleting}>
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={!title.trim() || saving || deleting} className="bg-blue-400 hover:bg-blue-500 text-white">
+            <Button onClick={handleSave} disabled={!title.trim() || saving || deleting} className="bg-blue-400 dark:bg-blue-600 hover:bg-blue-500 dark:hover:bg-blue-700 text-white">
               {saving ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
@@ -697,7 +697,7 @@ export default function DealDetailPage() {
 
         {/* Right Sidebar - Vehicle and Contact Information - Fixed Width, Full Height */}
         <div className="w-[400px] flex-shrink-0 flex flex-col">
-          <div className="bg-white shadow-sm border border-gray-200 p-6 h-full overflow-y-auto">
+          <div className="bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 p-6 h-full overflow-y-auto">
             <VehicleContactCard
               title="Lead Information"
               vehicle={lead?.listing ? {

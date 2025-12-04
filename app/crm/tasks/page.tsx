@@ -30,7 +30,6 @@ export default function TasksPage() {
     // Only apply assigned_to filter for admins (buyers are already filtered by backend by owner)
     assigned_to: isAdmin ? assignedToFilter : undefined
   });
-  
   // Filter tasks for buyers: show tasks where owner_id OR assigned_to matches buyer's ID
   const tasks = useMemo(() => {
     if (isAdmin) {
@@ -68,7 +67,87 @@ export default function TasksPage() {
   };
 
   const handleExportTasks = () => {
-    console.log('Export tasks clicked');
+    try {
+      // Filter to only completed tasks (status_name === 'Completed')
+      // Check status_name directly on task, or look it up from statuses array
+      const completedTasks = tasks.filter(task => {
+        // Check if task has status_name property directly
+        const taskStatusName = (task as any).status_name;
+        if (taskStatusName) {
+          return taskStatusName.toLowerCase() === 'completed';
+        }
+        // Fallback: look up status name from statuses array
+        const foundStatus = statuses.find(s => s.id === task.status_id);
+        return foundStatus?.name?.toLowerCase() === 'completed';
+      });
+      
+      // Filter by user role
+      let tasksToExport = completedTasks;
+      if (!isAdmin && user?.id) {
+        // For buyers: only export tasks where owner_id OR assigned_to matches buyer's ID
+        tasksToExport = completedTasks.filter(task => 
+          task.owner_user_id === user.id || 
+          task.assigned_to === user.id
+        );
+      }
+      if (tasksToExport.length === 0) {
+        alert('No completed tasks found to export.');
+        return;
+      }
+      
+      // Get status and priority names for export
+      const exportData = tasksToExport.map(task => {
+        const foundPriority = priorities.find(p => p.id === task.priority_id);
+        const foundStatus = statuses.find(s => s.id === task.status_id);
+        
+        return {
+          'Task ID': task.id,
+          'Title': task.title || '',
+          'Description': task.description || '',
+          'Status': foundStatus?.name || 'Unknown',
+          'Priority': foundPriority?.name || 'Unknown',
+          'Owner': task.owner_user_name || 'Unassigned',
+          'Due Date': task.due_date ? new Date(task.due_date).toLocaleDateString() : '',
+          'Completed At': task.completed_at ? new Date(task.completed_at).toLocaleDateString() : '',
+          'Related Deal': task.related_deal_name || '',
+          'Created At': task.created_at ? new Date(task.created_at).toLocaleDateString() : '',
+        };
+      });
+      
+      // Convert to CSV
+      const headers = Object.keys(exportData[0]);
+      const csvRows = [
+        headers.join(','),
+        ...exportData.map(row => 
+          headers.map(header => {
+            const value = row[header as keyof typeof row];
+            // Escape commas and quotes in CSV
+            if (value === null || value === undefined) return '';
+            const stringValue = String(value);
+            if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+              return `"${stringValue.replace(/"/g, '""')}"`;
+            }
+            return stringValue;
+          }).join(',')
+        )
+      ];
+      
+      const csvContent = csvRows.join('\n');
+      
+      // Create download link
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `completed_tasks_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error exporting tasks:', error);
+      alert('Failed to export tasks. Please try again.');
+    }
   };
 
   const handleCompleteTask = async (taskId: string) => {
@@ -161,9 +240,9 @@ export default function TasksPage() {
   // Show loading state
   if (loading && tasks.length === 0) {
     return (
-      <div className="p-6">
+      <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400"></div>
         </div>
       </div>
     );
@@ -172,25 +251,25 @@ export default function TasksPage() {
   // Show error state
   if (error) {
     return (
-      <div className="p-6 h-full">
-        <div className="bg-red-50 border border-red-200 rounded-md p-4">
+      <div className="p-6 h-full bg-gray-50 dark:bg-gray-900 min-h-screen">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
           <div className="flex">
             <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+              <svg className="h-5 w-5 text-red-400 dark:text-red-500" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
               </svg>
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">
+              <h3 className="text-sm font-medium text-red-800 dark:text-red-300">
                 Error loading tasks
               </h3>
-              <div className="mt-2 text-sm text-red-700">
+              <div className="mt-2 text-sm text-red-700 dark:text-red-300">
                 <p>{error}</p>
               </div>
               <div className="mt-4">
                 <button
                   onClick={refreshTasks}
-                  className="bg-red-100 px-3 py-2 rounded-md text-sm font-medium text-red-800 hover:bg-red-200"
+                  className="bg-red-100 dark:bg-red-900/30 px-3 py-2 rounded-md text-sm font-medium text-red-800 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-900/50"
                 >
                   Try again
                 </button>
@@ -203,7 +282,7 @@ export default function TasksPage() {
   }
 
   return (
-      <div className="p-6 h-full overflow-hidden flex flex-col">
+      <div className="p-6 h-full overflow-hidden flex flex-col bg-gray-50 dark:bg-gray-900 min-h-screen">
         <TaskManagement 
           tasks={transformedTasks}
           totalTasks={tasks.length}

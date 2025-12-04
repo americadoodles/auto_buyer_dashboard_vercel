@@ -117,26 +117,26 @@ export default function ListingsPage() {
   // Show loading state while authentication is being determined
   if (authLoading) {
     return (
-      <div className="p-6 flex items-center justify-center">
+      <div className="p-6 flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-      <div className="p-6 space-y-6 h-full overflow-y-auto">
+      <div className="p-6 space-y-6 h-full overflow-y-auto bg-gray-50 dark:bg-gray-900">
         {/* Header */}
-        <div className="border-b border-gray-200 pb-6">
+        <div className="border-b border-gray-200 dark:border-gray-700 pb-6">
           <div className="flex items-center space-x-4">
             <div className="w-12 h-12 bg-gradient-to-br from-green-600 to-green-700 rounded-xl flex items-center justify-center shadow-lg">
               <Car className="h-7 w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Vehicle Listings</h1>
-              <p className="text-gray-600 mt-2">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Vehicle Listings</h1>
+              <p className="text-gray-600 dark:text-gray-400 mt-2">
                 Manage and review all vehicle listings in the system
               </p>
             </div>
@@ -149,16 +149,16 @@ export default function ListingsPage() {
 
         {/* Backend Status */}
         {backendOk === false && (
-          <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-900">
+          <div className="rounded-xl border border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/20 p-4 text-amber-900 dark:text-amber-200">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <AlertTriangle className="h-5 w-5 text-amber-400" />
+                <AlertTriangle className="h-5 w-5 text-amber-400 dark:text-amber-500" />
               </div>
               <div className="ml-3">
                 <p className="text-sm font-medium">
                   Backend not reachable. Using in-memory demo data.
                 </p>
-                <p className="text-xs text-amber-700 mt-1">
+                <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
                   Some features may be limited. Please check your backend connection.
                 </p>
               </div>
@@ -167,13 +167,13 @@ export default function ListingsPage() {
         )}
 
         {/* Search, Filters, and Date Controls */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           {/* Top Row: Search + Actions */}
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             {/* Search Bar */}
             <div className="w-full md:max-w-xl">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
                 <Input
                   type="text"
                   placeholder="Search by make, model, VIN, or location..."
@@ -220,7 +220,7 @@ export default function ListingsPage() {
                   onClick={() => setSelectedListings(new Set())}
                   variant="outline"
                   size="sm"
-                  className="text-blue-600 hover:text-blue-700"
+                  className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
                 >
                   Clear Selection ({selectedListings.size})
                 </Button>
@@ -231,7 +231,7 @@ export default function ListingsPage() {
                   onClick={resetFilters}
                   variant="outline"
                   size="sm"
-                  className="text-red-600 hover:text-red-700"
+                  className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
                 >
                   Clear Filters
                 </Button>
@@ -253,16 +253,16 @@ export default function ListingsPage() {
 
           {/* Advanced Filters */}
           {showFilters && (
-            <div className="mt-6 pt-6 border-t border-gray-200">
+            <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Status
                   </label>
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
                   >
                     <option value="">All Status</option>
                     <option value="scored">Scored</option>
@@ -273,13 +273,13 @@ export default function ListingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Make
                   </label>
                   <select
                     value={makeFilter}
                     onChange={(e) => setMakeFilter(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
                   >
                     <option value="">All Makes</option>
                     {uniqueMakes.map((make) => (
@@ -295,22 +295,22 @@ export default function ListingsPage() {
         </div>
 
         {/* Listings Table */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="px-6 py-4 border-b border-gray-200">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Vehicle Listings</h2>
-                <p className="text-sm text-gray-600">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Vehicle Listings</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   {filteredListings.length} filtered listings • {paginatedRows.length} showing
                   {selectedListings.size > 0 && (
-                    <span className="ml-2 text-blue-600 font-medium">
+                    <span className="ml-2 text-blue-600 dark:text-blue-400 font-medium">
                       • {selectedListings.size} selected
                     </span>
                   )}
                 </p>
               </div>
               <div className="flex items-center space-x-2">
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-gray-500 dark:text-gray-400">
                   Page {currentPage} of {totalPages}
                 </div>
               </div>

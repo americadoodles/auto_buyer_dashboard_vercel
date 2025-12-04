@@ -92,7 +92,6 @@ export default function ListingDetailPage() {
           getListingActivities(parseInt(listingId)).catch(() => []),
           leadsApi.getLeads({ limit: 1000 }).catch(() => [])
         ]);
-        console.log('listingActivities: ', listingActivities)
         setActivities(listingActivities);
         
         // Find lead associated with this listing
@@ -292,10 +291,10 @@ export default function ListingDetailPage() {
 
   if (loading) {
     return (
-      <div className="h-full overflow-y-auto">
+      <div className="h-full overflow-y-auto bg-white dark:bg-gray-900">
         <div className="p-6 flex items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="ml-3 text-gray-600">Loading listing details...</span>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
+          <span className="ml-3 text-gray-800 dark:text-gray-200 font-medium">Loading listing details...</span>
         </div>
       </div>
     );
@@ -303,11 +302,11 @@ export default function ListingDetailPage() {
 
   if (!listing) {
     return (
-      <div className="h-full overflow-y-auto">
+      <div className="h-full overflow-y-auto bg-white dark:bg-gray-900">
         <div className="p-6">
           <div className="text-center py-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Listing Not Found</h2>
-            <p className="text-gray-600 mb-4">{error || 'The listing you are looking for does not exist.'}</p>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Listing Not Found</h2>
+            <p className="text-gray-700 dark:text-gray-300 mb-4 font-medium">{error || 'The listing you are looking for does not exist.'}</p>
             <Button onClick={() => router.push('/listings')} variant="outline">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Listings
@@ -319,8 +318,8 @@ export default function ListingDetailPage() {
   }
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="p-6 border-b border-gray-200 pb-6 flex-shrink-0">
+    <div className="h-full flex flex-col bg-white dark:bg-gray-900">
+      <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 pb-6 flex-shrink-0 shadow-sm">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
@@ -328,23 +327,23 @@ export default function ListingDetailPage() {
               variant="outline"
               size="sm"
               onClick={() => router.push('/listings')}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-2 border-blue-300 dark:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-medium"
             >
               <ArrowLeft className="h-4 w-4" />
               <span>Back</span>
             </Button>
-            <div className="w-12 h-12 bg-gradient-to-br from-green-600 to-green-700 rounded-xl flex items-center justify-center shadow-lg">
+            <div className="w-12 h-12 bg-blue-600 dark:bg-blue-500 rounded-xl flex items-center justify-center shadow-lg">
               <Icon name="car" className="h-7 w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
                 {listing.year} {listing.make} {listing.model}
               </h1>
             </div>
           </div>
         </div>
         {error && (
-          <div className="text-red-600 text-sm bg-red-50 p-3 rounded-md mt-4">{error}</div>
+          <div className="text-red-700 dark:text-red-400 text-sm bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 p-3 rounded-md mt-4 font-medium">{error}</div>
         )}
       </div>
 
@@ -355,17 +354,17 @@ export default function ListingDetailPage() {
           <div className="mt-4 flex items-center justify-between">
             <div className="flex items-center space-x-4">
               {listing.score !== undefined && (
-                <Badge color="blue">
+                <Badge color="blue" className="bg-blue-500 dark:bg-blue-600 text-white font-semibold shadow-sm">
                   Score: {listing.score}
                 </Badge>
               )}
               {listing.buyMax && (
-                <Badge color="green">
+                <Badge color="green" className="bg-emerald-500 dark:bg-emerald-600 text-white font-semibold shadow-sm">
                   Buy Max: ${listing.buyMax.toLocaleString()}
                 </Badge>
               )}
               {listing.decision?.status && (
-                <Badge color="orange">
+                <Badge color="orange" className="bg-orange-500 dark:bg-orange-600 text-white font-semibold shadow-sm">
                   Status: {listing.decision.status}
                 </Badge>
               )}
@@ -374,7 +373,7 @@ export default function ListingDetailPage() {
               onClick={() => setIsLeadCreateOpen(true)}
               variant="outline"
               size="sm"
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-black border-blue-600"
+              className="flex items-center gap-2 bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white border-0 shadow-md font-semibold"
             >
               <Plus className="h-4 w-4" />
               {hasExistingContact ? 'Update Contact' : 'Create Contact'}
@@ -382,37 +381,38 @@ export default function ListingDetailPage() {
           </div>
 
           {/* Edit Fields Section */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-4">
-            <h4 className="text-md font-semibold text-gray-900 border-b pb-2">Vehicle Information</h4>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-4">
+            <h4 className="text-lg font-bold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 pb-3">Vehicle Information</h4>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                   VIN Number
                 </label>
                 <Input
                   value={formData.vin || ''}
                   onChange={(e) => handleFieldChange('vin', e.target.value)}
                   placeholder="Enter VIN number"
-                  className="uppercase"
+                  className="uppercase border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                   Location
                 </label>
                 <Input
                   value={formData.location || ''}
                   onChange={(e) => handleFieldChange('location', e.target.value)}
                   placeholder="Enter location"
+                  className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                   Price
                 </label>
                 <Input
@@ -424,11 +424,12 @@ export default function ListingDetailPage() {
                     handleFieldChange('price', parsed);
                   }}
                   placeholder="Enter price"
+                  className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                   Miles
                 </label>
                 <Input
@@ -440,13 +441,14 @@ export default function ListingDetailPage() {
                     handleFieldChange('miles', parsed);
                   }}
                   placeholder="Enter miles"
+                  className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                   MMR (Manheim Market Report)
                 </label>
                 <Input
@@ -458,11 +460,12 @@ export default function ListingDetailPage() {
                     handleFieldChange('mmr', parsed);
                   }}
                   placeholder="Enter MMR value"
+                  className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                   Condition Rating (1-5)
                 </label>
                 <select
@@ -471,7 +474,7 @@ export default function ListingDetailPage() {
                     const value = e.target.value;
                     handleFieldChange('condition_rating', value === '' ? undefined : parseInt(value));
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 >
                   <option value="">Select condition</option>
                   <option value="1">1 - Poor</option>
@@ -485,37 +488,39 @@ export default function ListingDetailPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                   Interior Color
                 </label>
                 <Input
                   value={formData.interior_color || ''}
                   onChange={(e) => handleFieldChange('interior_color', e.target.value)}
                   placeholder="e.g., Black, Tan"
+                  className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                   Exterior Color
                 </label>
                 <Input
                   value={formData.exterior_color || ''}
                   onChange={(e) => handleFieldChange('exterior_color', e.target.value)}
                   placeholder="e.g., White, Silver"
+                  className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                   Transmission
                 </label>
                 <select
                   value={formData.transmission || ''}
                   onChange={(e) => handleFieldChange('transmission', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 >
                   <option value="">Select transmission</option>
                   <option value="Automatic">Automatic</option>
@@ -526,13 +531,13 @@ export default function ListingDetailPage() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                   Fuel Type
                 </label>
                 <select
                   value={formData.fuel_type || ''}
                   onChange={(e) => handleFieldChange('fuel_type', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 >
                   <option value="">Select fuel type</option>
                   <option value="Gasoline">Gasoline</option>
@@ -546,13 +551,13 @@ export default function ListingDetailPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                   Drivetrain
                 </label>
                 <select
                   value={formData.drivetrain || ''}
                   onChange={(e) => handleFieldChange('drivetrain', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 >
                   <option value="">Select drivetrain</option>
                   <option value="FWD">Front Wheel Drive</option>
@@ -563,26 +568,27 @@ export default function ListingDetailPage() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                   Engine Size
                 </label>
                 <Input
                   value={formData.engine_size || ''}
                   onChange={(e) => handleFieldChange('engine_size', e.target.value)}
                   placeholder="e.g., 2.0L, 3.5L"
+                  className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                   Body Style
                 </label>
                 <select
                   value={formData.body_style || ''}
                   onChange={(e) => handleFieldChange('body_style', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 >
                   <option value="">Select body style</option>
                   <option value="Sedan">Sedan</option>
@@ -598,24 +604,24 @@ export default function ListingDetailPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                 Notes
               </label>
               <textarea
                 value={formData.notes || ''}
                 onChange={(e) => handleFieldChange('notes', e.target.value)}
                 placeholder="Additional notes about this vehicle..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 rows={3}
               />
             </div>
           </div>
 
           {/* Image Carousel Section */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between mb-4">
-              <h4 className="text-md font-semibold text-gray-900">Vehicle Images</h4>
-              <label className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer transition-colors">
+              <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100">Vehicle Images</h4>
+              <label className="flex items-center gap-2 px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 cursor-pointer transition-colors font-medium">
                 <Upload className="h-4 w-4" />
                 {uploadingImages ? 'Uploading...' : 'Upload Images'}
                 <input
@@ -638,7 +644,7 @@ export default function ListingDetailPage() {
                       <img
                         src={image}
                         alt={`Vehicle image ${index + 1}`}
-                        className="w-full h-24 object-cover rounded-md border-2 border-gray-200"
+                        className="w-full h-24 object-cover rounded-md border-2 border-gray-200 dark:border-gray-600"
                       />
                       <button
                         onClick={() => handleRemoveImage(index)}
@@ -657,10 +663,10 @@ export default function ListingDetailPage() {
           </div>
 
           {/* Activity Log Timeline */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-2">
-            <h4 className="text-md font-semibold text-gray-900 border-b pb-2">Activity Log</h4>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-2">
+            <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 pb-2">Activity Log</h4>
             {activities.length === 0 ? (
-              <div className="text-center py-8 text-gray-400 text-sm">
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400 text-sm font-medium">
                 No activities yet
               </div>
             ) : (
@@ -669,29 +675,29 @@ export default function ListingDetailPage() {
                   <div key={activity.id} className="relative flex items-start space-x-3 pb-4">
                     {/* Timeline line */}
                     {index < activities.length - 1 && (
-                      <div className="absolute left-4 top-8 bottom-0 w-0.5 bg-gray-200"></div>
+                      <div className="absolute left-4 top-8 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-600"></div>
                     )}
                     {/* Icon */}
                     <div className="relative flex-shrink-0 mt-1 z-10">
-                      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                        <Icon name={getActivityIcon(activity.activity_type)} className="w-4 h-4 text-blue-600" />
+                      <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
+                        <Icon name={getActivityIcon(activity.activity_type)} className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                       </div>
                     </div>
                     {/* Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
-                          <span className="text-sm font-medium text-gray-900">
+                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                             {activity.description || activity.activity_type}
                           </span>
-                          <Badge color="blue">{activity.activity_type}</Badge>
+                          <Badge color="blue" className="bg-blue-500 dark:bg-blue-600 text-white">{activity.activity_type}</Badge>
                         </div>
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
                           {formatDate(activity.created_at)}
                         </span>
                       </div>
                       {activity.field_name && (
-                        <p className="text-sm text-gray-600 mt-1">
+                        <p className="text-sm text-gray-700 dark:text-gray-300 mt-1 font-medium">
                           {activity.field_name}: {activity.old_value} → {activity.new_value}
                         </p>
                       )}
@@ -703,34 +709,34 @@ export default function ListingDetailPage() {
           </div>
 
           {/* Listing Metadata */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-2">
-            <h4 className="text-md font-semibold text-gray-900 border-b pb-2">Listing Information</h4>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-2">
+            <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 pb-2">Listing Information</h4>
             <div className="flex flex-col space-y-2 text-sm">
               <div>
-                <span className="font-medium text-gray-700">Source:</span>
+                <span className="font-medium text-gray-800 dark:text-gray-200">Source:</span>
                 {listing.source ? (
                   <a
                     href={`/listings/source/${encodeURIComponent(listing.source)}`}
-                    className="ml-2 text-blue-600 hover:underline cursor-pointer"
+                    className="ml-2 text-blue-600 dark:text-blue-400 hover:underline cursor-pointer font-medium"
                   >
                     {listing.source}
                   </a>
                 ) : (
-                  <span className="ml-2 text-gray-600">N/A</span>
+                  <span className="ml-2 text-gray-600 dark:text-gray-400 font-medium">N/A</span>
                 )}
               </div>
               <div>
-                <span className="font-medium text-gray-700">DOM:</span>
-                <span className="ml-2 text-gray-600">{listing.dom ? listing.dom.toLocaleString('en-US') : 'N/A'} days</span>
+                <span className="font-medium text-gray-800 dark:text-gray-200">DOM:</span>
+                <span className="ml-2 text-gray-700 dark:text-gray-300 font-medium">{listing.dom ? listing.dom.toLocaleString('en-US') : 'N/A'} days</span>
               </div>
               <div>
-                <span className="font-medium text-gray-700">Buyer:</span>
-                <span className="ml-2 text-gray-600">{listing.buyer_username || 'N/A'}</span>
+                <span className="font-medium text-gray-800 dark:text-gray-200">Buyer:</span>
+                <span className="ml-2 text-gray-700 dark:text-gray-300 font-medium">{listing.buyer_username || 'N/A'}</span>
               </div>
               {listing.created_at && (
                 <div>
-                  <span className="font-medium text-gray-700">Created:</span>
-                  <span className="ml-2 text-gray-600">{formatDate(listing.created_at)}</span>
+                  <span className="font-medium text-gray-800 dark:text-gray-200">Created:</span>
+                  <span className="ml-2 text-gray-700 dark:text-gray-300 font-medium">{formatDate(listing.created_at)}</span>
                 </div>
               )}
             </div>
@@ -738,10 +744,10 @@ export default function ListingDetailPage() {
 
           {/* Footer Actions */}
           <div className="flex justify-end space-x-2 pb-6">
-            <Button variant="outline" onClick={() => router.push('/listings')} disabled={saving}>
+            <Button variant="outline" onClick={() => router.push('/listings')} disabled={saving} className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={saving} className="bg-blue-400 hover:bg-blue-500 text-white flex items-center gap-2">
+            <Button onClick={handleSave} disabled={saving} className="bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white flex items-center gap-2 font-medium">
               {saving ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -781,10 +787,10 @@ export default function ListingDetailPage() {
 
       {/* Create Contact Modal */}
       {isCreateContactOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b">
-              <h3 className="text-lg font-semibold">Create New Contact</h3>
+        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Create New Contact</h3>
               <Button 
                 onClick={() => {
                   setIsCreateContactOpen(false);
@@ -801,6 +807,7 @@ export default function ListingDetailPage() {
                 }} 
                 variant="outline" 
                 size="sm"
+                className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -809,30 +816,32 @@ export default function ListingDetailPage() {
             <div className="p-4 space-y-4 flex-1 overflow-y-auto">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                     First Name *
                   </label>
                   <Input
                     value={newContactData.first_name}
                     onChange={(e) => setNewContactData(prev => ({ ...prev, first_name: e.target.value }))}
                     placeholder="Enter first name"
+                    className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                     Last Name *
                   </label>
                   <Input
                     value={newContactData.last_name}
                     onChange={(e) => setNewContactData(prev => ({ ...prev, last_name: e.target.value }))}
                     placeholder="Enter last name"
+                    className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100"
                   />
                 </div>
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                     Email
                   </label>
                   <Input
@@ -840,63 +849,68 @@ export default function ListingDetailPage() {
                     value={newContactData.email}
                     onChange={(e) => setNewContactData(prev => ({ ...prev, email: e.target.value }))}
                     placeholder="Enter email"
+                    className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                     Phone
                   </label>
                   <Input
                     value={newContactData.phone}
                     onChange={(e) => setNewContactData(prev => ({ ...prev, phone: e.target.value }))}
                     placeholder="Enter phone number"
+                    className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                     Mobile
                   </label>
                   <Input
                     value={newContactData.mobile}
                     onChange={(e) => setNewContactData(prev => ({ ...prev, mobile: e.target.value }))}
                     placeholder="Enter mobile number"
+                    className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                     Company
                   </label>
                   <Input
                     value={newContactData.company}
                     onChange={(e) => setNewContactData(prev => ({ ...prev, company: e.target.value }))}
                     placeholder="Enter company"
+                    className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100"
                   />
                 </div>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                   Job Title
                 </label>
                 <Input
                   value={newContactData.job_title}
                   onChange={(e) => setNewContactData(prev => ({ ...prev, job_title: e.target.value }))}
                   placeholder="Enter job title"
+                  className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                   Notes
                 </label>
                 <textarea
                   value={newContactData.notes}
                   onChange={(e) => setNewContactData(prev => ({ ...prev, notes: e.target.value }))}
                   placeholder="Additional notes..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   rows={3}
                 />
               </div>
@@ -905,7 +919,7 @@ export default function ListingDetailPage() {
                 <Button
                   onClick={handleCreateContact}
                   disabled={!newContactData.first_name || !newContactData.last_name || creatingContact}
-                  className="flex-1"
+                  className="flex-1 bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white font-medium"
                 >
                   {creatingContact ? 'Creating...' : 'Create Contact'}
                 </Button>
@@ -924,7 +938,7 @@ export default function ListingDetailPage() {
                     });
                   }}
                   variant="outline"
-                  className="flex-1"
+                  className="flex-1 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                   disabled={creatingContact}
                 >
                   Cancel

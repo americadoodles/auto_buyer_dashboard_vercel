@@ -1,6 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = { 
   content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"], 
+  darkMode: 'class',
   safelist: [
     'grid-cols-17', // Ensure this class is never purged
     'grid-cols-20', // Ensure this class is never purged

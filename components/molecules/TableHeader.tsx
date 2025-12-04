@@ -34,16 +34,16 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
   // If columns prop is provided, use generic table header
   if (columns) {
     return (
-      <thead className="bg-gray-50">
+      <thead className="bg-gray-50 dark:bg-gray-700/50">
         <tr>
           {columns.map((column) => (
             <th
               key={column.key}
-              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
             >
               {column.sortable ? (
                 <button
-                  className="flex items-center space-x-1 hover:text-gray-700"
+                  className="flex items-center space-x-1 hover:text-gray-700 dark:hover:text-gray-200"
                   onClick={() => onColumnSort?.(column.key)}
                 >
                   <span>{column.label}</span>

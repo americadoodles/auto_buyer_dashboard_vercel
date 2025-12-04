@@ -1,20 +1,20 @@
 import '../styles/globals.css';
-import { ToastProvider } from '../hooks/useToast';
+import { Providers } from './providers';
 import { ConditionalAdminLayout } from '../components/templates/ConditionalAdminLayout';
 
 export const metadata = { title: "Auto Buyer Demo" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen">
-        <div className="mx-auto" style={{ maxWidth: '1920px' }}>
-          <ToastProvider>
+        <Providers>
+          <div className="mx-auto" style={{ maxWidth: '1920px' }}>
             <ConditionalAdminLayout>
               {children}
             </ConditionalAdminLayout>
-          </ToastProvider>
-        </div>
+          </div>
+        </Providers>
       </body>
     </html>
   );

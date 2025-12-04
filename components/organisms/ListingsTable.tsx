@@ -61,7 +61,7 @@ export const ListingsTable: React.FC<ListingsTableProps> = ({
   };
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
       {/* Desktop/Tablet Table View with Horizontal Scroll */}
       <div className="hidden md:block overflow-x-auto">
         <div className="min-w-max">
@@ -85,7 +85,7 @@ export const ListingsTable: React.FC<ListingsTableProps> = ({
       {/* Mobile Card View */}
       <div className="md:hidden">
         {listings.map(listing => (
-          <div key={listing.id} className="border-b border-slate-200 p-4 last:border-b-0">
+          <div key={listing.id} className="border-b border-slate-200 dark:border-gray-700 p-4 last:border-b-0">
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center gap-2">
                 <input

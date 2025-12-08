@@ -63,125 +63,75 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
         with get_db_connection() as conn:
             if not conn:
                 return out
-            # Check for existing listings by vin or by source
-            vin_to_row = {}
-            no_vin_rows = []
+            
+            cur = conn.cursor()
+            
+            # Collect all VINs and source URLs from incoming rows
+            vins = []
+            source_urls = []
+            rows_with_data = []
+            
             for item in rows:
                 norm = item.model_dump()
                 vin_raw = norm.get("vin")
                 vin = vin_raw.strip().upper() if vin_raw and vin_raw.strip() else None
+                source_url = norm.get("source")
+                source_normalized = source_url.strip().lower() if source_url and source_url.strip() else None
+                
                 if vin:
-                    vin_to_row[vin] = norm
-                else:
-                    no_vin_rows.append(norm)
+                    vins.append(vin)
+                if source_normalized and source_normalized != "unknown":
+                    source_urls.append(source_normalized)
+                
+                rows_with_data.append({
+                    "item": item,
+                    "norm": norm,
+                    "vin": vin,
+                    "source": source_normalized
+                })
             
-            # Build WHERE clause/params for all vins
-            vins = list(vin_to_row.keys())
-            source_rows_map = {}  # (source, created_at) mapping for missing VINs
-            
-            for n in no_vin_rows:
-                src = (n.get("source") or "unknown").strip().lower()
-                # We'll key by (source, created_at) since source alone is not unique
-                # created_at could be None, so fallback to year/make/model in worst case
-                created = n.get("created_at")
-                if isinstance(created, datetime.datetime):
-                    created_str = created.isoformat(timespec='seconds')
-                elif created:
-                    created_str = str(created)
-                else:
-                    # fallback to something sufficiently unique
-                    created_str = f"{n.get('year','')}-{n.get('make','')}-{n.get('model','')}"
-                source_rows_map[(src, created_str)] = n
-
-            # Query all matching listings by vin
-            found_by_vin = {}
+            # Query existing VINs
+            existing_vins = set()
             if vins:
-                cur = conn.cursor()
                 vin_placeholders = ','.join(['%s'] * len(vins))
-                cur.execute(f"SELECT id, vin, images, source, created_at FROM listings WHERE vin IN ({vin_placeholders})", vins)
+                cur.execute(f"SELECT DISTINCT UPPER(TRIM(vin)) FROM listings WHERE vin IN ({vin_placeholders})", vins)
                 for record in cur.fetchall():
-                    found_by_vin[record[1].strip().upper()] = record
-
-            # Query all matching listings by source and created_at for non-vin rows
-            found_by_src = {}
-            if source_rows_map:
-                # Only query records where the source and created_at match
-                # For better performance, use a window if many possible rows
-                query = """
-                    SELECT id, vin, images, source, created_at
-                    FROM listings
-                    WHERE vin IS NULL AND source = %s AND created_at::text = %s
-                """
-                for (src, created_str), n in source_rows_map.items():
-                    cur = conn.cursor()
-                    cur.execute(query, (src, created_str))
-                    for record in cur.fetchall():
-                        found_by_src[(src, created_str)] = record
-
-            # Now filter incoming rows: skip insert if exists & images are identical; else, update if images differ
+                    if record[0]:
+                        existing_vins.add(record[0].strip().upper())
+            
+            # Query existing source URLs (only for rows without VIN or with VIN not found)
+            existing_sources = set()
+            if source_urls:
+                source_placeholders = ','.join(['%s'] * len(source_urls))
+                cur.execute(
+                    f"SELECT DISTINCT LOWER(TRIM(source)) FROM listings WHERE LOWER(TRIM(source)) IN ({source_placeholders})",
+                    source_urls
+                )
+                for record in cur.fetchall():
+                    if record[0]:
+                        existing_sources.add(record[0].lower().strip())
+            
+            # Filter rows: skip if VIN exists, or if source exists (when VIN doesn't exist)
             rows_to_create = []
-            updates_to_perform = []
-
-
-            for item in rows:
-                norm = item.model_dump()
-                vin_raw = norm.get("vin")
-                vin = vin_raw.strip().upper() if vin_raw and vin_raw.strip() else None
-                images_incoming = norm.get('images') or []
-                if vin and vin in found_by_vin:
-                    existing_row = found_by_vin[vin]
-                    existing_images = existing_row[2]
-                    if images_equal(images_incoming, existing_images):
-                        logging.debug(f"Skipping update for VIN {vin}: images are identical.")
-                        continue
-                    else:
-                        logging.debug(f"Updating images for VIN {vin}: images differ. Existing: {existing_images}, Incoming: {images_incoming}")
-                        updates_to_perform.append({
-                            "id": existing_row[0],
-                            "images": images_incoming
-                        })
-                        continue
-                else:
-                    # Handle non-vin case: match (source, created_at)
-                    src = (norm.get("source") or "unknown").strip().lower()
-                    created = norm.get("created_at")
-                    if isinstance(created, datetime.datetime):
-                        created_str = created.isoformat(timespec='seconds')
-                    elif created:
-                        created_str = str(created)
-                    else:
-                        created_str = f"{norm.get('year','')}-{norm.get('make','')}-{norm.get('model','')}"
-                    candidate = found_by_src.get((src, created_str))
-                    if candidate:
-                        existing_images = candidate[2]
-                        if images_equal(images_incoming, existing_images):
-                            logging.debug(f"Skipping update for (src, created_at) {src, created_str}: images are identical.")
-                            continue
-                        else:
-                            logging.debug(f"Updating images for (src, created_at) {src, created_str}: images differ. Existing: {existing_images}, Incoming: {images_incoming}")
-                            updates_to_perform.append({
-                                "id": candidate[0],
-                                "images": images_incoming
-                            })
-                            continue
-                    else:
-                        # No match, add to create
-                        logging.debug(f"No match found for {vin or (src, created_str)}, adding to create list.")
-                        rows_to_create.append(item)
-                        continue
-
-            # Perform all image updates, if any
-            for update in updates_to_perform:
-                try:
-                    cur = conn.cursor()
-                    cur.execute(
-                        "UPDATE listings SET images=%s WHERE id=%s",
-                        (update["images"], update["id"])
-                    )
-                    conn.commit()
-                except Exception as update_exc:
-                    logging.error(f"Failed to update images for listing {update['id']}: {update_exc}")
-
+            for row_data in rows_with_data:
+                item = row_data["item"]
+                norm = row_data["norm"]
+                vin = row_data["vin"]
+                source = row_data["source"]
+                
+                # First check: if VIN exists, skip
+                if vin and vin in existing_vins:
+                    logging.debug(f"Skipping duplicate VIN: {vin}")
+                    continue
+                
+                # Second check: if no VIN or VIN not found, check source URL
+                if source and source in existing_sources:
+                    logging.debug(f"Skipping duplicate source URL: {source}")
+                    continue
+                
+                # No duplicate found, add to create list
+                rows_to_create.append(item)
+            
             # Only process create for rows_to_create from here
             rows = rows_to_create
             try:

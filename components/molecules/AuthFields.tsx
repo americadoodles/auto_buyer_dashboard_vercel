@@ -30,7 +30,7 @@ export const AuthFields: React.FC<AuthFieldsProps> = ({ onSubmit, loading, submi
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Email Field */}
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">
+        <label htmlFor="email" className="block text-sm font-medium text-gray-700">
           Email Address
         </label>
         <div className="relative">
@@ -38,11 +38,14 @@ export const AuthFields: React.FC<AuthFieldsProps> = ({ onSubmit, loading, submi
             <Mail className="h-5 w-5 text-gray-400" />
           </div>
           <input
+            id="email"
+            name="email"
             type="email"
             value={email}
             onChange={e => setEmail(e.target.value)}
             className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             placeholder="Enter your email"
+            autoComplete="email"
             required
           />
         </div>
@@ -51,7 +54,7 @@ export const AuthFields: React.FC<AuthFieldsProps> = ({ onSubmit, loading, submi
       {/* Username Field (optional) */}
       {showUsername && (
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">
+          <label htmlFor="username" className="block text-sm font-medium text-gray-700">
             Username
           </label>
           <div className="relative">
@@ -59,11 +62,14 @@ export const AuthFields: React.FC<AuthFieldsProps> = ({ onSubmit, loading, submi
               <UserIcon className="h-5 w-5 text-gray-400" />
             </div>
             <input
+              id="username"
+              name="username"
               type="text"
               value={username}
               onChange={e => setUsername(e.target.value)}
               className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               placeholder="Choose a username"
+              autoComplete="username"
               required
             />
           </div>
@@ -72,7 +78,7 @@ export const AuthFields: React.FC<AuthFieldsProps> = ({ onSubmit, loading, submi
 
       {/* Password Field */}
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">
+        <label htmlFor="password" className="block text-sm font-medium text-gray-700">
           Password
         </label>
         <div className="relative">
@@ -80,11 +86,14 @@ export const AuthFields: React.FC<AuthFieldsProps> = ({ onSubmit, loading, submi
             <Lock className="h-5 w-5 text-gray-400" />
           </div>
           <input
+            id="password"
+            name="password"
             type={showPassword ? "text" : "password"}
             value={password}
             onChange={e => setPassword(e.target.value)}
             className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             placeholder="Enter your password"
+            autoComplete="current-password"
             required
           />
           <button
@@ -104,7 +113,7 @@ export const AuthFields: React.FC<AuthFieldsProps> = ({ onSubmit, loading, submi
       {/* Confirm Password Field */}
       {showConfirmPassword && (
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">
+          <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
             Confirm Password
           </label>
           <div className="relative">
@@ -112,11 +121,14 @@ export const AuthFields: React.FC<AuthFieldsProps> = ({ onSubmit, loading, submi
               <Lock className="h-5 w-5 text-gray-400" />
             </div>
             <input
+              id="confirmPassword"
+              name="confirmPassword"
               type={showConfirmPasswordVisible ? "text" : "password"}
               value={confirmPassword}
               onChange={e => setConfirmPassword(e.target.value)}
               className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               placeholder="Confirm your password"
+              autoComplete="new-password"
               required
             />
             <button

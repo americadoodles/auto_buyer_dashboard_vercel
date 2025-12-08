@@ -14,7 +14,7 @@ import { Input } from "../../../components/atoms/Input";
 import { useAuth } from "../../auth/useAuth";
 import { useToast } from "../../../hooks/useToast";
 import { ApiService } from "../../../lib/services/api";
-import { getCurrentYearRange } from "lib/services/helper";
+import { getCurrentMonthRange } from "lib/services/helper";
 
 interface BuyerStats {
   total_listings: number;
@@ -42,7 +42,7 @@ export default function BuyerActivityPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(25);
 
-  const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>(getCurrentYearRange());
+  const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>(getCurrentMonthRange());
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [makeFilter, setMakeFilter] = useState("");

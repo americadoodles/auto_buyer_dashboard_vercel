@@ -4,7 +4,7 @@ import { MOCK_DATA } from '../data/mockData';
 import { ApiService } from '../services/api';
 import { useAuth } from '../../app/auth/useAuth';
 import { useToast } from '../../hooks/useToast';
-import { getCurrentYearRange } from 'lib/services/helper';
+import { getCurrentMonthRange } from 'lib/services/helper';
 
 export const useListings = () => {
   const { user } = useAuth();
@@ -18,7 +18,7 @@ export const useListings = () => {
   
 
   
-  const initialDateRange = getCurrentYearRange();
+  const initialDateRange = getCurrentMonthRange();
   const [startDate, setStartDate] = useState<Date | null>(initialDateRange.start);
   const [endDate, setEndDate] = useState<Date | null>(initialDateRange.end);
 
@@ -70,14 +70,14 @@ export const useListings = () => {
         
         if (isHealthy) {
           // Use current year date range
-          const yearRange = getCurrentYearRange();
-          setStartDate(yearRange.start);
-          setEndDate(yearRange.end);
+          const monthRange = getCurrentMonthRange();
+          setStartDate(monthRange.start);
+          setEndDate(monthRange.end);
           // Use appropriate API call based on user role
           const listings = user?.role === 'admin' 
-            ? await ApiService.getListings({ start_date: yearRange.start.toISOString(), end_date: yearRange.end.toISOString() })
+            ? await ApiService.getListings({ start_date: monthRange.start.toISOString(), end_date: monthRange.end.toISOString() })
             : user?.id 
-              ? await ApiService.getBuyerListings(user.id, { start_date: yearRange.start.toISOString(), end_date: yearRange.end.toISOString() })
+              ? await ApiService.getBuyerListings(user.id, { start_date: monthRange.start.toISOString(), end_date: monthRange.end.toISOString() })
               : [];
           if (mounted && Array.isArray(listings) && listings.length > 0) {
             setData(listings);

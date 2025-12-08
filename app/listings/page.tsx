@@ -44,7 +44,6 @@ export default function ListingsPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [makeFilter, setMakeFilter] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  
   // Selection state
   const [selectedListings, setSelectedListings] = useState<Set<string>>(new Set());
 

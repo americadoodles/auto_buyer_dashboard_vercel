@@ -1,7 +1,10 @@
-  // Set initial date range to current year
-export  const getCurrentYearRange = () => {
+  // Set initial date range to one month before
+export  const getCurrentMonthRange = () => {
     const now = new Date();
-    const startOfYear = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0); // January 1st
-    const endOfYear = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999); // December 31st
-    return { start: startOfYear, end: endOfYear };
+    const oneMonthAgo = new Date(now);
+    oneMonthAgo.setMonth(now.getMonth() - 1);
+    oneMonthAgo.setHours(0, 0, 0, 0); // Start of day
+    const endDate = new Date(now);
+    endDate.setHours(23, 59, 59, 999); // End of day
+    return { start: oneMonthAgo, end: endDate };
   };

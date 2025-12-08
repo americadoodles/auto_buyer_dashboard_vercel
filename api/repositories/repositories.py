@@ -317,15 +317,9 @@ def list_listings(
                     if date_conditions:
                         where_clause = "WHERE " + " AND ".join(date_conditions)
                     
-                    # Fixed query to prevent duplicates by using DISTINCT ON with date-filtered subquery
+                    # Query with date-filtered subquery
                     query = """
-                    SELECT DISTINCT ON (
-                        CASE
-                            WHEN POSITION('?' IN l.vehicle_key) > 0 THEN SPLIT_PART(l.vehicle_key, '?', 1)
-                            WHEN POSITION('#' IN l.vehicle_key) > 0 THEN SPLIT_PART(l.vehicle_key, '#', 1)
-                            ELSE l.vehicle_key
-                        END
-                        )
+                    SELECT
                         l.id,
                         l.vehicle_key,
                         COALESCE(l.vin, '') AS vin,
@@ -367,13 +361,7 @@ def list_listings(
                         ORDER BY vin, created_at DESC
                         ) s ON s.vin = l.vin
                         LEFT JOIN users u ON u.id::text = l.buyer_id
-                        ORDER BY
-                        CASE
-                            WHEN POSITION('?' IN l.vehicle_key) > 0 THEN SPLIT_PART(l.vehicle_key, '?', 1)
-                            WHEN POSITION('#' IN l.vehicle_key) > 0 THEN SPLIT_PART(l.vehicle_key, '#', 1)
-                            ELSE l.vehicle_key
-                        END,
-                        l.created_at DESC;
+                        ORDER BY l.updated_at DESC;
 
                     """
                     

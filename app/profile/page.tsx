@@ -12,6 +12,7 @@ const ProfilePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState<"success" | "error">("success");
   const [activeTab, setActiveTab] = useState<"profile" | "password">("profile");
   const [showPassword, setShowPassword] = useState(false);
 
@@ -68,13 +69,16 @@ const ProfilePage: React.FC = () => {
     e.preventDefault();
     setSaving(true);
     setMessage("");
+    setMessageType("success");
 
     try {
       const updatedUser = await ApiService.updateMyProfile(profileData);
       setUser(updatedUser);
       setMessage("Profile updated successfully!");
+      setMessageType("success");
     } catch (err: any) {
       setMessage(err.message || "Failed to update profile");
+      setMessageType("error");
     } finally {
       setSaving(false);
     }
@@ -84,16 +88,19 @@ const ProfilePage: React.FC = () => {
     e.preventDefault();
     setSaving(true);
     setMessage("");
+    setMessageType("success");
 
     try {
       await ApiService.updateMyPassword(passwordData);
       setMessage("Password updated successfully!");
+      setMessageType("success");
       setPasswordData({
         current_password: "",
         new_password: "",
       });
     } catch (err: any) {
       setMessage(err.message || "Failed to update password");
+      setMessageType("error");
     } finally {
       setSaving(false);
     }
@@ -185,9 +192,17 @@ const ProfilePage: React.FC = () => {
 
           {/* Message */}
           {message && (
-            <div className="px-6 py-3 bg-green-50 border-b border-green-200">
+            <div className={`px-6 py-3 border-b ${
+              messageType === "error" 
+                ? "bg-red-50 border-red-200" 
+                : "bg-green-50 border-green-200"
+            }`}>
               <div className="flex items-center space-x-2">
-                <span className="text-sm text-green-800">{message}</span>
+                <span className={`text-sm ${
+                  messageType === "error" 
+                    ? "text-red-800" 
+                    : "text-green-800"
+                }`}>{message}</span>
               </div>
             </div>
           )}

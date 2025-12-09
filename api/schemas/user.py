@@ -61,3 +61,7 @@ class UserUpdateRequest(BaseModel):
 class UserUpdatePasswordRequest(BaseModel):
     current_password: str
     new_password: str
+
+class UserResetPasswordRequest(BaseModel):
+    """Admin-only: Reset password without current password verification"""
+    new_password: str

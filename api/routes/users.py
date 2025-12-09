@@ -1,6 +1,6 @@
 from ..repositories.roles import get_role_by_name
 from fastapi import APIRouter, HTTPException, Depends
-from ..schemas.user import UserOut, UserSignupRequest, UserConfirmRequest, UserRemoveRequest, UserLoginRequest, TokenResponse, UserUpdateRequest, UserUpdatePasswordRequest
+from ..schemas.user import UserOut, UserSignupRequest, UserConfirmRequest, UserRemoveRequest, UserLoginRequest, TokenResponse, UserUpdateRequest, UserUpdatePasswordRequest, UserResetPasswordRequest
 from ..repositories.users import (
     create_user,
     get_user_by_email,
@@ -11,6 +11,7 @@ from ..repositories.users import (
     list_users,
     update_user,
     update_user_password,
+    reset_user_password,
     get_user_by_id
 )
 import logging
@@ -161,18 +162,33 @@ def update_user_api(user_id: str, request: UserUpdateRequest, _: UserOut = Depen
     return updated_user
 
 @user_router.put("/{user_id}/password")
-def update_user_password_api(user_id: str, request: UserUpdatePasswordRequest, _: UserOut = Depends(require_admin)):
+def update_user_password_api(user_id: str, request: UserResetPasswordRequest, _: UserOut = Depends(require_admin)):
+    """
+    Admin endpoint to reset a user's password.
+    Admins can reset passwords without knowing the current password.
+    """
     from uuid import UUID
     try:
         user_uuid = UUID(user_id)
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid user ID format")
     
-    success = update_user_password(user_uuid, request.current_password, request.new_password)
-    if not success:
-        raise HTTPException(status_code=400, detail="Failed to update password. Check current password.")
+    # Validate new password
+    if not request.new_password or len(request.new_password) < 6:
+        raise HTTPException(status_code=400, detail="New password must be at least 6 characters long")
     
-    return {"ok": True}
+    # Admin can reset password without current password verification
+    # Check if user exists first
+    existing_user = get_user_by_id(user_uuid)
+    if not existing_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Reset password (admin action - no current password required)
+    success = reset_user_password(user_uuid, request.new_password)
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to reset password. Please try again.")
+    
+    return {"ok": True, "message": "Password reset successfully"}
 
 @user_router.put("/me", response_model=UserOut)
 def update_my_profile(request: UserUpdateRequest, current_user: UserOut = Depends(get_current_user)):

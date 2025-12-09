@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { ApiService } from "../../lib/services/api";
-import { User, UserUpdateRequest, UserUpdatePasswordRequest } from "../../lib/types/user";
+import { User, UserUpdateRequest, UserResetPasswordRequest } from "../../lib/types/user";
 import { Role } from "../../lib/types/role";
 import { X, Save, Eye, EyeOff } from "lucide-react";
 
@@ -28,13 +28,13 @@ const UserEditModal: React.FC<UserEditModalProps> = ({
     is_confirmed: user.is_confirmed,
   });
 
-  const [passwordData, setPasswordData] = useState<UserUpdatePasswordRequest>({
-    current_password: "",
+  const [passwordData, setPasswordData] = useState<UserResetPasswordRequest>({
     new_password: "",
   });
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState<"success" | "error">("success");
   const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState<"profile" | "password">("profile");
 
@@ -47,10 +47,10 @@ const UserEditModal: React.FC<UserEditModalProps> = ({
         is_confirmed: user.is_confirmed,
       });
       setPasswordData({
-        current_password: "",
         new_password: "",
       });
       setMessage("");
+      setMessageType("success");
       setActiveTab("profile");
     }
   }, [isOpen, user]);
@@ -88,22 +88,25 @@ const UserEditModal: React.FC<UserEditModalProps> = ({
     e.preventDefault();
     setLoading(true);
     setMessage("");
+    setMessageType("success");
 
     try {
       if (activeTab === "profile") {
         const updatedUser = await ApiService.updateUser(user.id, formData);
         onUserUpdated(updatedUser);
         setMessage("User updated successfully!");
+        setMessageType("success");
       } else {
         await ApiService.updateUserPassword(user.id, passwordData);
         setMessage("Password updated successfully!");
+        setMessageType("success");
         setPasswordData({
-          current_password: "",
           new_password: "",
         });
       }
     } catch (err: any) {
       setMessage(err.message || "Update failed");
+      setMessageType("error");
     } finally {
       setLoading(false);
     }
@@ -153,9 +156,17 @@ const UserEditModal: React.FC<UserEditModalProps> = ({
 
         {/* Message */}
         {message && (
-          <div className="px-6 py-3 bg-green-50 dark:bg-green-900/20 border-b border-green-200 dark:border-green-800">
+          <div className={`px-6 py-3 border-b ${
+            messageType === "error"
+              ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
+              : "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800"
+          }`}>
             <div className="flex items-center space-x-2">
-              <span className="text-sm text-green-800 dark:text-green-300">{message}</span>
+              <span className={`text-sm ${
+                messageType === "error"
+                  ? "text-red-800 dark:text-red-300"
+                  : "text-green-800 dark:text-green-300"
+              }`}>{message}</span>
             </div>
           </div>
         )}
@@ -225,31 +236,10 @@ const UserEditModal: React.FC<UserEditModalProps> = ({
             </div>
           ) : (
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Current Password
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    name="current_password"
-                    value={passwordData.current_password}
-                    onChange={handlePasswordChange}
-                    className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-                    ) : (
-                      <Eye className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-                    )}
-                  </button>
-                </div>
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-3 mb-4">
+                <p className="text-sm text-blue-800 dark:text-blue-300">
+                  As an admin, you can reset this user's password without knowing their current password.
+                </p>
               </div>
 
               <div>

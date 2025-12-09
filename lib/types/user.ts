@@ -28,6 +28,10 @@ export type UserUpdatePasswordRequest = {
   new_password: string;
 };
 
+export type UserResetPasswordRequest = {
+  new_password: string;
+};
+
 export type UserLoginRequest = {
   email: string;
   password: string;

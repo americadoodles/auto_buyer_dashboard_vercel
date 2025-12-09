@@ -4,7 +4,7 @@ import { Listing, SortConfig } from "../../lib/types/listing";
 import { Badge } from "../atoms/Badge";
 import { formatCurrency, formatNumber } from "../../lib/utils/formatters";
 import { LISTINGS_TABLE_COLUMNS } from "../../lib/constants/table";
-
+import { formatDateTime } from "../../lib/utils/formatters";
 interface ListingsTableContentProps {
   listings: Listing[];
   sort?: SortConfig;
@@ -31,6 +31,8 @@ function parseSourceUrl(src?: string) {
     return null;
   }
 }
+
+
 
 export const ListingsTableContent: React.FC<ListingsTableContentProps> = ({
   listings,
@@ -155,7 +157,6 @@ export const ListingsTableContent: React.FC<ListingsTableContentProps> = ({
               {/* Price */}
               <td className="px-4 py-3 font-medium">
                 <div className="flex items-center gap-1">
-                  <DollarSign className="h-3 w-3 flex-shrink-0" />
                   <span>{formatCurrency(listing.price)}</span>
                 </div>
               </td>
@@ -205,6 +206,13 @@ export const ListingsTableContent: React.FC<ListingsTableContentProps> = ({
               <td className="px-4 py-3 hidden lg:table-cell text-xs text-slate-600 dark:text-gray-300">
                 <span title={listing.buyer_username || listing.buyer_id} className="truncate block">
                   {listing.buyer_username || listing.buyer_id}
+                </span>
+              </td>
+              
+              {/* Updated */}
+              <td className="px-4 py-3 hidden lg:table-cell text-xs text-slate-600 dark:text-gray-300">
+                <span title={formatDateTime(listing.updated_at)} className="truncate block">
+                  {formatDateTime(listing.updated_at)}
                 </span>
               </td>
               

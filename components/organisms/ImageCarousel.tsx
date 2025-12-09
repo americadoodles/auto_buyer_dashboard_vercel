@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Button } from '../atoms/Button';
 import { ChevronLeft, ChevronRight, X, Image as ImageIcon } from 'lucide-react';
 
@@ -11,6 +11,13 @@ interface ImageCarouselProps {
 
 export const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, showPlaceholder = true }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [startPan, setStartPan] = useState({ x: 0, y: 0 });
+
+  const currentImage = useMemo(() => images[currentIndex], [images, currentIndex]);
 
   if (images.length === 0) {
     if (!showPlaceholder) return null;
@@ -35,14 +42,62 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, showPlaceh
     setCurrentIndex((prevIndex) => (prevIndex === 0 ? images.length - 1 : prevIndex - 1));
   };
 
+  const openViewer = () => {
+    setZoom(1);
+    setOffset({ x: 0, y: 0 });
+    setIsViewerOpen(true);
+  };
+
+  const closeViewer = () => {
+    setIsViewerOpen(false);
+    setZoom(1);
+    setOffset({ x: 0, y: 0 });
+  };
+
+  const handleWheel = (event: React.WheelEvent) => {
+    event.preventDefault();
+    const delta = event.deltaY > 0 ? -0.1 : 0.1;
+    setZoom((prev) => Math.min(4, Math.max(1, Number((prev + delta).toFixed(2)))));
+  };
+
+  const zoomIn = () => setZoom((prev) => Math.min(4, Number((prev + 0.2).toFixed(2))));
+  const zoomOut = () => setZoom((prev) => Math.max(1, Number((prev - 0.2).toFixed(2))));
+  const resetZoom = () => {
+    setZoom(1);
+    setOffset({ x: 0, y: 0 });
+  };
+
+  const onMouseDown = (event: React.MouseEvent) => {
+    // Only allow panning when zoomed in
+    if (zoom <= 1) return;
+    event.preventDefault();
+    setIsPanning(true);
+    setStartPan({ x: event.clientX - offset.x, y: event.clientY - offset.y });
+  };
+
+  const onMouseMove = (event: React.MouseEvent) => {
+    if (!isPanning) return;
+    event.preventDefault();
+    setOffset({
+      x: event.clientX - startPan.x,
+      y: event.clientY - startPan.y,
+    });
+  };
+
+  const onMouseUp = () => {
+    setIsPanning(false);
+  };
+
   return (
+    <>
     <div className="w-full bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden border border-gray-200 dark:border-gray-700">
       {/* Main Carousel Image */}
       <div className="relative h-64 md:h-96 flex items-center justify-center bg-gray-100 dark:bg-gray-700">
         <img
-          src={images[currentIndex]}
+          src={currentImage}
           alt={`Vehicle image ${currentIndex + 1}`}
-          className="max-h-full max-w-full object-contain"
+          className="max-h-full max-w-full object-contain cursor-zoom-in"
+          onClick={openViewer}
         />
         {images.length > 1 && (
           <>
@@ -83,5 +138,44 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, showPlaceh
         </div>
       )}
     </div>
+
+    {/* Fullscreen zoomable viewer */}
+    {isViewerOpen && (
+      <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex flex-col">
+        <div className="flex justify-end p-4">
+          <Button variant="ghost" onClick={closeViewer} className="text-white hover:text-gray-200">
+            <X className="h-6 w-6" />
+          </Button>
+        </div>
+        <div className="flex-1 flex items-center justify-center overflow-auto">
+          <div
+            className="relative"
+            onWheel={handleWheel}
+            onMouseDown={onMouseDown}
+            onMouseMove={onMouseMove}
+            onMouseUp={onMouseUp}
+            onMouseLeave={onMouseUp}
+            style={{ cursor: zoom > 1 ? (isPanning ? 'grabbing' : 'grab') : 'zoom-in' }}
+          >
+            <img
+              src={currentImage}
+              alt={`Vehicle image zoomed ${currentIndex + 1}`}
+              className="max-h-[90vh] max-w-[90vw] object-contain select-none"
+              style={{
+                transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`,
+                transition: isPanning ? 'none' : 'transform 80ms ease-out',
+              }}
+              draggable={false}
+            />
+          </div>
+        </div>
+        <div className="flex justify-center gap-3 p-4">
+          <Button onClick={zoomOut} variant="secondary" className="px-3">-</Button>
+          <Button onClick={resetZoom} variant="secondary" className="px-3">Reset</Button>
+          <Button onClick={zoomIn} variant="secondary" className="px-3">+</Button>
+        </div>
+      </div>
+    )}
+    </>
   );
 };

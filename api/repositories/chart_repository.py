@@ -35,7 +35,7 @@ def get_sourcing_activities_per_agent() -> List[dict]:
 
 
 def get_car_categories_performance() -> List[dict]:
-    """Get performance metrics grouped by car category (make/model combination)"""
+    """Get performance metrics grouped by car make (brand)"""
     if not DB_ENABLED:
         return []
     
@@ -44,22 +44,15 @@ def get_car_categories_performance() -> List[dict]:
             return []
         
         with conn.cursor() as cur:
-            # Try to use body_style if available, otherwise use make/model
+            # Group by make (brand) only
             cur.execute("""
                 SELECT 
-                    COALESCE(
-                        NULLIF(l.body_style, ''),
-                        CONCAT(v.make, ' ', v.model)
-                    ) as name,
+                    v.make as name,
                     COUNT(*) as value
                 FROM listings l
                 JOIN vehicles v ON v.vehicle_key = l.vehicle_key
-                WHERE v.make IS NOT NULL AND v.model IS NOT NULL
-                GROUP BY 
-                    COALESCE(
-                        NULLIF(l.body_style, ''),
-                        CONCAT(v.make, ' ', v.model)
-                    )
+                WHERE v.make IS NOT NULL AND v.make != ''
+                GROUP BY v.make
                 ORDER BY value DESC
                 LIMIT 20
             """)

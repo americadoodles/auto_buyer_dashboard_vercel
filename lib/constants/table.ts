@@ -36,6 +36,7 @@ export const LISTINGS_TABLE_COLUMNS = [
   { key: 'source', label: 'Source', colSpan: 1, priority: 'low' },
   { key: 'location', label: 'Location', colSpan: 1, priority: 'medium' }, // Wider for locations
   { key: 'buyer_username', label: 'Buyer', colSpan: 1, priority: 'medium' },
+  { key: 'updated_at', label: 'Updated', colSpan: 1, priority: 'low' },
   { key: 'radius', label: 'Radius', colSpan: 1, priority: 'low' },
   { key: 'buyMax', label: 'Buy-Max', colSpan: 1, priority: 'high' },
   { key: 'decision_status', label: 'Status', colSpan: 1, priority: 'high' },
@@ -50,11 +51,11 @@ export const LISTINGS_TABLE_COLUMNS = [
 export const RESPONSIVE_BREAKPOINTS = {
   mobile: {
     visibleColumns: ['select', 'score', 'vin', 'year', 'make', 'model', 'price', 'status', 'notify', 'slack', 'workflow', 'edit'],
-    hiddenColumns: ['miles', 'dom', 'source', 'location', 'buyer_username', 'radius', 'buyMax', 'decision_reasons', 'contacts']
+    hiddenColumns: ['miles', 'dom', 'source', 'location', 'buyer_username', 'updated_at', 'radius', 'buyMax', 'decision_reasons', 'contacts']
   },
   tablet: {
     visibleColumns: ['select', 'score', 'vin', 'year', 'make', 'model', 'miles', 'price', 'dom', 'location', 'status', 'notify', 'slack', 'workflow', 'edit'],
-    hiddenColumns: ['source', 'buyer_username', 'radius', 'buyMax', 'decision_reasons', 'contacts']
+    hiddenColumns: ['source', 'buyer_username', 'updated_at', 'radius', 'buyMax', 'decision_reasons', 'contacts']
   },
   desktop: {
     visibleColumns: 'all',

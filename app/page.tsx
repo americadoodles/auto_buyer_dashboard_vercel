@@ -31,6 +31,12 @@ interface StatCard {
   color: string;
 }
 
+// Helper function to check if a string is a UUID
+const isUUID = (str: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+};
+
 export default function Page() {
   const { user } = useAuth();
   const isAdmin = user?.role?.toLowerCase() === 'admin';
@@ -39,7 +45,6 @@ export default function Page() {
   const { data: heatmapData, loading: heatmapLoading, error: heatmapError } = useActivityHeatmap();
   const [timeRange, setTimeRange] = React.useState<TimeRange>('1w');
   const { data: chartData, loading: chartLoading } = useChartData(timeRange);
-
   // Dynamic stats based on real data
   const statCards: StatCard[] = [
     {
@@ -294,7 +299,9 @@ export default function Page() {
                   name: 'Activities',
                   data: chartData.sourcingActivitiesPerAgent.map(item => item.value)
                 }]}
-                categories={chartData.sourcingActivitiesPerAgent.map(item => item.name)}
+                categories={chartData.sourcingActivitiesPerAgent.map(item => 
+                  isUUID(item.name) ? 'Deleted User' : item.name
+                )}
                 height={300}
                 colors={['#3b82f6']}
               />

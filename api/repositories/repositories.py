@@ -333,19 +333,29 @@ def list_listings(
                         COALESCE(s.score, 0) AS score,
                         s.buy_max,
                         COALESCE(s.reason_codes, ARRAY[]::text[]) AS reason_codes,
+                        l.created_at,
                         l.payload,
                         l.notes,
-                        l.condition_rating,
                         l.interior_color,
                         l.exterior_color,
                         l.transmission,
                         l.fuel_type,
                         l.drivetrain,
-                        l.engine_size,
                         l.body_style,
                         l.updated_at,
                         l.updated_by,
-                        l.mmr
+                        l.mmr,
+                        l.clean_title,
+                        l.condition,
+                        l.detailed_ratings,
+                        l.engine,
+                        l.mpg,
+                        l.overall_rating,
+                        l.paid_status,
+                        l.phone_number,
+                        l.seller_description,
+                        l.seller_joined_date,
+                        l.seller_name
                         FROM (
                         SELECT * FROM listings """ + where_clause + """
                         ) l
@@ -370,7 +380,7 @@ def list_listings(
                     results = cur.fetchall()
                     logging.info(f"Query returned {len(results)} raw results")
                     out: list[ListingOut] = []
-                    for rid, vehicle_key, vin, year, make, model, trim, miles, price, dom, source, location, buyer_id, images, buyer_username, score, buy_max, reason_codes, payload, notes, condition_rating, interior_color, exterior_color, transmission, fuel_type, drivetrain, engine_size, body_style, updated_at, updated_by, mmr in results:
+                    for rid, vehicle_key, vin, year, make, model, trim, miles, price, dom, source, location, buyer_id, images, buyer_username, score, buy_max, reason_codes, created_at, payload, notes, interior_color, exterior_color, transmission, fuel_type, drivetrain, body_style, updated_at, updated_by, mmr, clean_title, condition, detailed_ratings, engine, mpg, overall_rating, paid_status, phone_number, seller_description, seller_joined_date, seller_name in results:
                         # Extract decision data from payload if available
                         decision = None
                         status = ""
@@ -379,24 +389,60 @@ def list_listings(
                             decision = create_decision_from_data(payload_data)
                             status = payload_data.get("status", "")
                         
+                        # Parse detailed_ratings JSONB if it's a string
+                        detailed_ratings_list = None
+                        if detailed_ratings:
+                            if isinstance(detailed_ratings, str):
+                                try:
+                                    detailed_ratings_list = json.loads(detailed_ratings)
+                                except:
+                                    detailed_ratings_list = None
+                            else:
+                                detailed_ratings_list = detailed_ratings
+                        
                         out.append(ListingOut(
-                            id=str(rid), vehicle_key=vehicle_key, vin=vin or "", year=int(year), make=make, model=model, trim=trim,
-                            miles=int(miles), price=float(price), dom=int(dom), source=source,
-                            location=location, buyer_id=buyer_id, buyer_username=buyer_username,
-                            radius=25, reasonCodes=reason_codes or [],
-                            buyMax=float(buy_max) if buy_max is not None else None,
-                            status=status, score=int(score) if score is not None else None, decision=decision, images=images or [],
-                            notes=notes,
-                            condition_rating=condition_rating,
-                            interior_color=interior_color,
-                            exterior_color=exterior_color,
+                            id=str(rid),
+                            vehicle_key=vehicle_key,
+                            vin=vin or "",
+                            price=float(price),
+                            miles=int(miles),
+                            dom=int(dom),
+                            year=int(year),
+                            make=make,
+                            model=model,
+                            location=location,
+                            radius=25,
+                            images=images or [],
                             transmission=transmission,
-                            fuel_type=fuel_type,
-                            drivetrain=drivetrain,
-                            engine_size=engine_size,
-                            body_style=body_style,
+                            exteriorColor=exterior_color,
+                            interiorColor=interior_color,
+                            fuelType=fuel_type,
+                            overallRating=overall_rating,
+                            detailedRatings=detailed_ratings_list,
+                            condition=condition,
+                            mpg=mpg,
+                            cleanTitle=clean_title,
+                            paidStatus=paid_status,
+                            sellerDescription=seller_description,
+                            sellerName=seller_name,
+                            sellerJoinedDate=seller_joined_date,
+                            phoneNumber=phone_number,
+                            engine=engine,
+                            driveType=drivetrain,
+                            bodyStyle=body_style,
+                            source=source,
+                            status=status,
+                            reasonCodes=reason_codes or [],
+                            buyMax=float(buy_max) if buy_max is not None else None,
+                            trim=trim,
+                            buyer_id=buyer_id,
+                            buyer_username=buyer_username,
+                            decision=decision,
+                            created_at=created_at,
+                            notes=notes,
                             updated_at=updated_at,
                             updated_by=updated_by,
+                            score=int(score) if score is not None else None,
                             mmr=float(mmr) if mmr is not None else None
                         ))
                     logging.info(f"Returning {len(out)} processed listings")
@@ -415,7 +461,6 @@ def list_listings_by_buyer(
     limit: Optional[int] = None
 ) -> list[ListingOut]:
     """Get listings for a specific buyer with optional date filtering"""
-    print('======')
     if DB_ENABLED:
         with get_db_connection() as conn:
             if not conn:
@@ -442,17 +487,26 @@ def list_listings_by_buyer(
                             l.created_at,
                             l.payload,
                             l.notes,
-                            l.condition_rating,
                             l.interior_color,
                             l.exterior_color,
                             l.transmission,
                             l.fuel_type,
                             l.drivetrain,
-                            l.engine_size,
                             l.body_style,
                             l.updated_at,
                             l.updated_by,
-                            l.mmr
+                            l.mmr,
+                            l.clean_title,
+                            l.condition,
+                            l.detailed_ratings,
+                            l.engine,
+                            l.mpg,
+                            l.overall_rating,
+                            l.paid_status,
+                            l.phone_number,
+                            l.seller_description,
+                            l.seller_joined_date,
+                            l.seller_name
                         FROM listings l
                         LEFT JOIN vehicles v ON v.vehicle_key = l.vehicle_key
                         LEFT JOIN (
@@ -492,9 +546,11 @@ def list_listings_by_buyer(
                     for (
                         rid, vehicle_key, vin, year, make, model, trim, miles, price, dom,
                         source, location, buyer_id, images, buyer_username, score, buy_max,
-                        reason_codes, created_at, payload, notes, condition_rating, interior_color,
-                        exterior_color, transmission, fuel_type, drivetrain, engine_size,
-                        body_style, updated_at, updated_by, mmr
+                        reason_codes, created_at, payload, notes, interior_color,
+                        exterior_color, transmission, fuel_type, drivetrain,
+                        body_style, updated_at, updated_by, mmr, clean_title, condition,
+                        detailed_ratings, engine, mpg, overall_rating, paid_status, phone_number,
+                        seller_description, seller_joined_date, seller_name
                     ) in results:
                         
                         # Extract decision data from payload if available
@@ -505,39 +561,60 @@ def list_listings_by_buyer(
                             decision = create_decision_from_data(payload_data)
                             status = payload_data.get("status", "")
                         
+                        # Parse detailed_ratings JSONB if it's a string
+                        detailed_ratings_list = None
+                        if detailed_ratings:
+                            if isinstance(detailed_ratings, str):
+                                try:
+                                    detailed_ratings_list = json.loads(detailed_ratings)
+                                except:
+                                    detailed_ratings_list = None
+                            else:
+                                detailed_ratings_list = detailed_ratings
+                        
                         out.append(ListingOut(
                             id=str(rid),
                             vehicle_key=vehicle_key,
                             vin=vin or "",
+                            price=float(price),
+                            miles=int(miles),
+                            dom=int(dom),
                             year=int(year),
                             make=make,
                             model=model,
-                            trim=trim,
-                            miles=int(miles),
-                            price=float(price),
-                            dom=int(dom),
-                            source=source,
                             location=location,
-                            buyer_id=buyer_id,
-                            buyer_username=buyer_username,
                             radius=25,
+                            images=images or [],
+                            transmission=transmission,
+                            exteriorColor=exterior_color,
+                            interiorColor=interior_color,
+                            fuelType=fuel_type,
+                            overallRating=overall_rating,
+                            detailedRatings=detailed_ratings_list,
+                            condition=condition,
+                            mpg=mpg,
+                            cleanTitle=clean_title,
+                            paidStatus=paid_status,
+                            sellerDescription=seller_description,
+                            sellerName=seller_name,
+                            sellerJoinedDate=seller_joined_date,
+                            phoneNumber=phone_number,
+                            engine=engine,
+                            driveType=drivetrain,
+                            bodyStyle=body_style,
+                            source=source,
+                            status=status,
                             reasonCodes=reason_codes or [],
                             buyMax=float(buy_max) if buy_max is not None else None,
-                            status=status,
-                            score=int(score) if score is not None else None,
+                            trim=trim,
+                            buyer_id=buyer_id,
+                            buyer_username=buyer_username,
                             decision=decision,
-                            images=images or [],
+                            created_at=created_at,
                             notes=notes,
-                            condition_rating=condition_rating,
-                            interior_color=interior_color,
-                            exterior_color=exterior_color,
-                            transmission=transmission,
-                            fuel_type=fuel_type,
-                            drivetrain=drivetrain,
-                            engine_size=engine_size,
-                            body_style=body_style,
                             updated_at=updated_at,
                             updated_by=updated_by,
+                            score=int(score) if score is not None else None,
                             mmr=float(mmr) if mmr is not None else None
                         ))
                     logging.info(f"Returning {len(out)} processed listings for buyer {buyer_id}")

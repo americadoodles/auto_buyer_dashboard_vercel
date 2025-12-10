@@ -361,7 +361,7 @@ export default function LeadDetailPage() {
                   onClick={() => router.push(`/listings/${lead.listing_id}`)}
                   variant="outline"
                   size="sm"
-                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white border-blue-600 dark:border-blue-500"
+                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-black border-blue-600 dark:border-blue-500"
                 >
                   <ExternalLink className="h-4 w-4" />
                   View Listing

@@ -177,10 +177,10 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
               <Icon name="download" className="w-4 h-4 mr-2" />
               Export
             </Button>
-            <Button onClick={onCreateLead}>
+            {/* <Button onClick={onCreateLead}>
               <Icon name="plus" className="w-4 h-4 mr-2" />
               New Lead
-            </Button>
+            </Button> */}
           </div>
         </div>
 

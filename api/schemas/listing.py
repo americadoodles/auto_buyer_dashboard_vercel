@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any
+from typing import Optional, List
 from pydantic import BaseModel, Field
 from uuid import UUID
 
@@ -28,6 +28,24 @@ class ListingIn(BaseModel):
     decision: Optional[Decision] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     images: List[str] = []
+    # Additional fields from data source
+    bodyStyle: Optional[str] = None
+    cleanTitle: Optional[bool] = None
+    condition: Optional[str] = None
+    detailedRatings: Optional[List[str]] = None
+    driveType: Optional[str] = None
+    engine: Optional[str] = None
+    exteriorColor: Optional[str] = None
+    fuelType: Optional[str] = None
+    interiorColor: Optional[str] = None
+    mpg: Optional[str] = None
+    overallRating: Optional[str] = None
+    paidStatus: Optional[str] = None
+    phoneNumber: Optional[str] = None
+    sellerDescription: Optional[str] = None
+    sellerJoinedDate: Optional[str] = None
+    sellerName: Optional[str] = None
+    transmission: Optional[str] = None
 
 class ListingOut(BaseModel):
     id: str

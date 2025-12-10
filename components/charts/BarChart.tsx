@@ -9,6 +9,12 @@ import { getBarConfig } from './config/bar';
 // Dynamically import ApexCharts to avoid SSR issues
 const Chart = dynamic(() => import('react-apexcharts'), { ssr: false });
 
+// Helper function to check if a string is a UUID
+const isUUID = (str: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+};
+
 export interface BarChartProps {
   series: ApexOptions['series'];
   categories?: string[];
@@ -34,7 +40,13 @@ export const BarChart: React.FC<BarChartProps> = ({
 }) => {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
-
+  
+  // Process categories to replace UUIDs with "Deleted User"
+  const processedCategories = useMemo(() => {
+    if (!categories) return undefined;
+    return categories.map(category => isUUID(category) ? 'Deleted User' : category);
+  }, [categories]);
+  
   const options = useMemo(() => {
     const config = getBarConfig({
       colors,
@@ -46,9 +58,9 @@ export const BarChart: React.FC<BarChartProps> = ({
           horizontal,
         },
       },
-      xaxis: categories
+      xaxis: processedCategories
         ? {
-            categories,
+            categories: processedCategories,
             labels: {
               style: {
                 colors: isDark ? '#e5e7eb' : undefined, // gray-200 for dark mode
@@ -95,7 +107,7 @@ export const BarChart: React.FC<BarChartProps> = ({
       ...customOptions,
     });
     return config;
-  }, [categories, colors, horizontal, stacked, customOptions, isDark]);
+  }, [processedCategories, colors, horizontal, stacked, customOptions, isDark]);
 
   return (
     <div className={className}>

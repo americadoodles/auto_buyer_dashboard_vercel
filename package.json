@@ -3,9 +3,9 @@
   "private": true,
   "scripts": {
     "fastapi-dev": "pip install -r requirements.txt && python -m uvicorn api.index:app --reload --port 8001",
-    "next-dev": "next dev",
+    "next-dev": "next dev --webpack",
     "dev": "concurrently \"npm run next-dev\" \"npm run fastapi-dev\"",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "next lint"
   },

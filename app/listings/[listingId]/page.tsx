@@ -20,6 +20,7 @@ import { Lead } from '../../../lib/types/lead';
 import { ListingActivity } from '../../../lib/types/listing';
 import { ArrowLeft, Plus, Upload, X, Save } from 'lucide-react';
 import { useToast } from '../../../hooks/useToast';
+import { formatDateTime } from 'lib/utils/formatters';
 
 export default function ListingDetailPage() {
   const params = useParams();
@@ -244,12 +245,6 @@ export default function ListingDetailPage() {
     } finally {
       setCreatingContact(false);
     }
-  };
-
-  const formatDate = (dateString: string | undefined) => {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
   // Format number with commas
@@ -693,7 +688,7 @@ export default function ListingDetailPage() {
                           <Badge color="blue" className="bg-blue-500 dark:bg-blue-600 text-white">{activity.activity_type}</Badge>
                         </div>
                         <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
-                          {formatDate(activity.created_at)}
+                          {formatDateTime(activity.created_at)}
                         </span>
                       </div>
                       {activity.field_name && (
@@ -717,9 +712,9 @@ export default function ListingDetailPage() {
                 {listing.source ? (
                   <a
                     href={`/listings/source/${encodeURIComponent(listing.source)}`}
-                    className="ml-2 text-blue-600 dark:text-blue-400 hover:underline cursor-pointer font-medium"
+                    className="ml-2 text-blue-600 dark:text-blue-400 hover:underline cursor-pointer font-medium break-words"
                   >
-                    {listing.source}
+                    <span className="break-words break-all">{listing.source}</span>
                   </a>
                 ) : (
                   <span className="ml-2 text-gray-600 dark:text-gray-400 font-medium">N/A</span>
@@ -733,10 +728,16 @@ export default function ListingDetailPage() {
                 <span className="font-medium text-gray-800 dark:text-gray-200">Buyer:</span>
                 <span className="ml-2 text-gray-700 dark:text-gray-300 font-medium">{listing.buyer_username || 'N/A'}</span>
               </div>
+              <div>
+                <span className="font-medium text-gray-800 dark:text-gray-200">Updated:</span>
+                <span className="ml-2 text-gray-700 dark:text-gray-300 font-medium">
+                  {listing.updated_at ? formatDateTime(listing.updated_at) : 'N/A'}
+                </span>
+              </div>
               {listing.created_at && (
                 <div>
                   <span className="font-medium text-gray-800 dark:text-gray-200">Created:</span>
-                  <span className="ml-2 text-gray-700 dark:text-gray-300 font-medium">{formatDate(listing.created_at)}</span>
+                  <span className="ml-2 text-gray-700 dark:text-gray-300 font-medium">{formatDateTime(listing.created_at)}</span>
                 </div>
               )}
             </div>

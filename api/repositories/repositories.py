@@ -181,16 +181,61 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                             if isinstance(payload_data["created_at"], datetime.datetime):
                                 payload_data["created_at"] = payload_data["created_at"].isoformat()
 
+                        # Normalize camelCase fields to snake_case columns
+                        def _norm_str(val):
+                            if val is None:
+                                return None
+                            if isinstance(val, str):
+                                val = val.strip()
+                                return val if val else None
+                            return val
+
+                        interior_color = _norm_str(norm.get("interiorColor"))
+                        exterior_color = _norm_str(norm.get("exteriorColor"))
+                        transmission = _norm_str(norm.get("transmission"))
+                        fuel_type = _norm_str(norm.get("fuelType"))
+                        drivetrain = _norm_str(norm.get("driveType"))
+                        engine_size = _norm_str(norm.get("engine_size"))  # if provided
+                        body_style = _norm_str(norm.get("bodyStyle"))
+
+                        clean_title = norm.get("cleanTitle")
+                        condition_txt = _norm_str(norm.get("condition"))
+                        detailed_ratings = norm.get("detailedRatings")
+                        engine_desc = _norm_str(norm.get("engine"))
+                        mpg = _norm_str(norm.get("mpg"))
+                        overall_rating = _norm_str(norm.get("overallRating"))
+                        paid_status = _norm_str(norm.get("paidStatus"))
+                        phone_number = _norm_str(norm.get("phoneNumber"))
+                        seller_description = _norm_str(norm.get("sellerDescription"))
+                        seller_joined_date = _norm_str(norm.get("sellerJoinedDate"))
+                        seller_name = _norm_str(norm.get("sellerName"))
+
                         # Use buyer_id from authenticated context when provided; fallback to incoming buyer_id
                         buyer_from_id = buyer_id or norm.get("buyer_id") or None
 
                         # Prefer writing to buyer_id column;
                         try:
                             cur.execute("""
-                              insert into listings (vehicle_key, vin, source, price, miles, dom, location, buyer_id, payload, images)
-                              values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) returning id
-                            """, (vehicle_key, vin, norm["source"], norm["price"], norm["miles"], norm["dom"],
-                                  norm.get("location"), buyer_from_id, json.dumps(payload_data), norm.get("images", [])))
+                              insert into listings (
+                                vehicle_key, vin, source, price, miles, dom, location, buyer_id, payload, images,
+                                interior_color, exterior_color, transmission, fuel_type, drivetrain, engine_size, body_style,
+                                clean_title, condition, detailed_ratings, engine, mpg, overall_rating, paid_status, phone_number,
+                                seller_description, seller_joined_date, seller_name
+                              )
+                              values (
+                                %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
+                                %s,%s,%s,%s,%s,%s,%s,
+                                %s,%s,%s,%s,%s,%s,%s,%s,
+                                %s,%s,%s
+                              ) returning id
+                            """, (
+                                vehicle_key, vin, norm["source"], norm["price"], norm["miles"], norm["dom"],
+                                norm.get("location"), buyer_from_id, json.dumps(payload_data), norm.get("images", []),
+                                interior_color, exterior_color, transmission, fuel_type, drivetrain, engine_size, body_style,
+                                clean_title, condition_txt, json.dumps(detailed_ratings) if detailed_ratings is not None else None,
+                                engine_desc, mpg, overall_rating, paid_status, phone_number,
+                                seller_description, seller_joined_date, seller_name
+                            ))
                             new_id = str(cur.fetchone()[0])
                         except Exception as log_exc:
                             logging.error(f"Failed to insert listing into database: {log_exc}")

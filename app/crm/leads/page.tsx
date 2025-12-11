@@ -3,7 +3,6 @@
 import React, { useState, useMemo } from 'react';
 import { LeadManagement } from '../../../components/organisms/LeadManagement';
 import { useLeads, useLeadStatuses, useLeadSources } from '../../../lib/hooks/useLeads';
-import { LeadCreateModal } from '../../../components/organisms/LeadCreateModal';
 import { exportApi } from '../../../lib/services/exportApi';
 import { useAuth } from '../../../app/auth/useAuth';
 
@@ -18,7 +17,6 @@ export default function LeadsPage() {
   const [sourceFilter, setSourceFilter] = useState<number | undefined>(undefined);
   const [assignedToFilter, setAssignedToFilter] = useState<string | undefined>(undefined);
   const [locationFilter, setLocationFilter] = useState<string | undefined>(undefined);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   // For non-admin users, automatically filter by their user ID
   // Ensure the filter is always set for non-admin users
@@ -58,11 +56,7 @@ export default function LeadsPage() {
   const handleLeadClick = (leadId: string) => {
     // Handle lead click
   };
-
-  const handleCreateLead = async () => {
-    setIsCreateOpen(true);
-  };
-
+ 
   const handleExportLeads = async () => {
     try {
       const blob = await exportApi.exportLeads(
@@ -215,7 +209,6 @@ export default function LeadsPage() {
           totalPages={Math.ceil(filteredLeads.length / pageSize)}
           onPageChange={handlePageChange}
           onLeadClick={handleLeadClick}
-          onCreateLead={handleCreateLead}
           onExportLeads={handleExportLeads}
           onSearch={handleSearch}
           onStatusFilter={handleStatusFilter}
@@ -233,13 +226,6 @@ export default function LeadsPage() {
           loading={loading}
           onLeadUpdated={refreshLeads}
           isAdmin={isAdmin}
-        />
-        <LeadCreateModal
-          isOpen={isCreateOpen}
-          onClose={() => setIsCreateOpen(false)}
-          onCreated={async () => {
-            await refreshLeads();
-          }}
         />
       </div>
   );

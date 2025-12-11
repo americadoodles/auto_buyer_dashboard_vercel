@@ -13,9 +13,8 @@ import {
   getListingActivities,
   getContacts
 } from '../../../lib/services/listingManagementApi';
-import { LeadCreateModal } from '../../../components/organisms/LeadCreateModal';
 import { ContactEditModal } from '../../../components/organisms/ContactEditModal';
-import { LeadCreateSelectModal } from '../../../components/organisms/LeadCreateSelectModal';
+import { LeadCreateModal } from '../../../components/organisms/LeadCreateModal';
 import { ImageCarousel } from '../../../components/organisms/ImageCarousel';
 import { leadsApi } from '../../../lib/services/leadsApi';
 import { Lead } from '../../../lib/types/lead';
@@ -36,7 +35,6 @@ export default function ListingDetailPage() {
   const [listing, setListing] = useState<Listing | null>(null);
   const [activities, setActivities] = useState<ListingActivity[]>([]);
   const [formData, setFormData] = useState<ListingUpdate>({});
-  const [isLeadCreateOpen, setIsLeadCreateOpen] = useState(false);
   const [isCreateContactOpen, setIsCreateContactOpen] = useState(false);
   const [images, setImages] = useState<string[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
@@ -1956,29 +1954,8 @@ export default function ListingDetailPage() {
         </div>
       </div>
 
-      {/* Create Lead Modal */}
-      <LeadCreateModal
-        isOpen={isLeadCreateOpen}
-        onClose={() => setIsLeadCreateOpen(false)}
-        listingId={parseInt(listingId)}
-        onCreated={async () => {
-          setIsLeadCreateOpen(false);
-          // Reload lead data
-          try {
-            const leadsData = await leadsApi.getLeads({ limit: 1000 });
-            const listingLead = leadsData.find((lead: Lead) => lead.listing_id === parseInt(listingId));
-            if (listingLead) {
-              setLead(listingLead);
-              setHasExistingContact(!!(listingLead && listingLead.contact));
-            }
-          } catch (e) {
-            console.error('Error reloading lead data:', e);
-          }
-        }}
-      />
-
       {/* Create Lead from Contact Modal */}
-      <LeadCreateSelectModal
+      <LeadCreateModal
         isOpen={isCreateLeadFromContactOpen}
         onClose={() => setIsCreateLeadFromContactOpen(false)}
         listingId={parseInt(listingId)}

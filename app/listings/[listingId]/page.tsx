@@ -10,14 +10,14 @@ import { Listing, ListingUpdate } from '../../../lib/types/listing';
 import { 
   updateListing,
   getListingDetails,
-  getListingActivities,
-  createContact
+  getListingActivities
 } from '../../../lib/services/listingManagementApi';
 import { LeadCreateModal } from '../../../components/organisms/LeadCreateModal';
+import { ContactEditModal } from '../../../components/organisms/ContactEditModal';
 import { ImageCarousel } from '../../../components/organisms/ImageCarousel';
 import { leadsApi } from '../../../lib/services/leadsApi';
 import { Lead } from '../../../lib/types/lead';
-import { ListingActivity } from '../../../lib/types/listing';
+import { ListingActivity, Contact } from '../../../lib/types/listing';
 import { ArrowLeft, Plus, Upload, X, Save, Edit2, Check } from 'lucide-react';
 import { useToast } from '../../../hooks/useToast';
 import { formatDateTime } from 'lib/utils/formatters';
@@ -38,17 +38,6 @@ export default function ListingDetailPage() {
   const [isCreateContactOpen, setIsCreateContactOpen] = useState(false);
   const [images, setImages] = useState<string[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
-  const [newContactData, setNewContactData] = useState({
-    first_name: '',
-    last_name: '',
-    email: '',
-    phone: '',
-    mobile: '',
-    company: '',
-    job_title: '',
-    notes: ''
-  });
-  const [creatingContact, setCreatingContact] = useState(false);
   const [hasExistingContact, setHasExistingContact] = useState(false);
   const [lead, setLead] = useState<Lead | null>(null);
   const [editingField, setEditingField] = useState<string | null>(null);
@@ -318,34 +307,10 @@ export default function ListingDetailPage() {
     }
   };
 
-  // Create new contact
-  const handleCreateContact = async () => {
-    if (!newContactData.first_name || !newContactData.last_name) {
-      showError('Validation Error', 'First name and last name are required');
-      return;
-    }
-
-    try {
-      setCreatingContact(true);
-      await createContact(newContactData);
-      setIsCreateContactOpen(false);
-      setNewContactData({
-        first_name: '',
-        last_name: '',
-        email: '',
-        phone: '',
-        mobile: '',
-        company: '',
-        job_title: '',
-        notes: ''
-      });
-      showSuccess('Contact Created', 'Contact has been successfully created');
-    } catch (error) {
-      console.error('Error creating contact:', error);
-      showError('Failed to create contact', 'Please try again.');
-    } finally {
-      setCreatingContact(false);
-    }
+  // Handle contact save (from ContactEditModal)
+  const handleContactSave = (contact: Contact) => {
+    // Contact was created/updated successfully
+    // You can add any additional logic here if needed
   };
 
   // Format number with commas
@@ -466,10 +431,10 @@ export default function ListingDetailPage() {
               )}
             </div>
             <Button
-              onClick={() => setIsLeadCreateOpen(true)}
+              onClick={() => setIsCreateContactOpen(true)}
               variant="outline"
               size="sm"
-              className="flex items-center gap-2 bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-black border-0 shadow-md font-semibold"
+              className="flex items-center gap-2 bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white border-0 shadow-md font-semibold cursor-pointer"
             >
               <Plus className="h-4 w-4" />
               {hasExistingContact ? 'Update Contact' : 'Create Contact'}
@@ -1983,169 +1948,13 @@ export default function ListingDetailPage() {
         }}
       />
 
-      {/* Create Contact Modal */}
-      {isCreateContactOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Create New Contact</h3>
-              <Button 
-                onClick={() => {
-                  setIsCreateContactOpen(false);
-                  setNewContactData({
-                    first_name: '',
-                    last_name: '',
-                    email: '',
-                    phone: '',
-                    mobile: '',
-                    company: '',
-                    job_title: '',
-                    notes: ''
-                  });
-                }} 
-                variant="outline" 
-                size="sm"
-                className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            
-            <div className="p-4 space-y-4 flex-1 overflow-y-auto">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                    First Name *
-                  </label>
-                  <Input
-                    value={newContactData.first_name}
-                    onChange={(e) => setNewContactData(prev => ({ ...prev, first_name: e.target.value }))}
-                    placeholder="Enter first name"
-                    className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                    Last Name *
-                  </label>
-                  <Input
-                    value={newContactData.last_name}
-                    onChange={(e) => setNewContactData(prev => ({ ...prev, last_name: e.target.value }))}
-                    placeholder="Enter last name"
-                    className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100"
-                  />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                    Email
-                  </label>
-                  <Input
-                    type="email"
-                    value={newContactData.email}
-                    onChange={(e) => setNewContactData(prev => ({ ...prev, email: e.target.value }))}
-                    placeholder="Enter email"
-                    className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                    Phone
-                  </label>
-                  <Input
-                    value={newContactData.phone}
-                    onChange={(e) => setNewContactData(prev => ({ ...prev, phone: e.target.value }))}
-                    placeholder="Enter phone number"
-                    className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                    Mobile
-                  </label>
-                  <Input
-                    value={newContactData.mobile}
-                    onChange={(e) => setNewContactData(prev => ({ ...prev, mobile: e.target.value }))}
-                    placeholder="Enter mobile number"
-                    className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                    Company
-                  </label>
-                  <Input
-                    value={newContactData.company}
-                    onChange={(e) => setNewContactData(prev => ({ ...prev, company: e.target.value }))}
-                    placeholder="Enter company"
-                    className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100"
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                  Job Title
-                </label>
-                <Input
-                  value={newContactData.job_title}
-                  onChange={(e) => setNewContactData(prev => ({ ...prev, job_title: e.target.value }))}
-                  placeholder="Enter job title"
-                  className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                  Notes
-                </label>
-                <textarea
-                  value={newContactData.notes}
-                  onChange={(e) => setNewContactData(prev => ({ ...prev, notes: e.target.value }))}
-                  placeholder="Additional notes..."
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                  rows={3}
-                />
-              </div>
-              
-              <div className="flex gap-2 pt-4">
-                <Button
-                  onClick={handleCreateContact}
-                  disabled={!newContactData.first_name || !newContactData.last_name || creatingContact}
-                  className="flex-1 bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white font-medium"
-                >
-                  {creatingContact ? 'Creating...' : 'Create Contact'}
-                </Button>
-                <Button
-                  onClick={() => {
-                    setIsCreateContactOpen(false);
-                    setNewContactData({
-                      first_name: '',
-                      last_name: '',
-                      email: '',
-                      phone: '',
-                      mobile: '',
-                      company: '',
-                      job_title: '',
-                      notes: ''
-                    });
-                  }}
-                  variant="outline"
-                  className="flex-1 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                  disabled={creatingContact}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Create/Edit Contact Modal */}
+      <ContactEditModal
+        contact={lead?.contact || null}
+        isOpen={isCreateContactOpen}
+        onClose={() => setIsCreateContactOpen(false)}
+        onSave={handleContactSave}
+      />
     </div>
   );
 }

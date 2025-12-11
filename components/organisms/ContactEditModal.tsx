@@ -4,14 +4,15 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '../atoms/Button';
 import { Input } from '../atoms/Input';
 import { X, Save } from 'lucide-react';
-import { updateContact } from '../../lib/services/listingManagementApi';
+import { createContact, updateContact } from '../../lib/services/listingManagementApi';
 import { Contact } from '../../lib/types/listing';
+import { useToast } from '../../hooks/useToast';
 
 interface ContactEditModalProps {
-  contact: Contact;
+  contact?: Contact | null;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (updatedContact: Contact) => void;
+  onSave: (contact: Contact) => void;
 }
 
 export const ContactEditModal: React.FC<ContactEditModalProps> = ({
@@ -20,6 +21,9 @@ export const ContactEditModal: React.FC<ContactEditModalProps> = ({
   onClose,
   onSave
 }) => {
+  const { showSuccess, showError } = useToast();
+  const isEditMode = !!contact;
+  
   // Contact information (editable)
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -35,16 +39,30 @@ export const ContactEditModal: React.FC<ContactEditModalProps> = ({
 
   // Initialize form data when modal opens
   useEffect(() => {
-    if (isOpen && contact) {
-      setFirstName(contact.first_name || '');
-      setLastName(contact.last_name || '');
-      setEmail(contact.email || '');
-      setPhone(contact.phone || '');
-      setMobile(contact.mobile || '');
-      setCompany(contact.company || '');
-      setJobTitle(contact.job_title || '');
-      setNotes(contact.notes || '');
-      setIsActive(contact.is_active ?? true);
+    if (isOpen) {
+      if (contact) {
+        // Edit mode - populate with existing contact data
+        setFirstName(contact.first_name || '');
+        setLastName(contact.last_name || '');
+        setEmail(contact.email || '');
+        setPhone(contact.phone || '');
+        setMobile(contact.mobile || '');
+        setCompany(contact.company || '');
+        setJobTitle(contact.job_title || '');
+        setNotes(contact.notes || '');
+        setIsActive(contact.is_active ?? true);
+      } else {
+        // Create mode - reset to empty
+        setFirstName('');
+        setLastName('');
+        setEmail('');
+        setPhone('');
+        setMobile('');
+        setCompany('');
+        setJobTitle('');
+        setNotes('');
+        setIsActive(true);
+      }
     }
   }, [isOpen, contact]);
 
@@ -66,26 +84,51 @@ export const ContactEditModal: React.FC<ContactEditModalProps> = ({
 
   // Save changes
   const handleSave = async () => {
+    if (!firstName || !lastName) {
+      showError('Validation Error', 'First name and last name are required');
+      return;
+    }
+
     try {
       setSaving(true);
       
-      const updatedContact = await updateContact(contact.id, {
-        first_name: firstName,
-        last_name: lastName,
-        email: email || undefined,
-        phone: phone || undefined,
-        mobile: mobile || undefined,
-        company: company || undefined,
-        job_title: jobTitle || undefined,
-        notes: notes || undefined,
-        is_active: isActive
-      });
+      let savedContact: Contact;
       
-      onSave(updatedContact);
+      if (isEditMode && contact) {
+        // Update existing contact
+        savedContact = await updateContact(contact.id, {
+          first_name: firstName,
+          last_name: lastName,
+          email: email || undefined,
+          phone: phone || undefined,
+          mobile: mobile || undefined,
+          company: company || undefined,
+          job_title: jobTitle || undefined,
+          notes: notes || undefined,
+          is_active: isActive
+        });
+        showSuccess('Contact Updated', 'Contact has been successfully updated');
+      } else {
+        // Create new contact
+        savedContact = await createContact({
+          first_name: firstName,
+          last_name: lastName,
+          email: email || undefined,
+          phone: phone || undefined,
+          mobile: mobile || undefined,
+          company: company || undefined,
+          job_title: jobTitle || undefined,
+          notes: notes || undefined,
+          is_active: isActive
+        });
+        showSuccess('Contact Created', 'Contact has been successfully created');
+      }
+      
+      onSave(savedContact);
       onClose();
     } catch (error) {
-      console.error('Error updating contact:', error);
-      alert('Failed to update contact. Please try again.');
+      console.error(`Error ${isEditMode ? 'updating' : 'creating'} contact:`, error);
+      showError(`Failed to ${isEditMode ? 'update' : 'create'} contact`, error instanceof Error ? error.message : 'Please try again.');
     } finally {
       setSaving(false);
     }
@@ -104,7 +147,9 @@ export const ContactEditModal: React.FC<ContactEditModalProps> = ({
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Edit Contact</h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            {isEditMode ? 'Edit Contact' : 'Create New Contact'}
+          </h2>
           <button
             onClick={onClose}
             className="text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
@@ -243,12 +288,12 @@ export const ContactEditModal: React.FC<ContactEditModalProps> = ({
               {saving ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Saving...
+                  {isEditMode ? 'Saving...' : 'Creating...'}
                 </>
               ) : (
                 <>
                   <Save className="w-4 h-4 mr-2" />
-                  Save Changes
+                  {isEditMode ? 'Save Changes' : 'Create Contact'}
                 </>
               )}
             </Button>

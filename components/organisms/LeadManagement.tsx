@@ -10,6 +10,7 @@ import { Button } from "../atoms/Button";
 import { Input } from "../atoms/Input";
 import { Icon } from "../atoms/Icon";
 import { Pagination } from "../molecules/Pagination";
+import { LeadCreateWithSelectionModal } from "./LeadCreateWithSelectionModal";
 import { Lead as BaseLead, LeadStatus, LeadSource } from "../../lib/types/lead";
 import { useLeadSources, useLeadStatuses } from "../../lib/hooks/useLeads";
 
@@ -93,6 +94,7 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
   
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
+  const [isCreateLeadModalOpen, setIsCreateLeadModalOpen] = useState(false);
   
   // Derive filter values from parent props
   const statusFilter = currentStatusFilter === undefined ? "all" : currentStatusFilter.toString();
@@ -175,10 +177,13 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
               <Icon name="download" className="w-4 h-4 mr-2" />
               Export
             </Button>
-            {/* <Button onClick={onCreateLead}>
+            <Button 
+              onClick={() => setIsCreateLeadModalOpen(true)}
+              className="bg-green-600 dark:bg-green-500 hover:bg-green-700 dark:hover:bg-green-600 text-black"
+            >
               <Icon name="plus" className="w-4 h-4 mr-2" />
-              New Lead
-            </Button> */}
+              Create New Lead
+            </Button>
           </div>
         </div>
 
@@ -481,6 +486,17 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
           </div>
         </Card>
       </div>
+
+      {/* Create New Lead Modal */}
+      <LeadCreateWithSelectionModal
+        isOpen={isCreateLeadModalOpen}
+        onClose={() => setIsCreateLeadModalOpen(false)}
+        onSuccess={() => {
+          if (onLeadUpdated) {
+            onLeadUpdated();
+          }
+        }}
+      />
     </div>
   );
 };

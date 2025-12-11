@@ -704,7 +704,7 @@ export default function DealDetailPage() {
                 year: lead.listing.year,
                 make: lead.listing.make,
                 model: lead.listing.model,
-                trim: lead.listing.trim,
+                trim: lead.listing.trim || undefined,
                 vin: lead.listing.vin
               } : null}
               contact={lead?.contact ? {

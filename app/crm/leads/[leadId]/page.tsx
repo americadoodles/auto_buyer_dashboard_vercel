@@ -395,7 +395,7 @@ export default function LeadDetailPage() {
             <Button variant="outline" onClick={() => router.push('/crm/leads')} disabled={saving}>
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={saving} className="bg-blue-400 hover:bg-blue-500 text-white">
+            <Button onClick={handleSave} disabled={saving} className="bg-blue-400 hover:bg-blue-500  text-black">
               {saving ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Badge } from '../atoms/Badge';
 import { Button } from '../atoms/Button';
 import { Icon } from '../atoms/Icon';
@@ -65,20 +65,49 @@ export function KanbanBoard<T extends KanbanItem>({
   const [createModalStageId, setCreateModalStageId] = useState<number | undefined>(undefined);
   const [createModalStageName, setCreateModalStageName] = useState<string>('');
   const [hoveredStage, setHoveredStage] = useState<string | null>(null);
+  
+  // Horizontal scroll drag state
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [isScrolling, setIsScrolling] = useState(false);
+  const scrollStartXRef = useRef(0);
+  const scrollLeftRef = useRef(0);
 
   // Map stage name to stage ID
   const getStageIdByName = (stageName: string): number | undefined => {
+    const targetLower = stageName.toLowerCase();
+    
     // First try to find in the stagesFromDb prop
     if (stagesFromDb && stagesFromDb.length > 0) {
-      const stage = stagesFromDb.find(s => 
-        s.name.toLowerCase() === stageName.toLowerCase() ||
-        (stageName.toLowerCase().includes('closed') && s.name.toLowerCase().includes('closed'))
-      );
+      // Try exact match first
+      let stage = stagesFromDb.find(s => s.name.toLowerCase() === targetLower);
       if (stage) return stage.id;
+      
+      // For "closed lost" or "closed won", try more specific matching
+      if (targetLower.includes('closed') && targetLower.includes('lost')) {
+        stage = stagesFromDb.find(s => {
+          const sLower = s.name.toLowerCase();
+          return sLower.includes('closed') && sLower.includes('lost');
+        });
+        if (stage) return stage.id;
+      } else if (targetLower.includes('closed') && targetLower.includes('won')) {
+        stage = stagesFromDb.find(s => {
+          const sLower = s.name.toLowerCase();
+          return sLower.includes('closed') && sLower.includes('won');
+        });
+        if (stage) return stage.id;
+      }
+      
+      // Fallback: match any stage containing "closed" if target also contains "closed"
+      if (targetLower.includes('closed')) {
+        stage = stagesFromDb.find(s => s.name.toLowerCase().includes('closed'));
+        if (stage) return stage.id;
+      }
     }
+    
     // Try to find in stages array
-    const stage = stages.find(s => s.name.toLowerCase() === stageName.toLowerCase());
+    const stage = stages.find(s => s.name.toLowerCase() === targetLower);
     if (stage && typeof stage.id === 'number') return stage.id;
+    
     return undefined;
   };
 
@@ -139,16 +168,32 @@ export function KanbanBoard<T extends KanbanItem>({
 
     // Don't update if dropped on the same stage
     const currentStageName = getItemStageName(draggedItem);
-    if (currentStageName.toLowerCase() === targetStageName.toLowerCase() ||
-        (currentStageName.toLowerCase().includes('closed') && targetStageName.toLowerCase() === 'closed')) {
+    const currentStageLower = currentStageName.toLowerCase();
+    const targetStageLower = targetStageName.toLowerCase();
+    
+    // Only prevent if it's the exact same stage
+    if (currentStageLower === targetStageLower) {
       setDraggedItem(null);
       return;
     }
 
-    // Get the stage ID
-    const stageId = getStageIdByName(targetStageName);
+    // Get the stage ID - try multiple times with different matching strategies
+    let stageId = getStageIdByName(targetStageName);
+    
+    // If not found, try with the stage name from the stages array
     if (!stageId) {
-      console.error(`Could not find stage ID for stage: ${targetStageName}`);
+      const stageFromStages = stages.find(s => s.name.toLowerCase() === targetStageLower);
+      if (stageFromStages && typeof stageFromStages.id === 'number') {
+        stageId = stageFromStages.id;
+      }
+    }
+    
+    if (!stageId) {
+      console.error(`Could not find stage ID for stage: ${targetStageName}`, {
+        targetStageName,
+        stagesFromDb: stagesFromDb?.map(s => ({ id: s.id, name: s.name })),
+        stages: stages.map(s => ({ id: s.id, name: s.name }))
+      });
       setDraggedItem(null);
       return;
     }
@@ -180,6 +225,63 @@ export function KanbanBoard<T extends KanbanItem>({
     }
   };
 
+  // Handle horizontal scroll drag start
+  const handleScrollMouseDown = (e: React.MouseEvent) => {
+    // Only enable scroll dragging if we're not dragging an item
+    if (draggedItem) return;
+    
+    // Don't start scroll drag if clicking on interactive elements
+    const target = e.target as HTMLElement;
+    if (target.closest('button, a, [draggable="true"]')) return;
+    
+    setIsScrolling(true);
+    if (scrollContainerRef.current) {
+      scrollStartXRef.current = e.pageX - scrollContainerRef.current.offsetLeft;
+      scrollLeftRef.current = scrollContainerRef.current.scrollLeft;
+    }
+    e.preventDefault();
+  };
+
+  // Add global mouse event listeners for scroll dragging
+  useEffect(() => {
+    if (!isScrolling) {
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      return;
+    }
+
+    // Handle horizontal scroll drag move
+    const handleScrollMouseMove = (e: MouseEvent) => {
+      if (!scrollContainerRef.current) return;
+      e.preventDefault();
+      const x = e.pageX - scrollContainerRef.current.offsetLeft;
+      const walk = (x - scrollStartXRef.current) * 2; // Scroll speed multiplier
+      scrollContainerRef.current.scrollLeft = scrollLeftRef.current - walk;
+    };
+
+    // Handle horizontal scroll drag end
+    const handleScrollMouseUp = () => {
+      setIsScrolling(false);
+    };
+
+    document.addEventListener('mousemove', handleScrollMouseMove);
+    document.addEventListener('mouseup', handleScrollMouseUp);
+    document.body.style.cursor = 'grabbing';
+    document.body.style.userSelect = 'none';
+
+    return () => {
+      document.removeEventListener('mousemove', handleScrollMouseMove);
+      document.removeEventListener('mouseup', handleScrollMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isScrolling]);
+
+  // Handle horizontal scroll mouse leave
+  const handleScrollMouseLeave = () => {
+    setIsScrolling(false);
+  };
+
   // Default create button renderer
   const defaultRenderCreateButton = (stage: KanbanStage, onCreateClick: () => void) => (
     <Button
@@ -202,7 +304,13 @@ export function KanbanBoard<T extends KanbanItem>({
 
   return (
     <div className="w-full h-full flex flex-col">
-      <div className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden" style={{ scrollbarWidth: 'thin' }}>
+      <div 
+        ref={scrollContainerRef}
+        className={`flex-1 min-h-0 overflow-x-auto overflow-y-hidden ${isScrolling ? 'cursor-grabbing' : 'cursor-grab'} select-none`}
+        style={{ scrollbarWidth: 'thin' }}
+        onMouseDown={handleScrollMouseDown}
+        onMouseLeave={handleScrollMouseLeave}
+      >
         <div className="flex gap-2 h-full w-full">
           {stages.map((stage) => {
             const stageItems = itemsByStage[stage.name] || [];

@@ -469,7 +469,7 @@ export default function ListingDetailPage() {
               onClick={() => setIsLeadCreateOpen(true)}
               variant="outline"
               size="sm"
-              className="flex items-center gap-2 bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white border-0 shadow-md font-semibold"
+              className="flex items-center gap-2 bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-black border-0 shadow-md font-semibold"
             >
               <Plus className="h-4 w-4" />
               {hasExistingContact ? 'Update Contact' : 'Create Contact'}
@@ -1945,7 +1945,7 @@ export default function ListingDetailPage() {
             <Button variant="outline" onClick={() => router.push('/listings')} disabled={saving} className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={saving} className="bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white flex items-center gap-2 font-medium">
+            <Button onClick={handleSave} disabled={saving} className="bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-black flex items-center gap-2 font-medium">
               {saving ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>

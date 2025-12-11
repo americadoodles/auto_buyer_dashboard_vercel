@@ -13,74 +13,82 @@ class ListingIn(BaseModel):
     price: float
     miles: int
     dom: int
-    source: Optional[str] = None
     year: int
     make: str
     model: str
-    trim: Optional[str] = None
-    id: Optional[str] = None               # optional on ingest
+    location: Optional[str] = None
     radius: Optional[int] = 25
+    images: List[str] = []
+    transmission: Optional[str] = None
+    exteriorColor: Optional[str] = None
+    interiorColor: Optional[str] = None
+    fuelType: Optional[str] = None
+    overallRating: Optional[str] = None
+    detailedRatings: Optional[List[str]] = None
+    condition: Optional[str] = None
+    mpg: Optional[str] = None
+    cleanTitle: Optional[bool] = None
+    paidStatus: Optional[str] = None
+    sellerDescription: Optional[str] = None
+    sellerName: Optional[str] = None
+    sellerJoinedDate: Optional[str] = None
+    phoneNumber: Optional[str] = None
+    engine: Optional[str] = None
+    driveType: Optional[str] = None
+    bodyStyle: Optional[str] = None
+    source: Optional[str] = None
+    status: Optional[str] = None
     reasonCodes: List[str] = []
     buyMax: Optional[float] = None
-    status: Optional[str] = None
-    location: Optional[str] = None
+    trim: Optional[str] = None
+    id: Optional[str] = None               # optional on ingest
     buyer_id: Optional[str] = None
     decision: Optional[Decision] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    images: List[str] = []
-    # Additional fields from data source
-    bodyStyle: Optional[str] = None
-    cleanTitle: Optional[bool] = None
-    condition: Optional[str] = None
-    detailedRatings: Optional[List[str]] = None
-    driveType: Optional[str] = None
-    engine: Optional[str] = None
-    exteriorColor: Optional[str] = None
-    fuelType: Optional[str] = None
-    interiorColor: Optional[str] = None
-    mpg: Optional[str] = None
-    overallRating: Optional[str] = None
-    paidStatus: Optional[str] = None
-    phoneNumber: Optional[str] = None
-    sellerDescription: Optional[str] = None
-    sellerJoinedDate: Optional[str] = None
-    sellerName: Optional[str] = None
-    transmission: Optional[str] = None
 
 class ListingOut(BaseModel):
     id: str
     vehicle_key: str
     vin: Optional[str] = None
+    price: float
+    miles: int
+    dom: int
     year: int
     make: str
     model: str
-    trim: Optional[str] = None
-    miles: int
-    price: float
-    score: Optional[int] = None
-    dom: int
-    source: Optional[str] = None
+    location: Optional[str] = None
     radius: Optional[int] = 25
+    images: Optional[List[str]] = None
+    transmission: Optional[str] = None
+    exteriorColor: Optional[str] = None
+    interiorColor: Optional[str] = None
+    fuelType: Optional[str] = None
+    overallRating: Optional[str] = None
+    detailedRatings: Optional[List[str]] = None
+    condition: Optional[str] = None
+    mpg: Optional[str] = None
+    cleanTitle: Optional[bool] = None
+    paidStatus: Optional[str] = None
+    sellerDescription: Optional[str] = None
+    sellerName: Optional[str] = None
+    sellerJoinedDate: Optional[str] = None
+    phoneNumber: Optional[str] = None
+    engine: Optional[str] = None
+    driveType: Optional[str] = None
+    bodyStyle: Optional[str] = None
+    source: Optional[str] = None
+    status: Optional[str] = None
     reasonCodes: List[str] = []
     buyMax: Optional[float] = None
-    status: Optional[str] = None
-    location: Optional[str] = None
+    trim: Optional[str] = None
     buyer_id: Optional[str] = None
     buyer_username: Optional[str] = None
     decision: Optional[Decision] = None
-    # New editable fields
+    created_at: Optional[datetime] = None
     notes: Optional[str] = None
-    condition_rating: Optional[int] = None
-    interior_color: Optional[str] = None
-    exterior_color: Optional[str] = None
-    transmission: Optional[str] = None
-    fuel_type: Optional[str] = None
-    drivetrain: Optional[str] = None
-    engine_size: Optional[str] = None
-    body_style: Optional[str] = None
     updated_at: Optional[datetime] = None
     updated_by: Optional[str] = None
-    images: Optional[List[str]] = None
+    score: Optional[int] = None
     mmr: Optional[float] = None
 
 class ListingScoreIn(BaseModel):
@@ -105,9 +113,24 @@ class ListingUpdate(BaseModel):
     body_style: Optional[str] = None
     price: Optional[float] = None
     miles: Optional[int] = None
+    dom: Optional[int] = None
     location: Optional[str] = None
     images: Optional[List[str]] = None
     mmr: Optional[float] = None
+    overall_rating: Optional[str] = None
+    condition: Optional[str] = None
+    mpg: Optional[str] = None
+    clean_title: Optional[bool] = None
+    paid_status: Optional[str] = None
+    seller_name: Optional[str] = None
+    phone_number: Optional[str] = None
+    seller_description: Optional[str] = None
+    seller_joined_date: Optional[str] = None
+    detailed_ratings: Optional[List[str]] = None
+    status: Optional[str] = None
+    score: Optional[int] = None
+    buy_max: Optional[float] = None
+    radius: Optional[int] = None
 
 class ListingActivityOut(BaseModel):
     """Schema for listing activity history"""

@@ -18,7 +18,7 @@ import { ImageCarousel } from '../../../components/organisms/ImageCarousel';
 import { leadsApi } from '../../../lib/services/leadsApi';
 import { Lead } from '../../../lib/types/lead';
 import { ListingActivity } from '../../../lib/types/listing';
-import { ArrowLeft, Plus, Upload, X, Save } from 'lucide-react';
+import { ArrowLeft, Plus, Upload, X, Save, Edit2, Check } from 'lucide-react';
 import { useToast } from '../../../hooks/useToast';
 import { formatDateTime } from 'lib/utils/formatters';
 
@@ -51,7 +51,9 @@ export default function ListingDetailPage() {
   const [creatingContact, setCreatingContact] = useState(false);
   const [hasExistingContact, setHasExistingContact] = useState(false);
   const [lead, setLead] = useState<Lead | null>(null);
-
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState<string>('');
+  const [savingField, setSavingField] = useState<string | null>(null);
   // Load listing details
   useEffect(() => {
     if (!listingId) return;
@@ -73,14 +75,14 @@ export default function ListingDetailPage() {
         setFormData({
           vin: listingData.vin || '',
           notes: listingData.notes || '',
-          condition_rating: listingData.condition_rating || undefined,
-          interior_color: listingData.interior_color || '',
-          exterior_color: listingData.exterior_color || '',
+          condition_rating: undefined, // condition_rating removed from Listing type
+          interior_color: listingData.interiorColor || '',
+          exterior_color: listingData.exteriorColor || '',
           transmission: listingData.transmission || '',
-          fuel_type: listingData.fuel_type || '',
-          drivetrain: listingData.drivetrain || '',
-          engine_size: listingData.engine_size || '',
-          body_style: listingData.body_style || '',
+          fuel_type: listingData.fuelType || '',
+          drivetrain: listingData.driveType || '',
+          engine_size: listingData.engine || '',
+          body_style: listingData.bodyStyle || '',
           price: listingData.price,
           miles: listingData.miles,
           location: listingData.location || '',
@@ -118,6 +120,105 @@ export default function ListingDetailPage() {
       ...prev,
       [field]: value
     }));
+  };
+
+  // Start editing a field
+  const startEditing = (field: string, currentValue: any) => {
+    setEditingField(field);
+    if (typeof currentValue === 'number') {
+      setEditValue(currentValue.toString());
+    } else {
+      setEditValue(currentValue || '');
+    }
+  };
+
+  // Cancel editing
+  const cancelEditing = () => {
+    setEditingField(null);
+    setEditValue('');
+  };
+
+  // Save a single field
+  const saveField = async (field: string) => {
+    if (!listingId || !listing) return;
+
+    try {
+      setSavingField(field);
+      
+      let updateData: ListingUpdate = {};
+      let value: any = editValue;
+
+      // Parse value based on field type
+      switch (field) {
+        case 'price':
+        case 'mmr':
+        case 'buyMax':
+          value = value ? parseFloat(value.replace(/,/g, '')) : undefined;
+          if (isNaN(value)) value = undefined;
+          break;
+        case 'miles':
+        case 'dom':
+        case 'score':
+          value = value ? parseInt(value.replace(/,/g, ''), 10) : undefined;
+          if (isNaN(value)) value = undefined;
+          break;
+        case 'mpg':
+          // MPG is a string field, keep as string
+          value = value || undefined;
+          break;
+        case 'vin':
+          value = value.toUpperCase();
+          break;
+        case 'detailed_ratings':
+          // Convert comma-separated string to array
+          value = value ? value.split(',').map((r: string) => r.trim()).filter((r: string) => r.length > 0) : [];
+          break;
+        case 'clean_title':
+          // Convert Yes/No to boolean
+          value = value.toLowerCase() === 'yes' || value.toLowerCase() === 'true';
+          break;
+        default:
+          value = value || undefined;
+      }
+
+      // Map field names to API field names
+      const apiFieldMap: Record<string, string> = {
+        'interior_color': 'interior_color',
+        'exterior_color': 'exterior_color',
+        'fuel_type': 'fuel_type',
+        'drivetrain': 'drivetrain',
+        'engine_size': 'engine_size',
+        'body_style': 'body_style',
+        'overall_rating': 'overall_rating',
+        'clean_title': 'clean_title',
+        'paid_status': 'paid_status',
+        'seller_name': 'seller_name',
+        'phone_number': 'phone_number',
+        'seller_description': 'seller_description',
+        'seller_joined_date': 'seller_joined_date',
+        'detailed_ratings': 'detailed_ratings',
+        'buyMax': 'buy_max',
+      };
+
+      const apiField = apiFieldMap[field] || field;
+      updateData[apiField as keyof ListingUpdate] = value;
+
+      const updatedListing = await updateListing(parseInt(listingId), updateData);
+      setListing(updatedListing);
+      setEditingField(null);
+      setEditValue('');
+      
+      showSuccess('Field Updated', `${field} has been successfully updated`);
+      
+      // Reload activities after update
+      const updatedActivities = await getListingActivities(parseInt(listingId));
+      setActivities(updatedActivities);
+    } catch (error) {
+      console.error('Error updating field:', error);
+      showError('Failed to save', error instanceof Error ? error.message : 'Unknown error');
+    } finally {
+      setSavingField(null);
+    }
   };
 
   // Handle image file upload
@@ -379,236 +480,1332 @@ export default function ListingDetailPage() {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-4">
             <h4 className="text-lg font-bold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 pb-3">Vehicle Information</h4>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Read-only basic info */}
+            <div className="grid grid-cols-4 gap-4 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-md">
               <div>
-                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                  VIN Number
-                </label>
-                <Input
-                  value={formData.vin || ''}
-                  onChange={(e) => handleFieldChange('vin', e.target.value)}
-                  placeholder="Enter VIN number"
-                  className="uppercase border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100"
-                />
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Year</label>
+                <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">{listing.year}</div>
               </div>
-              
               <div>
-                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                  Location
-                </label>
-                <Input
-                  value={formData.location || ''}
-                  onChange={(e) => handleFieldChange('location', e.target.value)}
-                  placeholder="Enter location"
-                  className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100"
-                />
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Make</label>
+                <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">{listing.make}</div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Model</label>
+                <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">{listing.model}</div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Trim</label>
+                <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">{listing.trim || ''}</div>
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                  Price
-                </label>
-                <Input
-                  type="text"
-                  value={formatNumberWithCommas(formData.price)}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    const parsed = parseNumberFromFormatted(value);
-                    handleFieldChange('price', parsed);
-                  }}
-                  placeholder="Enter price"
-                  className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100"
-                />
+            <div className="grid grid-cols-2 gap-x-8 gap-y-1">
+              <div className="flex items-center w-full group">
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">VIN Number:</span>
+                {editingField === 'vin' ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <Input
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      className="uppercase border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => saveField('vin')}
+                      disabled={savingField === 'vin'}
+                      className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                      title="Save"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={cancelEditing}
+                      disabled={savingField === 'vin'}
+                      className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                      title="Cancel"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span 
+                      onClick={() => startEditing('vin', listing.vin || '')}
+                      className="text-sm text-gray-900 dark:text-gray-100 uppercase cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    >
+                      {listing.vin || ''}
+                    </span>
+                    <button
+                      onClick={() => startEditing('vin', listing.vin || '')}
+                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      title="Edit"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
               </div>
               
-              <div>
-                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                  Miles
-                </label>
-                <Input
-                  type="text"
-                  value={formatNumberWithCommas(formData.miles)}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    const parsed = parseIntFromFormatted(value);
-                    handleFieldChange('miles', parsed);
-                  }}
-                  placeholder="Enter miles"
-                  className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                  MMR (Manheim Market Report)
-                </label>
-                <Input
-                  type="text"
-                  value={formatNumberWithCommas(formData.mmr)}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    const parsed = parseNumberFromFormatted(value);
-                    handleFieldChange('mmr', parsed);
-                  }}
-                  placeholder="Enter MMR value"
-                  className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                  Condition Rating (1-5)
-                </label>
-                <select
-                  value={formData.condition_rating || ''}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    handleFieldChange('condition_rating', value === '' ? undefined : parseInt(value));
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                >
-                  <option value="">Select condition</option>
-                  <option value="1">1 - Poor</option>
-                  <option value="2">2 - Fair</option>
-                  <option value="3">3 - Good</option>
-                  <option value="4">4 - Very Good</option>
-                  <option value="5">5 - Excellent</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                  Interior Color
-                </label>
-                <Input
-                  value={formData.interior_color || ''}
-                  onChange={(e) => handleFieldChange('interior_color', e.target.value)}
-                  placeholder="e.g., Black, Tan"
-                  className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100"
-                />
+              <div className="flex items-center w-full group">
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Location:</span>
+                {editingField === 'location' ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <Input
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => saveField('location')}
+                      disabled={savingField === 'location'}
+                      className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                      title="Save"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={cancelEditing}
+                      disabled={savingField === 'location'}
+                      className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                      title="Cancel"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span 
+                      onClick={() => startEditing('location', listing.location || '')}
+                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    >
+                      {listing.location || ''}
+                    </span>
+                    <button
+                      onClick={() => startEditing('location', listing.location || '')}
+                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      title="Edit"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
               </div>
               
-              <div>
-                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                  Exterior Color
-                </label>
-                <Input
-                  value={formData.exterior_color || ''}
-                  onChange={(e) => handleFieldChange('exterior_color', e.target.value)}
-                  placeholder="e.g., White, Silver"
-                  className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                  Transmission
-                </label>
-                <select
-                  value={formData.transmission || ''}
-                  onChange={(e) => handleFieldChange('transmission', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                >
-                  <option value="">Select transmission</option>
-                  <option value="Automatic">Automatic</option>
-                  <option value="Manual">Manual</option>
-                  <option value="CVT">CVT</option>
-                  <option value="Semi-Automatic">Semi-Automatic</option>
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                  Fuel Type
-                </label>
-                <select
-                  value={formData.fuel_type || ''}
-                  onChange={(e) => handleFieldChange('fuel_type', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                >
-                  <option value="">Select fuel type</option>
-                  <option value="Gasoline">Gasoline</option>
-                  <option value="Diesel">Diesel</option>
-                  <option value="Hybrid">Hybrid</option>
-                  <option value="Electric">Electric</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                  Drivetrain
-                </label>
-                <select
-                  value={formData.drivetrain || ''}
-                  onChange={(e) => handleFieldChange('drivetrain', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                >
-                  <option value="">Select drivetrain</option>
-                  <option value="FWD">Front Wheel Drive</option>
-                  <option value="RWD">Rear Wheel Drive</option>
-                  <option value="AWD">All Wheel Drive</option>
-                  <option value="4WD">Four Wheel Drive</option>
-                </select>
+              <div className="flex items-center w-full group">
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Price:</span>
+                {editingField === 'price' ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <Input
+                      type="text"
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => saveField('price')}
+                      disabled={savingField === 'price'}
+                      className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                      title="Save"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={cancelEditing}
+                      disabled={savingField === 'price'}
+                      className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                      title="Cancel"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span 
+                      onClick={() => startEditing('price', listing.price || '')}
+                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    >
+                      {listing.price ? `$${formatNumberWithCommas(listing.price)}` : ''}
+                    </span>
+                    <button
+                      onClick={() => startEditing('price', listing.price || '')}
+                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      title="Edit"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
               </div>
               
-              <div>
-                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                  Engine Size
-                </label>
-                <Input
-                  value={formData.engine_size || ''}
-                  onChange={(e) => handleFieldChange('engine_size', e.target.value)}
-                  placeholder="e.g., 2.0L, 3.5L"
-                  className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100"
-                />
+              <div className="flex items-center w-full group">
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Miles:</span>
+                {editingField === 'miles' ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <Input
+                      type="text"
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => saveField('miles')}
+                      disabled={savingField === 'miles'}
+                      className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                      title="Save"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={cancelEditing}
+                      disabled={savingField === 'miles'}
+                      className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                      title="Cancel"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span 
+                      onClick={() => startEditing('miles', listing.miles || '')}
+                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    >
+                      {listing.miles ? formatNumberWithCommas(listing.miles) : ''}
+                    </span>
+                    <button
+                      onClick={() => startEditing('miles', listing.miles || '')}
+                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      title="Edit"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
               </div>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                  Body Style
-                </label>
-                <select
-                  value={formData.body_style || ''}
-                  onChange={(e) => handleFieldChange('body_style', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                >
-                  <option value="">Select body style</option>
-                  <option value="Sedan">Sedan</option>
-                  <option value="SUV">SUV</option>
-                  <option value="Truck">Truck</option>
-                  <option value="Coupe">Coupe</option>
-                  <option value="Convertible">Convertible</option>
-                  <option value="Hatchback">Hatchback</option>
-                  <option value="Wagon">Wagon</option>
-                  <option value="Van">Van</option>
-                </select>
+              <div className="flex items-center w-full group">
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">MMR:</span>
+                {editingField === 'mmr' ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <Input
+                      type="text"
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => saveField('mmr')}
+                      disabled={savingField === 'mmr'}
+                      className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                      title="Save"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={cancelEditing}
+                      disabled={savingField === 'mmr'}
+                      className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                      title="Cancel"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span 
+                      onClick={() => startEditing('mmr', listing.mmr || '')}
+                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    >
+                      {listing.mmr ? formatNumberWithCommas(listing.mmr) : ''}
+                    </span>
+                    <button
+                      onClick={() => startEditing('mmr', listing.mmr || '')}
+                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      title="Edit"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
               </div>
-            </div>
+              
+              <div className="flex items-center w-full group">
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">DOM:</span>
+                {editingField === 'dom' ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <Input
+                      type="text"
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => saveField('dom')}
+                      disabled={savingField === 'dom'}
+                      className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                      title="Save"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={cancelEditing}
+                      disabled={savingField === 'dom'}
+                      className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                      title="Cancel"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span 
+                      onClick={() => startEditing('dom', listing.dom || '')}
+                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    >
+                      {listing.dom || ''}
+                    </span>
+                    <button
+                      onClick={() => startEditing('dom', listing.dom || '')}
+                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      title="Edit"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                Notes
-              </label>
-              <textarea
-                value={formData.notes || ''}
-                onChange={(e) => handleFieldChange('notes', e.target.value)}
-                placeholder="Additional notes about this vehicle..."
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                rows={3}
-              />
+              <div className="flex items-center w-full group">
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Status:</span>
+                {editingField === 'status' ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <Input
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => saveField('status')}
+                      disabled={savingField === 'status'}
+                      className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                      title="Save"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={cancelEditing}
+                      disabled={savingField === 'status'}
+                      className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                      title="Cancel"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span 
+                      onClick={() => startEditing('status', listing.status || listing.decision?.status || '')}
+                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    >
+                      {listing.status || listing.decision?.status || ''}
+                    </span>
+                    <button
+                      onClick={() => startEditing('status', listing.status || listing.decision?.status || '')}
+                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      title="Edit"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex items-center w-full group">
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Score:</span>
+                {editingField === 'score' ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <Input
+                      type="text"
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => saveField('score')}
+                      disabled={savingField === 'score'}
+                      className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                      title="Save"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={cancelEditing}
+                      disabled={savingField === 'score'}
+                      className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                      title="Cancel"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span 
+                      onClick={() => startEditing('score', listing.score !== undefined ? listing.score.toString() : '')}
+                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    >
+                      {listing.score !== undefined ? listing.score.toString() : ''}
+                    </span>
+                    <button
+                      onClick={() => startEditing('score', listing.score !== undefined ? listing.score.toString() : '')}
+                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      title="Edit"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center w-full group">
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Buy Max:</span>
+                {editingField === 'buyMax' ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <Input
+                      type="text"
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => saveField('buyMax')}
+                      disabled={savingField === 'buyMax'}
+                      className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                      title="Save"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={cancelEditing}
+                      disabled={savingField === 'buyMax'}
+                      className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                      title="Cancel"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span 
+                      onClick={() => startEditing('buyMax', listing.buyMax || '')}
+                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    >
+                      {listing.buyMax ? `$${listing.buyMax.toLocaleString()}` : ''}
+                    </span>
+                    <button
+                      onClick={() => startEditing('buyMax', listing.buyMax || '')}
+                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      title="Edit"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center w-full group">
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Interior Color:</span>
+                {editingField === 'interior_color' ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <Input
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => saveField('interior_color')}
+                      disabled={savingField === 'interior_color'}
+                      className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                      title="Save"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={cancelEditing}
+                      disabled={savingField === 'interior_color'}
+                      className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                      title="Cancel"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span 
+                      onClick={() => startEditing('interior_color', listing.interiorColor || '')}
+                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    >
+                      {listing.interiorColor || ''}
+                    </span>
+                    <button
+                      onClick={() => startEditing('interior_color', listing.interiorColor || '')}
+                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      title="Edit"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex items-center w-full group">
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Exterior Color:</span>
+                {editingField === 'exterior_color' ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <Input
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => saveField('exterior_color')}
+                      disabled={savingField === 'exterior_color'}
+                      className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                      title="Save"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={cancelEditing}
+                      disabled={savingField === 'exterior_color'}
+                      className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                      title="Cancel"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span 
+                      onClick={() => startEditing('exterior_color', listing.exteriorColor || '')}
+                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    >
+                      {listing.exteriorColor || ''}
+                    </span>
+                    <button
+                      onClick={() => startEditing('exterior_color', listing.exteriorColor || '')}
+                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      title="Edit"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center w-full group">
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Transmission:</span>
+                {editingField === 'transmission' ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <Input
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => saveField('transmission')}
+                      disabled={savingField === 'transmission'}
+                      className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                      title="Save"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={cancelEditing}
+                      disabled={savingField === 'transmission'}
+                      className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                      title="Cancel"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span 
+                      onClick={() => startEditing('transmission', listing.transmission || '')}
+                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    >
+                      {listing.transmission || ''}
+                    </span>
+                    <button
+                      onClick={() => startEditing('transmission', listing.transmission || '')}
+                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      title="Edit"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex items-center w-full group">
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Fuel Type:</span>
+                {editingField === 'fuel_type' ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <Input
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => saveField('fuel_type')}
+                      disabled={savingField === 'fuel_type'}
+                      className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                      title="Save"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={cancelEditing}
+                      disabled={savingField === 'fuel_type'}
+                      className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                      title="Cancel"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span 
+                      onClick={() => startEditing('fuel_type', listing.fuelType || '')}
+                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    >
+                      {listing.fuelType || ''}
+                    </span>
+                    <button
+                      onClick={() => startEditing('fuel_type', listing.fuelType || '')}
+                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      title="Edit"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center w-full group">
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Drivetrain:</span>
+                {editingField === 'drivetrain' ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <Input
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => saveField('drivetrain')}
+                      disabled={savingField === 'drivetrain'}
+                      className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                      title="Save"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={cancelEditing}
+                      disabled={savingField === 'drivetrain'}
+                      className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                      title="Cancel"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span 
+                      onClick={() => startEditing('drivetrain', listing.driveType || '')}
+                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    >
+                      {listing.driveType || ''}
+                    </span>
+                    <button
+                      onClick={() => startEditing('drivetrain', listing.driveType || '')}
+                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      title="Edit"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex items-center w-full group">
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Engine:</span>
+                {editingField === 'engine_size' ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <Input
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => saveField('engine_size')}
+                      disabled={savingField === 'engine_size'}
+                      className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                      title="Save"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={cancelEditing}
+                      disabled={savingField === 'engine_size'}
+                      className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                      title="Cancel"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span 
+                      onClick={() => startEditing('engine_size', listing.engine || '')}
+                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    >
+                      {listing.engine || ''}
+                    </span>
+                    <button
+                      onClick={() => startEditing('engine_size', listing.engine || '')}
+                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      title="Edit"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center w-full group">
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Body Style:</span>
+                {editingField === 'body_style' ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <Input
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => saveField('body_style')}
+                      disabled={savingField === 'body_style'}
+                      className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                      title="Save"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={cancelEditing}
+                      disabled={savingField === 'body_style'}
+                      className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                      title="Cancel"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span 
+                      onClick={() => startEditing('body_style', listing.bodyStyle || '')}
+                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    >
+                      {listing.bodyStyle || ''}
+                    </span>
+                    <button
+                      onClick={() => startEditing('body_style', listing.bodyStyle || '')}
+                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      title="Edit"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center w-full group">
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">MPG:</span>
+                {editingField === 'mpg' ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <Input
+                      type="text"
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => saveField('mpg')}
+                      disabled={savingField === 'mpg'}
+                      className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                      title="Save"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={cancelEditing}
+                      disabled={savingField === 'mpg'}
+                      className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                      title="Cancel"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span 
+                      onClick={() => startEditing('mpg', listing.mpg || '')}
+                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    >
+                      {listing.mpg || ''}
+                    </span>
+                    <button
+                      onClick={() => startEditing('mpg', listing.mpg || '')}
+                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      title="Edit"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex items-center w-full group">
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Overall Rating:</span>
+                {editingField === 'overall_rating' ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <Input
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => saveField('overall_rating')}
+                      disabled={savingField === 'overall_rating'}
+                      className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                      title="Save"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={cancelEditing}
+                      disabled={savingField === 'overall_rating'}
+                      className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                      title="Cancel"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span 
+                      onClick={() => startEditing('overall_rating', listing.overallRating || '')}
+                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    >
+                      {listing.overallRating || ''}
+                    </span>
+                    <button
+                      onClick={() => startEditing('overall_rating', listing.overallRating || '')}
+                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      title="Edit"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center w-full group">
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Condition:</span>
+                {editingField === 'condition' ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <Input
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => saveField('condition')}
+                      disabled={savingField === 'condition'}
+                      className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                      title="Save"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={cancelEditing}
+                      disabled={savingField === 'condition'}
+                      className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                      title="Cancel"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span 
+                      onClick={() => startEditing('condition', listing.condition || '')}
+                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    >
+                      {listing.condition || ''}
+                    </span>
+                    <button
+                      onClick={() => startEditing('condition', listing.condition || '')}
+                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      title="Edit"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center w-full group">
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Detailed Ratings:</span>
+                {editingField === 'detailed_ratings' ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <Input
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      placeholder="Comma-separated ratings"
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => saveField('detailed_ratings')}
+                      disabled={savingField === 'detailed_ratings'}
+                      className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                      title="Save"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={cancelEditing}
+                      disabled={savingField === 'detailed_ratings'}
+                      className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                      title="Cancel"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <div 
+                      onClick={() => startEditing('detailed_ratings', listing.detailedRatings ? listing.detailedRatings.join(', ') : '')}
+                      className="flex flex-wrap gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+                    >
+                      {listing.detailedRatings && listing.detailedRatings.length > 0 ? (
+                        listing.detailedRatings.map((rating, idx) => (
+                          <Badge key={idx} color="blue" className="bg-blue-500 dark:bg-blue-600 text-white">{rating}</Badge>
+                        ))
+                      ) : (
+                        <span className="text-sm text-gray-500 dark:text-gray-400"></span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => startEditing('detailed_ratings', listing.detailedRatings ? listing.detailedRatings.join(', ') : '')}
+                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      title="Edit"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center w-full group">
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Clean Title:</span>
+                {editingField === 'clean_title' ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <Input
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => saveField('clean_title')}
+                      disabled={savingField === 'clean_title'}
+                      className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                      title="Save"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={cancelEditing}
+                      disabled={savingField === 'clean_title'}
+                      className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                      title="Cancel"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span 
+                      onClick={() => startEditing('clean_title', listing.cleanTitle ? 'Yes' : 'No')}
+                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    >
+                      {listing.cleanTitle ? 'Yes' : 'No'}
+                    </span>
+                    <button
+                      onClick={() => startEditing('clean_title', listing.cleanTitle ? 'Yes' : 'No')}
+                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      title="Edit"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex items-center w-full group">
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Paid Status:</span>
+                {editingField === 'paid_status' ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <Input
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => saveField('paid_status')}
+                      disabled={savingField === 'paid_status'}
+                      className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                      title="Save"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={cancelEditing}
+                      disabled={savingField === 'paid_status'}
+                      className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                      title="Cancel"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span 
+                      onClick={() => startEditing('paid_status', listing.paidStatus || '')}
+                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    >
+                      {listing.paidStatus || ''}
+                    </span>
+                    <button
+                      onClick={() => startEditing('paid_status', listing.paidStatus || '')}
+                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      title="Edit"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center w-full group">
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Seller Name:</span>
+                {editingField === 'seller_name' ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <Input
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => saveField('seller_name')}
+                      disabled={savingField === 'seller_name'}
+                      className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                      title="Save"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={cancelEditing}
+                      disabled={savingField === 'seller_name'}
+                      className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                      title="Cancel"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span 
+                      onClick={() => startEditing('seller_name', listing.sellerName || '')}
+                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    >
+                      {listing.sellerName || ''}
+                    </span>
+                    <button
+                      onClick={() => startEditing('seller_name', listing.sellerName || '')}
+                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      title="Edit"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center w-full group">
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Phone Number:</span>
+                {editingField === 'phone_number' ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <Input
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => saveField('phone_number')}
+                      disabled={savingField === 'phone_number'}
+                      className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                      title="Save"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={cancelEditing}
+                      disabled={savingField === 'phone_number'}
+                      className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                      title="Cancel"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span 
+                      onClick={() => startEditing('phone_number', listing.phoneNumber || '')}
+                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    >
+                      {listing.phoneNumber || ''}
+                    </span>
+                    <button
+                      onClick={() => startEditing('phone_number', listing.phoneNumber || '')}
+                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      title="Edit"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>       
+
+              <div className="flex items-center w-full group">
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Seller Joined Date:</span>
+                {editingField === 'seller_joined_date' ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <Input
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => saveField('seller_joined_date')}
+                      disabled={savingField === 'seller_joined_date'}
+                      className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                      title="Save"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={cancelEditing}
+                      disabled={savingField === 'seller_joined_date'}
+                      className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                      title="Cancel"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span 
+                      onClick={() => startEditing('seller_joined_date', listing.sellerJoinedDate || '')}
+                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    >
+                      {listing.sellerJoinedDate || ''}
+                    </span>
+                    <button
+                      onClick={() => startEditing('seller_joined_date', listing.sellerJoinedDate || '')}
+                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      title="Edit"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center w-full group">
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Radius:</span>
+                {editingField === 'radius' ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <Input
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => saveField('radius')}
+                      disabled={savingField === 'radius'}
+                      className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                      title="Save"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={cancelEditing}
+                      disabled={savingField === 'radius'}
+                      className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                      title="Cancel"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span 
+                      onClick={() => startEditing('radius', listing.radius || '')}
+                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    >
+                      {listing.radius || ''}
+                    </span>
+                    <button
+                      onClick={() => startEditing('radius', listing.radius || '')}
+                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      title="Edit"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div className="flex items-start col-span-2 w-full group">
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Seller Description:</span>
+                {editingField === 'seller_description' ? (
+                  <div className="flex items-start gap-2 flex-1">
+                    <textarea
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      className="flex-1 px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      rows={3}
+                      autoFocus
+                    />
+                    <div className="flex flex-col gap-1 pt-1">
+                      <button
+                        onClick={() => saveField('seller_description')}
+                        disabled={savingField === 'seller_description'}
+                        className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                        title="Save"
+                      >
+                        <Check className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={cancelEditing}
+                        disabled={savingField === 'seller_description'}
+                        className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                        title="Cancel"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-start gap-2">
+                    <span 
+                      onClick={() => startEditing('seller_description', listing.sellerDescription || '')}
+                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    >
+                      {listing.sellerDescription || ''}
+                    </span>
+                    <button
+                      onClick={() => startEditing('seller_description', listing.sellerDescription || '')}
+                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100 mt-1"
+                      title="Edit"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div className="flex items-start col-span-2 w-full group">
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0 pt-1">Notes:</span>
+                {editingField === 'notes' ? (
+                  <div className="flex items-start gap-2 flex-1">
+                    <textarea
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      className="flex-1 px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      rows={3}
+                      autoFocus
+                    />
+                    <div className="flex flex-col gap-1 pt-1">
+                      <button
+                        onClick={() => saveField('notes')}
+                        disabled={savingField === 'notes'}
+                        className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                        title="Save"
+                      >
+                        <Check className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={cancelEditing}
+                        disabled={savingField === 'notes'}
+                        className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                        title="Cancel"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-start gap-2">
+                    <span 
+                      onClick={() => startEditing('notes', listing.notes || '')}
+                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    >
+                      {listing.notes || ''}
+                    </span>
+                    <button
+                      onClick={() => startEditing('notes', listing.notes || '')}
+                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100 mt-1"
+                      title="Edit"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -717,21 +1914,21 @@ export default function ListingDetailPage() {
                     <span className="break-words break-all">{listing.source}</span>
                   </a>
                 ) : (
-                  <span className="ml-2 text-gray-600 dark:text-gray-400 font-medium">N/A</span>
+                  <span className="ml-2 text-gray-600 dark:text-gray-400 font-medium"></span>
                 )}
               </div>
               <div>
                 <span className="font-medium text-gray-800 dark:text-gray-200">DOM:</span>
-                <span className="ml-2 text-gray-700 dark:text-gray-300 font-medium">{listing.dom ? listing.dom.toLocaleString('en-US') : 'N/A'} days</span>
+                <span className="ml-2 text-gray-700 dark:text-gray-300 font-medium">{listing.dom ? listing.dom.toLocaleString('en-US') : ''} days</span>
               </div>
               <div>
                 <span className="font-medium text-gray-800 dark:text-gray-200">Buyer:</span>
-                <span className="ml-2 text-gray-700 dark:text-gray-300 font-medium">{listing.buyer_username || 'N/A'}</span>
+                <span className="ml-2 text-gray-700 dark:text-gray-300 font-medium">{listing.buyer_username || ''}</span>
               </div>
               <div>
                 <span className="font-medium text-gray-800 dark:text-gray-200">Updated:</span>
                 <span className="ml-2 text-gray-700 dark:text-gray-300 font-medium">
-                  {listing.updated_at ? formatDateTime(listing.updated_at) : 'N/A'}
+                  {listing.updated_at ? formatDateTime(listing.updated_at) : ''}
                 </span>
               </div>
               {listing.created_at && (

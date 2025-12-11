@@ -5,7 +5,7 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
 }
 
 export const Input: React.FC<InputProps> = ({ label, className = '', ...props }) => (
-  <div className="mb-2">
+  <div className="mb-2 w-full">
     {label && <label className="block mb-1 font-medium text-gray-900 dark:text-gray-100">{label}</label>}
     <input 
       {...props} 

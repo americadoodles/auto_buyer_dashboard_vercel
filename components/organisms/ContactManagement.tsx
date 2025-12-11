@@ -9,7 +9,6 @@ import { Button } from '../atoms/Button';
 import { Input } from '../atoms/Input';
 import { Icon } from '../atoms/Icon';
 import { Pagination } from '../molecules/Pagination';
-import { VehicleInfoModal } from './VehicleInfoModal';
 import { ContactEditModal } from './ContactEditModal';
 import { Listing } from '../../lib/types/listing';
 
@@ -392,12 +391,6 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
         </Card>
 
       </div>
-      {/* Vehicle Information Modal */}
-      <VehicleInfoModal
-        isOpen={isVehicleModalOpen}
-        onClose={handleCloseVehicleModal}
-        listing={selectedVehicleListing}
-      />
 
       {/* Contact Edit Modal */}
       {selectedContact && (

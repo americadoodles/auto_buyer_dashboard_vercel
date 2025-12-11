@@ -1,4 +1,5 @@
 # Listing Management Repository
+import json
 import logging
 from typing import List, Optional, Dict, Any
 from uuid import UUID
@@ -8,8 +9,18 @@ from ..core.db_helpers import get_db_connection
 from ..lib.db.query_builder import QueryBuilder
 from ..schemas.listing import (
     ListingUpdate, 
-    ListingActivityOut, ListingOut
+    ListingActivityOut, ListingOut, Decision
 )
+
+def create_decision_from_data(data: dict) -> Optional[Decision]:
+    """Create a Decision object from data if status, reasonCodes, or buyMax are present."""
+    if data.get("status") or data.get("reasonCodes") or data.get("buyMax"):
+        return Decision(
+            status=data.get("status", ""),
+            reasons=data.get("reasonCodes", []),
+            buyMax=float(data.get("buyMax", 0)) if data.get("buyMax") is not None else 0
+        )
+    return None
 
 # ==============================================
 # LISTING UPDATE FUNCTIONS
@@ -75,40 +86,17 @@ def update_listing(listing_id: int, update_data: ListingUpdate, updated_by: str)
                     except Exception as log_error:
                         logging.warning(f"Failed to log activity for listing {listing_id}: {str(log_error)}")
                     
-                    # Fetch the complete listing data after update (similar to get_listing_by_id)
+                    # Fetch the complete listing data after update using get_listing_by_id
+                    # This ensures we return all fields from ListingOut schema
                     listing = get_listing_by_id(listing_id)
                     if listing:
                         return listing
                     
-                    # Fallback: Return basic data if get_listing_by_id fails
-                    # Note: This is a simplified version - ideally get_listing_by_id should work
-                    return ListingOut(
-                        id=str(result[0]),  # id
-                        vehicle_key=result[1] if result[1] else "",  # vehicle_key
-                        vin=result[2],  # vin
-                        year=2021,  # Default year (not in listings table)
-                        make="Tesla",  # Default make (not in listings table)
-                        model="Model 3",  # Default model (not in listings table)
-                        miles=result[5] if result[5] else 0,  # miles
-                        price=float(result[4]) if result[4] else 0.0,  # price
-                        dom=result[6] if result[6] else 0,  # dom
-                        source=result[3],  # source
-                        location=result[7],  # location
-                        buyer_id=result[8],  # buyer_id
-                        created_at=result[10],  # created_at
-                        notes=result[14] if len(result) > 14 else None,  # notes
-                        condition_rating=result[15] if len(result) > 15 else None,  # condition_rating
-                        interior_color=result[16] if len(result) > 16 else None,  # interior_color
-                        exterior_color=result[17] if len(result) > 17 else None,  # exterior_color
-                        transmission=result[18] if len(result) > 18 else None,  # transmission
-                        fuel_type=result[19] if len(result) > 19 else None,  # fuel_type
-                        drivetrain=result[20] if len(result) > 20 else None,  # drivetrain
-                        engine_size=result[21] if len(result) > 21 else None,  # engine_size
-                        body_style=result[22] if len(result) > 22 else None,  # body_style
-                        updated_at=result[12] if len(result) > 12 else None,  # updated_at
-                        updated_by=result[13] if len(result) > 13 else None,  # updated_by
-                        images=result[11] if len(result) > 11 and result[11] else []  # images
-                    )
+                    # If get_listing_by_id fails, log error and return None
+                    # This should not happen in normal operation, but if it does,
+                    # we want to fail rather than return incomplete data
+                    logging.error(f"get_listing_by_id returned None after successful update for listing {listing_id}")
+                    return None
                 else:
                     logging.warning(f"No result returned for listing {listing_id}")
                     return None
@@ -133,15 +121,44 @@ def get_listing_by_id(listing_id: int) -> Optional[ListingOut]:
             with conn.cursor() as cur:
                 query = """
                     SELECT 
-                        l.id, l.vehicle_key, l.vin, l.price, l.miles, l.dom, l.source, 
-                        l.location, l.buyer_id, l.payload, l.created_at,
-                        l.notes, l.condition_rating, l.interior_color, l.exterior_color,
-                        l.transmission, l.fuel_type, l.drivetrain, l.engine_size, l.body_style,
-                        l.updated_at, l.updated_by, l.mmr,
-                        COALESCE(l.images, ARRAY[]::text[]) as images,
-                        v.year, v.make, v.model, v.trim,
-                        u.username as buyer_username,
-                        s.score, s.buy_max, s.reason_codes
+                        l.id, l.vehicle_key,
+                        COALESCE(l.vin, '') AS vin,
+                        l.price, l.miles, l.dom,
+                        l.location,
+                        l.buyer_id,
+                        COALESCE(l.images, ARRAY[]::text[]) AS images,
+                        l.transmission,
+                        l.interior_color,
+                        l.exterior_color,
+                        l.fuel_type,
+                        l.drivetrain,
+                        l.body_style,
+                        l.source,
+                        l.payload,
+                        l.notes,
+                        l.updated_at,
+                        l.updated_by,
+                        l.mmr,
+                        l.clean_title,
+                        l.condition,
+                        l.detailed_ratings,
+                        l.engine,
+                        l.mpg,
+                        l.overall_rating,
+                        l.paid_status,
+                        l.phone_number,
+                        l.seller_description,
+                        l.seller_joined_date,
+                        l.seller_name,
+                        l.created_at,
+                        COALESCE(v.year, 0) AS year,
+                        COALESCE(v.make, '') AS make,
+                        COALESCE(v.model, '') AS model,
+                        v.trim,
+                        u.username AS buyer_username,
+                        COALESCE(s.score, 0) AS score,
+                        s.buy_max,
+                        COALESCE(s.reason_codes, ARRAY[]::text[]) AS reason_codes
                     FROM listings l
                     LEFT JOIN vehicles v ON v.vehicle_key = l.vehicle_key
                     LEFT JOIN users u ON u.id::text = l.buyer_id
@@ -157,38 +174,71 @@ def get_listing_by_id(listing_id: int) -> Optional[ListingOut]:
                 result = cur.fetchone()
                 
                 if result:
+                    # Extract decision data from payload if available
+                    decision = None
+                    status = ""
+                    payload = result[16]  # payload is at index 16
+                    if payload:
+                        payload_data = json.loads(payload) if isinstance(payload, str) else payload
+                        decision = create_decision_from_data(payload_data)
+                        status = payload_data.get("status", "")
+                    
+                    # Parse detailed_ratings JSONB if it's a string
+                    detailed_ratings_list = None
+                    detailed_ratings = result[23]  # detailed_ratings is at index 23
+                    if detailed_ratings:
+                        if isinstance(detailed_ratings, str):
+                            try:
+                                detailed_ratings_list = json.loads(detailed_ratings)
+                            except:
+                                detailed_ratings_list = None
+                        else:
+                            detailed_ratings_list = detailed_ratings
+                    
                     return ListingOut(
                         id=str(result[0]),
                         vehicle_key=result[1],
-                        vin=result[2],
-                        price=result[3],
-                        miles=result[4],
-                        dom=result[5],
-                        source=result[6],
-                        location=result[7],
-                        buyer_id=result[8],
-                        created_at=result[10],
-                        notes=result[11],
-                        condition_rating=result[12],
-                        interior_color=result[13],
-                        exterior_color=result[14],
-                        transmission=result[15],
-                        fuel_type=result[16],
-                        drivetrain=result[17],
-                        engine_size=result[18],
-                        body_style=result[19],
-                        updated_at=result[20],
-                        updated_by=result[21],
-                        mmr=float(result[22]) if result[22] is not None else None,
-                        images=result[23] or [],
-                        year=result[24],
-                        make=result[25],
-                        model=result[26],
-                        trim=result[27],
-                        buyer_username=result[28],
-                        score=result[29],
-                        buyMax=result[30],
-                        reasonCodes=result[31] or []
+                        vin=result[2] or "",
+                        price=float(result[3]),
+                        miles=int(result[4]),
+                        dom=int(result[5]),
+                        year=int(result[33]),
+                        make=result[34],
+                        model=result[35],
+                        location=result[6],
+                        radius=25,  # Default value since radius column doesn't exist in listings table
+                        images=result[8] or [],
+                        transmission=result[9],
+                        exteriorColor=result[11],
+                        interiorColor=result[10],
+                        fuelType=result[12],
+                        overallRating=result[26],
+                        detailedRatings=detailed_ratings_list,
+                        condition=result[22],
+                        mpg=result[25],
+                        cleanTitle=result[21],
+                        paidStatus=result[27],
+                        sellerDescription=result[29],
+                        sellerName=result[31],
+                        sellerJoinedDate=result[30],
+                        phoneNumber=result[28],
+                        engine=result[24],
+                        driveType=result[13],
+                        bodyStyle=result[14],
+                        source=result[15],
+                        status=status,
+                        reasonCodes=result[40] or [],
+                        buyMax=float(result[39]) if result[39] is not None else None,
+                        trim=result[36],
+                        buyer_id=result[7],
+                        buyer_username=result[37],
+                        decision=decision,
+                        created_at=result[32],
+                        notes=result[17],
+                        updated_at=result[18],
+                        updated_by=result[19],
+                        score=int(result[38]) if result[38] is not None else None,
+                        mmr=float(result[20]) if result[20] is not None else None
                     )
                 
         except Exception as e:

@@ -407,11 +407,11 @@ export default function LeadDetailPage() {
             <VehicleContactCard
               title="Vehicle of Interest"
               vehicle={lead.listing ? {
-                year: lead.listing.year,
-                make: lead.listing.make,
-                model: lead.listing.model,
-                trim: lead.listing.trim,
-                vin: lead.listing.vin
+                year: lead.listing.year ?? undefined,
+                make: lead.listing.make ?? undefined,
+                model: lead.listing.model ?? undefined,
+                trim: lead.listing.trim ?? undefined,
+                vin: lead.listing.vin ?? undefined,
               } : null}
               contact={lead.contact ? {
                 first_name: lead.contact.first_name,

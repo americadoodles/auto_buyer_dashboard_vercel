@@ -624,11 +624,11 @@ export default function TaskDetailPage() {
               <VehicleContactCard
                 title="Vehicle & Contact Information"
                 vehicle={listing ? {
-                  year: listing.year,
-                  make: listing.make,
-                  model: listing.model,
-                  trim: listing.trim,
-                  vin: listing.vin
+                  year: listing.year ?? undefined,
+                  make: listing.make ?? undefined,
+                  model: listing.model ?? undefined,
+                  trim: listing.trim ?? undefined,
+                  vin: listing.vin ?? undefined,
                 } : null}
                 contact={taskContact ? {
                   first_name: taskContact.first_name,

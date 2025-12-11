@@ -71,9 +71,24 @@ export type ListingUpdate = {
   body_style?: string;
   price?: number;
   miles?: number;
+  dom?: number;
   location?: string;
   images?: string[];
   mmr?: number;
+  overall_rating?: string;
+  condition?: string;
+  mpg?: string;
+  clean_title?: boolean;
+  paid_status?: string;
+  seller_name?: string;
+  phone_number?: string;
+  seller_description?: string;
+  seller_joined_date?: string;
+  detailed_ratings?: string[];
+  status?: string;
+  score?: number;
+  buy_max?: number;
+  radius?: number;
 };
 
 export type ListingActivity = {

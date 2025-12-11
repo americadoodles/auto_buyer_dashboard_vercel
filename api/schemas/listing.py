@@ -40,7 +40,6 @@ class ListingIn(BaseModel):
     status: Optional[str] = None
     reasonCodes: List[str] = []
     buyMax: Optional[float] = None
-    # Additional fields not in JavaScript mapping
     trim: Optional[str] = None
     id: Optional[str] = None               # optional on ingest
     buyer_id: Optional[str] = None
@@ -81,7 +80,6 @@ class ListingOut(BaseModel):
     status: Optional[str] = None
     reasonCodes: List[str] = []
     buyMax: Optional[float] = None
-    # Additional output fields
     trim: Optional[str] = None
     buyer_id: Optional[str] = None
     buyer_username: Optional[str] = None
@@ -115,9 +113,24 @@ class ListingUpdate(BaseModel):
     body_style: Optional[str] = None
     price: Optional[float] = None
     miles: Optional[int] = None
+    dom: Optional[int] = None
     location: Optional[str] = None
     images: Optional[List[str]] = None
     mmr: Optional[float] = None
+    overall_rating: Optional[str] = None
+    condition: Optional[str] = None
+    mpg: Optional[str] = None
+    clean_title: Optional[bool] = None
+    paid_status: Optional[str] = None
+    seller_name: Optional[str] = None
+    phone_number: Optional[str] = None
+    seller_description: Optional[str] = None
+    seller_joined_date: Optional[str] = None
+    detailed_ratings: Optional[List[str]] = None
+    status: Optional[str] = None
+    score: Optional[int] = None
+    buy_max: Optional[float] = None
+    radius: Optional[int] = None
 
 class ListingActivityOut(BaseModel):
     """Schema for listing activity history"""

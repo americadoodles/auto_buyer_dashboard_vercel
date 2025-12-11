@@ -159,9 +159,12 @@ export default function ListingDetailPage() {
         case 'miles':
         case 'dom':
         case 'score':
-        case 'mpg':
           value = value ? parseInt(value.replace(/,/g, ''), 10) : undefined;
           if (isNaN(value)) value = undefined;
+          break;
+        case 'mpg':
+          // MPG is a string field, keep as string
+          value = value || undefined;
           break;
         case 'vin':
           value = value.toUpperCase();
@@ -178,7 +181,7 @@ export default function ListingDetailPage() {
           value = value || undefined;
       }
 
-      // Map field names to API field names (using any for fields that might not be in ListingUpdate type)
+      // Map field names to API field names
       const apiFieldMap: Record<string, string> = {
         'interior_color': 'interior_color',
         'exterior_color': 'exterior_color',
@@ -194,10 +197,11 @@ export default function ListingDetailPage() {
         'seller_description': 'seller_description',
         'seller_joined_date': 'seller_joined_date',
         'detailed_ratings': 'detailed_ratings',
+        'buyMax': 'buy_max',
       };
 
       const apiField = apiFieldMap[field] || field;
-      (updateData as any)[apiField] = value;
+      updateData[apiField as keyof ListingUpdate] = value;
 
       const updatedListing = await updateListing(parseInt(listingId), updateData);
       setListing(updatedListing);

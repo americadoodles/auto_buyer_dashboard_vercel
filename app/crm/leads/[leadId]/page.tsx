@@ -11,6 +11,8 @@ import { updateContact } from '../../../../lib/services/listingManagementApi';
 import { Lead, LeadStatus, LeadSource } from '../../../../lib/types/lead';
 import { useLeadStatuses, useLeadSources } from '../../../../lib/hooks/useLeads';
 import { VehicleContactCard } from '../../../../components/molecules/VehicleContactCard';
+import { ListingSelectModal } from '../../../../components/organisms/ListingSelectModal';
+import { ConfirmationModal } from '../../../../components/organisms/ConfirmationModal';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { useToast } from '../../../../hooks/useToast';
 
@@ -22,8 +24,11 @@ export default function LeadDetailPage() {
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lead, setLead] = useState<Lead | null>(null);
+  const [isUpdateListingModalOpen, setIsUpdateListingModalOpen] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
   // Contact information (editable)
   const [firstName, setFirstName] = useState('');
@@ -128,6 +133,45 @@ export default function LeadDetailPage() {
     });
   };
 
+  const handleUpdateListingSuccess = async () => {
+    // Reload lead data after successful update
+    if (!leadId) return;
+    try {
+      const leadData = await leadsApi.getLead(leadId);
+      if (leadData) {
+        setLead(leadData);
+        // Re-initialize form fields if listing_id now exists
+        if (leadData.listing_id && !lead?.listing_id) {
+          setStatusId(leadData.status_id || leadData.status?.id);
+          setSourceId(leadData.source_id);
+          setNotes(leadData.notes || '');
+          setLeadScore(leadData.lead_score || 0);
+        }
+      }
+    } catch (e: any) {
+      console.error('Error reloading lead:', e);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!leadId) return;
+    
+    setDeleting(true);
+    setError(null);
+    
+    try {
+      await leadsApi.deleteLead(leadId);
+      showSuccess('Lead Deleted', 'Lead has been successfully deleted');
+      router.push('/crm/leads');
+    } catch (e: any) {
+      setError(e?.message || 'Failed to delete lead');
+      showError('Failed to delete lead', e?.message || 'An error occurred');
+      setShowDeleteConfirm(false);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (loading || statusesLoading || sourcesLoading) {
     return (
       <div className="h-full overflow-y-auto bg-gray-50 dark:bg-gray-900">
@@ -178,6 +222,26 @@ export default function LeadDetailPage() {
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Lead Details</h1>
             </div>
           </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              onClick={() => setIsUpdateListingModalOpen(true)}
+              className="bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-black font-medium cursor-pointer"
+              size="sm"
+            >
+              <Icon name="edit" className="w-4 h-4 mr-2" />
+              Update Lead
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowDeleteConfirm(true)}
+              disabled={saving || deleting}
+              className="text-red-600 dark:text-red-400 border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center"
+              size="sm"
+            >
+              <Icon name="trash-2" className="w-4 h-4 mr-2" />
+              <span>Delete Lead</span>
+            </Button>
+          </div>
         </div>
         {error && (
           <div className="text-red-600 dark:text-red-300 text-sm bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3 rounded-md mt-4">{error}</div>
@@ -188,24 +252,43 @@ export default function LeadDetailPage() {
       <div className="flex-1 flex gap-6 overflow-hidden px-6 pb-6 items-stretch">
         {/* Left Content - Scrollable */}
         <div className="flex-1 overflow-y-auto space-y-6 pr-4">
-          {/* Status Badges */}
-          <div className="mt-4 flex items-center space-x-4">
-            {lead.status && (
-              <Badge color="blue">
-                Status: {lead.status.name}
-              </Badge>
-            )}
-            {lead.source && (
-              <Badge color="orange">
-                Source: {lead.source.name}
-              </Badge>
-            )}
-            {lead.lead_score !== undefined && (
-              <Badge color="green">
-                Score: {lead.lead_score}
-              </Badge>
-            )}
-          </div>
+          {/* Alert if no listing_id */}
+          {!lead.listing_id && (
+            <div className="mt-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+              <div className="flex items-start">
+                <Icon name="alert-circle" className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5 mr-3 flex-shrink-0" />
+                <div>
+                  <h3 className="text-sm font-semibold text-yellow-800 dark:text-yellow-300 mb-1">
+                    No Listing Information
+                  </h3>
+                  <p className="text-sm text-yellow-700 dark:text-yellow-400">
+                    This lead does not have an associated listing.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Status Badges - Only show if listing_id exists */}
+          {lead.listing_id && (
+            <div className="mt-4 flex items-center space-x-4">
+              {lead.status && (
+                <Badge color="blue">
+                  Status: {lead.status.name}
+                </Badge>
+              )}
+              {lead.source && (
+                <Badge color="orange">
+                  Source: {lead.source.name}
+                </Badge>
+              )}
+              {lead.lead_score !== undefined && (
+                <Badge color="green">
+                  Score: {lead.lead_score}
+                </Badge>
+              )}
+            </div>
+          )}
 
           {/* Edit Fields Section */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-4">
@@ -284,75 +367,77 @@ export default function LeadDetailPage() {
             )}
           </div>
 
-          {/* Lead Information Section */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-4">
-            <h4 className="text-md font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Lead Information</h4>
+          {/* Lead Information Section - Only show if listing_id exists */}
+          {lead.listing_id && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-4">
+              <h4 className="text-md font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Lead Information</h4>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Status
-              </label>
-              <select
-                value={statusId || ''}
-                onChange={(e) => setStatusId(e.target.value ? parseInt(e.target.value) : undefined)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                disabled={statusesLoading}
-              >
-                <option value="">Select status</option>
-                {statuses.map((status) => (
-                  <option key={status.id} value={status.id}>
-                    {status.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Status
+                </label>
+                <select
+                  value={statusId || ''}
+                  onChange={(e) => setStatusId(e.target.value ? parseInt(e.target.value) : undefined)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  disabled={statusesLoading}
+                >
+                  <option value="">Select status</option>
+                  {statuses.map((status) => (
+                    <option key={status.id} value={status.id}>
+                      {status.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Source
-              </label>
-              <select
-                value={sourceId || ''}
-                onChange={(e) => setSourceId(e.target.value ? parseInt(e.target.value) : undefined)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                disabled={sourcesLoading}
-              >
-                <option value="">Select source</option>
-                {sources.map((source) => (
-                  <option key={source.id} value={source.id}>
-                    {source.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Source
+                </label>
+                <select
+                  value={sourceId || ''}
+                  onChange={(e) => setSourceId(e.target.value ? parseInt(e.target.value) : undefined)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  disabled={sourcesLoading}
+                >
+                  <option value="">Select source</option>
+                  {sources.map((source) => (
+                    <option key={source.id} value={source.id}>
+                      {source.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Lead Score
-              </label>
-              <Input
-                type="number"
-                min="0"
-                max="100"
-                value={leadScore}
-                onChange={(e) => setLeadScore(parseInt(e.target.value) || 0)}
-                placeholder="Enter lead score (0-100)"
-              />
-            </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Lead Score
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={leadScore}
+                  onChange={(e) => setLeadScore(parseInt(e.target.value) || 0)}
+                  placeholder="Enter lead score (0-100)"
+                />
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Notes
-              </label>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Add notes about this lead..."
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                rows={4}
-              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Notes
+                </label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Add notes about this lead..."
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  rows={4}
+                />
+              </div>
             </div>
-          </div>
+          )}
           {lead.listing_id && (
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-2">
               <h4 className="text-md font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Related Listing</h4>
@@ -372,7 +457,7 @@ export default function LeadDetailPage() {
 
           {/* Lead Metadata */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-2">
-            <h4 className="text-md font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Lead Information</h4>
+            <h4 className="text-md font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Lead Activity</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="font-medium text-gray-700 dark:text-gray-300">Assigned To:</span>
@@ -425,6 +510,28 @@ export default function LeadDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Update Listing Modal */}
+      <ListingSelectModal
+        isOpen={isUpdateListingModalOpen}
+        onClose={() => setIsUpdateListingModalOpen(false)}
+        leadId={leadId}
+        onSuccess={handleUpdateListingSuccess}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDelete}
+        title="Confirm Deletion"
+        message="Are you sure you want to delete this lead? This action cannot be undone."
+        confirmText="Yes"
+        cancelText="No"
+        variant="danger"
+        loading={deleting}
+        loadingText="Deleting..."
+      />
     </div>
   );
 }

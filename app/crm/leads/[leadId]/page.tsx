@@ -12,6 +12,7 @@ import { Lead, LeadStatus, LeadSource } from '../../../../lib/types/lead';
 import { useLeadStatuses, useLeadSources } from '../../../../lib/hooks/useLeads';
 import { VehicleContactCard } from '../../../../components/molecules/VehicleContactCard';
 import { ListingSelectModal } from '../../../../components/organisms/ListingSelectModal';
+import { ConfirmationModal } from '../../../../components/organisms/ConfirmationModal';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { useToast } from '../../../../hooks/useToast';
 
@@ -23,9 +24,11 @@ export default function LeadDetailPage() {
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lead, setLead] = useState<Lead | null>(null);
   const [isUpdateListingModalOpen, setIsUpdateListingModalOpen] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
   // Contact information (editable)
   const [firstName, setFirstName] = useState('');
@@ -150,6 +153,25 @@ export default function LeadDetailPage() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!leadId) return;
+    
+    setDeleting(true);
+    setError(null);
+    
+    try {
+      await leadsApi.deleteLead(leadId);
+      showSuccess('Lead Deleted', 'Lead has been successfully deleted');
+      router.push('/crm/leads');
+    } catch (e: any) {
+      setError(e?.message || 'Failed to delete lead');
+      showError('Failed to delete lead', e?.message || 'An error occurred');
+      setShowDeleteConfirm(false);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (loading || statusesLoading || sourcesLoading) {
     return (
       <div className="h-full overflow-y-auto bg-gray-50 dark:bg-gray-900">
@@ -200,14 +222,24 @@ export default function LeadDetailPage() {
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Lead Details</h1>
             </div>
           </div>
-          <div className="flex space-x-2">
+          <div className="flex items-center space-x-2">
             <Button
               onClick={() => setIsUpdateListingModalOpen(true)}
-              className="bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white font-medium cursor-pointer"
+              className="bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-black font-medium cursor-pointer"
               size="sm"
             >
               <Icon name="edit" className="w-4 h-4 mr-2" />
               Update Lead
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowDeleteConfirm(true)}
+              disabled={saving || deleting}
+              className="text-red-600 dark:text-red-400 border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center"
+              size="sm"
+            >
+              <Icon name="trash-2" className="w-4 h-4 mr-2" />
+              <span>Delete Lead</span>
             </Button>
           </div>
         </div>
@@ -485,6 +517,20 @@ export default function LeadDetailPage() {
         onClose={() => setIsUpdateListingModalOpen(false)}
         leadId={leadId}
         onSuccess={handleUpdateListingSuccess}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDelete}
+        title="Confirm Deletion"
+        message="Are you sure you want to delete this lead? This action cannot be undone."
+        confirmText="Yes"
+        cancelText="No"
+        variant="danger"
+        loading={deleting}
+        loadingText="Deleting..."
       />
     </div>
   );

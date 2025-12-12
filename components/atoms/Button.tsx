@@ -17,7 +17,7 @@ export const Button: React.FC<ButtonProps> = ({
   
   const variantClasses = {
     primary: 'bg-slate-900 dark:bg-gray-700 text-white hover:bg-slate-800 dark:hover:bg-gray-600 focus-visible:ring-slate-500 dark:focus-visible:ring-gray-500',
-    secondary: 'bg-slate-100 dark:bg-gray-700 text-slate-900 dark:text-gray-100 hover:bg-slate-200 dark:hover:bg-gray-600 focus-visible:ring-slate-500 dark:focus-visible:ring-gray-500',
+    secondary: 'bg-slate-300 dark:bg-gray-700 text-slate-900 dark:text-gray-100 hover:bg-slate-200 dark:hover:bg-gray-600 focus-visible:ring-slate-500 dark:focus-visible:ring-gray-500',
     outline: 'border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-slate-700 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-gray-700 focus-visible:ring-slate-500 dark:focus-visible:ring-gray-500',
     success: 'bg-green-600 dark:bg-green-700 text-white hover:bg-green-700 dark:hover:bg-green-600 focus-visible:ring-green-500 dark:focus-visible:ring-green-400',
     ghost: 'bg-transparent text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 focus-visible:ring-slate-500 dark:focus-visible:ring-gray-500'

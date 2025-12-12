@@ -123,6 +123,7 @@ def get_listing_by_id(listing_id: int) -> Optional[ListingOut]:
                     SELECT 
                         l.id, l.vehicle_key,
                         COALESCE(l.vin, '') AS vin,
+                        l.lpn,
                         l.price, l.miles, l.dom,
                         l.location,
                         l.buyer_id,
@@ -177,7 +178,7 @@ def get_listing_by_id(listing_id: int) -> Optional[ListingOut]:
                     # Extract decision data from payload if available
                     decision = None
                     status = ""
-                    payload = result[16]  # payload is at index 16
+                    payload = result[17]  # payload is at index 17 (shifted by 1 due to lpn)
                     if payload:
                         payload_data = json.loads(payload) if isinstance(payload, str) else payload
                         decision = create_decision_from_data(payload_data)
@@ -185,7 +186,7 @@ def get_listing_by_id(listing_id: int) -> Optional[ListingOut]:
                     
                     # Parse detailed_ratings JSONB if it's a string
                     detailed_ratings_list = None
-                    detailed_ratings = result[23]  # detailed_ratings is at index 23
+                    detailed_ratings = result[24]  # detailed_ratings is at index 24 (shifted by 1 due to lpn)
                     if detailed_ratings:
                         if isinstance(detailed_ratings, str):
                             try:
@@ -199,46 +200,47 @@ def get_listing_by_id(listing_id: int) -> Optional[ListingOut]:
                         id=str(result[0]),
                         vehicle_key=result[1],
                         vin=result[2] or "",
-                        price=float(result[3]),
-                        miles=int(result[4]),
-                        dom=int(result[5]),
-                        year=int(result[33]),
-                        make=result[34],
-                        model=result[35],
-                        location=result[6],
+                        lpn=result[3],
+                        price=float(result[4]),
+                        miles=int(result[5]),
+                        dom=int(result[6]),
+                        year=int(result[34]),
+                        make=result[35],
+                        model=result[36],
+                        location=result[7],
                         radius=25,  # Default value since radius column doesn't exist in listings table
-                        images=result[8] or [],
-                        transmission=result[9],
-                        exteriorColor=result[11],
-                        interiorColor=result[10],
-                        fuelType=result[12],
-                        overallRating=result[26],
+                        images=result[9] or [],
+                        transmission=result[10],
+                        exteriorColor=result[12],
+                        interiorColor=result[11],
+                        fuelType=result[13],
+                        overallRating=result[27],
                         detailedRatings=detailed_ratings_list,
-                        condition=result[22],
-                        mpg=result[25],
-                        cleanTitle=result[21],
-                        paidStatus=result[27],
-                        sellerDescription=result[29],
-                        sellerName=result[31],
-                        sellerJoinedDate=result[30],
-                        phoneNumber=result[28],
-                        engine=result[24],
-                        driveType=result[13],
-                        bodyStyle=result[14],
-                        source=result[15],
+                        condition=result[23],
+                        mpg=result[26],
+                        cleanTitle=result[22],
+                        paidStatus=result[28],
+                        sellerDescription=result[30],
+                        sellerName=result[32],
+                        sellerJoinedDate=result[31],
+                        phoneNumber=result[29],
+                        engine=result[25],
+                        driveType=result[14],
+                        bodyStyle=result[15],
+                        source=result[16],
                         status=status,
-                        reasonCodes=result[40] or [],
-                        buyMax=float(result[39]) if result[39] is not None else None,
-                        trim=result[36],
-                        buyer_id=result[7],
-                        buyer_username=result[37],
+                        reasonCodes=result[41] or [],
+                        buyMax=float(result[40]) if result[40] is not None else None,
+                        trim=result[37],
+                        buyer_id=result[8],
+                        buyer_username=result[38],
                         decision=decision,
-                        created_at=result[32],
-                        notes=result[17],
-                        updated_at=result[18],
-                        updated_by=result[19],
-                        score=int(result[38]) if result[38] is not None else None,
-                        mmr=float(result[20]) if result[20] is not None else None
+                        created_at=result[33],
+                        notes=result[18],
+                        updated_at=result[19],
+                        updated_by=result[20],
+                        score=int(result[39]) if result[39] is not None else None,
+                        mmr=float(result[21]) if result[21] is not None else None
                     )
                 
         except Exception as e:

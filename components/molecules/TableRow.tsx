@@ -105,6 +105,11 @@ export const TableRow: React.FC<TableRowProps> = ({
         <span title={listing.vin}>{listing.vin}</span>
       </div>
       
+      {/* LPN */}
+      <div style={getColSpanStyle('lpn')} className="truncate text-xs text-slate-600 font-mono">
+        <span title={listing.lpn}>{listing.lpn || '—'}</span>
+      </div>
+      
       {/* Year */}
       <div style={getColSpanStyle('year')} className="invisible md:visible flex items-center">
         {listing.year}

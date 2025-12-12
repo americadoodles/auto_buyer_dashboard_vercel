@@ -63,6 +63,7 @@ export default function ListingsPage() {
       listing.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
       listing.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
       listing.vin?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      listing.lpn?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       listing.location?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === "" || 
@@ -175,7 +176,7 @@ export default function ListingsPage() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
                 <Input
                   type="text"
-                  placeholder="Search by make, model, VIN, or location..."
+                  placeholder="Search by make, model, VIN, LPN, or location..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"

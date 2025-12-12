@@ -1,249 +1,263 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../atoms/Button';
 import { Input } from '../atoms/Input';
 import { Icon } from '../atoms/Icon';
+import { Badge } from '../atoms/Badge';
+import { X } from 'lucide-react';
+import { getContacts } from '../../lib/services/listingManagementApi';
 import { leadsApi } from '../../lib/services/leadsApi';
-import { LeadSource, LeadStatus, Lead } from '../../lib/types/lead';
-import { createContact } from '../../lib/services/listingManagementApi';
+import { Contact } from '../../lib/types/listing';
+import { Lead } from '../../lib/types/lead';
+import { useToast } from '../../hooks/useToast';
 import { useAuth } from '../../app/auth/useAuth';
-type LeadCreateModalProps = {
+import { useLeadStatuses } from '../../lib/hooks/useLeads';
+
+interface LeadCreateModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreated?: (leadId: string) => void;
-  // Optional: preselect a listing to link the created contact to
-  listingId?: number;
-};
+  listingId: number;
+  existingLead?: Lead | null;
+  onSuccess?: () => void;
+}
 
-export const LeadCreateModal: React.FC<LeadCreateModalProps> = ({ isOpen, onClose, onCreated, listingId }) => {
+export const LeadCreateModal: React.FC<LeadCreateModalProps> = ({
+  isOpen,
+  onClose,
+  listingId,
+  existingLead,
+  onSuccess
+}) => {
+  const { showSuccess, showError } = useToast();
   const { user } = useAuth();
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [company, setCompany] = useState('');
-  const [jobTitle, setJobTitle] = useState('');
-  const [sourceId, setSourceId] = useState<number | undefined>(undefined);
-  const [statusId, setStatusId] = useState<number | undefined>(undefined);
-  const [notes, setNotes] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [sources, setSources] = useState<LeadSource[]>([]);
-  const [statuses, setStatuses] = useState<LeadStatus[]>([]);
-  const [hasExistingContact, setHasExistingContact] = useState(false);
+  const { statuses: leadStatuses } = useLeadStatuses();
+  
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [selectedContactId, setSelectedContactId] = useState<string | undefined>(undefined);
+  const [contactSearch, setContactSearch] = useState<string>('');
+  const [loadingContacts, setLoadingContacts] = useState(false);
+  const [creatingLead, setCreatingLead] = useState(false);
+
+  // Load contacts when modal opens
   useEffect(() => {
     if (!isOpen) return;
-    const loadMeta = async () => {
-      try {
-        const [srcs, stats] = await Promise.all([
-          leadsApi.getLeadSources().catch(() => []),
-          leadsApi.getLeadStatuses().catch(() => []),
-        ]);
-        setSources(srcs);
-        setStatuses(stats);
-      } catch (e) {
-        // ignore
-      }
-    };
-    loadMeta();
-  }, [isOpen]);
-
-  // Load contact information from existing leads for this listing
-  useEffect(() => {
-    if (!isOpen || !listingId) return;
     
-    const loadListingContact = async () => {
+    const loadContacts = async () => {
+      setLoadingContacts(true);
       try {
-        // Fetch leads and find one associated with this listing
-        const leads = await leadsApi.getLeads({ limit: 1000 });
-        const listingLead = leads.find((lead: Lead) => lead.listing_id === listingId);
-        
-        if (listingLead && listingLead.contact) {
-          const contact = listingLead.contact;
-          // Pre-populate form fields with contact information
-          if (contact.first_name) setFirstName(contact.first_name);
-          if (contact.last_name) setLastName(contact.last_name);
-          if (contact.email) setEmail(contact.email);
-          if (contact.phone) setPhone(contact.phone);
-          if (contact.mobile && !contact.phone) setPhone(contact.mobile);
-          if (contact.company) setCompany(contact.company);
-          if (contact.job_title) setJobTitle(contact.job_title);
-          if (contact.notes) setNotes(contact.notes);
-          // Pre-select source and status if available
-          if (listingLead.source_id) setSourceId(listingLead.source_id);
-          if (listingLead.status_id) setStatusId(listingLead.status_id);
-          setHasExistingContact(true);
-        } else {
-          setHasExistingContact(false);
-        }
-      } catch (e) {
-        // Silently fail - it's okay if we can't load existing contact info
-        console.debug('Could not load listing contact information:', e);
+        const contactsData = await getContacts({ limit: 1000, is_active: true });
+        setContacts(contactsData);
+      } catch (error) {
+        console.error('Error loading contacts:', error);
+        showError('Failed to load contacts', 'Please try again.');
+      } finally {
+        setLoadingContacts(false);
       }
     };
     
-    loadListingContact();
-  }, [isOpen, listingId]);
+    loadContacts();
+  }, [isOpen, showError]);
 
+  // Reset state when modal closes
   useEffect(() => {
     if (!isOpen) {
-      setFirstName('');
-      setLastName('');
-      setEmail('');
-      setPhone('');
-      setCompany('');
-      setJobTitle('');
-      setSourceId(undefined);
-      setStatusId(undefined);
-      setNotes('');
-      setError(null);
-      setLoading(false);
-      setHasExistingContact(false);
+      setSelectedContactId(undefined);
+      setContactSearch('');
     }
   }, [isOpen]);
 
-  const canSubmit = useMemo(() => {
-    return firstName.trim().length > 0 && lastName.trim().length > 0 && !loading;
-  }, [firstName, lastName, loading]);
+  // Filter contacts based on search
+  const filteredContacts = contacts.filter(contact => {
+    if (!contactSearch.trim()) return true;
+    const searchLower = contactSearch.toLowerCase();
+    return (
+      contact.first_name.toLowerCase().includes(searchLower) ||
+      contact.last_name.toLowerCase().includes(searchLower) ||
+      contact.email?.toLowerCase().includes(searchLower) ||
+      contact.phone?.includes(searchLower) ||
+      contact.company?.toLowerCase().includes(searchLower)
+    );
+  });
 
-  const handleCreate = async () => {
-    if (!canSubmit) return;
-    setLoading(true);
-    setError(null);
+  // Create or update lead from selected contact
+  const handleCreateLeadFromContact = async () => {
+    if (!selectedContactId) {
+      showError('Validation Error', 'Please select a contact');
+      return;
+    }
+
     try {
-   
-
-      // First create a Contact to store contact information
-      const contact = await createContact({
-        first_name: firstName.trim(),
-        last_name: lastName.trim(),
-        email: email.trim() || undefined,
-        phone: phone.trim() || undefined,
-        company: company.trim() || undefined,
-        job_title: jobTitle.trim() || undefined,
-        notes: notes.trim() || undefined,
-      });
+      setCreatingLead(true);
       
-      // Then create a Lead that references the contact and listing
-      const lead = await leadsApi.createLead({
-        contact_id: contact.id,
-        listing_id: listingId,
-        source_id: sourceId,
-        status_id: statusId,
-        notes: notes.trim() || undefined,
-        lead_score: 0,
-        vehicle_interest: {},
-        budget_range: {},
-        assigned_to: user?.id ?? '',
-        created_by: user?.id ?? '',
-      });
+      const isUpdating = existingLead && existingLead.contact;
+      
+      if (isUpdating && existingLead.id) {
+        // Update existing lead with new contact
+        await leadsApi.updateLead(existingLead.id.toString(), {
+          contact_id: selectedContactId,
+        });
 
-      onCreated && onCreated(lead.id);
+        showSuccess('Lead Updated', 'Lead has been successfully updated');
+      } else {
+        // Create new lead
+        // Find the "new" status
+        const newStatus = leadStatuses.find(
+          status => status.name.toLowerCase() === 'new'
+        );
+        
+        await leadsApi.createLead({
+          contact_id: selectedContactId,
+          listing_id: listingId,
+          status_id: newStatus?.id,
+          lead_score: 0,
+          vehicle_interest: {},
+          budget_range: {},
+          assigned_to: user?.id ?? '',
+          created_by: user?.id ?? '',
+        });
+
+        showSuccess('Lead Created', 'Lead has been successfully created');
+      }
+
+      // Reset state
+      setSelectedContactId(undefined);
+      setContactSearch('');
+      
+      // Call success callback
+      if (onSuccess) {
+        onSuccess();
+      }
+      
+      // Close modal
       onClose();
-    } catch (e: any) {
-      setError(e?.message || 'Failed to create lead');
+    } catch (error) {
+      console.error('Error creating/updating lead:', error);
+      const action = existingLead && existingLead.contact ? 'update' : 'create';
+      showError(`Failed to ${action} lead`, error instanceof Error ? error.message : 'Please try again.');
     } finally {
-      setLoading(false);
+      setCreatingLead(false);
     }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl border border-gray-200 dark:border-gray-700">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{hasExistingContact ? 'Update Contact' : 'New Contact'}</h3>
-          <button onClick={onClose} className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
-            <Icon name="x" className="w-5 h-5" />
-          </button>
-        </div>
-
-        <div className="p-6 space-y-4">
-          {error && (
-            <div className="text-red-600 dark:text-red-400 text-sm bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 p-3 rounded-md font-medium">{error}</div>
-          )}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">First name</label>
-              <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="John" className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100" />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">Last name</label>
-              <Input value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Doe" className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">Email</label>
-              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="john@example.com" className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100" />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">Phone</label>
-              <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(555) 555-5555" className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">Company</label>
-              <Input value={company} onChange={(e) => setCompany(e.target.value)} placeholder="Company Inc." className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100" />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">Job title</label>
-              <Input value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} placeholder="Owner" className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">Source</label>
-              <select className="w-full border border-gray-300 dark:border-gray-600 rounded-md h-10 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400" value={sourceId ?? ''} onChange={(e) => setSourceId(e.target.value ? Number(e.target.value) : undefined)}>
-                {sources.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">Status</label>
-              <select className="w-full border border-gray-300 dark:border-gray-600 rounded-md h-10 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400" value={statusId ?? ''} onChange={(e) => setStatusId(e.target.value ? Number(e.target.value) : undefined)}>
-                {statuses.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">Notes</label>
-            <textarea className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Context about this lead..." />
-          </div>
-
-          {listingId ? (
-            <div className="text-sm text-gray-700 dark:text-gray-300 font-medium">
-              {hasExistingContact ? (
-                <span className="text-blue-600 dark:text-blue-400">✓ Contact information loaded from existing lead for listing #{listingId}</span>
-              ) : (
-                <span>This lead will be linked to listing #{listingId} as a seller contact.</span>
-              )}
-            </div>
-          ) : null}
-        </div>
-
-        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-2">
-          <Button variant="outline" onClick={onClose} disabled={loading} className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Cancel</Button>
-          <Button onClick={handleCreate} disabled={!canSubmit} className="bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white font-medium">
-            {loading ? (hasExistingContact ? 'Updating...' : 'Creating...') : (hasExistingContact ? 'Update Contact' : 'Create Contact')}
+    <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-3xl w-full max-h-[80vh] flex flex-col border border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-black dark:text-gray-100">
+            {existingLead && existingLead.contact ? 'Update Lead - Select Contact' : 'Create Lead - Select Contact'}
+          </h3>
+          <Button 
+            onClick={onClose} 
+            variant="outline" 
+            size="sm"
+            className="border-gray-300 dark:border-gray-600 text-black dark:text-gray-300 cursor-pointer"
+          >
+            <X className="h-4 w-4" />
           </Button>
+        </div>
+        
+        <div className="p-4 flex-1 overflow-y-auto flex flex-col">
+          {/* Search */}
+          <div className="mb-4">
+            <Input
+              type="text"
+              value={contactSearch}
+              onChange={(e) => setContactSearch(e.target.value)}
+              placeholder="Search contacts by name, email, phone, or company..."
+              className="w-full border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-black dark:text-gray-100"
+            />
+          </div>
+
+          {/* Contacts List */}
+          {loadingContacts ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
+              <span className="ml-3 text-black dark:text-gray-200 font-medium">Loading contacts...</span>
+            </div>
+          ) : filteredContacts.length === 0 ? (
+            <div className="text-center py-8 text-black dark:text-gray-400 text-sm font-medium">
+              {contactSearch ? 'No contacts found matching your search' : 'No contacts available'}
+            </div>
+          ) : (
+            <div className="space-y-2 flex-1 overflow-y-auto">
+              {filteredContacts.map((contact) => (
+                <div
+                  key={contact.id}
+                  onClick={() => setSelectedContactId(contact.id)}
+                  className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                    selectedContactId === contact.id
+                      ? 'border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/30'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-semibold text-black dark:text-gray-100">
+                          {contact.first_name} {contact.last_name}
+                        </span>
+                        {selectedContactId === contact.id && (
+                          <Badge color="blue" className="bg-blue-500 dark:bg-blue-600 text-white">Selected</Badge>
+                        )}
+                      </div>
+                      <div className="text-sm text-black dark:text-gray-400 space-y-1">
+                        {contact.email && (
+                          <div className="flex items-center gap-1">
+                            <Icon name="mail" className="w-3 h-3" />
+                            <span>{contact.email}</span>
+                          </div>
+                        )}
+                        {(contact.phone || contact.mobile) && (
+                          <div className="flex items-center gap-1">
+                            <Icon name="phone" className="w-3 h-3" />
+                            <span>{contact.phone || contact.mobile}</span>
+                          </div>
+                        )}
+                        {contact.company && (
+                          <div className="flex items-center gap-1">
+                            <Icon name="briefcase" className="w-3 h-3" />
+                            <span>{contact.company}</span>
+                          </div>
+                        )}
+                        {contact.job_title && (
+                          <div className="text-xs text-black dark:text-gray-500">
+                            {contact.job_title}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {/* Footer */}
+          <div className="flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-700 mt-4">
+            <Button
+              onClick={onClose}
+              variant="outline"
+              className="flex-1 border-gray-300 dark:border-gray-600 text-black dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
+              disabled={creatingLead}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreateLeadFromContact}
+              disabled={!selectedContactId || creatingLead}
+              className="flex-1 bg-green-600 dark:bg-green-500 hover:bg-green-700 dark:hover:bg-green-600 text-black font-medium cursor-pointer"
+            >
+              {creatingLead 
+                ? (existingLead && existingLead.contact ? 'Updating...' : 'Creating...') 
+                : (existingLead && existingLead.contact ? 'Update Lead' : 'Create Lead')}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
   );
 };
-
-export default LeadCreateModal;
-
 

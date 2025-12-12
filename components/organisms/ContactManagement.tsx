@@ -303,10 +303,10 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {contacts.map((contact) => (
                   <TableRow key={contact.id} onClick={() => onContactClick(contact.id)} className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {formatCalendarDate(contact.updated_at)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-2 py-2 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
                           <div className="h-10 w-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
@@ -325,19 +325,19 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {contact.company || '-'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {contact.email || '-'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {contact.phone || contact.mobile || '-'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {contact.assigned_to?.username || 'Unassigned'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-2 py-2 whitespace-nowrap">
                       {contact.status ? (
                         <Badge color={contact.status.color || 'blue'}>
                           {contact.status.name}
@@ -348,7 +348,7 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
                         </Badge>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <td className="px-2 py-2 whitespace-nowrap text-sm font-medium">
                       <div className="flex space-x-2">
                         <Button 
                           variant="ghost" 

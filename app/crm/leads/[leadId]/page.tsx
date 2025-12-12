@@ -11,6 +11,7 @@ import { updateContact } from '../../../../lib/services/listingManagementApi';
 import { Lead, LeadStatus, LeadSource } from '../../../../lib/types/lead';
 import { useLeadStatuses, useLeadSources } from '../../../../lib/hooks/useLeads';
 import { VehicleContactCard } from '../../../../components/molecules/VehicleContactCard';
+import { ListingSelectModal } from '../../../../components/organisms/ListingSelectModal';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { useToast } from '../../../../hooks/useToast';
 
@@ -24,6 +25,7 @@ export default function LeadDetailPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lead, setLead] = useState<Lead | null>(null);
+  const [isUpdateListingModalOpen, setIsUpdateListingModalOpen] = useState(false);
   
   // Contact information (editable)
   const [firstName, setFirstName] = useState('');
@@ -128,6 +130,26 @@ export default function LeadDetailPage() {
     });
   };
 
+  const handleUpdateListingSuccess = async () => {
+    // Reload lead data after successful update
+    if (!leadId) return;
+    try {
+      const leadData = await leadsApi.getLead(leadId);
+      if (leadData) {
+        setLead(leadData);
+        // Re-initialize form fields if listing_id now exists
+        if (leadData.listing_id && !lead?.listing_id) {
+          setStatusId(leadData.status_id || leadData.status?.id);
+          setSourceId(leadData.source_id);
+          setNotes(leadData.notes || '');
+          setLeadScore(leadData.lead_score || 0);
+        }
+      }
+    } catch (e: any) {
+      console.error('Error reloading lead:', e);
+    }
+  };
+
   if (loading || statusesLoading || sourcesLoading) {
     return (
       <div className="h-full overflow-y-auto bg-gray-50 dark:bg-gray-900">
@@ -177,6 +199,16 @@ export default function LeadDetailPage() {
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Lead Details</h1>
             </div>
+          </div>
+          <div className="flex space-x-2">
+            <Button
+              onClick={() => setIsUpdateListingModalOpen(true)}
+              className="bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white font-medium cursor-pointer"
+              size="sm"
+            >
+              <Icon name="edit" className="w-4 h-4 mr-2" />
+              Update Lead
+            </Button>
           </div>
         </div>
         {error && (
@@ -446,6 +478,14 @@ export default function LeadDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Update Listing Modal */}
+      <ListingSelectModal
+        isOpen={isUpdateListingModalOpen}
+        onClose={() => setIsUpdateListingModalOpen(false)}
+        leadId={leadId}
+        onSuccess={handleUpdateListingSuccess}
+      />
     </div>
   );
 }

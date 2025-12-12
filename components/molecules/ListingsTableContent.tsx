@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 import { Gauge, DollarSign, Clock, ExternalLink, Bell, Send, Workflow, Edit, ArrowUpDown } from "lucide-react";
 import { Listing, SortConfig } from "../../lib/types/listing";
 import { Badge } from "../atoms/Badge";
@@ -55,34 +56,12 @@ export const ListingsTableContent: React.FC<ListingsTableContentProps> = ({
       <thead>
         <tr className="bg-slate-50 dark:bg-gray-700/50 border-b-2 border-slate-200 dark:border-gray-600">
           {listingsColumns.map(col => {
-            const isActionColumn = ['notify', 'slack', 'workflow', 'edit'].includes(col.key);
-            const visibilityClass = col.priority === 'low' ? 'hidden lg:table-cell' : 
-                                    col.priority === 'medium' ? 'hidden md:table-cell' : '';
+            const isActionColumn = ['notify', 'slack', 'workflow'].includes(col.key);
             
-            if (col.key === 'select') {
-              return (
-                <th
-                  key={col.key}
-                  className="px-4 py-2 text-xs font-medium uppercase tracking-wide text-slate-600 dark:text-gray-300 dark:text-gray-300 text-center"
-                >
-                  <input
-                    type="checkbox"
-                    checked={isAllSelected}
-                    ref={(input) => {
-                      if (input) input.indeterminate = isIndeterminate;
-                    }}
-                    onChange={(e) => onSelectAll?.(e.target.checked)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    title={isAllSelected ? "Deselect all" : "Select all"}
-                  />
-                </th>
-              );
-            }
-
             return (
               <th
                 key={col.key}
-                className={`px-4 py-2 text-xs font-medium uppercase tracking-wide text-slate-600 dark:text-gray-300 dark:text-gray-300 ${visibilityClass} ${
+                className={`px-4 py-2 text-xs font-medium uppercase tracking-wide text-slate-600 dark:text-gray-300 ${
                   isActionColumn ? 'text-center' : 'text-left'
                 }`}
               >
@@ -109,54 +88,22 @@ export const ListingsTableContent: React.FC<ListingsTableContentProps> = ({
           return (
             <tr
               key={listing.id}
-              className="border-t border-slate-200 dark:border-gray-700 hover:bg-slate-50 dark:hover:bg-gray-700/50 transition-colors"
+              className="border-t border-slate-200 dark:border-gray-700 hover:bg-slate-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
+              onClick={() => onEdit?.(listing)}
             >
-              {/* Select checkbox */}
-              <td className="px-4 py-3 text-center">
-                <input
-                  type="checkbox"
-                  checked={selectedListings.has(listing.id)}
-                  onChange={(e) => onSelectListing?.(listing.id, e.target.checked)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-              </td>
-              
               {/* Score */}
               <td className="px-4 py-3">
                 <Badge variant="default">{listing.score}</Badge>
               </td>
               
               {/* VIN */}
-              <td className="px-4 py-3 text-xs text-slate-600 dark:text-gray-300 dark:text-gray-300 font-mono max-w-[120px]">
+              <td className="px-4 py-3 text-xs text-slate-600 dark:text-gray-300 font-mono max-w-[120px]">
                 <span title={listing.vin} className="truncate block">{listing.vin}</span>
               </td>
               
               {/* LPN */}
               <td className="px-4 py-3 text-xs text-slate-600 dark:text-gray-300 font-mono max-w-[120px]">
                 <span title={listing.lpn} className="truncate block">{listing.lpn || '—'}</span>
-              </td>
-              
-              {/* Year */}
-              <td className="px-4 py-3 hidden md:table-cell">
-                {listing.year}
-              </td>
-              
-              {/* Make */}
-              <td className="px-4 py-3 hidden md:table-cell">
-                {listing.make}
-              </td>
-              
-              {/* Model */}
-              <td className="px-4 py-3 max-w-[150px]">
-                <span title={listing.model} className="truncate block">{listing.model}</span>
-              </td>
-              
-              {/* Miles */}
-              <td className="px-4 py-3 hidden md:table-cell">
-                <div className="flex items-center gap-1">
-                  <Gauge className="h-3 w-3 flex-shrink-0" />
-                  <span>{formatNumber(listing.miles)}</span>
-                </div>
               </td>
               
               {/* Price */}
@@ -166,34 +113,44 @@ export const ListingsTableContent: React.FC<ListingsTableContentProps> = ({
                 </div>
               </td>
               
-              {/* DOM */}
-              <td className="px-4 py-3 hidden md:table-cell">
+              {/* Year */}
+              <td className="px-4 py-3">
+                {listing.year}
+              </td>
+              
+              {/* Make */}
+              <td className="px-4 py-3">
+                {listing.make}
+              </td>
+              
+              {/* Model */}
+              <td className="px-4 py-3 max-w-[150px]">
+                <span title={listing.model} className="truncate block">{listing.model}</span>
+              </td>
+              
+              {/* Miles */}
+              <td className="px-4 py-3">
                 <div className="flex items-center gap-1">
-                  <Clock className="h-3 w-3 flex-shrink-0" />
-                  <span>{listing.dom}d</span>
+                  <Gauge className="h-3 w-3 flex-shrink-0" />
+                  <span>{formatNumber(listing.miles)}</span>
                 </div>
               </td>
               
               {/* Source */}
-              <td className="px-4 py-3 hidden lg:table-cell">
+              <td className="px-4 py-3">
                 {parsedSource ? (
                   <div className="flex items-center gap-2">
-                    <span
-                      className="text-xs text-slate-600 dark:text-gray-300 truncate"
-                      title={parsedSource.href}
-                    >
-                      {parsedSource.host}
-                    </span>
-                    <a
+                    <Link
                       href={parsedSource.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      aria-label="Open source link"
-                      className="shrink-0 text-slate-500 dark:text-gray-400 hover:text-blue-600"
-                      title="Open source"
+                      className="text-xs text-slate-600 dark:text-gray-300 truncate inline-flex items-center gap-1 hover:text-blue-600 dark:hover:text-blue-400"
+                      title={parsedSource.href}
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
+                      <span>{parsedSource.host}</span>
+                      <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                    </Link>
                   </div>
                 ) : (
                   <span className="text-xs text-slate-600 dark:text-gray-300 truncate" title={listing.source || ""}>
@@ -202,68 +159,8 @@ export const ListingsTableContent: React.FC<ListingsTableContentProps> = ({
                 )}
               </td>
               
-              {/* Location */}
-              <td className="px-4 py-3 hidden md:table-cell text-xs text-slate-600 dark:text-gray-300">
-                <span title={listing.location} className="truncate block">{listing.location}</span>
-              </td>
-              
-              {/* Buyer */}
-              <td className="px-4 py-3 hidden lg:table-cell text-xs text-slate-600 dark:text-gray-300">
-                <span title={listing.buyer_username || listing.buyer_id} className="truncate block">
-                  {listing.buyer_username || listing.buyer_id}
-                </span>
-              </td>
-              
-              {/* Updated */}
-              <td className="px-4 py-3 hidden lg:table-cell text-xs text-slate-600 dark:text-gray-300">
-                <span title={formatDateTime(listing.updated_at)} className="truncate block">
-                  {formatDateTime(listing.updated_at)}
-                </span>
-              </td>
-              
-              {/* Radius */}
-              <td className="px-4 py-3 hidden lg:table-cell">
-                {listing.radius} mi
-              </td>
-              
-              {/* Buy Max */}
-              <td className="px-4 py-3 hidden md:table-cell font-medium">
-                {listing.buyMax != null ? formatCurrency(listing.buyMax) : "—"}
-              </td>
-              
-              {/* Status */}
-              <td className="px-4 py-3">
-                {listing.status ? (
-                  <Badge variant={listing.status === 'approved' ? 'success' : listing.status === 'rejected' ? 'destructive' : 'default'}>
-                    {listing.status}
-                  </Badge>
-                ) : (
-                  <span className="text-slate-400 dark:text-gray-500">—</span>
-                )}
-              </td>
-              
-              {/* Decision Reasons */}
-              <td className="px-4 py-3 hidden lg:table-cell">
-                {listing.decision?.reasons && listing.decision.reasons.length > 0 ? (
-                  <div className="flex flex-wrap gap-1">
-                    {listing.decision.reasons.slice(0, 2).map((reason, index) => (
-                      <Badge key={index} variant="outline" className="text-xs">
-                        {reason}
-                      </Badge>
-                    ))}
-                    {listing.decision.reasons.length > 2 && (
-                      <Badge variant="outline" className="text-xs flex-shrink-0">
-                        +{listing.decision.reasons.length - 2}
-                      </Badge>
-                    )}
-                  </div>
-                ) : (
-                  <span className="text-slate-400 dark:text-gray-500">—</span>
-                )}
-              </td>
-              
               {/* Notify Action */}
-              <td className="px-4 py-3 text-center">
+              <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
                 <button
                   className="p-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={() => listing.vin && onNotify?.(listing.vin)}
@@ -276,7 +173,7 @@ export const ListingsTableContent: React.FC<ListingsTableContentProps> = ({
               </td>
               
               {/* Slack Action */}
-              <td className="px-4 py-3 text-center">
+              <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
                 {onNotifySlack ? (
                   <button
                     className="p-1.5 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -293,7 +190,7 @@ export const ListingsTableContent: React.FC<ListingsTableContentProps> = ({
               </td>
               
               {/* Workflow Action */}
-              <td className="px-4 py-3 text-center">
+              <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
                 {onTriggerWorkflow ? (
                   <button
                     className="p-1.5 text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -309,20 +206,11 @@ export const ListingsTableContent: React.FC<ListingsTableContentProps> = ({
                 )}
               </td>
               
-              {/* Edit Action */}
-              <td className="px-4 py-3 text-center">
-                {onEdit ? (
-                  <button
-                    className="p-1.5 text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded-full transition-colors border border-orange-200"
-                    onClick={() => onEdit(listing)}
-                    title="Edit listing"
-                    aria-label="Edit listing"
-                  >
-                    <Edit className="h-3.5 w-3.5" />
-                  </button>
-                ) : (
-                  <span className="text-slate-400 dark:text-gray-500 text-xs">—</span>
-                )}
+              {/* Updated */}
+              <td className="px-4 py-3 text-xs text-slate-600 dark:text-gray-300">
+                <span title={formatDateTime(listing.updated_at)} className="truncate block">
+                  {formatDateTime(listing.updated_at)}
+                </span>
               </td>
             </tr>
           );

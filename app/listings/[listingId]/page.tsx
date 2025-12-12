@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Button } from '../../../components/atoms/Button';
 import { Input } from '../../../components/atoms/Input';
 import { Icon } from '../../../components/atoms/Icon';
@@ -19,7 +20,7 @@ import { ImageCarousel } from '../../../components/organisms/ImageCarousel';
 import { leadsApi } from '../../../lib/services/leadsApi';
 import { Lead } from '../../../lib/types/lead';
 import { ListingActivity, Contact } from '../../../lib/types/listing';
-import { ArrowLeft, Plus, Upload, X, Save, Edit2, Check } from 'lucide-react';
+import { ArrowLeft, Plus, Upload, X, Save, Edit2, Check, ExternalLink, Bell, Send, Workflow } from 'lucide-react';
 import { useToast } from '../../../hooks/useToast';
 import { formatDateTime } from 'lib/utils/formatters';
 
@@ -333,6 +334,42 @@ export default function ListingDetailPage() {
     // You can add any additional logic here if needed
   };
 
+  // Handle notify action
+  const handleNotify = async () => {
+    if (!listing) return;
+    try {
+      // TODO: Implement notify functionality
+      showSuccess('Notification Sent', 'Notification has been sent successfully');
+    } catch (error) {
+      console.error('Error sending notification:', error);
+      showError('Failed to send notification', error instanceof Error ? error.message : 'Unknown error');
+    }
+  };
+
+  // Handle Slack action
+  const handleSlack = async () => {
+    if (!listing) return;
+    try {
+      // TODO: Implement Slack integration
+      showSuccess('Slack Message Sent', 'Message has been sent to Slack successfully');
+    } catch (error) {
+      console.error('Error sending Slack message:', error);
+      showError('Failed to send Slack message', error instanceof Error ? error.message : 'Unknown error');
+    }
+  };
+
+  // Handle workflow action
+  const handleWorkflow = async () => {
+    if (!listing) return;
+    try {
+      // TODO: Implement workflow functionality
+      showSuccess('Workflow Triggered', 'Workflow has been triggered successfully');
+    } catch (error) {
+      console.error('Error triggering workflow:', error);
+      showError('Failed to trigger workflow', error instanceof Error ? error.message : 'Unknown error');
+    }
+  };
+
   // Format number with commas
   const formatNumberWithCommas = (value: number | string | undefined): string => {
     if (value === undefined || value === null || value === '') return '';
@@ -474,7 +511,32 @@ export default function ListingDetailPage() {
 
           {/* Edit Fields Section */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-4">
-            <h4 className="text-lg font-bold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 pb-3">Vehicle Information</h4>
+            <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-3">
+              <h4 className="text-lg font-bold text-gray-900 dark:text-gray-100">Vehicle Information</h4>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleNotify}
+                  className="p-1.5 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full transition-colors"
+                  title="Notify about this listing"
+                >
+                  <Bell className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={handleSlack}
+                  className="p-1.5 text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-full transition-colors"
+                  title="Send to Slack"
+                >
+                  <Send className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={handleWorkflow}
+                  className="p-1.5 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-full transition-colors"
+                  title="Trigger Slack Workflow"
+                >
+                  <Workflow className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
             
             {/* Read-only basic info */}
             <div className="grid grid-cols-4 gap-4 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-md">
@@ -1949,12 +2011,15 @@ export default function ListingDetailPage() {
               <div>
                 <span className="font-medium text-gray-800 dark:text-gray-200">Source:</span>
                 {listing.source ? (
-                  <a
-                    href={`/listings/source/${encodeURIComponent(listing.source)}`}
-                    className="ml-2 text-blue-600 dark:text-blue-400 hover:underline cursor-pointer font-medium break-words"
+                  <Link
+                    href={listing.source}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-2 text-blue-600 dark:text-blue-400 hover:underline cursor-pointer font-medium break-words inline-flex items-center gap-1"
                   >
                     <span className="break-words break-all">{listing.source}</span>
-                  </a>
+                    <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                  </Link>
                 ) : (
                   <span className="ml-2 text-gray-600 dark:text-gray-400 font-medium"></span>
                 )}

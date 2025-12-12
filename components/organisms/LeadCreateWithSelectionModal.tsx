@@ -83,8 +83,11 @@ export const LeadCreateWithSelectionModal: React.FC<LeadCreateWithSelectionModal
     );
   });
 
-  // Filter listings based on search
+  // Filter listings based on search and exclude listings with contact_id
   const filteredListings = listings.filter(listing => {
+    // Exclude listings that already have a contact_id
+    if (listing.contact_id) return false;
+    
     if (!listingSearch.trim()) return true;
     const searchLower = listingSearch.toLowerCase();
     return (

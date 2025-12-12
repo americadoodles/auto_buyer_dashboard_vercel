@@ -48,6 +48,7 @@ export type Listing = {
   updated_by?: string | null;
   score?: number;
   mmr?: number | null;
+  contact_id?: string | null;
 };
 
 export type SortConfig = {

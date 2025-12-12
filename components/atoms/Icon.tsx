@@ -24,7 +24,8 @@ import {
   XCircle,
   DollarSign,
   Car,
-  FileText
+  FileText,
+  MapPin
 } from 'lucide-react';
 
 interface IconProps {
@@ -59,7 +60,8 @@ const iconMap: Record<string, LucideIcon> = {
   'x-circle': XCircle,
   'dollar-sign': DollarSign,
   'car': Car,
-  'file-text': FileText
+  'file-text': FileText,
+  'map-pin': MapPin
 };
 
 export const Icon: React.FC<IconProps> = ({ 

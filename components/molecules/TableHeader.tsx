@@ -92,8 +92,9 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
         }
         
         const isActionColumn = ['notify', 'slack', 'workflow', 'edit'].includes(col.key);
-        const visibilityClass = col.priority === 'low' ? 'invisible lg:visible' : 
-                                col.priority === 'medium' ? 'invisible md:visible' : '';
+        const priority = col.priority as string;
+        const visibilityClass = priority === 'low' ? 'invisible lg:visible' : 
+                                priority === 'medium' ? 'invisible md:visible' : '';
         
         return (
           <div key={col.key} style={colSpanStyle} className={`flex items-center ${visibilityClass}`}>

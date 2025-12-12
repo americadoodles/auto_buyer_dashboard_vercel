@@ -57,15 +57,30 @@ export const ListingsTableContent: React.FC<ListingsTableContentProps> = ({
         <tr className="bg-slate-50 dark:bg-gray-700/50 border-b-2 border-slate-200 dark:border-gray-600">
           {listingsColumns.map(col => {
             const isActionColumn = ['notify', 'slack', 'workflow'].includes(col.key);
+            const isSelectColumn = col.key === 'select';
             
             return (
               <th
                 key={col.key}
                 className={`px-4 py-2 text-xs font-medium uppercase tracking-wide text-slate-600 dark:text-gray-300 ${
-                  isActionColumn ? 'text-center' : 'text-left'
+                  isActionColumn ? 'text-center' : isSelectColumn ? 'text-center' : 'text-left'
                 }`}
               >
-                {!isActionColumn ? (
+                {isSelectColumn ? (
+                  <div className="flex items-center justify-center">
+                    <input
+                      type="checkbox"
+                      checked={isAllSelected}
+                      ref={(input) => {
+                        if (input) input.indeterminate = isIndeterminate;
+                      }}
+                      onChange={(e) => onSelectAll?.(e.target.checked)}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      title={isAllSelected ? "Deselect all" : "Select all"}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                ) : !isActionColumn ? (
                   <button
                     className="flex items-center gap-1 hover:text-slate-800 dark:hover:text-gray-100 transition-colors"
                     onClick={() => onSort?.(col.key as keyof Listing | 'decision_status' | 'decision_reasons')}
@@ -91,6 +106,17 @@ export const ListingsTableContent: React.FC<ListingsTableContentProps> = ({
               className="border-t border-slate-200 dark:border-gray-700 hover:bg-slate-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
               onClick={() => onEdit?.(listing)}
             >
+              {/* Select Checkbox */}
+              <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                <input
+                  type="checkbox"
+                  checked={selectedListings.has(listing.id)}
+                  onChange={(e) => onSelectListing?.(listing.id, e.target.checked)}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  title={selectedListings.has(listing.id) ? "Deselect listing" : "Select listing"}
+                />
+              </td>
+              
               {/* Score */}
               <td className="px-4 py-3">
                 <Badge variant="default">{listing.score}</Badge>

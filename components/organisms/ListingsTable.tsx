@@ -153,7 +153,10 @@ export const ListingsTable: React.FC<ListingsTableProps> = ({
                 <span className="text-lg font-bold text-green-600">{formatCurrency(listing.price)}</span>
               </div>
               
-              <div className="text-sm text-slate-600 font-mono">{listing.vin}</div>
+              <div className="text-sm text-slate-600 font-mono">
+                {listing.vin && <div>VIN: {listing.vin}</div>}
+                {listing.lpn && <div>LPN: {listing.lpn}</div>}
+              </div>
               
               <div className="flex items-center gap-4 text-sm text-slate-600">
                 <span className="flex items-center gap-1">

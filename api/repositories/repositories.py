@@ -382,7 +382,7 @@ def list_listings(
                     results = cur.fetchall()
                     logging.info(f"Query returned {len(results)} raw results")
                     out: list[ListingOut] = []
-                    for rid, vehicle_key, vin, year, make, model, trim, miles, price, dom, source, location, buyer_id, images, buyer_username, score, buy_max, reason_codes, created_at, payload, notes, interior_color, exterior_color, transmission, fuel_type, drivetrain, body_style, updated_at, updated_by, mmr, clean_title, condition, detailed_ratings, engine, mpg, overall_rating, paid_status, phone_number, seller_description, seller_joined_date, seller_name in results:
+                    for rid, vehicle_key, vin, lpn, year, make, model, trim, miles, price, dom, source, location, buyer_id, images, buyer_username, score, buy_max, reason_codes, created_at, payload, notes, interior_color, exterior_color, transmission, fuel_type, drivetrain, body_style, updated_at, updated_by, mmr, clean_title, condition, detailed_ratings, engine, mpg, overall_rating, paid_status, phone_number, seller_description, seller_joined_date, seller_name in results:
                         # Extract decision data from payload if available
                         decision = None
                         status = ""
@@ -406,6 +406,7 @@ def list_listings(
                             id=str(rid),
                             vehicle_key=vehicle_key,
                             vin=vin or "",
+                            lpn=lpn,
                             price=float(price),
                             miles=int(miles),
                             dom=int(dom),
@@ -547,7 +548,7 @@ def list_listings_by_buyer(
 
                     out: list[ListingOut] = []
                     for (
-                        rid, vehicle_key, vin, year, make, model, trim, miles, price, dom,
+                        rid, vehicle_key, vin, lpn, year, make, model, trim, miles, price, dom,
                         source, location, buyer_id, images, buyer_username, score, buy_max,
                         reason_codes, created_at, payload, notes, interior_color,
                         exterior_color, transmission, fuel_type, drivetrain,
@@ -579,6 +580,7 @@ def list_listings_by_buyer(
                             id=str(rid),
                             vehicle_key=vehicle_key,
                             vin=vin or "",
+                            lpn=lpn,
                             price=float(price),
                             miles=int(miles),
                             dom=int(dom),

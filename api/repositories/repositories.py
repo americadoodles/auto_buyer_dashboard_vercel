@@ -209,6 +209,7 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                         seller_description = _norm_str(norm.get("sellerDescription"))
                         seller_joined_date = _norm_str(norm.get("sellerJoinedDate"))
                         seller_name = _norm_str(norm.get("sellerName"))
+                        lpn = _norm_str(norm.get("lpn"))
 
                         # Use buyer_id from authenticated context when provided; fallback to incoming buyer_id
                         buyer_from_id = buyer_id or norm.get("buyer_id") or None
@@ -217,19 +218,19 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                         try:
                             cur.execute("""
                               insert into listings (
-                                vehicle_key, vin, source, price, miles, dom, location, buyer_id, payload, images,
+                                vehicle_key, vin, lpn, source, price, miles, dom, location, buyer_id, payload, images,
                                 interior_color, exterior_color, transmission, fuel_type, drivetrain, engine_size, body_style,
                                 clean_title, condition, detailed_ratings, engine, mpg, overall_rating, paid_status, phone_number,
                                 seller_description, seller_joined_date, seller_name
                               )
                               values (
-                                %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
+                                %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
                                 %s,%s,%s,%s,%s,%s,%s,
                                 %s,%s,%s,%s,%s,%s,%s,%s,
                                 %s,%s,%s
                               ) returning id
                             """, (
-                                vehicle_key, vin, norm["source"], norm["price"], norm["miles"], norm["dom"],
+                                vehicle_key, vin, lpn, norm["source"], norm["price"], norm["miles"], norm["dom"],
                                 norm.get("location"), buyer_from_id, json.dumps(payload_data), norm.get("images", []),
                                 interior_color, exterior_color, transmission, fuel_type, drivetrain, engine_size, body_style,
                                 clean_title, condition_txt, json.dumps(detailed_ratings) if detailed_ratings is not None else None,
@@ -318,6 +319,7 @@ def list_listings(
                         l.id,
                         l.vehicle_key,
                         COALESCE(l.vin, '') AS vin,
+                        l.lpn,
                         COALESCE(v.year, 0) AS year,
                         COALESCE(v.make, '') AS make,
                         COALESCE(v.model, '') AS model,
@@ -472,7 +474,8 @@ def list_listings_by_buyer(
                     base_query = """
                         SELECT 
                             l.id, l.vehicle_key, 
-                            COALESCE(l.vin, '') AS vin, 
+                            COALESCE(l.vin, '') AS vin,
+                            l.lpn,
                             COALESCE(v.year, 0) AS year, 
                             COALESCE(v.make, '') AS make, 
                             COALESCE(v.model, '') AS model, 

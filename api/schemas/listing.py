@@ -10,6 +10,7 @@ class Decision(BaseModel):
 
 class ListingIn(BaseModel):
     vin: Optional[str] = None
+    lpn: Optional[str] = None
     price: float
     miles: int
     dom: int
@@ -50,6 +51,7 @@ class ListingOut(BaseModel):
     id: str
     vehicle_key: str
     vin: Optional[str] = None
+    lpn: Optional[str] = None
     price: float
     miles: int
     dom: int
@@ -102,6 +104,7 @@ class ListingScoreIn(BaseModel):
 class ListingUpdate(BaseModel):
     """Schema for updating listing information"""
     vin: Optional[str] = None
+    lpn: Optional[str] = None
     notes: Optional[str] = None
     condition_rating: Optional[int] = Field(None, ge=1, le=5)
     interior_color: Optional[str] = None

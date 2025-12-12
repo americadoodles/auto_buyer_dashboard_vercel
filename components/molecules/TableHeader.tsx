@@ -39,7 +39,7 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
           {columns.map((column) => (
             <th
               key={column.key}
-              className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
             >
               {column.sortable ? (
                 <button

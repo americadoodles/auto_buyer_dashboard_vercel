@@ -466,20 +466,20 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
               renderCard={(deal, stage, onItemClick) => (
                 <>
                   {/* Deal Header */}
-                  <div className="mb-2">
+                  <div className="">
                     <h4 
                       onClick={(e) => {
                         e.stopPropagation();
                         onItemClick(deal);
                       }}
-                      className="text-lg font-semibold text-gray-900 dark:text-white mb-1 line-clamp-2 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 hover:underline transition-colors"
+                      className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-2 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 hover:underline transition-colors"
                     >
                       {deal.name}
                     </h4>
                   </div>
 
                   {/* Deal Value */}
-                  <div className="mb-2">
+                  <div className="">
                     <div className="text-lg font-bold text-gray-900 dark:text-white">
                       {formatCurrency(deal.deal_value)}
                     </div>
@@ -487,7 +487,7 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
 
                   {/* Contact and Owner */}
                   {(deal.contact || deal.assigned_to) && (
-                    <div className="mb-2 flex gap-2">
+                    <div className="flex gap-2">
                       {deal.contact && (
                         <div className="flex-1 flex items-center space-x-2 text-xs text-gray-700 dark:text-gray-300 bg-blue-100 dark:bg-blue-900/30 rounded-lg px-2 py-1">
                           <div className="w-5 h-5 rounded-full bg-blue-300 dark:bg-blue-700 flex items-center justify-center flex-shrink-0">
@@ -515,7 +515,7 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
                     </div>
                   )}
                   {/* Probability */}
-                  <div className="mb-2">
+                  <div className="">
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-xs text-gray-500 dark:text-gray-400">Probability</span>
                       <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{deal.probability}%</span>
@@ -532,7 +532,7 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
                   </div>
 
                   {/* Expected Close Date */}
-                  <div className="mb-2">
+                  <div className="">
                     <div className="flex items-center space-x-1 text-xs text-gray-500 dark:text-gray-400">
                       <Icon name="calendar" className="w-3 h-3" />
                       <span>{formatDate(deal.expected_close_date)}</span>

@@ -612,7 +612,7 @@ export default function TaskDetailPage() {
               <Button variant="outline" onClick={() => router.push('/crm/tasks')} disabled={saving || deleting}>
                 Cancel
               </Button>
-              <Button onClick={handleSave} disabled={!title.trim() || saving || deleting} className="bg-blue-400 dark:bg-blue-600 hover:bg-blue-500 dark:hover:bg-blue-700 text-white">
+              <Button onClick={handleSave} disabled={!title.trim() || saving || deleting} className="bg-blue-400 dark:bg-blue-600 hover:bg-blue-500 dark:hover:bg-blue-700  text-black">
                 {saving ? 'Saving...' : 'Save Changes'}
               </Button>
             </div>

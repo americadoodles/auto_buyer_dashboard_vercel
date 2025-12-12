@@ -64,6 +64,7 @@ export default function ListingDetailPage() {
         // Initialize form data
         setFormData({
           vin: listingData.vin || '',
+          lpn: listingData.lpn || '',
           notes: listingData.notes || '',
           condition_rating: undefined, // condition_rating removed from Listing type
           interior_color: listingData.interiorColor || '',
@@ -157,6 +158,9 @@ export default function ListingDetailPage() {
           value = value || undefined;
           break;
         case 'vin':
+          value = value.toUpperCase();
+          break;
+        case 'lpn':
           value = value.toUpperCase();
           break;
         case 'detailed_ratings':
@@ -530,6 +534,52 @@ export default function ListingDetailPage() {
                     </span>
                     <button
                       onClick={() => startEditing('vin', listing.vin || '')}
+                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      title="Edit"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex items-center w-full group">
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">LPN:</span>
+                {editingField === 'lpn' ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <Input
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      className="uppercase border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => saveField('lpn')}
+                      disabled={savingField === 'lpn'}
+                      className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                      title="Save"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={cancelEditing}
+                      disabled={savingField === 'lpn'}
+                      className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                      title="Cancel"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span 
+                      onClick={() => startEditing('lpn', listing.lpn || '')}
+                      className="text-sm text-gray-900 dark:text-gray-100 uppercase cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    >
+                      {listing.lpn || '—'}
+                    </span>
+                    <button
+                      onClick={() => startEditing('lpn', listing.lpn || '')}
                       className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
                       title="Edit"
                     >

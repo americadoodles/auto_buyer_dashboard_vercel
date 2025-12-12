@@ -131,6 +131,11 @@ export const ListingsTableContent: React.FC<ListingsTableContentProps> = ({
                 <span title={listing.vin} className="truncate block">{listing.vin}</span>
               </td>
               
+              {/* LPN */}
+              <td className="px-4 py-3 text-xs text-slate-600 dark:text-gray-300 font-mono max-w-[120px]">
+                <span title={listing.lpn} className="truncate block">{listing.lpn || '—'}</span>
+              </td>
+              
               {/* Year */}
               <td className="px-4 py-3 hidden md:table-cell">
                 {listing.year}

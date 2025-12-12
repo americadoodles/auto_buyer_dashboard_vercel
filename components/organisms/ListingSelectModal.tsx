@@ -48,6 +48,7 @@ export const ListingSelectModal: React.FC<ListingSelectModalProps> = ({
     const searchLower = listingSearch.toLowerCase();
     return (
       listing.vin?.toLowerCase().includes(searchLower) ||
+      listing.lpn?.toLowerCase().includes(searchLower) ||
       listing.make?.toLowerCase().includes(searchLower) ||
       listing.model?.toLowerCase().includes(searchLower) ||
       listing.year?.toString().includes(searchLower) ||
@@ -157,7 +158,13 @@ export const ListingSelectModal: React.FC<ListingSelectModalProps> = ({
                         {listing.vin && (
                           <div className="flex items-center gap-1">
                             <Icon name="car" className="w-3 h-3" />
-                            <span className="uppercase">{listing.vin}</span>
+                            <span className="uppercase">VIN: {listing.vin}</span>
+                          </div>
+                        )}
+                        {listing.lpn && (
+                          <div className="flex items-center gap-1">
+                            <Icon name="car" className="w-3 h-3" />
+                            <span className="uppercase">LPN: {listing.lpn}</span>
                           </div>
                         )}
                         {listing.location && (

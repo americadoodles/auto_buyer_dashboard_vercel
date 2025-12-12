@@ -27,6 +27,7 @@ export const LISTINGS_TABLE_COLUMNS = [
   { key: 'select', label: '', colSpan: 1, priority: 'high' },
   { key: 'score', label: 'Score', colSpan: 1, priority: 'high' },
   { key: 'vin', label: 'VIN', colSpan: 1, priority: 'high' }, // Wider for VIN numbers
+  { key: 'lpn', label: 'LPN', colSpan: 1, priority: 'medium' },
   { key: 'year', label: 'Year', colSpan: 1, priority: 'medium' },
   { key: 'make', label: 'Make', colSpan: 1, priority: 'medium' },
   { key: 'model', label: 'Model', colSpan: 1, priority: 'high' }, // Wider for model names
@@ -50,11 +51,11 @@ export const LISTINGS_TABLE_COLUMNS = [
 // Responsive breakpoints for table columns
 export const RESPONSIVE_BREAKPOINTS = {
   mobile: {
-    visibleColumns: ['select', 'score', 'vin', 'year', 'make', 'model', 'price', 'status', 'notify', 'slack', 'workflow', 'edit'],
+    visibleColumns: ['select', 'score', 'vin', 'lpn', 'year', 'make', 'model', 'price', 'status', 'notify', 'slack', 'workflow', 'edit'],
     hiddenColumns: ['miles', 'dom', 'source', 'location', 'buyer_username', 'updated_at', 'radius', 'buyMax', 'decision_reasons', 'contacts']
   },
   tablet: {
-    visibleColumns: ['select', 'score', 'vin', 'year', 'make', 'model', 'miles', 'price', 'dom', 'location', 'status', 'notify', 'slack', 'workflow', 'edit'],
+    visibleColumns: ['select', 'score', 'vin', 'lpn', 'year', 'make', 'model', 'miles', 'price', 'dom', 'location', 'status', 'notify', 'slack', 'workflow', 'edit'],
     hiddenColumns: ['source', 'buyer_username', 'updated_at', 'radius', 'buyMax', 'decision_reasons', 'contacts']
   },
   desktop: {

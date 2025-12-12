@@ -199,6 +199,9 @@ export const DealCreateModal: React.FC<DealCreateModalProps> = ({
                       {selectedLead.listing.vin && (
                         <div><span className="font-medium">VIN:</span> {selectedLead.listing.vin}</div>
                       )}
+                      {selectedLead.listing.lpn && (
+                        <div><span className="font-medium">LPN:</span> {selectedLead.listing.lpn}</div>
+                      )}
                     </div>
                   </div>
                 )}

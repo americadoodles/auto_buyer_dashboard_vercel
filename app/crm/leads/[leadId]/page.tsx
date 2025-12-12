@@ -188,24 +188,43 @@ export default function LeadDetailPage() {
       <div className="flex-1 flex gap-6 overflow-hidden px-6 pb-6 items-stretch">
         {/* Left Content - Scrollable */}
         <div className="flex-1 overflow-y-auto space-y-6 pr-4">
-          {/* Status Badges */}
-          <div className="mt-4 flex items-center space-x-4">
-            {lead.status && (
-              <Badge color="blue">
-                Status: {lead.status.name}
-              </Badge>
-            )}
-            {lead.source && (
-              <Badge color="orange">
-                Source: {lead.source.name}
-              </Badge>
-            )}
-            {lead.lead_score !== undefined && (
-              <Badge color="green">
-                Score: {lead.lead_score}
-              </Badge>
-            )}
-          </div>
+          {/* Alert if no listing_id */}
+          {!lead.listing_id && (
+            <div className="mt-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+              <div className="flex items-start">
+                <Icon name="alert-circle" className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5 mr-3 flex-shrink-0" />
+                <div>
+                  <h3 className="text-sm font-semibold text-yellow-800 dark:text-yellow-300 mb-1">
+                    No Listing Information
+                  </h3>
+                  <p className="text-sm text-yellow-700 dark:text-yellow-400">
+                    This lead does not have an associated listing.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Status Badges - Only show if listing_id exists */}
+          {lead.listing_id && (
+            <div className="mt-4 flex items-center space-x-4">
+              {lead.status && (
+                <Badge color="blue">
+                  Status: {lead.status.name}
+                </Badge>
+              )}
+              {lead.source && (
+                <Badge color="orange">
+                  Source: {lead.source.name}
+                </Badge>
+              )}
+              {lead.lead_score !== undefined && (
+                <Badge color="green">
+                  Score: {lead.lead_score}
+                </Badge>
+              )}
+            </div>
+          )}
 
           {/* Edit Fields Section */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-4">
@@ -284,75 +303,77 @@ export default function LeadDetailPage() {
             )}
           </div>
 
-          {/* Lead Information Section */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-4">
-            <h4 className="text-md font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Lead Information</h4>
+          {/* Lead Information Section - Only show if listing_id exists */}
+          {lead.listing_id && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-4">
+              <h4 className="text-md font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Lead Information</h4>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Status
-              </label>
-              <select
-                value={statusId || ''}
-                onChange={(e) => setStatusId(e.target.value ? parseInt(e.target.value) : undefined)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                disabled={statusesLoading}
-              >
-                <option value="">Select status</option>
-                {statuses.map((status) => (
-                  <option key={status.id} value={status.id}>
-                    {status.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Status
+                </label>
+                <select
+                  value={statusId || ''}
+                  onChange={(e) => setStatusId(e.target.value ? parseInt(e.target.value) : undefined)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  disabled={statusesLoading}
+                >
+                  <option value="">Select status</option>
+                  {statuses.map((status) => (
+                    <option key={status.id} value={status.id}>
+                      {status.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Source
-              </label>
-              <select
-                value={sourceId || ''}
-                onChange={(e) => setSourceId(e.target.value ? parseInt(e.target.value) : undefined)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                disabled={sourcesLoading}
-              >
-                <option value="">Select source</option>
-                {sources.map((source) => (
-                  <option key={source.id} value={source.id}>
-                    {source.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Source
+                </label>
+                <select
+                  value={sourceId || ''}
+                  onChange={(e) => setSourceId(e.target.value ? parseInt(e.target.value) : undefined)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  disabled={sourcesLoading}
+                >
+                  <option value="">Select source</option>
+                  {sources.map((source) => (
+                    <option key={source.id} value={source.id}>
+                      {source.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Lead Score
-              </label>
-              <Input
-                type="number"
-                min="0"
-                max="100"
-                value={leadScore}
-                onChange={(e) => setLeadScore(parseInt(e.target.value) || 0)}
-                placeholder="Enter lead score (0-100)"
-              />
-            </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Lead Score
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={leadScore}
+                  onChange={(e) => setLeadScore(parseInt(e.target.value) || 0)}
+                  placeholder="Enter lead score (0-100)"
+                />
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Notes
-              </label>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Add notes about this lead..."
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                rows={4}
-              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Notes
+                </label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Add notes about this lead..."
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  rows={4}
+                />
+              </div>
             </div>
-          </div>
+          )}
           {lead.listing_id && (
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-2">
               <h4 className="text-md font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Related Listing</h4>
@@ -372,7 +393,7 @@ export default function LeadDetailPage() {
 
           {/* Lead Metadata */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-2">
-            <h4 className="text-md font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Lead Information</h4>
+            <h4 className="text-md font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Lead Activity</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="font-medium text-gray-700 dark:text-gray-300">Assigned To:</span>

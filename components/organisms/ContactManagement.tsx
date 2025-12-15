@@ -51,7 +51,6 @@ interface ContactManagementProps {
   totalPages: number;
   onPageChange: (page: number) => void;
   onContactClick: (contactId: string) => void;
-  onCreateContact: () => void;
   onExportContacts: () => void;
   onContactUpdated?: () => void;
 }
@@ -63,7 +62,6 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
   totalPages,
   onPageChange,
   onContactClick,
-  onCreateContact,
   onExportContacts,
   onContactUpdated
 }) => {
@@ -187,7 +185,10 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
               <Icon name="download" className="w-4 h-4 mr-2" />
               Export
             </Button>
-            <Button onClick={onCreateContact}>
+            <Button onClick={() => {
+              setSelectedContact(undefined);
+              setIsEditModalOpen(true);
+            }}>
               <Icon name="plus" className="w-4 h-4 mr-2" />
               New Contact
             </Button>
@@ -424,27 +425,25 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
       </div>
 
       {/* Contact Edit Modal */}
-      {selectedContact && (
-        <ContactEditModal
-          contact={{
-            id: selectedContact.id,
-            first_name: selectedContact.first_name,
-            last_name: selectedContact.last_name,
-            email: selectedContact.email,
-            phone: selectedContact.phone,
-            mobile: selectedContact.mobile,
-            company: selectedContact.company,
-            job_title: selectedContact.job_title,
-            notes: selectedContact.notes || '',
-            is_active: selectedContact.is_active,
-            created_at: selectedContact.created_at,
-            updated_at: selectedContact.updated_at
-          }}
-          isOpen={isEditModalOpen}
-          onClose={handleCloseEditModal}
-          onSave={handleContactSaved}
-        />
-      )}
+      <ContactEditModal
+        contact={selectedContact ? {
+          id: selectedContact.id,
+          first_name: selectedContact.first_name,
+          last_name: selectedContact.last_name,
+          email: selectedContact.email,
+          phone: selectedContact.phone,
+          mobile: selectedContact.mobile,
+          company: selectedContact.company,
+          job_title: selectedContact.job_title,
+          notes: selectedContact.notes || '',
+          is_active: selectedContact.is_active,
+          created_at: selectedContact.created_at,
+          updated_at: selectedContact.updated_at
+        } : null}
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        onSave={handleContactSaved}
+      />
 
       {/* Delete Confirmation Modal */}
       <ConfirmationModal

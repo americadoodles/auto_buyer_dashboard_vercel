@@ -295,6 +295,7 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
                   { key: 'company', label: 'Company', sortable: true },
                   { key: 'email', label: 'Email', sortable: true },
                   { key: 'phone', label: 'Phone', sortable: true },
+                  { key: 'mobile', label: 'Mobile', sortable: true },
                   { key: 'assigned', label: 'Assigned To', sortable: true },
                   { key: 'status', label: 'Status', sortable: true },
                   { key: 'actions', label: 'Actions', sortable: false }
@@ -332,7 +333,10 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
                       {contact.email || '-'}
                     </td>
                     <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                      {contact.phone || contact.mobile || '-'}
+                      {contact.phone || '-'}
+                    </td>
+                    <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      {contact.mobile || '-'}
                     </td>
                     <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {contact.assigned_to?.username || 'Unassigned'}

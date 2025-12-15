@@ -12,6 +12,10 @@ import { Pagination } from '../molecules/Pagination';
 import { ContactEditModal } from './ContactEditModal';
 import { ConfirmationModal } from './ConfirmationModal';
 import { Listing } from '../../lib/types/listing';
+import { deleteContact } from 'lib/services/listingManagementApi';
+import { leadsApi } from '../../lib/services/leadsApi';
+import { dealsApi } from '../../lib/services/dealsApi';
+import { useToast } from '../../hooks/useToast';
 
 interface Contact {
   id: string;
@@ -65,6 +69,7 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
   onExportContacts,
   onContactUpdated
 }) => {
+  const { showSuccess, showError } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -154,8 +159,40 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
     
     setDeleting(true);
     try {
-      // TODO: Implement contact removal API call
-      console.log('Remove contact:', contactToDelete.id);
+      // First, check if contact is related to any leads or deals
+      // Fetch all leads and filter by contact_id
+      const allLeads = await leadsApi.getLeads({ skip: 0, limit: 1000 });
+      const relatedLeads = allLeads.filter(lead => lead.contact_id === contactToDelete.id);
+      
+      // Fetch deals filtered by contact_id
+      const relatedDeals = await dealsApi.getDeals({ 
+        skip: 0, 
+        limit: 1000, 
+        contact_id: contactToDelete.id 
+      });
+      
+      // Remove contact_id from all related leads
+      // Using null to explicitly unset the field (backend expects null, not undefined)
+      const leadUpdatePromises = relatedLeads.map(lead => 
+        leadsApi.updateLead(lead.id, { contact_id: null as unknown as string | undefined })
+      );
+      
+      // Remove contact_id from all related deals
+      // Using null to explicitly unset the field (backend expects null, not undefined)
+      const dealUpdatePromises = relatedDeals.map(deal => 
+        dealsApi.updateDeal(deal.id, { contact_id: null as unknown as string | undefined })
+      );
+      
+      // Wait for all updates to complete
+      await Promise.all([...leadUpdatePromises, ...dealUpdatePromises]);
+      
+      // Now delete the contact
+      await deleteContact(contactToDelete.id);
+      
+      // Show success toast
+      const contactName = `${contactToDelete.first_name} ${contactToDelete.last_name}`;
+      showSuccess('Contact Deleted', `${contactName} has been successfully deleted`);
+      
       // Notify parent to refresh the contacts list
       if (onContactUpdated) {
         onContactUpdated();
@@ -164,6 +201,8 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
       setContactToDelete(undefined);
     } catch (error) {
       console.error('Error deleting contact:', error);
+      const contactName = contactToDelete ? `${contactToDelete.first_name} ${contactToDelete.last_name}` : 'Contact';
+      showError('Failed to Delete Contact', `Failed to delete ${contactName}. ${error instanceof Error ? error.message : 'Please try again.'}`);
     } finally {
       setDeleting(false);
     }

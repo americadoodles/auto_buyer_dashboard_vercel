@@ -159,33 +159,6 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
     
     setDeleting(true);
     try {
-      // First, check if contact is related to any leads or deals
-      // Fetch all leads and filter by contact_id
-      const allLeads = await leadsApi.getLeads({ skip: 0, limit: 1000 });
-      const relatedLeads = allLeads.filter(lead => lead.contact_id === contactToDelete.id);
-      
-      // Fetch deals filtered by contact_id
-      const relatedDeals = await dealsApi.getDeals({ 
-        skip: 0, 
-        limit: 1000, 
-        contact_id: contactToDelete.id 
-      });
-      
-      // Remove contact_id from all related leads
-      // Using null to explicitly unset the field (backend expects null, not undefined)
-      const leadUpdatePromises = relatedLeads.map(lead => 
-        leadsApi.updateLead(lead.id, { contact_id: null as unknown as string | undefined })
-      );
-      
-      // Remove contact_id from all related deals
-      // Using null to explicitly unset the field (backend expects null, not undefined)
-      const dealUpdatePromises = relatedDeals.map(deal => 
-        dealsApi.updateDeal(deal.id, { contact_id: null as unknown as string | undefined })
-      );
-      
-      // Wait for all updates to complete
-      await Promise.all([...leadUpdatePromises, ...dealUpdatePromises]);
-      
       // Now delete the contact
       await deleteContact(contactToDelete.id);
       

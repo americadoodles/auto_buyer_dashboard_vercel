@@ -148,7 +148,7 @@ def update_contact(contact_id: UUID, contact_update: ContactUpdate) -> Optional[
             return None
 
 def delete_contact(contact_id: UUID) -> bool:
-    """Delete a contact"""
+    """Delete a contact. First removes contact_id from related leads and deals."""
     if not DB_ENABLED:
         return False
     
@@ -158,6 +158,21 @@ def delete_contact(contact_id: UUID) -> bool:
         
         try:
             with conn.cursor() as cur:
+                # First, remove contact_id from all related leads
+                cur.execute("""
+                    UPDATE leads 
+                    SET contact_id = NULL, updated_at = NOW()
+                    WHERE contact_id = %s
+                """, (contact_id,))
+                
+                # Then, remove contact_id from all related deals
+                cur.execute("""
+                    UPDATE deals 
+                    SET contact_id = NULL, updated_at = NOW()
+                    WHERE contact_id = %s
+                """, (contact_id,))
+                
+                # Finally, delete the contact
                 cur.execute("DELETE FROM contacts WHERE id = %s", (contact_id,))
                 return cur.rowcount > 0
                 

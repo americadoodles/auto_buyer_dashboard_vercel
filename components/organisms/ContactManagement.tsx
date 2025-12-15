@@ -325,7 +325,6 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <TableHeader
                 columns={[
-                  { key: 'updated_at', label: 'Updated At', sortable: true },
                   { key: 'name', label: 'Name', sortable: true },
                   { key: 'company', label: 'Company', sortable: true },
                   { key: 'email', label: 'Email', sortable: true },
@@ -333,26 +332,24 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
                   { key: 'mobile', label: 'Mobile', sortable: true },
                   { key: 'assigned', label: 'Assigned To', sortable: true },
                   { key: 'status', label: 'Status', sortable: true },
+                  { key: 'updated_at', label: 'Updated At', sortable: true },
                   { key: 'actions', label: 'Actions', sortable: false }
                 ]}
               />
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {contacts.map((contact) => (
-                  <TableRow key={contact.id} onClick={() => handleRowClick(contact)} className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                    <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {formatCalendarDate(contact.updated_at)}
-                    </td>
+                  <TableRow key={contact.id} onClick={() => handleRowClick(contact)} className="cursor-pointer group hover:bg-gray-50 dark:hover:bg-gray-700/50">
                     <td className="px-2 py-2 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
-                          <div className="h-10 w-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
-                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          <div className="h-10 w-10 rounded-full bg-gray-300 dark:bg-gray-600 group-hover:bg-blue-500 dark:group-hover:bg-blue-600 transition-colors duration-150 flex items-center justify-center">
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-white transition-colors duration-150">
                               {contact.first_name?.[0] || ''}{contact.last_name?.[0] || ''}
                             </span>
                           </div>
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900 dark:text-white">
+                          <div className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">
                             {contact.first_name} {contact.last_name}
                           </div>
                           {contact.job_title && (
@@ -386,6 +383,9 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
                           {contact.is_active ? 'Active' : 'Inactive'}
                         </Badge>
                       )}
+                    </td>
+                    <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {formatCalendarDate(contact.updated_at)}
                     </td>
                     <td className="px-2 py-2 whitespace-nowrap text-sm font-medium">
                       <div className="flex space-x-2">

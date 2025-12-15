@@ -10,6 +10,7 @@ import { Input } from '../atoms/Input';
 import { Icon } from '../atoms/Icon';
 import { Pagination } from '../molecules/Pagination';
 import { ContactEditModal } from './ContactEditModal';
+import { ConfirmationModal } from './ConfirmationModal';
 import { Listing } from '../../lib/types/listing';
 
 interface Contact {
@@ -74,6 +75,9 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
   const [selectedVehicleListing, setSelectedVehicleListing] = useState<Listing | undefined>(undefined);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedContact, setSelectedContact] = useState<Contact | undefined>(undefined);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [contactToDelete, setContactToDelete] = useState<Contact | undefined>(undefined);
+  const [deleting, setDeleting] = useState(false);
 
   const getTypeColor = (type: string) => {
     switch (type.toLowerCase()) {
@@ -123,6 +127,11 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
     setIsEditModalOpen(true);
   };
 
+  const handleRowClick = (contact: Contact) => {
+    setSelectedContact(contact);
+    setIsEditModalOpen(true);
+  };
+
   const handleCloseEditModal = () => {
     setIsEditModalOpen(false);
     setSelectedContact(undefined);
@@ -133,6 +142,32 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
     // Notify parent to refresh the contacts list
     if (onContactUpdated) {
       onContactUpdated();
+    }
+  };
+
+  const handleRemoveContact = (e: React.MouseEvent, contact: Contact) => {
+    e.stopPropagation(); // Prevent row click
+    setContactToDelete(contact);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!contactToDelete) return;
+    
+    setDeleting(true);
+    try {
+      // TODO: Implement contact removal API call
+      console.log('Remove contact:', contactToDelete.id);
+      // Notify parent to refresh the contacts list
+      if (onContactUpdated) {
+        onContactUpdated();
+      }
+      setShowDeleteConfirm(false);
+      setContactToDelete(undefined);
+    } catch (error) {
+      console.error('Error deleting contact:', error);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -303,7 +338,7 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
               />
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {contacts.map((contact) => (
-                  <TableRow key={contact.id} onClick={() => onContactClick(contact.id)} className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                  <TableRow key={contact.id} onClick={() => handleRowClick(contact)} className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50">
                     <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {formatCalendarDate(contact.updated_at)}
                     </td>
@@ -341,7 +376,7 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
                     <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {contact.assigned_to?.username || 'Unassigned'}
                     </td>
-                    <td className="px-2 py-2 whitespace-nowrap">
+                    <td className="px-2 py-2 whitespace-nowrap text-center">
                       {contact.status ? (
                         <Badge color={contact.status.color || 'blue'}>
                           {contact.status.name}
@@ -354,27 +389,19 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
                     </td>
                     <td className="px-2 py-2 whitespace-nowrap text-sm font-medium">
                       <div className="flex space-x-2">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={(e) => handleViewVehicle(e, contact)}
-                          title="View Vehicle Information"
-                        >
-                          <Icon name="eye" className="w-4 h-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={(e) => handleEditContact(e, contact)}
-                          title="Edit Contact"
-                        >
-                          <Icon name="edit" className="w-4 h-4" />
-                        </Button>
                         <Button variant="ghost" size="sm">
                           <Icon name="phone" className="w-4 h-4" />
                         </Button>
                         <Button variant="ghost" size="sm">
                           <Icon name="mail" className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          onClick={(e) => handleRemoveContact(e, contact)}
+                          className="text-red-600 dark:text-red-400 border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center"
+                          size="sm"
+                        >
+                          <Icon name="trash-2" className="w-4 h-4" />
                         </Button>
                       </div>
                     </td>
@@ -418,6 +445,23 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
           onSave={handleContactSaved}
         />
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteConfirm}
+        onClose={() => {
+          setShowDeleteConfirm(false);
+          setContactToDelete(undefined);
+        }}
+        onConfirm={handleDeleteConfirm}
+        title="Confirm Deletion"
+        message={contactToDelete ? `Are you sure you want to delete ${contactToDelete.first_name} ${contactToDelete.last_name}? This action cannot be undone.` : ''}
+        confirmText="Yes"
+        cancelText="No"
+        variant="danger"
+        loading={deleting}
+        loadingText="Deleting..."
+      />
     </div>
   );
 };

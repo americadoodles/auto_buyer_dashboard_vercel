@@ -14,78 +14,61 @@ export default function ContactsPage() {
     limit: 1000, // Fetch a large number to get all converted leads
   });
 
-  const { statuses } = useLeadStatuses();
-
-  // Find the "Converted" status ID
-  const convertedStatusId = useMemo(() => {
-    const convertedStatus = statuses.find(
-      status => status.name.toLowerCase() === 'converted'
-    );
-    return convertedStatus?.id;
-  }, [statuses]);
-
-  // Filter leads: must have contact_id and status must be "Converted"
-  const convertedLeadsWithContacts = useMemo(() => {
-    return leads.filter(lead => {
-      // Must have contact_id
-      if (!lead.contact_id) return false;
-      
-      // Check if status is "Converted" - check both status object and status_id
-      const isConverted = 
-        lead.status?.name?.toLowerCase() === 'converted' ||
-        (convertedStatusId && lead.status_id === convertedStatusId);
-      
-      return isConverted;
-    });
-  }, [leads, convertedStatusId]);
-
-  // Transform leads to contacts format
+  console.log('leads: ', leads)
   const contacts = useMemo(() => {
-    return convertedLeadsWithContacts.map(lead => {
-      const contact = lead.contact;
-      if (!contact) return null;
-
-      return {
-        id: lead.contact_id || lead.id,
-        first_name: contact.first_name || '',
-        last_name: contact.last_name || '',
-        email: contact.email || '',
-        phone: contact.phone || '',
-        mobile: contact.mobile || '',
-        company: contact.company || '',
-        job_title: contact.job_title || '',
-        notes: contact.notes || '',
-        contact_type: contact.contact_type ? {
-          id: contact.contact_type.id || 0,
-          name: contact.contact_type.name || 'Contact',
-          color: contact.contact_type.color || 'blue'
-        } : {
-          id: 0,
-          name: 'Contact',
-          color: 'blue'
-        },
-        assigned_to: lead.assigned_to_user ? {
-          id: lead.assigned_to_user.id,
-          username: lead.assigned_to_user.username || 'Unknown'
-        } : {
-          id: '',
-          username: 'Unassigned'
-        },
-        is_active: contact.is_active ?? true,
-        created_at: lead.created_at,
-        updated_at: lead.updated_at,
-        last_contact: lead.updated_at,
-        // Add status from lead
-        status: lead.status ? {
-          id: lead.status.id,
-          name: lead.status.name,
-          color: lead.status.color_code
-        } : undefined,
-        // Add listing/vehicle information
-        listing: lead.listing
-      };
-    }).filter((contact): contact is NonNullable<typeof contact> => contact !== null);
-  }, [convertedLeadsWithContacts]);
+    const contactMap = new Map<string, any>();
+    
+    leads
+      .filter(lead => lead.contact) // Only include leads with contacts
+      .forEach(lead => {
+        const contact = lead.contact!; // Safe to use ! since we filtered above
+        const contactId = lead.contact_id || contact.id;
+        // Only add if we haven't seen this contact ID before
+        if (!contactMap.has(contactId)) {
+          contactMap.set(contactId, {
+            id: contactId,
+            first_name: contact.first_name || '',
+            last_name: contact.last_name || '',
+            email: contact.email || '',
+            phone: contact.phone || '',
+            mobile: contact.mobile || '',
+            company: contact.company || '',
+            job_title: contact.job_title || '',
+            notes: contact.notes || '',
+            contact_type: contact.contact_type ? {
+              id: contact.contact_type.id || 0,
+              name: contact.contact_type.name || 'Contact',
+              color: contact.contact_type.color || 'blue'
+            } : {
+              id: 0,
+              name: 'Contact',
+              color: 'blue'
+            },
+            assigned_to: lead.assigned_to_user ? {
+              id: lead.assigned_to_user.id,
+              username: lead.assigned_to_user.username || 'Unknown'
+            } : {
+              id: '',
+              username: 'Unassigned'
+            },
+            is_active: contact.is_active ?? true,
+            created_at: lead.created_at,
+            updated_at: lead.updated_at,
+            last_contact: lead.updated_at,
+            // Add status from lead
+            status: lead.status ? {
+              id: lead.status.id,
+              name: lead.status.name,
+              color: lead.status.color_code
+            } : undefined,
+            // Add listing/vehicle information
+            listing: lead.listing
+          });
+        }
+      });
+    
+    return Array.from(contactMap.values());
+  }, [leads]);
 
   // Paginate contacts
   const paginatedContacts = useMemo(() => {

@@ -61,7 +61,7 @@ export default function TestAuthPage() {
             <div className="space-y-2">
               <p><strong>Loading:</strong> {loading ? 'Yes' : 'No'}</p>
               <p><strong>User:</strong> {user ? JSON.stringify(user, null, 2) : 'None'}</p>
-              <p><strong>Token:</strong> {typeof window !== 'undefined' ? localStorage.getItem('auth.token')?.substring(0, 20) + '...' : 'N/A'}</p>
+              <p><strong>Token:</strong> {typeof window !== 'undefined' ? localStorage.getItem('auth.token')?.substring(0, 20) + '...' : '-'}</p>
             </div>
           </div>
 

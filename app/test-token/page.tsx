@@ -92,7 +92,7 @@ export default function TestTokenPage() {
         <div className="bg-white rounded-lg shadow p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">Current User</h2>
           <p className="text-gray-600">Logged in as: {user.email}</p>
-          <p className="text-gray-600">Role: {user.role || 'N/A'}</p>
+          <p className="text-gray-600">Role: {user.role || '-'}</p>
         </div>
 
         <div className="bg-white rounded-lg shadow p-6 mb-6">

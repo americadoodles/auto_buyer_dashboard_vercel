@@ -425,10 +425,10 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
                       </div>
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {lead.contact?.email || "N/A"}
+                      {lead.contact?.email || "-"}
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {lead.contact?.phone || "N/A"}
+                      {lead.contact?.phone || "-"}
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap">
                       <Badge color={lead.status.color}>
@@ -436,31 +436,31 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
                       </Badge>
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {lead.source?.name || "N/A"}
+                      {lead.source?.name || "-"}
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                       {lead.assigned_to?.username || "Unassigned"}
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {lead.listing?.location || "N/A"}
+                      {lead.listing?.location || "-"}
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {lead.listing?.vin || "N/A"}
+                      {lead.listing?.vin || "-"}
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {lead.listing?.year || "N/A"}
+                      {lead.listing?.year || "-"}
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {lead.listing?.make || "N/A"}
+                      {lead.listing?.make || "-"}
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {lead.listing?.model || "N/A"}
+                      {lead.listing?.model || "-"}
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {lead.listing?.trim || "N/A"}
+                      {lead.listing?.trim || "-"}
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {lead.listing?.miles?.toLocaleString() || "N/A"}
+                      {lead.listing?.miles?.toLocaleString() || "-"}
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap">
                       <Badge color={getScoreColor(lead.lead_score)}>

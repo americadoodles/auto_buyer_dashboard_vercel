@@ -30,7 +30,7 @@ export const BuyerPerformanceKpi: React.FC<BuyerPerformanceKpiProps> = ({ stats 
   };
 
   const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString();
   };
 

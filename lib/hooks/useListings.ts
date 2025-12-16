@@ -4,7 +4,7 @@ import { MOCK_DATA } from '../data/mockData';
 import { ApiService } from '../services/api';
 import { useAuth } from '../../app/auth/useAuth';
 import { useToast } from '../../hooks/useToast';
-import { getCurrentMonthRange } from 'lib/services/helper';
+import { getCurrentTodayRange } from 'lib/services/helper';
 
 export const useListings = () => {
   const { user } = useAuth();
@@ -18,7 +18,7 @@ export const useListings = () => {
   
 
   
-  const initialDateRange = getCurrentMonthRange();
+  const initialDateRange = getCurrentTodayRange();
   const [startDate, setStartDate] = useState<Date | null>(initialDateRange.start);
   const [endDate, setEndDate] = useState<Date | null>(initialDateRange.end);
 
@@ -70,7 +70,7 @@ export const useListings = () => {
         
         if (isHealthy) {
           // Use current year date range
-          const monthRange = getCurrentMonthRange();
+          const monthRange = getCurrentTodayRange();
           setStartDate(monthRange.start);
           setEndDate(monthRange.end);
           // Use appropriate API call based on user role

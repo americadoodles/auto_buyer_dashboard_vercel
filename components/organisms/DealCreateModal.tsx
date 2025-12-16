@@ -42,6 +42,7 @@ export const DealCreateModal: React.FC<DealCreateModalProps> = ({
   const [leads, setLeads] = useState<Lead[]>([]);
   const [selectedLeadId, setSelectedLeadId] = useState<string | undefined>(undefined);
   const [selectedLead, setSelectedLead] = useState<Lead | undefined>(undefined);
+  const [aiLoading, setAiLoading] = useState(false);
   
   // Use hooks for stages and categories
   const { stages, loading: stagesLoading } = useDealStages();
@@ -111,6 +112,47 @@ export const DealCreateModal: React.FC<DealCreateModalProps> = ({
   }, [isOpen, stageId]);
 
   const canSubmit = name.trim().length > 0 && selectedStageId !== undefined && !loading;
+
+  const handleAIDraft = async () => {
+    setAiLoading(true);
+    setError(null);
+    try {
+      // Prepare context for AI
+      const vehicleInfo = selectedLead?.listing ? {
+        year: selectedLead.listing.year,
+        make: selectedLead.listing.make,
+        model: selectedLead.listing.model,
+        trim: selectedLead.listing.trim || undefined,
+        vin: selectedLead.listing.vin || undefined,
+      } : undefined;
+
+      const contactInfo = selectedLead?.contact ? {
+        first_name: selectedLead.contact.first_name,
+        last_name: selectedLead.contact.last_name,
+        company: selectedLead.contact.company || undefined,
+        email: selectedLead.contact.email || undefined,
+        phone: selectedLead.contact.phone || selectedLead.contact.mobile || undefined,
+      } : undefined;
+
+      const draft = await dealsApi.generateAIDraft({
+        lead_id: selectedLeadId,
+        contact_id: contactId,
+        vehicle_info: vehicleInfo,
+        contact_info: contactInfo,
+        additional_context: notes || undefined,
+      });
+
+      // Populate fields with AI suggestions
+      setName(draft.name);
+      setDescription(draft.description);
+      setNotes(draft.notes);
+      setExpectedCloseDate(draft.expected_close_date);
+    } catch (e: any) {
+      setError(e?.message || 'Failed to generate AI draft');
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   const handleCreate = async () => {
     if (!canSubmit) return;
@@ -234,9 +276,30 @@ export const DealCreateModal: React.FC<DealCreateModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Deal Name <span className="text-red-500">*</span>
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-sm font-medium text-gray-700">
+                Deal Name <span className="text-red-500">*</span>
+              </label>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleAIDraft}
+                disabled={aiLoading || loading}
+                className="text-xs px-3 py-1 h-7"
+              >
+                {aiLoading ? (
+                  <>
+                    <Icon name="loader" className="w-3 h-3 mr-1 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Icon name="sparkles" className="w-3 h-3 mr-1" />
+                    Draft with AI
+                  </>
+                )}
+              </Button>
+            </div>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}

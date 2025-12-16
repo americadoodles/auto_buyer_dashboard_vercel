@@ -199,5 +199,42 @@ export const dealsApi = {
 
   async getSalesMetrics(): Promise<SalesPerformanceMetrics> {
     return apiCall<SalesPerformanceMetrics>('/crm/deals/metrics');
+  },
+
+  // AI Draft generation
+  async generateAIDraft(params: {
+    lead_id?: string;
+    contact_id?: string;
+    vehicle_info?: {
+      year?: number;
+      make?: string;
+      model?: string;
+      trim?: string;
+      vin?: string;
+    };
+    contact_info?: {
+      first_name?: string;
+      last_name?: string;
+      company?: string;
+      email?: string;
+      phone?: string;
+    };
+    additional_context?: string;
+  }): Promise<{
+    name: string;
+    description: string;
+    notes: string;
+    expected_close_date: string;
+  }> {
+    return apiCall<{
+      name: string;
+      description: string;
+      notes: string;
+      expected_close_date: string;
+    }>('/crm/deals/ai-draft', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params)
+    });
   }
 };

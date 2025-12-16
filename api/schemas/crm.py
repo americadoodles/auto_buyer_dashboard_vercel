@@ -606,3 +606,16 @@ class SalesPerformanceMetrics(BaseModel):
     avg_deal_size: Decimal
     avg_sales_cycle: Optional[float] = None
     revenue_by_stage: Dict[str, Decimal]
+
+class DealAIDraftRequest(BaseModel):
+    lead_id: Optional[UUID] = None
+    contact_id: Optional[UUID] = None
+    vehicle_info: Optional[Dict[str, Any]] = None
+    contact_info: Optional[Dict[str, Any]] = None
+    additional_context: Optional[str] = None
+
+class DealAIDraftResponse(BaseModel):
+    name: str
+    description: str
+    notes: str
+    expected_close_date: str  # ISO date string

@@ -25,7 +25,9 @@ import {
   DollarSign,
   Car,
   FileText,
-  MapPin
+  MapPin,
+  Sparkles,
+  Loader2
 } from 'lucide-react';
 
 interface IconProps {
@@ -61,7 +63,9 @@ const iconMap: Record<string, LucideIcon> = {
   'dollar-sign': DollarSign,
   'car': Car,
   'file-text': FileText,
-  'map-pin': MapPin
+  'map-pin': MapPin,
+  'sparkles': Sparkles,
+  'loader': Loader2
 };
 
 export const Icon: React.FC<IconProps> = ({ 

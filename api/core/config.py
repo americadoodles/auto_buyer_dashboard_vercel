@@ -42,6 +42,9 @@ class Settings(BaseSettings):
     BLOB_READ_WRITE_TOKEN: str = os.getenv("BLOB_READ_WRITE_TOKEN", "")
     BLOB_STORE_URL: str = os.getenv("BLOB_STORE_URL", "")  
 
+    # OpenAI settings
+    OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 

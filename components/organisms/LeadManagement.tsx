@@ -12,6 +12,8 @@ import { Button } from "../atoms/Button";
 import { Input } from "../atoms/Input";
 import { Icon } from "../atoms/Icon";
 import { Pagination } from "../molecules/Pagination";
+import { ViewToggle, ViewMode } from "../molecules/ViewToggle";
+import { LeadsCardGrid } from "./LeadsCardGrid";
 import { LeadCreateWithSelectionModal } from "./LeadCreateWithSelectionModal";
 import { Lead as BaseLead, LeadStatus, LeadSource } from "../../lib/types/lead";
 import { useLeadSources, useLeadStatuses } from "../../lib/hooks/useLeads";
@@ -110,6 +112,12 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateLeadModalOpen, setIsCreateLeadModalOpen] = useState(false);
+  // View mode state - default to cards
+  const [viewMode, setViewMode] = useState<ViewMode>('cards');
+  // Liked leads state (for card view)
+  const [likedLeads, setLikedLeads] = useState<Set<string>>(new Set());
+  // Selected leads state
+  const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
   
   // Derive filter values from parent props
   const statusFilter = currentStatusFilter === undefined ? "all" : currentStatusFilter.toString();
@@ -393,115 +401,176 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
 
         {/* Lead List */}
         <Card className="p-6">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <TableHeader
-                columns={[
-                  { key: "score", label: "Score", sortable: true },
-                  { key: "vin", label: "VIN", sortable: true },
-                  { key: "lpn", label: "LPN", sortable: true },
-                  { key: "price", label: "Price", sortable: true },
-                  { key: "year", label: "Year", sortable: true },
-                  { key: "make", label: "Make", sortable: true },
-                  { key: "model", label: "Model", sortable: true },
-                  { key: "miles", label: "Miles", sortable: true },
-                  { key: "listing_source", label: "Source", sortable: true },
-                  { key: "status", label: "Status", sortable: true },
-                  { key: "name", label: "Name", sortable: true },
-                  { key: "email", label: "Email", sortable: true },
-                  { key: "updated", label: "Updated", sortable: true },
-                ]}
-              />
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {leads.map((lead) => (
-                  <TableRow
-                    key={lead.id}
-                    onClick={() => handleEditLead(lead)}
-                    className="cursor-pointer group transition-colors duration-150"
-                  >
-                    <td className="px-4 py-2 whitespace-nowrap">
-                      <Badge color={getScoreColor(lead.lead_score)}>
-                        {lead.lead_score}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {lead.listing?.vin || "-"}
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {lead.listing?.lpn || "-"}
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {lead.listing?.price ? formatCurrency(lead.listing.price) : "-"}
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {lead.listing?.year || "-"}
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {lead.listing?.make || "-"}
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {lead.listing?.model ? (lead.listing.model.length > 10 ? lead.listing.model.substring(0, 10) + "..." : lead.listing.model) : "-"}
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {lead.listing?.miles?.toLocaleString() || "-"}
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {(() => {
-                        const parsedSource = parseSourceUrl(lead.listing?.source);
-                        if (parsedSource) {
-                          return (
-                            <Link
-                              href={parsedSource.href}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs text-blue-600 dark:text-blue-400 inline-flex items-center gap-1 hover:text-blue-700 dark:hover:text-blue-300"
-                              title={parsedSource.href}
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <span>{parsedSource.host}</span>
-                              <ExternalLink className="h-3 w-3 flex-shrink-0" />
-                            </Link>
-                          );
-                        }
-                        return <span>{lead.listing?.source || "-"}</span>;
-                      })()}
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap">
-                      <Badge color={lead.status.color}>
-                        {lead.status.name}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap">
-                      <div className="flex items-center">
-                  
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">
-                            {lead.contact?.first_name || "Unknown"}{" "}
-                            {lead.contact?.last_name || ""}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {lead.contact?.email || "-"}
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {lead.updated_at ? formatDate(lead.updated_at) : formatDate(lead.created_at)}
-                    </td>
-                  </TableRow>
-                ))}
-              </tbody>
-            </table>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Leads</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {leads.length} lead{leads.length !== 1 ? 's' : ''} showing
+                {selectedLeads.size > 0 && (
+                  <span className="ml-2 text-blue-600 dark:text-blue-400 font-medium">
+                    • {selectedLeads.size} selected
+                  </span>
+                )}
+              </p>
+            </div>
+            <div className="flex items-center space-x-3">
+              <ViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                Page {currentPage} of {totalPages}
+              </div>
+            </div>
           </div>
 
-          {/* Pagination */}
-          <div className="mt-6">
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={onPageChange}
-            />
-          </div>
+          {viewMode === 'table' ? (
+            <>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <TableHeader
+                    columns={[
+                      { key: "score", label: "Score", sortable: true },
+                      { key: "vin", label: "VIN", sortable: true },
+                      { key: "lpn", label: "LPN", sortable: true },
+                      { key: "price", label: "Price", sortable: true },
+                      { key: "year", label: "Year", sortable: true },
+                      { key: "make", label: "Make", sortable: true },
+                      { key: "model", label: "Model", sortable: true },
+                      { key: "miles", label: "Miles", sortable: true },
+                      { key: "listing_source", label: "Source", sortable: true },
+                      { key: "status", label: "Status", sortable: true },
+                      { key: "name", label: "Name", sortable: true },
+                      { key: "email", label: "Email", sortable: true },
+                      { key: "updated", label: "Updated", sortable: true },
+                    ]}
+                  />
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    {leads.map((lead) => (
+                      <TableRow
+                        key={lead.id}
+                        onClick={() => handleEditLead(lead)}
+                        className="cursor-pointer group transition-colors duration-150"
+                      >
+                        <td className="px-4 py-2 whitespace-nowrap">
+                          <Badge color={getScoreColor(lead.lead_score)}>
+                            {lead.lead_score}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                          {lead.listing?.vin || "-"}
+                        </td>
+                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                          {lead.listing?.lpn || "-"}
+                        </td>
+                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                          {lead.listing?.price ? formatCurrency(lead.listing.price) : "-"}
+                        </td>
+                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                          {lead.listing?.year || "-"}
+                        </td>
+                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                          {lead.listing?.make || "-"}
+                        </td>
+                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                          {lead.listing?.model ? (lead.listing.model.length > 10 ? lead.listing.model.substring(0, 10) + "..." : lead.listing.model) : "-"}
+                        </td>
+                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                          {lead.listing?.miles?.toLocaleString() || "-"}
+                        </td>
+                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                          {(() => {
+                            const parsedSource = parseSourceUrl(lead.listing?.source);
+                            if (parsedSource) {
+                              return (
+                                <Link
+                                  href={parsedSource.href}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-xs text-blue-600 dark:text-blue-400 inline-flex items-center gap-1 hover:text-blue-700 dark:hover:text-blue-300"
+                                  title={parsedSource.href}
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <span>{parsedSource.host}</span>
+                                  <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                                </Link>
+                              );
+                            }
+                            return <span>{lead.listing?.source || "-"}</span>;
+                          })()}
+                        </td>
+                        <td className="px-4 py-2 whitespace-nowrap">
+                          <Badge color={lead.status.color}>
+                            {lead.status.name}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-2 whitespace-nowrap">
+                          <div className="flex items-center">
+                      
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">
+                                {lead.contact?.first_name || "Unknown"}{" "}
+                                {lead.contact?.last_name || ""}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                          {lead.contact?.email || "-"}
+                        </td>
+                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                          {lead.updated_at ? formatDate(lead.updated_at) : formatDate(lead.created_at)}
+                        </td>
+                      </TableRow>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              <div className="mt-6">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={onPageChange}
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <LeadsCardGrid
+                leads={leads}
+                selectedLeads={selectedLeads}
+                onSelectLead={(leadId, selected) => {
+                  setSelectedLeads(prev => {
+                    const newSet = new Set(prev);
+                    if (selected) {
+                      newSet.add(leadId);
+                    } else {
+                      newSet.delete(leadId);
+                    }
+                    return newSet;
+                  });
+                }}
+                onLike={(leadId) => {
+                  setLikedLeads(prev => {
+                    const newSet = new Set(prev);
+                    if (newSet.has(leadId)) {
+                      newSet.delete(leadId);
+                    } else {
+                      newSet.add(leadId);
+                    }
+                    return newSet;
+                  });
+                }}
+                likedLeads={likedLeads}
+              />
+              <div className="mt-6">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={onPageChange}
+                />
+              </div>
+            </>
+          )}
         </Card>
       </div>
 

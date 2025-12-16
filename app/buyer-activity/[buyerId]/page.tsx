@@ -3,9 +3,12 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ListingsTable } from "../../../components/organisms/ListingsTable";
+import { ListingsCardGrid } from "../../../components/organisms/ListingsCardGrid";
 import { BuyerPerformanceKpi } from "../../../components/organisms/BuyerPerformanceKpi";
 import { DateRangePicker } from "../../../components/molecules/DateRangePicker";
 import { ExportButton } from "../../../components/molecules/ExportButton";
+import { ViewToggle, ViewMode } from "../../../components/molecules/ViewToggle";
+import { Pagination } from "../../../components/molecules/Pagination";
 import { Listing } from "../../../lib/types/listing";
 import { SortConfig } from "../../../lib/types/listing";
 import { Car, ArrowLeft, Calendar, TrendingUp, User, Search, Filter } from "lucide-react";
@@ -53,6 +56,10 @@ export default function BuyerActivityPage() {
   
   // Selection state
   const [selectedListings, setSelectedListings] = useState<Set<string>>(new Set());
+  // View mode state - default to cards
+  const [viewMode, setViewMode] = useState<ViewMode>('cards');
+  // Liked listings state (for card view)
+  const [likedListings, setLikedListings] = useState<Set<string>>(new Set());
 
   // Fetch buyer listings and stats
   const fetchBuyerData = async () => {
@@ -315,6 +322,19 @@ export default function BuyerActivityPage() {
   const isAllSelected = sortedListings.length > 0 && sortedListings.every(listing => selectedListings.has(listing.id));
   const isIndeterminate = selectedListings.size > 0 && selectedListings.size < sortedListings.length;
 
+  // Like handler
+  const handleLike = (listingId: string) => {
+    setLikedListings(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(listingId)) {
+        newSet.delete(listingId);
+      } else {
+        newSet.add(listingId);
+      }
+      return newSet;
+    });
+  };
+
   return (
     <div className="h-full overflow-y-auto bg-gray-50 dark:bg-gray-900">
     <div className="p-6 space-y-6">
@@ -522,7 +542,8 @@ export default function BuyerActivityPage() {
                   )}
                 </p>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-3">
+                <ViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
                 <div className="text-sm text-gray-500 dark:text-gray-400">
                   Page {currentPage} of {totalPages}
                 </div>
@@ -578,7 +599,7 @@ export default function BuyerActivityPage() {
                   Clear Filters
                 </Button>
               </div>
-            ) : (
+            ) : viewMode === 'table' ? (
               <ListingsTable
                 listings={paginatedListings}
                 sort={sort}
@@ -598,6 +619,29 @@ export default function BuyerActivityPage() {
                 isAllSelected={isAllSelected}
                 isIndeterminate={isIndeterminate}
               />
+            ) : (
+              <>
+                <ListingsCardGrid
+                  listings={paginatedListings}
+                  selectedListings={selectedListings}
+                  onSelectListing={handleSelectListing}
+                  onNotify={handleNotify}
+                  onNotifySlack={handleNotifySlack}
+                  onTriggerWorkflow={handleTriggerWorkflow}
+                  onLike={handleLike}
+                  likedListings={likedListings}
+                />
+                <div className="mt-6">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    rowsPerPage={rowsPerPage}
+                    totalRows={sortedListings.length}
+                    onPageChange={setCurrentPage}
+                    onRowsPerPageChange={setRowsPerPage}
+                  />
+                </div>
+              </>
             )}
           </div>
         </div>

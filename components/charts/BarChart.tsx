@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useTheme } from 'next-themes';
 import { ApexOptions } from 'apexcharts';
@@ -40,6 +40,35 @@ export const BarChart: React.FC<BarChartProps> = ({
 }) => {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  
+  // Inject CSS for ApexCharts menu dark mode styling
+  useEffect(() => {
+    const styleId = 'apexcharts-menu-dark-mode';
+    let styleElement = document.getElementById(styleId) as HTMLStyleElement;
+    
+    if (!styleElement) {
+      styleElement = document.createElement('style');
+      styleElement.id = styleId;
+      document.head.appendChild(styleElement);
+    }
+    
+    if (isDark) {
+      styleElement.textContent = `
+        .apexcharts-menu {
+          background-color: #1f2937 !important; /* gray-800 */
+          border: 1px solid #374151 !important; /* gray-700 */
+        }
+        .apexcharts-menu-item {
+          color: #f3f4f6 !important; /* gray-100 */
+        }
+        .apexcharts-menu-item:hover {
+          background-color: #374151 !important; /* gray-700 */
+        }
+      `;
+    } else {
+      styleElement.textContent = '';
+    }
+  }, [isDark]);
   
   // Process categories to replace UUIDs with "Deleted User"
   const processedCategories = useMemo(() => {

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Calendar, X, RefreshCw } from 'lucide-react';
 import { Button } from '../atoms/Button';
 
@@ -15,21 +15,26 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
   onDateChange,
   onRefreshToday
 }) => {
+  const [selectedButton, setSelectedButton] = useState<string | null>('today');
   const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const date = e.target.value ? new Date(e.target.value) : null;
+    setSelectedButton(null);
     onDateChange(date, endDate);
   };
 
   const handleEndDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const date = e.target.value ? new Date(e.target.value) : null;
+    setSelectedButton(null);
     onDateChange(startDate, date);
   };
 
   const clearStartDate = () => {
+    setSelectedButton(null);
     onDateChange(null, endDate);
   };
 
   const clearEndDate = () => {
+    setSelectedButton(null);
     onDateChange(startDate, null);
   };
 
@@ -97,7 +102,9 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
           <Button
             variant="outline"
             size="sm"
+            className={selectedButton === 'today' ? '!bg-blue-100 !text-blue-700 dark:!bg-gray-700 dark:!text-gray-200' : ''}
             onClick={() => {
+              setSelectedButton('today');
               const today = new Date();
               const start = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
               const end = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
@@ -109,7 +116,9 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
           <Button
             variant="outline"
             size="sm"
+            className={selectedButton === 'thisWeek' ? '!bg-blue-100 !text-blue-700 dark:!bg-gray-700 dark:!text-gray-200' : ''}
             onClick={() => {
+              setSelectedButton('thisWeek');
               const now = new Date();
               const day = now.getDay();
               const diffToMonday = (day === 0 ? 6 : day - 1); // Monday start
@@ -125,7 +134,9 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
           <Button
             variant="outline"
             size="sm"
+            className={selectedButton === 'thisMonth' ? '!bg-blue-100 !text-blue-700 dark:!bg-gray-700 dark:!text-gray-200' : ''}
             onClick={() => {
+              setSelectedButton('thisMonth');
               const now = new Date();
               const start = new Date(now.getFullYear(), now.getMonth(), 1, 0,0,0,0);
               const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23,59,59,999);
@@ -137,7 +148,9 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
           <Button
             variant="outline"
             size="sm"
+            className={selectedButton === 'thisYear' ? '!bg-blue-100 !text-blue-700 dark:!bg-gray-700 dark:!text-gray-200' : ''}
             onClick={() => {
+              setSelectedButton('thisYear');
               const now = new Date();
               const start = new Date(now.getFullYear(), 0, 1, 0,0,0,0);
               const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23,59,59,999);
@@ -149,7 +162,9 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
           <Button
             variant="outline"
             size="sm"
+            className={selectedButton === 'last7Days' ? '!bg-blue-100 !text-blue-700 dark:!bg-gray-700 dark:!text-gray-200' : ''}
             onClick={() => {
+              setSelectedButton('last7Days');
               const today = new Date();
               const weekAgo = new Date(today);
               weekAgo.setDate(today.getDate() - 7);
@@ -161,7 +176,9 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
           <Button
             variant="outline"
             size="sm"
+            className={selectedButton === 'last30Days' ? '!bg-blue-100 !text-blue-700 dark:!bg-gray-700 dark:!text-gray-200' : ''}
             onClick={() => {
+              setSelectedButton('last30Days');
               const today = new Date();
               const monthAgo = new Date(today);
               monthAgo.setDate(today.getDate() - 30);
@@ -173,7 +190,9 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
           <Button
             variant="outline"
             size="sm"
+            className={selectedButton === 'last3Months' ? '!bg-blue-100 !text-blue-700 dark:!bg-gray-700 dark:!text-gray-200' : ''}
             onClick={() => {
+              setSelectedButton('last3Months');
               const today = new Date();
               const quarterAgo = new Date(today);
               quarterAgo.setMonth(today.getMonth() - 3);
@@ -185,7 +204,9 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
           <Button
             variant="outline"
             size="sm"
+            className={selectedButton === 'lastYear' ? '!bg-blue-100 !text-blue-700 dark:!bg-gray-700 dark:!text-gray-200' : ''}
             onClick={() => {
+              setSelectedButton('lastYear');
               const today = new Date();
               const yearAgo = new Date(today);
               yearAgo.setFullYear(today.getFullYear() - 1);
@@ -199,6 +220,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
             size="sm"
             className="inline-flex items-center gap-2"
             onClick={() => {
+              setSelectedButton(null);
               if (onRefreshToday) {
                 onRefreshToday();
               } else {

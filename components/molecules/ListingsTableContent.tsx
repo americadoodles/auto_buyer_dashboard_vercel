@@ -170,7 +170,7 @@ export const ListingsTableContent: React.FC<ListingsTableContentProps> = ({
                       href={parsedSource.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs text-slate-600 dark:text-gray-300 truncate inline-flex items-center gap-1 hover:text-blue-600 dark:hover:text-blue-400"
+                      className="text-xs text-blue-600 dark:text-blue-400 truncate inline-flex items-center gap-1 hover:text-blue-700 dark:hover:text-blue-300"
                       title={parsedSource.href}
                       onClick={(e) => e.stopPropagation()}
                     >

@@ -22,7 +22,7 @@ function parseSourceUrl(src?: string) {
   if (!src) return null;
   try {
     const u = new URL(src);
-    const host = u.hostname.replace(/^www\./, "");
+    const host = u.hostname.replace(/^(www|web)\./, "");
     return { href: u.href, host };
   } catch {
     return null;

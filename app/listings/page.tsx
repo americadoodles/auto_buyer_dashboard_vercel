@@ -4,13 +4,16 @@ import React, { useEffect, useState } from "react";
 import { useListings } from "../../lib/hooks/useListings";
 import { useAuth } from "../auth/useAuth";
 import { ListingsTable } from "../../components/organisms/ListingsTable";
+import { ListingsCardGrid } from "../../components/organisms/ListingsCardGrid";
 import { KpiGrid } from "../../components/organisms/KpiGrid";
 import { ExportButton } from "../../components/molecules/ExportButton";
 import { DateRangePicker } from "../../components/molecules/DateRangePicker";
+import { ViewToggle, ViewMode } from "../../components/molecules/ViewToggle";
 import { Listing } from "../../lib/types/listing";
 import { Car, TrendingUp, AlertTriangle, Filter, Search, RefreshCw } from "lucide-react";
 import { Input } from "../../components/atoms/Input";
 import { Button } from "../../components/atoms/Button";
+import { Pagination } from "../../components/molecules/Pagination";
 
 export default function ListingsPage() {
   const { user, loading: authLoading } = useAuth();
@@ -46,6 +49,10 @@ export default function ListingsPage() {
   const [showFilters, setShowFilters] = useState(false);
   // Selection state
   const [selectedListings, setSelectedListings] = useState<Set<string>>(new Set());
+  // View mode state - default to cards
+  const [viewMode, setViewMode] = useState<ViewMode>('cards');
+  // Liked listings state (for card view)
+  const [likedListings, setLikedListings] = useState<Set<string>>(new Set());
 
   // Get user role from authentication context
   const userRole = user?.role || "buyer"; // Default to buyer if no user or role
@@ -113,6 +120,26 @@ export default function ListingsPage() {
   // Calculate selection state for header checkbox
   const isAllSelected = filteredListings.length > 0 && filteredListings.every(listing => selectedListings.has(listing.id));
   const isIndeterminate = selectedListings.size > 0 && selectedListings.size < filteredListings.length;
+
+  // Pagination for filtered listings
+  const paginatedFilteredListings = filteredListings.slice(
+    (currentPage - 1) * rowsPerPage,
+    currentPage * rowsPerPage
+  );
+  const filteredTotalPages = Math.ceil(filteredListings.length / rowsPerPage);
+
+  // Like handler
+  const handleLike = (listingId: string) => {
+    setLikedListings(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(listingId)) {
+        newSet.delete(listingId);
+      } else {
+        newSet.add(listingId);
+      }
+      return newSet;
+    });
+  };
 
   // Show loading state while authentication is being determined
   if (authLoading) {
@@ -294,14 +321,14 @@ export default function ListingsPage() {
           )}
         </div>
 
-        {/* Listings Table */}
+        {/* Listings View */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Vehicle Listings</h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {filteredListings.length} filtered listings • {paginatedRows.length} showing
+                  {filteredListings.length} filtered listings • {paginatedFilteredListings.length} showing
                   {selectedListings.size > 0 && (
                     <span className="ml-2 text-blue-600 dark:text-blue-400 font-medium">
                       • {selectedListings.size} selected
@@ -309,35 +336,61 @@ export default function ListingsPage() {
                   )}
                 </p>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-3">
+                <ViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
                 <div className="text-sm text-gray-500 dark:text-gray-400">
-                  Page {currentPage} of {totalPages}
+                  Page {currentPage} of {filteredTotalPages}
                 </div>
               </div>
             </div>
           </div>
           
           <div className="p-6">
-            <ListingsTable
-              listings={filteredListings.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)}
-              sort={sort}
-              onSort={handleSort}
-              onNotify={notify}
-              onNotifySlack={notifySlack}
-              onTriggerWorkflow={triggerWorkflow}
-              currentPage={currentPage}
-              totalPages={Math.ceil(filteredListings.length / rowsPerPage)}
-              rowsPerPage={rowsPerPage}
-              totalRows={filteredListings.length}
-              onPageChange={setCurrentPage}
-              onRowsPerPageChange={setRowsPerPage}
-              selectedListings={selectedListings}
-              onSelectListing={handleSelectListing}
-              onSelectAll={handleSelectAll}
-              isAllSelected={isAllSelected}
-              isIndeterminate={isIndeterminate}
-              onListingUpdated={updateListingInState}
-            />
+            {viewMode === 'table' ? (
+              <ListingsTable
+                listings={paginatedFilteredListings}
+                sort={sort}
+                onSort={handleSort}
+                onNotify={notify}
+                onNotifySlack={notifySlack}
+                onTriggerWorkflow={triggerWorkflow}
+                currentPage={currentPage}
+                totalPages={filteredTotalPages}
+                rowsPerPage={rowsPerPage}
+                totalRows={filteredListings.length}
+                onPageChange={setCurrentPage}
+                onRowsPerPageChange={setRowsPerPage}
+                selectedListings={selectedListings}
+                onSelectListing={handleSelectListing}
+                onSelectAll={handleSelectAll}
+                isAllSelected={isAllSelected}
+                isIndeterminate={isIndeterminate}
+                onListingUpdated={updateListingInState}
+              />
+            ) : (
+              <>
+                <ListingsCardGrid
+                  listings={paginatedFilteredListings}
+                  selectedListings={selectedListings}
+                  onSelectListing={handleSelectListing}
+                  onNotify={notify}
+                  onNotifySlack={notifySlack}
+                  onTriggerWorkflow={triggerWorkflow}
+                  onLike={handleLike}
+                  likedListings={likedListings}
+                />
+                <div className="mt-6">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={filteredTotalPages}
+                    rowsPerPage={rowsPerPage}
+                    totalRows={filteredListings.length}
+                    onPageChange={setCurrentPage}
+                    onRowsPerPageChange={setRowsPerPage}
+                  />
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

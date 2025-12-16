@@ -2,6 +2,8 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { ExternalLink } from "lucide-react";
 import { Card } from "../molecules/Card";
 import { TableHeader } from "../molecules/TableHeader";
 import { TableRow } from "../molecules/TableRow";
@@ -13,6 +15,19 @@ import { Pagination } from "../molecules/Pagination";
 import { LeadCreateWithSelectionModal } from "./LeadCreateWithSelectionModal";
 import { Lead as BaseLead, LeadStatus, LeadSource } from "../../lib/types/lead";
 import { useLeadSources, useLeadStatuses } from "../../lib/hooks/useLeads";
+import { formatCurrency } from "../../lib/utils/formatters";
+
+// Helper to parse URL and extract hostname
+function parseSourceUrl(src?: string) {
+  if (!src) return null;
+  try {
+    const u = new URL(src);
+    const host = u.hostname.replace(/^www\./, "");
+    return { href: u.href, host };
+  } catch {
+    return null;
+  }
+}
 
 // Extended Lead type with transformed fields for UI display
 type Lead = Omit<BaseLead, 'status' | 'assigned_to' | 'source'> & {
@@ -382,21 +397,19 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <TableHeader
                 columns={[
-                  { key: "name", label: "Name", sortable: true },
-                  { key: "email", label: "Email", sortable: true },
-                  { key: "phone", label: "Phone", sortable: true },
-                  { key: "status", label: "Status", sortable: true },
-                  { key: "source", label: "Source", sortable: true },
-                  { key: "assigned_to", label: "Assigned To", sortable: true },
-                  { key: "location", label: "Location", sortable: true },
+                  { key: "score", label: "Score", sortable: true },
                   { key: "vin", label: "VIN", sortable: true },
+                  { key: "lpn", label: "LPN", sortable: true },
+                  { key: "price", label: "Price", sortable: true },
                   { key: "year", label: "Year", sortable: true },
                   { key: "make", label: "Make", sortable: true },
                   { key: "model", label: "Model", sortable: true },
-                  { key: "trim", label: "Trim", sortable: true },
                   { key: "miles", label: "Miles", sortable: true },
-                  { key: "score", label: "Score", sortable: true },
-                  { key: "created", label: "Created", sortable: true },
+                  { key: "listing_source", label: "Source", sortable: true },
+                  { key: "status", label: "Status", sortable: true },
+                  { key: "name", label: "Name", sortable: true },
+                  { key: "email", label: "Email", sortable: true },
+                  { key: "updated", label: "Updated", sortable: true },
                 ]}
               />
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -407,15 +420,60 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
                     className="cursor-pointer group transition-colors duration-150"
                   >
                     <td className="px-4 py-2 whitespace-nowrap">
+                      <Badge color={getScoreColor(lead.lead_score)}>
+                        {lead.lead_score}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                      {lead.listing?.vin || "-"}
+                    </td>
+                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                      {lead.listing?.lpn || "-"}
+                    </td>
+                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                      {lead.listing?.price ? formatCurrency(lead.listing.price) : "-"}
+                    </td>
+                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                      {lead.listing?.year || "-"}
+                    </td>
+                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                      {lead.listing?.make || "-"}
+                    </td>
+                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                      {lead.listing?.model ? (lead.listing.model.length > 10 ? lead.listing.model.substring(0, 10) + "..." : lead.listing.model) : "-"}
+                    </td>
+                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                      {lead.listing?.miles?.toLocaleString() || "-"}
+                    </td>
+                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                      {(() => {
+                        const parsedSource = parseSourceUrl(lead.listing?.source);
+                        if (parsedSource) {
+                          return (
+                            <Link
+                              href={parsedSource.href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-blue-600 dark:text-blue-400 inline-flex items-center gap-1 hover:text-blue-700 dark:hover:text-blue-300"
+                              title={parsedSource.href}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <span>{parsedSource.host}</span>
+                              <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                            </Link>
+                          );
+                        }
+                        return <span>{lead.listing?.source || "-"}</span>;
+                      })()}
+                    </td>
+                    <td className="px-4 py-2 whitespace-nowrap">
+                      <Badge color={lead.status.color}>
+                        {lead.status.name}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-2 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10">
-                          <div className="h-10 w-10 rounded-full bg-gray-300 dark:bg-gray-600 group-hover:bg-blue-500 dark:group-hover:bg-blue-600 transition-colors duration-150 flex items-center justify-center">
-                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-white transition-colors duration-150">
-                              {lead.contact?.first_name?.[0] || "?"}
-                              {lead.contact?.last_name?.[0] || "?"}
-                            </span>
-                          </div>
-                        </div>
+                  
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">
                             {lead.contact?.first_name || "Unknown"}{" "}
@@ -425,50 +483,10 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
                       </div>
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {lead.contact?.email || "N/A"}
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {lead.contact?.phone || "N/A"}
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap">
-                      <Badge color={lead.status.color}>
-                        {lead.status.name}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {lead.source?.name || "N/A"}
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {lead.assigned_to?.username || "Unassigned"}
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {lead.listing?.location || "N/A"}
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {lead.listing?.vin || "N/A"}
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {lead.listing?.year || "N/A"}
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {lead.listing?.make || "N/A"}
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {lead.listing?.model || "N/A"}
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {lead.listing?.trim || "N/A"}
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {lead.listing?.miles?.toLocaleString() || "N/A"}
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap">
-                      <Badge color={getScoreColor(lead.lead_score)}>
-                        {lead.lead_score}
-                      </Badge>
+                      {lead.contact?.email || "-"}
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {formatDate(lead.created_at)}
+                      {lead.updated_at ? formatDate(lead.updated_at) : formatDate(lead.created_at)}
                     </td>
                   </TableRow>
                 ))}

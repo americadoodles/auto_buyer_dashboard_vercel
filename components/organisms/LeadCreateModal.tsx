@@ -59,13 +59,16 @@ export const LeadCreateModal: React.FC<LeadCreateModalProps> = ({
     loadContacts();
   }, [isOpen, showError]);
 
-  // Reset state when modal closes
+  // Reset state when modal closes and initialize selected contact when opening with existing lead
   useEffect(() => {
     if (!isOpen) {
       setSelectedContactId(undefined);
       setContactSearch('');
+    } else if (existingLead && existingLead.contact_id) {
+      // Pre-select the current contact when modal opens with existing lead
+      setSelectedContactId(existingLead.contact_id);
     }
-  }, [isOpen]);
+  }, [isOpen, existingLead]);
 
   // Filter contacts based on search
   const filteredContacts = contacts.filter(contact => {
@@ -90,17 +93,18 @@ export const LeadCreateModal: React.FC<LeadCreateModalProps> = ({
     try {
       setCreatingLead(true);
       
-      const isUpdating = existingLead && existingLead.contact;
+      // If existingLead is provided, always update it (don't create new)
+      const isUpdating = existingLead && existingLead.id;
       
-      if (isUpdating && existingLead.id) {
+      if (isUpdating) {
         // Update existing lead with new contact
         await leadsApi.updateLead(existingLead.id.toString(), {
           contact_id: selectedContactId,
         });
 
-        showSuccess('Lead Updated', 'Lead has been successfully updated');
+        showSuccess('Lead Updated', 'Lead has been successfully updated with contact information');
       } else {
-        // Create new lead
+        // Create new lead only if no existing lead is provided
         // Find the "new" status
         const newStatus = leadStatuses.find(
           status => status.name.toLowerCase() === 'new'
@@ -133,7 +137,7 @@ export const LeadCreateModal: React.FC<LeadCreateModalProps> = ({
       onClose();
     } catch (error) {
       console.error('Error creating/updating lead:', error);
-      const action = existingLead && existingLead.contact ? 'update' : 'create';
+      const action = existingLead && existingLead.id ? 'update' : 'create';
       showError(`Failed to ${action} lead`, error instanceof Error ? error.message : 'Please try again.');
     } finally {
       setCreatingLead(false);
@@ -147,7 +151,7 @@ export const LeadCreateModal: React.FC<LeadCreateModalProps> = ({
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-3xl w-full max-h-[80vh] flex flex-col border border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-semibold text-black dark:text-gray-100">
-            {existingLead && existingLead.contact ? 'Update Lead - Select Contact' : 'Create Lead - Select Contact'}
+            {existingLead && existingLead.id ? 'Update Lead - Select Contact' : 'Create Lead - Select Contact'}
           </h3>
           <Button 
             onClick={onClose} 
@@ -251,8 +255,8 @@ export const LeadCreateModal: React.FC<LeadCreateModalProps> = ({
               className="flex-1 bg-green-600 dark:bg-green-500 hover:bg-green-700 dark:hover:bg-green-600 text-black font-medium cursor-pointer"
             >
               {creatingLead 
-                ? (existingLead && existingLead.contact ? 'Updating...' : 'Creating...') 
-                : (existingLead && existingLead.contact ? 'Update Lead' : 'Create Lead')}
+                ? (existingLead && existingLead.id ? 'Updating...' : 'Creating...') 
+                : (existingLead && existingLead.id ? 'Update Lead' : 'Create Lead')}
             </Button>
           </div>
         </div>

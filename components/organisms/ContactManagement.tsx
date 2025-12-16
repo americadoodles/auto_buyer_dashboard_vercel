@@ -10,7 +10,12 @@ import { Input } from '../atoms/Input';
 import { Icon } from '../atoms/Icon';
 import { Pagination } from '../molecules/Pagination';
 import { ContactEditModal } from './ContactEditModal';
+import { ConfirmationModal } from './ConfirmationModal';
 import { Listing } from '../../lib/types/listing';
+import { deleteContact } from 'lib/services/listingManagementApi';
+import { leadsApi } from '../../lib/services/leadsApi';
+import { dealsApi } from '../../lib/services/dealsApi';
+import { useToast } from '../../hooks/useToast';
 
 interface Contact {
   id: string;
@@ -50,7 +55,6 @@ interface ContactManagementProps {
   totalPages: number;
   onPageChange: (page: number) => void;
   onContactClick: (contactId: string) => void;
-  onCreateContact: () => void;
   onExportContacts: () => void;
   onContactUpdated?: () => void;
 }
@@ -62,10 +66,10 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
   totalPages,
   onPageChange,
   onContactClick,
-  onCreateContact,
   onExportContacts,
   onContactUpdated
 }) => {
+  const { showSuccess, showError } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -74,6 +78,9 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
   const [selectedVehicleListing, setSelectedVehicleListing] = useState<Listing | undefined>(undefined);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedContact, setSelectedContact] = useState<Contact | undefined>(undefined);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [contactToDelete, setContactToDelete] = useState<Contact | undefined>(undefined);
+  const [deleting, setDeleting] = useState(false);
 
   const getTypeColor = (type: string) => {
     switch (type.toLowerCase()) {
@@ -123,6 +130,11 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
     setIsEditModalOpen(true);
   };
 
+  const handleRowClick = (contact: Contact) => {
+    setSelectedContact(contact);
+    setIsEditModalOpen(true);
+  };
+
   const handleCloseEditModal = () => {
     setIsEditModalOpen(false);
     setSelectedContact(undefined);
@@ -133,6 +145,39 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
     // Notify parent to refresh the contacts list
     if (onContactUpdated) {
       onContactUpdated();
+    }
+  };
+
+  const handleRemoveContact = (e: React.MouseEvent, contact: Contact) => {
+    e.stopPropagation(); // Prevent row click
+    setContactToDelete(contact);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!contactToDelete) return;
+    
+    setDeleting(true);
+    try {
+      // Now delete the contact
+      await deleteContact(contactToDelete.id);
+      
+      // Show success toast
+      const contactName = `${contactToDelete.first_name} ${contactToDelete.last_name}`;
+      showSuccess('Contact Deleted', `${contactName} has been successfully deleted`);
+      
+      // Notify parent to refresh the contacts list
+      if (onContactUpdated) {
+        onContactUpdated();
+      }
+      setShowDeleteConfirm(false);
+      setContactToDelete(undefined);
+    } catch (error) {
+      console.error('Error deleting contact:', error);
+      const contactName = contactToDelete ? `${contactToDelete.first_name} ${contactToDelete.last_name}` : 'Contact';
+      showError('Failed to Delete Contact', `Failed to delete ${contactName}. ${error instanceof Error ? error.message : 'Please try again.'}`);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -152,7 +197,10 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
               <Icon name="download" className="w-4 h-4 mr-2" />
               Export
             </Button>
-            <Button onClick={onCreateContact}>
+            <Button onClick={() => {
+              setSelectedContact(undefined);
+              setIsEditModalOpen(true);
+            }}>
               <Icon name="plus" className="w-4 h-4 mr-2" />
               New Contact
             </Button>
@@ -290,33 +338,31 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <TableHeader
                 columns={[
-                  { key: 'updated_at', label: 'Updated At', sortable: true },
                   { key: 'name', label: 'Name', sortable: true },
                   { key: 'company', label: 'Company', sortable: true },
                   { key: 'email', label: 'Email', sortable: true },
                   { key: 'phone', label: 'Phone', sortable: true },
+                  { key: 'mobile', label: 'Mobile', sortable: true },
                   { key: 'assigned', label: 'Assigned To', sortable: true },
                   { key: 'status', label: 'Status', sortable: true },
+                  { key: 'updated_at', label: 'Updated At', sortable: true },
                   { key: 'actions', label: 'Actions', sortable: false }
                 ]}
               />
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {contacts.map((contact) => (
-                  <TableRow key={contact.id} onClick={() => onContactClick(contact.id)} className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                    <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {formatCalendarDate(contact.updated_at)}
-                    </td>
+                  <TableRow key={contact.id} onClick={() => handleRowClick(contact)} className="cursor-pointer group hover:bg-gray-50 dark:hover:bg-gray-700/50">
                     <td className="px-2 py-2 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
-                          <div className="h-10 w-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
-                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          <div className="h-10 w-10 rounded-full bg-gray-300 dark:bg-gray-600 group-hover:bg-blue-500 dark:group-hover:bg-blue-600 transition-colors duration-150 flex items-center justify-center">
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-white transition-colors duration-150">
                               {contact.first_name?.[0] || ''}{contact.last_name?.[0] || ''}
                             </span>
                           </div>
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900 dark:text-white">
+                          <div className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">
                             {contact.first_name} {contact.last_name}
                           </div>
                           {contact.job_title && (
@@ -332,12 +378,15 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
                       {contact.email || '-'}
                     </td>
                     <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                      {contact.phone || contact.mobile || '-'}
+                      {contact.phone || '-'}
+                    </td>
+                    <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      {contact.mobile || '-'}
                     </td>
                     <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {contact.assigned_to?.username || 'Unassigned'}
                     </td>
-                    <td className="px-2 py-2 whitespace-nowrap">
+                    <td className="px-2 py-2 whitespace-nowrap text-center">
                       {contact.status ? (
                         <Badge color={contact.status.color || 'blue'}>
                           {contact.status.name}
@@ -348,29 +397,24 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
                         </Badge>
                       )}
                     </td>
+                    <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {formatCalendarDate(contact.updated_at)}
+                    </td>
                     <td className="px-2 py-2 whitespace-nowrap text-sm font-medium">
                       <div className="flex space-x-2">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={(e) => handleViewVehicle(e, contact)}
-                          title="View Vehicle Information"
-                        >
-                          <Icon name="eye" className="w-4 h-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={(e) => handleEditContact(e, contact)}
-                          title="Edit Contact"
-                        >
-                          <Icon name="edit" className="w-4 h-4" />
-                        </Button>
                         <Button variant="ghost" size="sm">
                           <Icon name="phone" className="w-4 h-4" />
                         </Button>
                         <Button variant="ghost" size="sm">
                           <Icon name="mail" className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          onClick={(e) => handleRemoveContact(e, contact)}
+                          className="text-red-600 dark:text-red-400 border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center"
+                          size="sm"
+                        >
+                          <Icon name="trash-2" className="w-4 h-4" />
                         </Button>
                       </div>
                     </td>
@@ -393,27 +437,42 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
       </div>
 
       {/* Contact Edit Modal */}
-      {selectedContact && (
-        <ContactEditModal
-          contact={{
-            id: selectedContact.id,
-            first_name: selectedContact.first_name,
-            last_name: selectedContact.last_name,
-            email: selectedContact.email,
-            phone: selectedContact.phone,
-            mobile: selectedContact.mobile,
-            company: selectedContact.company,
-            job_title: selectedContact.job_title,
-            notes: selectedContact.notes || '',
-            is_active: selectedContact.is_active,
-            created_at: selectedContact.created_at,
-            updated_at: selectedContact.updated_at
-          }}
-          isOpen={isEditModalOpen}
-          onClose={handleCloseEditModal}
-          onSave={handleContactSaved}
-        />
-      )}
+      <ContactEditModal
+        contact={selectedContact ? {
+          id: selectedContact.id,
+          first_name: selectedContact.first_name,
+          last_name: selectedContact.last_name,
+          email: selectedContact.email,
+          phone: selectedContact.phone,
+          mobile: selectedContact.mobile,
+          company: selectedContact.company,
+          job_title: selectedContact.job_title,
+          notes: selectedContact.notes || '',
+          is_active: selectedContact.is_active,
+          created_at: selectedContact.created_at,
+          updated_at: selectedContact.updated_at
+        } : null}
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        onSave={handleContactSaved}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteConfirm}
+        onClose={() => {
+          setShowDeleteConfirm(false);
+          setContactToDelete(undefined);
+        }}
+        onConfirm={handleDeleteConfirm}
+        title="Confirm Deletion"
+        message={contactToDelete ? `Are you sure you want to delete ${contactToDelete.first_name} ${contactToDelete.last_name}? This action cannot be undone.` : ''}
+        confirmText="Yes"
+        cancelText="No"
+        variant="danger"
+        loading={deleting}
+        loadingText="Deleting..."
+      />
     </div>
   );
 };

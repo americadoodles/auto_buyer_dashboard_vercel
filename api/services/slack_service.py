@@ -53,7 +53,7 @@ class SlackService:
             estimated_price_offer=listing.price,
             urgency_level=self._determine_urgency(listing.dom, listing.score),
             main_contact=listing.buyer_username or "Unknown Buyer",
-            vin=listing.vin or "N/A",
+            vin=listing.vin or "-",
             clear_carfax="Unknown",  # Not available in current data
             clean_autocheck="Unknown",  # Not available in current data
             mmr_price=listing.buyMax if listing.buyMax else None,

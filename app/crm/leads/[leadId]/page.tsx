@@ -11,7 +11,7 @@ import { updateContact } from '../../../../lib/services/listingManagementApi';
 import { Lead, LeadStatus, LeadSource } from '../../../../lib/types/lead';
 import { useLeadStatuses, useLeadSources } from '../../../../lib/hooks/useLeads';
 import { VehicleContactCard } from '../../../../components/molecules/VehicleContactCard';
-import { ListingSelectModal } from '../../../../components/organisms/ListingSelectModal';
+import { LeadCreateModal } from '../../../../components/organisms/LeadCreateModal';
 import { ConfirmationModal } from '../../../../components/organisms/ConfirmationModal';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { useToast } from '../../../../hooks/useToast';
@@ -122,7 +122,7 @@ export default function LeadDetailPage() {
   };
 
   const formatDate = (dateString: string | undefined) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return '-';
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
@@ -140,16 +140,25 @@ export default function LeadDetailPage() {
       const leadData = await leadsApi.getLead(leadId);
       if (leadData) {
         setLead(leadData);
-        // Re-initialize form fields if listing_id now exists
-        if (leadData.listing_id && !lead?.listing_id) {
-          setStatusId(leadData.status_id || leadData.status?.id);
-          setSourceId(leadData.source_id);
-          setNotes(leadData.notes || '');
-          setLeadScore(leadData.lead_score || 0);
-        }
+        
+        // Update contact information fields
+        setFirstName(leadData.contact?.first_name || '');
+        setLastName(leadData.contact?.last_name || '');
+        setEmail(leadData.contact?.email || '');
+        setPhone(leadData.contact?.phone || '');
+        setJobTitle(leadData.contact?.job_title || '');
+        
+        // Update lead information fields
+        setStatusId(leadData.status_id || leadData.status?.id);
+        setSourceId(leadData.source_id);
+        setNotes(leadData.notes || '');
+        setLeadScore(leadData.lead_score || 0);
+        
+        showSuccess('Lead Updated', 'Lead has been successfully updated');
       }
     } catch (e: any) {
       console.error('Error reloading lead:', e);
+      showError('Failed to reload lead', e?.message || 'An error occurred');
     }
   };
 
@@ -511,11 +520,12 @@ export default function LeadDetailPage() {
         </div>
       </div>
 
-      {/* Update Listing Modal */}
-      <ListingSelectModal
+      {/* Update Lead Modal */}
+      <LeadCreateModal
         isOpen={isUpdateListingModalOpen}
         onClose={() => setIsUpdateListingModalOpen(false)}
-        leadId={leadId}
+        listingId={lead?.listing_id || 0}
+        existingLead={lead || null}
         onSuccess={handleUpdateListingSuccess}
       />
 

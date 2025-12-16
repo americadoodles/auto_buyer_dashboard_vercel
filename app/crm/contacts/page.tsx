@@ -2,90 +2,123 @@
 
 import React, { useState, useMemo } from 'react';
 import { ContactManagement } from '../../../components/organisms/ContactManagement';
-import { useLeads, useLeadStatuses } from '../../../lib/hooks/useLeads';
+import { useLeads } from '../../../lib/hooks/useLeads';
+import { useContacts } from '../../../lib/hooks/useContacts';
 
 export default function ContactsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
 
-  // Fetch all leads to filter for converted ones with contact_id
-  const { leads, loading, error, refreshLeads } = useLeads({
+  // Fetch contacts from contacts table
+  const { contacts: fetchedContacts, loading: contactsLoading, error: contactsError, refreshContacts } = useContacts({
     skip: 0,
-    limit: 1000, // Fetch a large number to get all converted leads
+    limit: 1000, // Fetch a large number to get all contacts
   });
 
-  const { statuses } = useLeadStatuses();
+  // Fetch leads to get status information
+  const { leads, loading: leadsLoading, error: leadsError, refreshLeads } = useLeads({
+    skip: 0,
+    limit: 1000, // Fetch a large number to get all leads
+  });
 
-  // Find the "Converted" status ID
-  const convertedStatusId = useMemo(() => {
-    const convertedStatus = statuses.find(
-      status => status.name.toLowerCase() === 'converted'
-    );
-    return convertedStatus?.id;
-  }, [statuses]);
-
-  // Filter leads: must have contact_id and status must be "Converted"
-  const convertedLeadsWithContacts = useMemo(() => {
-    return leads.filter(lead => {
-      // Must have contact_id
-      if (!lead.contact_id) return false;
-      
-      // Check if status is "Converted" - check both status object and status_id
-      const isConverted = 
-        lead.status?.name?.toLowerCase() === 'converted' ||
-        (convertedStatusId && lead.status_id === convertedStatusId);
-      
-      return isConverted;
-    });
-  }, [leads, convertedStatusId]);
-
-  // Transform leads to contacts format
+  // Merge contacts with status from leads
   const contacts = useMemo(() => {
-    return convertedLeadsWithContacts.map(lead => {
-      const contact = lead.contact;
-      if (!contact) return null;
+    // Create a map of contact_id to the most recent lead's status
+    const leadStatusMap = new Map<string, { id: number; name: string; color_code: string }>();
+    // Create a map of contact_id to assigned user info from leads
+    const assignedUserMap = new Map<string, { id: string; username: string }>();
+    // Create a map of contact_id to most recent lead's listing and last_contact date
+    const leadInfoMap = new Map<string, { listing?: any; last_contact: string }>();
+    
+    // Sort leads by updated_at descending to get the most recent lead for each contact
+    const sortedLeads = [...leads].sort((a, b) => {
+      const dateA = new Date(a.updated_at).getTime();
+      const dateB = new Date(b.updated_at).getTime();
+      return dateB - dateA;
+    });
 
+    // Map each contact_id to its most recent lead's status, assigned user, and other info
+    sortedLeads.forEach(lead => {
+      if (lead.contact_id) {
+        // Map status if available and not already set
+        if (lead.status && !leadStatusMap.has(lead.contact_id)) {
+          leadStatusMap.set(lead.contact_id, {
+            id: lead.status.id,
+            name: lead.status.name,
+            color_code: lead.status.color_code || '#3B82F6'
+          });
+        }
+        // Map assigned user if available and not already set
+        if (lead.assigned_to_user && !assignedUserMap.has(lead.contact_id)) {
+          assignedUserMap.set(lead.contact_id, {
+            id: lead.assigned_to_user.id,
+            username: lead.assigned_to_user.username || 'Unknown'
+          });
+        }
+        // Map listing and last_contact if available and not already set
+        if (!leadInfoMap.has(lead.contact_id)) {
+          leadInfoMap.set(lead.contact_id, {
+            listing: lead.listing,
+            last_contact: lead.updated_at
+          });
+        }
+      }
+    });
+
+    // Enrich contacts with status from leads
+    return fetchedContacts.map(contact => {
+      const status = leadStatusMap.get(contact.id);
+      const assignedUser = assignedUserMap.get(contact.id);
+      const leadInfo = leadInfoMap.get(contact.id);
+      
       return {
-        id: lead.contact_id || lead.id,
-        first_name: contact.first_name || '',
-        last_name: contact.last_name || '',
+        id: contact.id,
+        first_name: contact.first_name,
+        last_name: contact.last_name,
         email: contact.email || '',
-        phone: contact.phone || contact.mobile || '',
-        mobile: contact.mobile || contact.phone || '',
+        phone: contact.phone || '',
+        mobile: contact.mobile || '',
         company: contact.company || '',
         job_title: contact.job_title || '',
-        notes: contact.notes || '',
-        contact_type: contact.contact_type ? {
-          id: contact.contact_type.id || 0,
-          name: contact.contact_type.name || 'Contact',
-          color: contact.contact_type.color || 'blue'
-        } : {
-          id: 0,
+        notes: contact.notes,
+        // Map contact_type - use existing if available, otherwise provide default
+        contact_type: contact.contact_type || {
+          id: contact.contact_type_id || 0,
           name: 'Contact',
           color: 'blue'
         },
-        assigned_to: lead.assigned_to_user ? {
-          id: lead.assigned_to_user.id,
-          username: lead.assigned_to_user.username || 'Unknown'
+        // Map assigned_to to the expected format
+        // Use user info from leads if available, otherwise use contact's assigned_to
+        assigned_to: assignedUser || (contact.assigned_to ? {
+          id: contact.assigned_to,
+          username: 'User' // Fallback if user details not available from leads
         } : {
           id: '',
           username: 'Unassigned'
-        },
-        is_active: contact.is_active ?? true,
-        created_at: lead.created_at,
-        updated_at: lead.updated_at,
-        last_contact: lead.updated_at,
-        // Add status from lead
-        status: lead.status ? {
-          id: lead.status.id,
-          name: lead.status.name,
-          color: lead.status.color_code
+        }),
+        is_active: contact.is_active,
+        created_at: contact.created_at,
+        updated_at: contact.updated_at,
+        // Add status from lead if available
+        status: status ? {
+          id: status.id,
+          name: status.name,
+          color: status.color_code
         } : undefined,
-        // Add listing/vehicle information
-        listing: lead.listing
+        // Add last_contact and listing from leads if available
+        last_contact: leadInfo?.last_contact || contact.updated_at,
+        listing: leadInfo?.listing
       };
-    }).filter((contact): contact is NonNullable<typeof contact> => contact !== null);
-  }, [convertedLeadsWithContacts]);
+    }) as any; // Type assertion since ContactManagement has its own Contact interface
+  }, [fetchedContacts, leads]);
+
+  const loading = contactsLoading || leadsLoading;
+  const error = contactsError || leadsError;
+
+  const refreshData = () => {
+    refreshContacts();
+    refreshLeads();
+  };
 
   // Paginate contacts
   const paginatedContacts = useMemo(() => {
@@ -104,16 +137,12 @@ export default function ContactsPage() {
     console.log('Contact clicked:', contactId);
   };
 
-  const handleCreateContact = () => {
-    console.log('Create contact clicked');
-  };
-
   const handleExportContacts = () => {
     console.log('Export contacts clicked');
   };
 
   // Show loading state
-  if (loading && contacts.length === 0) {
+  if (loading && fetchedContacts.length === 0) {
     return (
       <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
         <div className="flex items-center justify-center h-64">
@@ -143,7 +172,7 @@ export default function ContactsPage() {
               </div>
               <div className="mt-4">
                 <button
-                  onClick={refreshLeads}
+                  onClick={refreshData}
                   className="bg-red-100 dark:bg-red-900/30 px-3 py-2 rounded-md text-sm font-medium text-red-800 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-900/50"
                 >
                   Try again
@@ -165,9 +194,8 @@ export default function ContactsPage() {
           totalPages={totalPages}
           onPageChange={handlePageChange}
           onContactClick={handleContactClick}
-          onCreateContact={handleCreateContact}
           onExportContacts={handleExportContacts}
-          onContactUpdated={refreshLeads}
+          onContactUpdated={refreshData}
         />
       </div>
   );

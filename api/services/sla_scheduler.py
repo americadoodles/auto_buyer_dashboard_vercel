@@ -171,7 +171,7 @@ class SLAScheduler:
             # Create Slack message
             message = f"⚠️ *Overdue Task Alert*\n\n"
             message += f"*Task:* {task.title}\n"
-            message += f"*Due:* {task.due_at.strftime('%Y-%m-%d %H:%M') if task.due_at else 'N/A'}\n"
+            message += f"*Due:* {task.due_at.strftime('%Y-%m-%d %H:%M') if task.due_at else '-'}\n"
             message += f"*Priority:* {task.priority.value}\n"
             
             if task.related_type and task.related_id:

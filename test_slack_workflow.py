@@ -47,7 +47,7 @@ def test_workflow_payload():
     webhook_payload = slack_workflow_service._create_workflow_webhook_payload(listing, "Test custom message")
     
     print("📋 Webhook Payload Structure:")
-    print(f"  - Text: {webhook_payload.get('text', 'N/A')}")
+    print(f"  - Text: {webhook_payload.get('text', '-')}")
     print(f"  - Attachments: {len(webhook_payload.get('attachments', []))} attachment(s)")
     print(f"  - Data Variables: {len([k for k in webhook_payload.keys() if not k.startswith(('text', 'attachments'))])} variables")
     

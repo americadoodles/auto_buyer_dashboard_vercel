@@ -16,6 +16,7 @@ import { deleteContact } from 'lib/services/listingManagementApi';
 import { leadsApi } from '../../lib/services/leadsApi';
 import { dealsApi } from '../../lib/services/dealsApi';
 import { useToast } from '../../hooks/useToast';
+import { useAuth } from '../../app/auth/useAuth';
 
 interface Contact {
   id: string;
@@ -70,12 +71,12 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
   onContactUpdated
 }) => {
   const { showSuccess, showError } = useToast();
+  const { user } = useAuth();
+  const isBuyer = user?.role?.toLowerCase() === 'buyer';
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [assignedFilter, setAssignedFilter] = useState('all');
-  const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
-  const [selectedVehicleListing, setSelectedVehicleListing] = useState<Listing | undefined>(undefined);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedContact, setSelectedContact] = useState<Contact | undefined>(undefined);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -113,24 +114,9 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
     });
   };
 
-  const handleViewVehicle = (e: React.MouseEvent, contact: Contact) => {
-    e.stopPropagation(); // Prevent row click
-    setSelectedVehicleListing(contact.listing);
-    setIsVehicleModalOpen(true);
-  };
-
-  const handleCloseVehicleModal = () => {
-    setIsVehicleModalOpen(false);
-    setSelectedVehicleListing(undefined);
-  };
-
-  const handleEditContact = (e: React.MouseEvent, contact: Contact) => {
-    e.stopPropagation(); // Prevent row click
-    setSelectedContact(contact);
-    setIsEditModalOpen(true);
-  };
-
   const handleRowClick = (contact: Contact) => {
+    // Buyers cannot edit contacts
+    if (isBuyer) return;
     setSelectedContact(contact);
     setIsEditModalOpen(true);
   };
@@ -197,13 +183,13 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
               <Icon name="download" className="w-4 h-4 mr-2" />
               Export
             </Button>
-            <Button onClick={() => {
-              setSelectedContact(undefined);
-              setIsEditModalOpen(true);
-            }}>
-              <Icon name="plus" className="w-4 h-4 mr-2" />
-              New Contact
-            </Button>
+              <Button onClick={() => {
+                setSelectedContact(undefined);
+                setIsEditModalOpen(true);
+              }}>
+                <Icon name="plus" className="w-4 h-4 mr-2" />
+                New Contact
+              </Button>
           </div>
         </div>
 
@@ -351,7 +337,7 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
               />
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {contacts.map((contact) => (
-                  <TableRow key={contact.id} onClick={() => handleRowClick(contact)} className="cursor-pointer group hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                  <TableRow key={contact.id} onClick={() => handleRowClick(contact)} className={isBuyer ? "group hover:bg-gray-50 dark:hover:bg-gray-700/50" : "cursor-pointer group hover:bg-gray-50 dark:hover:bg-gray-700/50"}>
                     <td className="px-2 py-2 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
@@ -408,14 +394,16 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
                         <Button variant="ghost" size="sm">
                           <Icon name="mail" className="w-4 h-4" />
                         </Button>
-                        <Button 
-                          variant="outline" 
-                          onClick={(e) => handleRemoveContact(e, contact)}
-                          className="text-red-600 dark:text-red-400 border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center"
-                          size="sm"
-                        >
-                          <Icon name="trash-2" className="w-4 h-4" />
-                        </Button>
+                        {!isBuyer && (
+                          <Button 
+                            variant="outline" 
+                            onClick={(e) => handleRemoveContact(e, contact)}
+                            className="text-red-600 dark:text-red-400 border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center"
+                            size="sm"
+                          >
+                            <Icon name="trash-2" className="w-4 h-4" />
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </TableRow>

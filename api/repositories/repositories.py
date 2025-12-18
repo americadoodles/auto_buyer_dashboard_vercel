@@ -7,6 +7,7 @@ from ..core.db import DB_ENABLED
 from ..core.db_helpers import get_db_connection
 from ..schemas.listing import ListingIn, ListingOut
 from ..schemas.listing import Decision
+from ..services.ai_service import extract_vehicle_info_from_title
 
 # In-memory fallback for listings
 _BY_ID: dict[str, ListingOut] = {}
@@ -150,9 +151,37 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                             return f"{src}#{created.isoformat(timespec='milliseconds')}"
 
                         vehicle_key = make_vehicle_key(norm)
-                        make = norm["make"].strip()
-                        model = norm["model"].strip()
-                        trim = (norm["trim"] or None)
+                        
+                        # Extract vehicle info from title using AI if title is present
+                        title = norm.get("title")
+                        year = None
+                        make = None
+                        model = None
+                        trim = None
+                        extracted_bodystyle = None
+                        
+                        if title and title.strip():
+                            try:
+                                extracted_info = extract_vehicle_info_from_title(title.strip())
+                                year = extracted_info.get("year")
+                                make = extracted_info.get("make")
+                                model = extracted_info.get("model")
+                                trim = extracted_info.get("trim")
+                                extracted_bodystyle = extracted_info.get("bodystyle")
+                                logging.info(f"Extracted vehicle info from title: year={year}, make={make}, model={model}, trim={trim}, bodystyle={extracted_bodystyle}")
+                            except Exception as e:
+                                logging.error(f"Failed to extract vehicle info from title '{title}': {str(e)}")
+                                # Continue without extracted info - will need to handle missing fields
+                        
+                        # Validate required fields
+                        if not year or not make or not model:
+                            logging.warning(f"Missing required vehicle fields (year={year}, make={make}, model={model}) for item with title: {title}")
+                            # Skip this item or use defaults - you may want to adjust this behavior
+                            continue
+                        
+                        make = make.strip() if make else None
+                        model = model.strip() if model else None
+                        trim = trim.strip() if trim else None
 
                         # Handle external API data: map status, reasonCodes, buyMax to Decision object
                         decision = create_decision_from_data(norm)
@@ -162,7 +191,7 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                              insert into vehicles (vehicle_key, vin, year, make, model, trim)
                              values (%s,%s,%s,%s,%s,%s)
                              on conflict (vehicle_key) do update set vin=excluded.vin, year=excluded.year, make=excluded.make, model=excluded.model, trim=excluded.trim
-                         """, (vehicle_key, vin, norm["year"], make, model, trim))
+                         """, (vehicle_key, vin, year, make, model, trim))
                         
                         # Store decision data in scores table if provided
                         if decision and vin:
@@ -197,6 +226,9 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                         drivetrain = _norm_str(norm.get("driveType"))
                         engine_size = _norm_str(norm.get("engine_size"))  # if provided
                         body_style = _norm_str(norm.get("bodyStyle"))
+                        # Use extracted bodystyle if input bodystyle is empty
+                        if not body_style and extracted_bodystyle:
+                            body_style = extracted_bodystyle
 
                         clean_title = norm.get("cleanTitle")
                         condition_txt = _norm_str(norm.get("condition"))
@@ -248,41 +280,17 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                         status = norm.get("status", "")
                         
                         out.append(ListingOut(
-                            id=new_id, vehicle_key=vehicle_key, vin=vin, year=norm["year"], make=make, model=model,
+                            id=new_id, vehicle_key=vehicle_key, vin=vin, year=year, make=make, model=model,
                             trim=trim, miles=norm["miles"], price=norm["price"], dom=norm["dom"],
                             source=norm["source"], location=norm.get("location"), buyer_id=buyer_from_id,
                             radius=norm.get("radius", 25), reasonCodes=reason_codes,
-                            buyMax=buy_max, status=status, score=None, decision=decision
+                            buyMax=buy_max, status=status, score=None, decision=decision, bodyStyle=body_style
                         ))
             except Exception as e:
                 logging.error(f"Database error in ingest_listings: {e}")
                 return out
         return out
 
-    # in-memory fallback
-    for item in rows:
-        norm = item.model_dump()
-        vin = item.vin.strip().upper() if item.vin and item.vin.strip() else None
-        
-        # Handle external API data: map status, reasonCodes, buyMax to Decision object
-        decision = create_decision_from_data(norm)
-        
-        lid = item.id or f"mem-{len(_BY_ID)+1}"
-        reason_codes = norm.get("reasonCodes", [])
-        buy_max = float(norm.get("buyMax", 0)) if norm.get("buyMax") is not None else None
-        status = norm.get("status", "")
-        
-        obj = ListingOut(
-            id=lid, vin=vin, year=item.year, make=item.make.strip(), model=item.model.strip(),
-            trim=item.trim.strip() if item.trim else None, miles=item.miles, price=item.price,
-            dom=item.dom, source=item.source, location=norm.get("location"), buyer_id=buyer_id or item.buyer_id,
-            radius=item.radius or 25, reasonCodes=reason_codes, buyMax=buy_max, status=status, decision=decision, images=norm.get("images", [])
-        )
-        _BY_ID[lid] = obj
-        if vin:
-            _IDS_BY_VIN.setdefault(vin, []).append(lid)
-        out.append(obj)
-    return out
 
 def list_listings(
     limit: Optional[int] = None,

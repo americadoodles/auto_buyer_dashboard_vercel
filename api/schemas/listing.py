@@ -13,10 +13,8 @@ class ListingIn(BaseModel):
     lpn: Optional[str] = None
     price: float
     miles: int
+    title: Optional[str] = None
     dom: int
-    year: int
-    make: str
-    model: str
     location: Optional[str] = None
     radius: Optional[int] = 25
     images: List[str] = []
@@ -41,7 +39,6 @@ class ListingIn(BaseModel):
     status: Optional[str] = None
     reasonCodes: List[str] = []
     buyMax: Optional[float] = None
-    trim: Optional[str] = None
     id: Optional[str] = None               # optional on ingest
     buyer_id: Optional[str] = None
     decision: Optional[Decision] = None

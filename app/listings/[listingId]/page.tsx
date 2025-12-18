@@ -23,6 +23,7 @@ import { ListingActivity, Contact } from '../../../lib/types/listing';
 import { ArrowLeft, Plus, Upload, X, Save, Edit2, Check, ExternalLink, Bell, Send, Workflow } from 'lucide-react';
 import { useToast } from '../../../hooks/useToast';
 import { formatDateTime } from 'lib/utils/formatters';
+import { invalidateListingsCache } from '../../../lib/hooks/useListings';
 
 export default function ListingDetailPage() {
   const params = useParams();
@@ -203,6 +204,9 @@ export default function ListingDetailPage() {
       setEditingField(null);
       setEditValue('');
       
+      // Invalidate listings cache since listing was updated
+      invalidateListingsCache();
+      
       showSuccess('Field Updated', `${field} has been successfully updated`);
       
       // Reload activities after update
@@ -299,6 +303,9 @@ export default function ListingDetailPage() {
       
       const updatedListing = await updateListing(parseInt(listingId), updateData);
       setListing(updatedListing);
+      
+      // Invalidate listings cache since listing was updated
+      invalidateListingsCache();
       
       showSuccess('Listing Updated', 'Listing has been successfully updated');
       

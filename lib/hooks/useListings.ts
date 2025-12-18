@@ -5,6 +5,7 @@ import { ApiService } from '../services/api';
 import { useAuth } from '../../app/auth/useAuth';
 import { useToast } from '../../hooks/useToast';
 import { getCurrentTodayRange } from 'lib/services/helper';
+import { loadDateRangeFromStorage, saveDateRangeToStorage } from '../utils/dateRangeStorage';
 
 export const useListings = () => {
   const { user } = useAuth();
@@ -18,7 +19,18 @@ export const useListings = () => {
   
 
   
-  const initialDateRange = getCurrentTodayRange();
+  // Initialize date range from localStorage or use default
+  const getInitialDateRange = () => {
+    if (typeof window !== 'undefined') {
+      const stored = loadDateRangeFromStorage();
+      if (stored.startDate || stored.endDate) {
+        return { start: stored.startDate, end: stored.endDate };
+      }
+    }
+    return getCurrentTodayRange();
+  };
+
+  const initialDateRange = getInitialDateRange();
   const [startDate, setStartDate] = useState<Date | null>(initialDateRange.start);
   const [endDate, setEndDate] = useState<Date | null>(initialDateRange.end);
 
@@ -69,15 +81,21 @@ export const useListings = () => {
         setBackendOk(isHealthy);
         
         if (isHealthy) {
-          // Use current year date range
-          const monthRange = getCurrentTodayRange();
-          setStartDate(monthRange.start);
-          setEndDate(monthRange.end);
+          // Use stored date range from localStorage or default
+          const dateRange = getInitialDateRange();
+          setStartDate(dateRange.start);
+          setEndDate(dateRange.end);
           // Use appropriate API call based on user role
           const listings = user?.role === 'admin' 
-            ? await ApiService.getListings({ start_date: monthRange.start.toISOString(), end_date: monthRange.end.toISOString() })
+            ? await ApiService.getListings({ 
+                start_date: dateRange.start?.toISOString(), 
+                end_date: dateRange.end?.toISOString() 
+              })
             : user?.id 
-              ? await ApiService.getBuyerListings(user.id, { start_date: monthRange.start.toISOString(), end_date: monthRange.end.toISOString() })
+              ? await ApiService.getBuyerListings(user.id, { 
+                  start_date: dateRange.start?.toISOString(), 
+                  end_date: dateRange.end?.toISOString() 
+                })
               : [];
           if (mounted && Array.isArray(listings) && listings.length > 0) {
             setData(listings);
@@ -155,6 +173,8 @@ export const useListings = () => {
       setLoading(true);
       setStartDate(start);
       setEndDate(end);
+      // Save to localStorage whenever date range changes
+      saveDateRangeToStorage(start, end);
       const listings = user?.role === 'admin'
         ? await ApiService.getListings({ start_date: start?.toISOString() || undefined, end_date: end?.toISOString() || undefined })
         : user?.id
@@ -173,6 +193,7 @@ export const useListings = () => {
     const today = new Date();
     const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
     const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+    // loadWithDateRange will save to localStorage automatically
     await loadWithDateRange(startOfToday, endOfToday);
   };
 

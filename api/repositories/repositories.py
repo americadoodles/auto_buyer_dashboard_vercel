@@ -376,7 +376,7 @@ def list_listings(
                         ORDER BY vin, created_at DESC
                         ) s ON s.vin = l.vin
                         LEFT JOIN users u ON u.id::text = l.buyer_id
-                        ORDER BY l.updated_at DESC;
+                        ORDER BY l.created_at DESC;
 
                     """
                     

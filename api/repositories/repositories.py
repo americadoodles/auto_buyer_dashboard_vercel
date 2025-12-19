@@ -173,15 +173,15 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                                 logging.error(f"Failed to extract vehicle info from title '{title}': {str(e)}")
                                 # Continue without extracted info - will need to handle missing fields
                         
-                        # Validate required fields
-                        if not year or not make or not model:
-                            logging.warning(f"Missing required vehicle fields (year={year}, make={make}, model={model}) for item with title: {title}")
-                            # Skip this item or use defaults - you may want to adjust this behavior
-                            continue
+                        # Normalize make and model
+                        make = make.strip() if make and make.strip() else None
+                        model = model.strip() if model and model.strip() else None
+                        trim = trim.strip() if trim and trim.strip() else None
                         
-                        make = make.strip() if make else None
-                        model = model.strip() if model else None
-                        trim = trim.strip() if trim else None
+                        # Skip ingestion if make and model are empty
+                        if not make or not model:
+                            logging.warning(f"Skipping ingestion: missing make and/or model (make={make}, model={model}) for item with title: {title}")
+                            continue
 
                         # Handle external API data: map status, reasonCodes, buyMax to Decision object
                         decision = create_decision_from_data(norm)

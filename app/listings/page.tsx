@@ -52,8 +52,10 @@ export default function ListingsPage() {
   const [showFilters, setShowFilters] = useState(false);
   // Selection state
   const [selectedListings, setSelectedListings] = useState<Set<string>>(new Set());
-  // View mode state - default to cards
+  // View mode state - default to cards, will be initialized from localStorage
   const [viewMode, setViewMode] = useState<ViewMode>('cards');
+  // Track if view mode has been initialized from localStorage
+  const [viewModeInitialized, setViewModeInitialized] = useState(false);
   // Liked listings state (for card view)
   const [likedListings, setLikedListings] = useState<Set<string>>(new Set());
   // Track if URL params have been initialized
@@ -164,6 +166,33 @@ export default function ListingsPage() {
   useEffect(() => {
     currentPageRef.current = currentPage;
   }, [currentPage]);
+
+  // Initialize view mode from localStorage on mount
+  useEffect(() => {
+    if (typeof window === 'undefined') return; // SSR check
+    
+    try {
+      const savedViewMode = localStorage.getItem('listingsViewMode') as ViewMode | null;
+      if (savedViewMode === 'table' || savedViewMode === 'cards') {
+        setViewMode(savedViewMode);
+      }
+    } catch (error) {
+      console.error('Failed to load view mode from localStorage:', error);
+    } finally {
+      setViewModeInitialized(true);
+    }
+  }, []); // Only run on mount
+
+  // Save view mode to localStorage whenever it changes
+  useEffect(() => {
+    if (!viewModeInitialized || typeof window === 'undefined') return; // Don't save until initialized and client-side
+    
+    try {
+      localStorage.setItem('listingsViewMode', viewMode);
+    } catch (error) {
+      console.error('Failed to save view mode to localStorage:', error);
+    }
+  }, [viewMode, viewModeInitialized]);
 
   // Reset to page 1 when search/filters change (but not when page changes)
   useEffect(() => {

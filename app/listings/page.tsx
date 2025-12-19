@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useListings } from "../../lib/hooks/useListings";
 import { useAuth } from "../auth/useAuth";
 import { ListingsTable } from "../../components/organisms/ListingsTable";
@@ -16,6 +17,8 @@ import { Button } from "../../components/atoms/Button";
 import { Pagination } from "../../components/molecules/Pagination";
 
 export default function ListingsPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
   const {
     data,
@@ -53,9 +56,134 @@ export default function ListingsPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('cards');
   // Liked listings state (for card view)
   const [likedListings, setLikedListings] = useState<Set<string>>(new Set());
+  // Track if URL params have been initialized
+  const [urlInitialized, setUrlInitialized] = useState(false);
+  // Ref to prevent infinite loops when syncing URL
+  const isUpdatingFromURL = useRef(false);
+  // Refs to track previous filter values to detect actual changes
+  const prevFilters = useRef({ searchTerm: "", statusFilter: "", makeFilter: "" });
+  // Ref to track current page for filter reset effect (to avoid stale closures)
+  const currentPageRef = useRef(currentPage);
 
   // Get user role from authentication context
   const userRole = user?.role || "buyer"; // Default to buyer if no user or role
+
+  // Update URL query parameters for pagination
+  const updatePaginationURL = useCallback((page: number, perPage: number, skipCheck = false) => {
+    if (isUpdatingFromURL.current && !skipCheck) {
+      return; // Don't update URL if we're currently updating from URL
+    }
+    
+    const currentPageParam = searchParams.get('page');
+    const currentPerPageParam = searchParams.get('perPage');
+    
+    const urlPage = currentPageParam ? parseInt(currentPageParam, 10) : 1;
+    const urlPerPage = currentPerPageParam ? parseInt(currentPerPageParam, 10) : 10;
+    
+    // Only update if values actually changed
+    if (urlPage === page && urlPerPage === perPage) {
+      return;
+    }
+    
+    const params = new URLSearchParams(searchParams.toString());
+    
+    if (page > 1) {
+      params.set('page', String(page));
+    } else {
+      params.delete('page');
+    }
+    
+    if (perPage !== 10) {
+      params.set('perPage', String(perPage));
+    } else {
+      params.delete('perPage');
+    }
+
+    const newUrl = params.toString() ? `/listings?${params.toString()}` : '/listings';
+    router.replace(newUrl, { scroll: false });
+  }, [searchParams, router]);
+
+  // Track previous URL params to detect changes
+  const prevUrlParams = useRef<string>('');
+  
+  // Initialize pagination from URL params on mount and when URL changes
+  useEffect(() => {
+    if (authLoading) return;
+
+    const urlPage = searchParams.get('page');
+    const urlPerPage = searchParams.get('perPage');
+    const currentUrlParams = `${urlPage || ''}_${urlPerPage || ''}`;
+    
+    // Only update if URL params have actually changed (not just state)
+    if (currentUrlParams !== prevUrlParams.current || !urlInitialized) {
+      prevUrlParams.current = currentUrlParams;
+      isUpdatingFromURL.current = true;
+      
+      const urlPageNum = urlPage ? parseInt(urlPage, 10) : null;
+      const urlPerPageNum = urlPerPage ? parseInt(urlPerPage, 10) : null;
+      
+      // Always update from URL if it has a value, regardless of current state
+      // This ensures we restore the correct page when navigating back
+      if (urlPageNum !== null && urlPageNum > 0) {
+        setCurrentPage(urlPageNum);
+      }
+      
+      if (urlPerPageNum !== null && urlPerPageNum > 0) {
+        setRowsPerPage(urlPerPageNum);
+      }
+      
+      if (!urlInitialized) {
+        setUrlInitialized(true);
+      }
+      
+      // Reset flag after a short delay to allow state updates to complete
+      setTimeout(() => {
+        isUpdatingFromURL.current = false;
+      }, 100);
+    }
+  }, [searchParams, authLoading]); // Only depend on searchParams and authLoading to avoid loops
+
+  // Sync pagination changes to URL (but not during initialization or when updating from URL)
+  useEffect(() => {
+    if (!urlInitialized || isUpdatingFromURL.current) return;
+    
+    // Check if URL already matches to prevent unnecessary updates
+    const urlPage = searchParams.get('page');
+    const urlPerPage = searchParams.get('perPage');
+    const urlPageNum = urlPage ? parseInt(urlPage, 10) : 1;
+    const urlPerPageNum = urlPerPage ? parseInt(urlPerPage, 10) : 10;
+    
+    if (urlPageNum === currentPage && urlPerPageNum === rowsPerPage) {
+      return; // URL already matches, no update needed
+    }
+    
+    updatePaginationURL(currentPage, rowsPerPage);
+  }, [currentPage, rowsPerPage, updatePaginationURL, urlInitialized, searchParams]);
+
+  // Update currentPageRef whenever currentPage changes
+  useEffect(() => {
+    currentPageRef.current = currentPage;
+  }, [currentPage]);
+
+  // Reset to page 1 when search/filters change (but not when page changes)
+  useEffect(() => {
+    if (!urlInitialized || isUpdatingFromURL.current) return;
+    
+    // Check if filters actually changed
+    const filtersChanged = 
+      prevFilters.current.searchTerm !== searchTerm ||
+      prevFilters.current.statusFilter !== statusFilter ||
+      prevFilters.current.makeFilter !== makeFilter;
+    
+    // Only reset to page 1 if filters actually changed and we're on a page > 1
+    if (filtersChanged && currentPageRef.current > 1) {
+      setCurrentPage(1);
+      updatePaginationURL(1, rowsPerPage, true);
+    }
+    
+    // Update previous filter values
+    prevFilters.current = { searchTerm, statusFilter, makeFilter };
+  }, [searchTerm, statusFilter, makeFilter, urlInitialized, rowsPerPage, updatePaginationURL]);
 
   const handleSort = (key: keyof Listing | 'decision_status' | 'decision_reasons') => {
     setSort((prev) => ({
@@ -358,8 +486,14 @@ export default function ListingsPage() {
                 totalPages={filteredTotalPages}
                 rowsPerPage={rowsPerPage}
                 totalRows={filteredListings.length}
-                onPageChange={setCurrentPage}
-                onRowsPerPageChange={setRowsPerPage}
+                onPageChange={(page) => {
+                  setCurrentPage(page);
+                  updatePaginationURL(page, rowsPerPage);
+                }}
+                onRowsPerPageChange={(perPage) => {
+                  setRowsPerPage(perPage);
+                  updatePaginationURL(currentPage, perPage);
+                }}
                 selectedListings={selectedListings}
                 onSelectListing={handleSelectListing}
                 onSelectAll={handleSelectAll}
@@ -385,8 +519,14 @@ export default function ListingsPage() {
                     totalPages={filteredTotalPages}
                     rowsPerPage={rowsPerPage}
                     totalRows={filteredListings.length}
-                    onPageChange={setCurrentPage}
-                    onRowsPerPageChange={setRowsPerPage}
+                    onPageChange={(page) => {
+                      setCurrentPage(page);
+                      updatePaginationURL(page, rowsPerPage);
+                    }}
+                    onRowsPerPageChange={(perPage) => {
+                      setRowsPerPage(perPage);
+                      updatePaginationURL(currentPage, perPage);
+                    }}
                   />
                 </div>
               </>

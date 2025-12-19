@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Listing } from '../../lib/types/listing';
 import { ListingsTableContent } from '../molecules/ListingsTableContent';
 import { Pagination } from '../molecules/Pagination';
@@ -51,13 +51,21 @@ export const ListingsTable: React.FC<ListingsTableProps> = ({
   onListingUpdated
 }) => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   
   const handleSort = (key: keyof Listing | 'decision_status' | 'decision_reasons') => {
     onSort(key);
   };
   
   const handleEditListing = (listing: Listing) => {
-    router.push(`/listings/${listing.id}`);
+    // Preserve page parameter when navigating to detail page
+    const page = searchParams.get('page');
+    const perPage = searchParams.get('perPage');
+    const params = new URLSearchParams();
+    if (page) params.set('page', page);
+    if (perPage) params.set('perPage', perPage);
+    const queryString = params.toString();
+    router.push(`/listings/${listing.id}${queryString ? `?${queryString}` : ''}`);
   };
   console.log('listings in ListingsTable  ', listings);
   return (

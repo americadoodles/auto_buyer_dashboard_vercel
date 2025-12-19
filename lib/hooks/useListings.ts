@@ -95,10 +95,9 @@ export const useListings = () => {
 
   const totalPages = Math.ceil(sortedRows.length / rowsPerPage);
 
-  // Reset to first page when data changes or rows per page changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [data.length, rowsPerPage]);
+  // Don't automatically reset page when data changes
+  // Page should be controlled by URL params or explicit user actions
+  // This preserves pagination state when navigating back from detail pages
 
   // Track if we've initialized to avoid refetching on navigation
   const hasInitialized = useRef(false);

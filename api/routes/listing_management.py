@@ -62,8 +62,14 @@ def update_listing_info(
         
         updated_listing = update_listing(listing_id, update_data, str(current_user.id))
         if not updated_listing:
-            logging.error(f"update_listing returned None for listing {listing_id}")
-            raise HTTPException(status_code=404, detail="Listing not found or update failed")
+            # Check if listing exists to provide more specific error message
+            existing_listing = get_listing_by_id(listing_id)
+            if not existing_listing:
+                logging.error(f"Listing {listing_id} not found")
+                raise HTTPException(status_code=404, detail=f"Listing {listing_id} not found")
+            else:
+                logging.error(f"update_listing returned None for listing {listing_id} (listing exists but update failed)")
+                raise HTTPException(status_code=500, detail="Failed to update listing")
         
         logging.info(f"Successfully updated listing {listing_id}")
         return updated_listing

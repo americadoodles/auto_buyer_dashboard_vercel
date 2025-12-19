@@ -37,6 +37,14 @@ def update_listing(listing_id: int, update_data: ListingUpdate, updated_by: str)
             
         try:
             with conn.cursor() as cur:
+                # First, check if the listing exists
+                cur.execute("SELECT id FROM listings WHERE id = %s", (listing_id,))
+                listing_exists = cur.fetchone()
+                
+                if not listing_exists:
+                    logging.error(f"Listing {listing_id} not found in database")
+                    return None
+                
                 # Build dynamic update query using QueryBuilder
                 try:
                     query, params = QueryBuilder.build_update_query(

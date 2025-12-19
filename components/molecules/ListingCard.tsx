@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Listing } from '../../lib/types/listing';
 import { formatCurrency, formatNumber } from '../../lib/utils/formatters';
 import { getMarketplaceInfo, getTrustIndicators } from '../../lib/utils/marketplace';
@@ -36,6 +36,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({
   isLiked = false,
 }) => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [imageError, setImageError] = useState(false);
   const [showActions, setShowActions] = useState(false);
   
@@ -48,12 +49,23 @@ export const ListingCard: React.FC<ListingCardProps> = ({
     ? listing.sellerDescription.substring(0, 120) + (listing.sellerDescription.length > 120 ? '...' : '')
     : `${listing.year} ${listing.make} ${listing.model}${listing.bodyStyle ? ` • ${listing.bodyStyle}` : ''}${listing.exteriorColor ? ` • ${listing.exteriorColor}` : ''}`;
 
+  const navigateToDetail = () => {
+    // Preserve page parameter when navigating to detail page
+    const page = searchParams.get('page');
+    const perPage = searchParams.get('perPage');
+    const params = new URLSearchParams();
+    if (page) params.set('page', page);
+    if (perPage) params.set('perPage', perPage);
+    const queryString = params.toString();
+    router.push(`/listings/${listing.id}${queryString ? `?${queryString}` : ''}`);
+  };
+
   const handleCardClick = (e: React.MouseEvent) => {
     // Don't navigate if clicking on interactive elements
     if ((e.target as HTMLElement).closest('button, a, input')) {
       return;
     }
-    router.push(`/listings/${listing.id}`);
+    navigateToDetail();
   };
 
   return (
@@ -274,7 +286,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        router.push(`/listings/${listing.id}`);
+                        navigateToDetail();
                         setShowActions(false);
                       }}
                       className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"

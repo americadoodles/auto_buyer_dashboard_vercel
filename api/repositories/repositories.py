@@ -376,7 +376,7 @@ def list_listings(
                         ORDER BY vin, created_at DESC
                         ) s ON s.vin = l.vin
                         LEFT JOIN users u ON u.id::text = l.buyer_id
-                        ORDER BY l.updated_at DESC;
+                        ORDER BY l.created_at DESC;
 
                     """
                     
@@ -418,9 +418,9 @@ def list_listings(
                             price=float(price),
                             miles=int(miles),
                             dom=int(dom),
-                            year=int(year),
-                            make=make,
-                            model=model,
+                            year=int(year) if year is not None else 0,
+                            make=make or "",
+                            model=model or "",
                             location=location,
                             radius=25,
                             images=images or [],
@@ -592,9 +592,9 @@ def list_listings_by_buyer(
                             price=float(price),
                             miles=int(miles),
                             dom=int(dom),
-                            year=int(year),
-                            make=make,
-                            model=model,
+                            year=int(year) if year is not None else 0,
+                            make=make or "",
+                            model=model or "",
                             location=location,
                             radius=25,
                             images=images or [],

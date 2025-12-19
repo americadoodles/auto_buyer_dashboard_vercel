@@ -52,9 +52,9 @@ class ListingOut(BaseModel):
     price: float
     miles: int
     dom: int
-    year: int
-    make: str
-    model: str
+    year: Optional[int] = 0
+    make: Optional[str] = ""
+    model: Optional[str] = ""
     location: Optional[str] = None
     radius: Optional[int] = 25
     images: Optional[List[str]] = None

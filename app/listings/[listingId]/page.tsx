@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '../../../components/atoms/Button';
 import { Input } from '../../../components/atoms/Input';
@@ -23,10 +23,12 @@ import { ListingActivity, Contact } from '../../../lib/types/listing';
 import { ArrowLeft, Plus, Upload, X, Save, Edit2, Check, ExternalLink, Bell, Send, Workflow } from 'lucide-react';
 import { useToast } from '../../../hooks/useToast';
 import { formatDateTime } from 'lib/utils/formatters';
+import { invalidateListingsCache } from '../../../lib/hooks/useListings';
 
 export default function ListingDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const listingId = params.listingId as string;
   const { showSuccess, showError } = useToast();
   
@@ -203,6 +205,9 @@ export default function ListingDetailPage() {
       setEditingField(null);
       setEditValue('');
       
+      // Invalidate listings cache since listing was updated
+      invalidateListingsCache();
+      
       showSuccess('Field Updated', `${field} has been successfully updated`);
       
       // Reload activities after update
@@ -299,6 +304,9 @@ export default function ListingDetailPage() {
       
       const updatedListing = await updateListing(parseInt(listingId), updateData);
       setListing(updatedListing);
+      
+      // Invalidate listings cache since listing was updated
+      invalidateListingsCache();
       
       showSuccess('Listing Updated', 'Listing has been successfully updated');
       
@@ -425,7 +433,19 @@ export default function ListingDetailPage() {
           <div className="text-center py-12">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Listing Not Found</h2>
             <p className="text-gray-700 dark:text-gray-300 mb-4 font-medium">{error || 'The listing you are looking for does not exist.'}</p>
-            <Button onClick={() => router.push('/listings')} variant="outline">
+            <Button 
+              onClick={() => {
+                // Preserve page parameter when navigating back
+                const page = searchParams.get('page');
+                const perPage = searchParams.get('perPage');
+                const params = new URLSearchParams();
+                if (page) params.set('page', page);
+                if (perPage) params.set('perPage', perPage);
+                const queryString = params.toString();
+                router.push(queryString ? `/listings?${queryString}` : '/listings');
+              }} 
+              variant="outline"
+            >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Listings
             </Button>
@@ -444,7 +464,16 @@ export default function ListingDetailPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => router.push('/listings')}
+              onClick={() => {
+                // Preserve page parameter when navigating back
+                const page = searchParams.get('page');
+                const perPage = searchParams.get('perPage');
+                const params = new URLSearchParams();
+                if (page) params.set('page', page);
+                if (perPage) params.set('perPage', perPage);
+                const queryString = params.toString();
+                router.push(queryString ? `/listings?${queryString}` : '/listings');
+              }}
               className="flex items-center space-x-2 border-blue-300 dark:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-medium"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -2049,7 +2078,21 @@ export default function ListingDetailPage() {
 
           {/* Footer Actions */}
           <div className="flex justify-end space-x-2 pb-6">
-            <Button variant="outline" onClick={() => router.push('/listings')} disabled={saving} className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                // Preserve page parameter when navigating back
+                const page = searchParams.get('page');
+                const perPage = searchParams.get('perPage');
+                const params = new URLSearchParams();
+                if (page) params.set('page', page);
+                if (perPage) params.set('perPage', perPage);
+                const queryString = params.toString();
+                router.push(queryString ? `/listings?${queryString}` : '/listings');
+              }} 
+              disabled={saving} 
+              className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+            >
               Cancel
             </Button>
             <Button onClick={handleSave} disabled={saving} className="bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-black flex items-center gap-2 font-medium">

@@ -45,7 +45,7 @@ export const useListings = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [backendOk, setBackendOk] = useState<boolean | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [rowsPerPage, setRowsPerPage] = useState<number>(10);
+  const [rowsPerPage, setRowsPerPage] = useState<number>(12);
   
 
   

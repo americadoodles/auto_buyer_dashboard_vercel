@@ -37,9 +37,9 @@ export const Pagination: React.FC<PaginationProps> = ({
             onChange={handleRowsPerPageChange}
             className="border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent"
           >
-            <option value={10}>10</option>
-            <option value={25}>25</option>
-            <option value={50}>50</option>
+            <option value={12}>12</option>
+            <option value={24}>24</option>
+            <option value={60}>60</option>
           </select>
           <span className="text-sm text-slate-600 dark:text-gray-400">
             {startRow}-{endRow} of {totalRows}

@@ -50,27 +50,15 @@ export default function ListingsPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [makeFilter, setMakeFilter] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  // Selection state
   const [selectedListings, setSelectedListings] = useState<Set<string>>(new Set());
-  // View mode state - default to cards, will be initialized from localStorage
   const [viewMode, setViewMode] = useState<ViewMode>('cards');
-  // Track if view mode has been initialized from localStorage
   const [viewModeInitialized, setViewModeInitialized] = useState(false);
-  // Liked listings state (for card view)
   const [likedListings, setLikedListings] = useState<Set<string>>(new Set());
-  // Track if URL params have been initialized
   const [urlInitialized, setUrlInitialized] = useState(false);
-  // Ref to prevent infinite loops when syncing URL
   const isUpdatingFromURL = useRef(false);
-  // Refs to track previous filter values to detect actual changes
   const prevFilters = useRef({ searchTerm: "", statusFilter: "", makeFilter: "" });
-  // Ref to track current page for filter reset effect (to avoid stale closures)
   const currentPageRef = useRef(currentPage);
-
-  // Get user role from authentication context
   const userRole = user?.role || "buyer"; // Default to buyer if no user or role
-
-  // Update URL query parameters for pagination
   const updatePaginationURL = useCallback((page: number, perPage: number, skipCheck = false) => {
     if (isUpdatingFromURL.current && !skipCheck) {
       return; // Don't update URL if we're currently updating from URL

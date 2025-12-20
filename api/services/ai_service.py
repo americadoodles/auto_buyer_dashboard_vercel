@@ -120,14 +120,16 @@ If any field cannot be determined, use null for that field. Always return valid 
         make = ai_data.get("make")
         model = ai_data.get("model")
         
-        if not year or not make or not model:
-            raise ValueError(f"Missing required fields: year={year}, make={make}, model={model}")
+        # Only fail if all fields are missing
+        if not year and not make and not model:
+            raise ValueError(f"Missing all required fields: year={year}, make={make}, model={model}")
         
-        # Validate year is an integer
-        try:
-            year = int(year)
-        except (ValueError, TypeError):
-            raise ValueError(f"Invalid year format: {year}")
+        # Validate year is an integer if it exists
+        if year:
+            try:
+                year = int(year)
+            except (ValueError, TypeError):
+                raise ValueError(f"Invalid year format: {year}")
         
         # Return extracted data (only year, make, model, trim, and bodystyle)
         trim_value = ai_data.get("trim")
@@ -135,8 +137,8 @@ If any field cannot be determined, use null for that field. Always return valid 
         
         result = {
             "year": year,
-            "make": str(make).strip(),
-            "model": str(model).strip(),
+            "make": str(make).strip() if make else None,
+            "model": str(model).strip() if model else None,
             "trim": str(trim_value).strip() if trim_value else None,
             "bodystyle": str(bodystyle_value).strip() if bodystyle_value else None
         }

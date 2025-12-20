@@ -177,12 +177,6 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                         make = make.strip() if make and make.strip() else None
                         model = model.strip() if model and model.strip() else None
                         trim = trim.strip() if trim and trim.strip() else None
-                        
-                        # Skip ingestion if make and model are empty
-                        if not make or not model:
-                            logging.warning(f"Skipping ingestion: missing make and/or model (make={make}, model={model}) for item with title: {title}")
-                            continue
-
                         # Handle external API data: map status, reasonCodes, buyMax to Decision object
                         decision = create_decision_from_data(norm)
 

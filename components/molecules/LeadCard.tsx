@@ -6,6 +6,7 @@ import { Lead as BaseLead } from '../../lib/types/lead';
 import { formatCurrency, formatNumber, formatLocationWithStateCode } from '../../lib/utils/formatters';
 import { getMarketplaceInfo } from '../../lib/utils/marketplace';
 import { Badge } from '../atoms/Badge';
+import { Icon } from '../atoms/Icon';
 import { 
   Gauge, 
   Clock, 
@@ -79,9 +80,23 @@ export const LeadCard: React.FC<LeadCardProps> = ({
     return 'red';
   };
 
+  // Helper function to get verification icons for a lead
+  const getVerificationIcons = (lead: Lead) => {
+    const icons: string[] = [];
+    const listing = lead.listing;
+    if (!listing) {
+      return icons;
+    }
+    icons.push('mmr');
+    icons.push('accutrade');
+    icons.push('autocheck');
+    icons.push('carfax');
+    return icons;
+  };
+
   return (
     <div
-      className={`group relative bg-white dark:bg-gray-800 rounded-xl border-2 transition-all duration-200 hover:shadow-lg cursor-pointer flex flex-col h-full ${
+      className={`group relative bg-gray-50 dark:bg-gray-800 rounded-xl border-2 transition-all duration-200 hover:shadow-lg cursor-pointer flex flex-col h-full ${
         isSelected 
           ? 'border-blue-500 dark:border-blue-400 shadow-md' 
           : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
@@ -222,6 +237,34 @@ export const LeadCard: React.FC<LeadCardProps> = ({
                     </a>
                   </div>
                 )}
+
+                {/* Verification Icons */}
+                {(() => {
+                  const verificationIcons = getVerificationIcons(lead);
+                  if (verificationIcons.length > 0) {
+                    return (
+                      <div className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                        <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">Verified:</span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {verificationIcons.map((iconName) => (
+                            <div
+                              key={iconName}
+                              title={iconName.charAt(0).toUpperCase() + iconName.slice(1)}
+                              className="inline-flex"
+                            >
+                              <Icon
+                                name={iconName}
+                                size={24}
+                                className="opacity-80 hover:opacity-100 transition-opacity rounded"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
             </div>
           </>

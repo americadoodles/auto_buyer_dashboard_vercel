@@ -1,3 +1,4 @@
+import React from 'react';
 import { 
   LucideIcon,
   Download,
@@ -29,6 +30,12 @@ import {
   Sparkles,
   Loader2,
 } from 'lucide-react';
+
+// Import image icons
+import AccuTradeIcon from '../../assets/images/icons/AccuTrade.png';
+import AutoCheckIcon from '../../assets/images/icons/AutoCheck.png';
+import CarfaxIcon from '../../assets/images/icons/Carfax.png';
+import MMRIcon from '../../assets/images/icons/MMR.png';
 
 interface IconProps {
   icon?: LucideIcon;
@@ -68,12 +75,41 @@ const iconMap: Record<string, LucideIcon> = {
   'loader': Loader2
 };
 
+// Helper function to get image source from StaticImageData or string
+const getImageSrc = (img: string | { src?: string; [key: string]: any }): string => {
+  if (typeof img === 'string') return img;
+  return img.src || (img as any).default || '';
+};
+
+const imageIconMap: Record<string, string> = {
+  'accutrade': getImageSrc(AccuTradeIcon),
+  'autocheck': getImageSrc(AutoCheckIcon),
+  'carfax': getImageSrc(CarfaxIcon),
+  'mmr': getImageSrc(MMRIcon),
+};
+
 export const Icon: React.FC<IconProps> = ({ 
   icon: IconComponent, 
   name,
   className = '', 
   size = 24 
 }) => {
+  // Check if it's an image icon first
+  if (name) {
+    const imageIconSrc = imageIconMap[name.toLowerCase()];
+    if (imageIconSrc) {
+      return (
+        <img
+          src={imageIconSrc}
+          alt={name}
+          className={className}
+          style={{ width: size, height: size }}
+        />
+      );
+    }
+  }
+
+  // Otherwise, try Lucide icon
   const IconToRender = name ? iconMap[name] : IconComponent;
   
   if (!IconToRender) {

@@ -6,6 +6,7 @@ import { Lead as BaseLead } from '../../lib/types/lead';
 import { formatCurrency, formatNumber, formatLocationWithStateCode } from '../../lib/utils/formatters';
 import { getMarketplaceInfo } from '../../lib/utils/marketplace';
 import { Badge } from '../atoms/Badge';
+import { Icon } from '../atoms/Icon';
 import { 
   Gauge, 
   Clock, 
@@ -77,6 +78,20 @@ export const LeadCard: React.FC<LeadCardProps> = ({
     if (score >= 60) return 'blue';
     if (score >= 40) return 'yellow';
     return 'red';
+  };
+
+  // Helper function to get verification icons for a lead
+  const getVerificationIcons = (lead: Lead) => {
+    const icons: string[] = [];
+    const listing = lead.listing;
+    if (!listing) {
+      return icons;
+    }
+    icons.push('mmr');
+    icons.push('accutrade');
+    icons.push('autocheck');
+    icons.push('carfax');
+    return icons;
   };
 
   return (
@@ -222,6 +237,34 @@ export const LeadCard: React.FC<LeadCardProps> = ({
                     </a>
                   </div>
                 )}
+
+                {/* Verification Icons */}
+                {(() => {
+                  const verificationIcons = getVerificationIcons(lead);
+                  if (verificationIcons.length > 0) {
+                    return (
+                      <div className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                        <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">Verified:</span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {verificationIcons.map((iconName) => (
+                            <div
+                              key={iconName}
+                              title={iconName.charAt(0).toUpperCase() + iconName.slice(1)}
+                              className="inline-flex"
+                            >
+                              <Icon
+                                name={iconName}
+                                size={24}
+                                className="opacity-80 hover:opacity-100 transition-opacity rounded"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
             </div>
           </>

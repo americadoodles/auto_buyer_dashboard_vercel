@@ -210,6 +210,20 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
     return date.toLocaleDateString();
   };
 
+  // Helper function to get verification icons for a lead
+  const getVerificationIcons = (lead: Lead) => {
+    const icons: string[] = [];
+    const listing = lead.listing;
+    if (!listing) {
+      return icons;
+    }
+    icons.push('mmr');
+    icons.push('accutrade');
+    icons.push('autocheck');
+    icons.push('carfax');
+    return icons;
+  };
+
   return (
     <div>
       <div className="space-y-6">
@@ -468,6 +482,7 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
                       { key: "name", label: "Name", sortable: true },
                       { key: "email", label: "Email", sortable: true },
                       { key: "updated", label: "Updated", sortable: true },
+                      { key: "verified", label: "Verified", sortable: false },
                     ]}
                   />
                   <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -482,13 +497,13 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
                             {lead.lead_score}
                           </Badge>
                         </td>
-                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                        <td className="px-4 py-2 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-gray-100">
                           {lead.listing?.vin || "-"}
                         </td>
                         <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                           {lead.listing?.lpn || "-"}
                         </td>
-                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                        <td className="px-4 py-2 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-gray-100">
                           {lead.listing?.price ? formatCurrency(lead.listing.price) : "-"}
                         </td>
                         <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
@@ -500,8 +515,8 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
                         <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                           {lead.listing?.model ? (lead.listing.model.length > 10 ? lead.listing.model.substring(0, 10) + "..." : lead.listing.model) : "-"}
                         </td>
-                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                          {lead.listing?.miles?.toLocaleString() || "-"}
+                        <td className="px-4 py-2 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-gray-100">
+                          {formatCurrency(Number(lead.listing?.miles || 0))}
                         </td>
                         <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                           {(() => {
@@ -533,7 +548,7 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
                           <div className="flex items-center">
                       
                             <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">
+                              <div className="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">
                                 {lead.contact?.first_name || "Unknown"}{" "}
                                 {lead.contact?.last_name || ""}
                               </div>
@@ -545,6 +560,33 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
                         </td>
                         <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                           {lead.updated_at ? formatDate(lead.updated_at) : formatDate(lead.created_at)}
+                        </td>
+                        <td className="px-4 py-2 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            {(() => {
+                              const verificationIcons = getVerificationIcons(lead);
+                              if (verificationIcons.length === 0) {
+                                return <span className="text-gray-400 dark:text-gray-500">-</span>;
+                              }
+                              return (
+                                <div className="flex items-center gap-1.5">
+                                  {verificationIcons.map((iconName) => (
+                                    <div
+                                      key={iconName}
+                                      title={iconName.charAt(0).toUpperCase() + iconName.slice(1)}
+                                      className="inline-flex"
+                                    >
+                                      <Icon
+                                        name={iconName}
+                                        size={20}
+                                        className="opacity-80 hover:opacity-100 transition-opacity rounded"
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              );
+                            })()}
+                          </div>
                         </td>
                       </TableRow>
                     ))}

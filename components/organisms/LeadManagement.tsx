@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
@@ -114,11 +114,39 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
   const [isCreateLeadModalOpen, setIsCreateLeadModalOpen] = useState(false);
   // View mode state - default to cards
   const [viewMode, setViewMode] = useState<ViewMode>('cards');
+  const [viewModeInitialized, setViewModeInitialized] = useState(false);
   // Liked leads state (for card view)
   const [likedLeads, setLikedLeads] = useState<Set<string>>(new Set());
   // Selected leads state
   const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
   
+  // Initialize view mode from localStorage on mount
+  useEffect(() => {
+    if (typeof window === 'undefined') return; // SSR check
+    
+    try {
+      const savedViewMode = localStorage.getItem('leadsViewMode') as ViewMode | null;
+      if (savedViewMode === 'table' || savedViewMode === 'cards') {
+        setViewMode(savedViewMode);
+      }
+    } catch (error) {
+      console.error('Failed to load view mode from localStorage:', error);
+    } finally {
+      setViewModeInitialized(true);
+    }
+  }, []); // Only run on mount
+
+  // Save view mode to localStorage whenever it changes
+  useEffect(() => {
+    if (!viewModeInitialized || typeof window === 'undefined') return; // Don't save until initialized and client-side
+    
+    try {
+      localStorage.setItem('leadsViewMode', viewMode);
+    } catch (error) {
+      console.error('Failed to save view mode to localStorage:', error);
+    }
+  }, [viewMode, viewModeInitialized]);
+
   // Derive filter values from parent props
   const statusFilter = currentStatusFilter === undefined ? "all" : currentStatusFilter.toString();
   const sourceFilter = currentSourceFilter === undefined ? "all" : currentSourceFilter.toString();

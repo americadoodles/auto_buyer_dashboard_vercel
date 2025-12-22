@@ -27,7 +27,7 @@ import {
   FileText,
   MapPin,
   Sparkles,
-  Loader2
+  Loader2,
 } from 'lucide-react';
 
 interface IconProps {

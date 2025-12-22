@@ -619,3 +619,14 @@ class DealAIDraftResponse(BaseModel):
     description: str
     notes: str
     expected_close_date: str  # ISO date string
+
+class TaskAIDraftRequest(BaseModel):
+    deal_id: Optional[UUID] = None
+    contact_id: Optional[UUID] = None
+    vehicle_info: Optional[Dict[str, Any]] = None
+    contact_info: Optional[Dict[str, Any]] = None
+    additional_context: Optional[str] = None
+
+class TaskAIDraftResponse(BaseModel):
+    title: str
+    description: str

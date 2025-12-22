@@ -34,7 +34,9 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
   const [selectedStatusId, setSelectedStatusId] = useState<number | undefined>(statusId);
   const [dueDate, setDueDate] = useState('');
   const [relatedDealId, setRelatedDealId] = useState<string | undefined>(undefined);
+  const [selectedDeal, setSelectedDeal] = useState<{ id: string; name: string; description?: string; contact?: { first_name?: string; last_name?: string; email?: string; phone?: string } } | undefined>(undefined);
   const [loading, setLoading] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   
@@ -93,6 +95,61 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
       setLoading(false);
     }
   }, [isOpen, statusId, user]);
+
+  // Update selectedDeal when relatedDealId changes
+  useEffect(() => {
+    if (relatedDealId) {
+      const deal = deals.find(d => d.id === relatedDealId);
+      if (deal) {
+        setSelectedDeal({
+          id: deal.id,
+          name: deal.title || '',
+          description: deal.description,
+          contact: deal.contact ? {
+            first_name: deal.contact.first_name,
+            last_name: deal.contact.last_name,
+            email: deal.contact.email,
+            phone: deal.contact.phone
+          } : undefined
+        });
+      } else {
+        setSelectedDeal(undefined);
+      }
+    } else {
+      setSelectedDeal(undefined);
+    }
+  }, [relatedDealId, deals]);
+
+  const handleAIDraft = async () => {
+    if (!relatedDealId || !selectedDeal) {
+      setError('Please select a related deal first');
+      return;
+    }
+
+    setAiLoading(true);
+    setError(null);
+    try {
+      const draft = await tasksApi.generateAIDraft({
+        deal_id: relatedDealId,
+        contact_id: selectedDeal.contact ? undefined : undefined, // We'll pass contact info separately
+        contact_info: selectedDeal.contact ? {
+          first_name: selectedDeal.contact.first_name,
+          last_name: selectedDeal.contact.last_name,
+          email: selectedDeal.contact.email,
+          phone: selectedDeal.contact.phone
+        } : undefined,
+        additional_context: selectedDeal.description || undefined,
+      });
+
+      // Populate fields with AI suggestions
+      setTitle(draft.title);
+      setDescription(draft.description);
+    } catch (e: any) {
+      setError(e?.message || 'Failed to generate AI draft');
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   const canSubmit = title.trim().length > 0 && selectedStatusId !== undefined && !loading;
 
@@ -158,13 +215,50 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Task Title <span className="text-red-500">*</span>
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Related Deal</label>
+            <select
+              className="w-full border rounded-md h-10 px-3"
+              value={relatedDealId || ''}
+              onChange={(e) => setRelatedDealId(e.target.value || undefined)}
+            >
+              <option value="">No deal selected</option>
+              {deals.map((deal) => (
+                <option key={deal.id} value={deal.id}>
+                  {deal.title || `Deal ${deal.id}`}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-sm font-medium text-gray-700">
+                Task Title <span className="text-red-500">*</span>
+              </label>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleAIDraft}
+                disabled={aiLoading || loading || !relatedDealId}
+                className="text-xs px-3 py-1 h-7"
+              >
+                {aiLoading ? (
+                  <>
+                    <Icon name="loader" className="w-3 h-3 mr-1 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Icon name="sparkles" className="w-3 h-3 mr-1" />
+                    Draft with AI
+                  </>
+                )}
+              </Button>
+            </div>
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g., Follow up with client"
+              placeholder={selectedDeal ? `Task for ${selectedDeal.name}` : "e.g., Follow up with client"}
               required
             />
           </div>
@@ -228,22 +322,6 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
                 onChange={(e) => setDueDate(e.target.value)}
               />
             </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Related Deal</label>
-            <select
-              className="w-full border rounded-md h-10 px-3"
-              value={relatedDealId || ''}
-              onChange={(e) => setRelatedDealId(e.target.value || undefined)}
-            >
-              <option value="">No deal selected</option>
-              {deals.map((deal) => (
-                <option key={deal.id} value={deal.id}>
-                  {deal.title || `Deal ${deal.id}`}
-                </option>
-              ))}
-            </select>
           </div>
 
         </div>

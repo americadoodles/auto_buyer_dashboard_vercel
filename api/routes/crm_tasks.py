@@ -7,7 +7,8 @@ from ..schemas.crm import (
     TaskCreate, TaskUpdate, TaskOut, TaskPriorityCreate, TaskPriorityOut,
     TaskStatusCreate, TaskStatusOut, TaskDashboard,
     TaskMoveRequest, TaskBoardDetailOut, BulkTaskMoveRequest,
-    BulkTaskOwnerChangeRequest, BulkTaskStatusCloseRequest, TaskBoardScope
+    BulkTaskOwnerChangeRequest, BulkTaskStatusCloseRequest, TaskBoardScope,
+    TaskAIDraftRequest, TaskAIDraftResponse
 )
 from ..schemas.user import UserOut
 from ..core.auth import get_current_user, require_admin, require_buyer_or_admin, check_task_ownership
@@ -19,6 +20,7 @@ from ..repositories.crm_tasks import (
     move_task, get_task_board_detail,
     bulk_move_tasks, bulk_change_task_owner, bulk_close_tasks
 )
+from ..services.ai_service import generate_task_draft
 import logging
 
 task_router = APIRouter(prefix="/crm/tasks", tags=["crm-tasks"])
@@ -593,3 +595,22 @@ def bulk_close_tasks_endpoint(
     except Exception as e:
         logging.error(f"Error in bulk close tasks: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to bulk close tasks")
+
+# ==============================================
+# AI DRAFT GENERATION ENDPOINT
+# ==============================================
+
+@task_router.post("/ai-draft", response_model=TaskAIDraftResponse)
+def generate_ai_draft(
+    request: TaskAIDraftRequest,
+    current_user: UserOut = Depends(get_current_user)
+):
+    """Generate AI-powered draft for task creation"""
+    try:
+        return generate_task_draft(request)
+    except ValueError as e:
+        logging.error(f"Error generating AI draft: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        logging.error(f"Error generating AI draft: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate AI draft: {str(e)}")

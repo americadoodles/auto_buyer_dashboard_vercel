@@ -1,4 +1,4 @@
-# AI Service for Deal Draft Generation
+# AI Service for Deal and Task Draft Generation
 from openai import OpenAI
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional
@@ -9,7 +9,7 @@ import traceback
 import inspect
 import httpx
 
-from ..schemas.crm import DealAIDraftRequest, DealAIDraftResponse
+from ..schemas.crm import DealAIDraftRequest, DealAIDraftResponse, TaskAIDraftRequest, TaskAIDraftResponse
 from ..core.config import settings
 
 
@@ -323,5 +323,125 @@ Respond in JSON format with these exact keys:
         description=description,
         notes=notes,
         expected_close_date=expected_close_date
+    )
+
+
+def generate_task_draft(request: TaskAIDraftRequest) -> TaskAIDraftResponse:
+    """Generate AI-powered draft for task creation"""
+    # Step 1: Check OpenAI library version
+    try:
+        import openai
+        logging.info(f"OpenAI library version: {openai.__version__}")
+    except Exception as e:
+        logging.warning(f"Could not get OpenAI version: {str(e)}")
+    
+    # Step 2: Check API key configuration
+    if not settings.OPENAI_API_KEY:
+        logging.error("OpenAI API key not configured - OPENAI_API_KEY is empty or missing")
+        raise ValueError("OpenAI API key not configured")
+    
+    # Step 3: Initialize OpenAI client
+    logging.info("Attempting to initialize OpenAI client for task draft...")
+    try:
+        client = _get_openai_client()
+        logging.info("OpenAI client initialized successfully")
+    except ValueError:
+        raise
+          
+    # Build context for AI prompt
+    context_parts = []
+    
+    if request.deal_id:
+        context_parts.append(f"Related Deal ID: {request.deal_id}")
+    
+    if request.vehicle_info:
+        vehicle = request.vehicle_info
+        vehicle_desc = f"Vehicle: {vehicle.get('year', '')} {vehicle.get('make', '')} {vehicle.get('model', '')}"
+        if vehicle.get('trim'):
+            vehicle_desc += f" {vehicle.get('trim')}"
+        if vehicle.get('vin'):
+            vehicle_desc += f" (VIN: {vehicle.get('vin')})"
+        context_parts.append(vehicle_desc)
+    
+    if request.contact_info:
+        contact = request.contact_info
+        contact_desc = f"Contact: {contact.get('first_name', '')} {contact.get('last_name', '')}"
+        if contact.get('company'):
+            contact_desc += f" from {contact.get('company')}"
+        if contact.get('email'):
+            contact_desc += f" (Email: {contact.get('email')})"
+        if contact.get('phone'):
+            contact_desc += f" (Phone: {contact.get('phone')})"
+        context_parts.append(contact_desc)
+    
+    if request.additional_context:
+        context_parts.append(f"Additional context: {request.additional_context}")
+    
+    context = "\n".join(context_parts) if context_parts else "General task"
+    
+    # Create prompt for OpenAI
+    prompt = f"""You are a CRM assistant helping to create a professional task record. 
+Based on the following information from a related deal, generate a task draft:
+
+{context}
+
+Please provide:
+1. A clear and actionable task title (e.g., "Follow up with John Smith about 2024 Toyota Camry")
+2. A detailed task description (2-3 sentences explaining what needs to be done, including relevant details from the deal)
+
+Respond in JSON format with these exact keys:
+{{
+    "title": "task title here",
+    "description": "task description here"
+}}"""
+
+    # Call OpenAI API
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "You are a professional CRM assistant specializing in task management. Always respond with valid JSON only."},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.7,
+        max_tokens=300
+    )
+    
+    # Parse response
+    content = response.choices[0].message.content
+    if content is None:
+        logging.error("OpenAI API returned None content")
+        raise ValueError("OpenAI API returned empty response")
+    
+    content = content.strip()
+    
+    # Try to extract JSON from response (handle markdown code blocks)
+    if "```json" in content:
+        content = content.split("```json")[1].split("```")[0].strip()
+    elif "```" in content:
+        content = content.split("```")[1].split("```")[0].strip()
+    
+    try:
+        ai_data = json.loads(content)
+    except json.JSONDecodeError:
+        # Fallback: try to extract fields manually or use defaults
+        logging.warning(f"Failed to parse AI response as JSON: {content}")
+        
+        # Try to extract title from content
+        title = "AI Generated Task"
+        if request.contact_info:
+            title = f"Follow up with {request.contact_info.get('first_name', '')} {request.contact_info.get('last_name', '')}"
+        
+        ai_data = {
+            "title": title,
+            "description": content[:300] if len(content) > 300 else content or "AI-generated task. Please review and update with specific details."
+        }
+    
+    # Validate and set defaults
+    title = ai_data.get("title", "AI Generated Task")
+    description = ai_data.get("description", "Task created with AI assistance. Please review and update with specific details.")
+    
+    return TaskAIDraftResponse(
+        title=title,
+        description=description
     )
 

@@ -123,5 +123,38 @@ export const tasksApi = {
 
   async deleteTaskStatus(id: number): Promise<void> {
     await apiCall(`/crm/tasks/statuses/${id}`, { method: 'DELETE' });
+  },
+
+  // AI Draft generation
+  async generateAIDraft(params: {
+    deal_id?: string;
+    contact_id?: string;
+    vehicle_info?: {
+      year?: number;
+      make?: string;
+      model?: string;
+      trim?: string;
+      vin?: string;
+    };
+    contact_info?: {
+      first_name?: string;
+      last_name?: string;
+      company?: string;
+      email?: string;
+      phone?: string;
+    };
+    additional_context?: string;
+  }): Promise<{
+    title: string;
+    description: string;
+  }> {
+    return apiCall<{
+      title: string;
+      description: string;
+    }>('/crm/tasks/ai-draft', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params)
+    });
   }
 };

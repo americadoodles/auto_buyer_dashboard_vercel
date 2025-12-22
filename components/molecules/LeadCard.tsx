@@ -96,7 +96,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 
   return (
     <div
-      className={`group relative bg-white dark:bg-gray-800 rounded-xl border-2 transition-all duration-200 hover:shadow-lg cursor-pointer flex flex-col h-full ${
+      className={`group relative bg-gray-50 dark:bg-gray-800 rounded-xl border-2 transition-all duration-200 hover:shadow-lg cursor-pointer flex flex-col h-full ${
         isSelected 
           ? 'border-blue-500 dark:border-blue-400 shadow-md' 
           : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'

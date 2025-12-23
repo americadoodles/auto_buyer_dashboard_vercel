@@ -12,12 +12,11 @@ interface UseDealsParams {
   search?: string;
   is_won?: boolean;
   is_lost?: boolean;
-  enabled?: boolean; // Control whether to auto-fetch on mount/param changes
 }
 
 export const useDeals = (params?: UseDealsParams) => {
   const [deals, setDeals] = useState<Deal[]>([]);
-  const [loading, setLoading] = useState(params?.enabled !== false); // Only show loading if enabled
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchDeals = async () => {
@@ -26,6 +25,8 @@ export const useDeals = (params?: UseDealsParams) => {
       setError(null);
       const data = await dealsApi.getDeals(params);
       setDeals(data);
+      console.log('useDeals deals', data);
+      console.log('useDeals params', params);
     } catch (err) {
       console.error('Error fetching deals:', err);
       setError('Failed to fetch deals');
@@ -35,11 +36,8 @@ export const useDeals = (params?: UseDealsParams) => {
   };
 
   useEffect(() => {
-    // Only auto-fetch if enabled is not false (defaults to true for backward compatibility)
-    if (params?.enabled !== false) {
-      fetchDeals();
-    }
-  }, [params?.skip, params?.limit, params?.stage_id, params?.category_id, params?.assigned_to, params?.contact_id, params?.search, params?.is_won, params?.is_lost, params?.enabled]);
+    fetchDeals();
+  }, [params?.skip, params?.limit, params?.stage_id, params?.category_id, params?.assigned_to, params?.contact_id, params?.search, params?.is_won, params?.is_lost]);
 
   const refreshDeals = () => {
     fetchDeals();

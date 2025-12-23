@@ -67,7 +67,6 @@ export const ListingsTable: React.FC<ListingsTableProps> = ({
     const queryString = params.toString();
     router.push(`/listings/${listing.id}${queryString ? `?${queryString}` : ''}`);
   };
-  console.log('listings in ListingsTable  ', listings);
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
       {/* Desktop/Tablet Table View with Horizontal Scroll */}

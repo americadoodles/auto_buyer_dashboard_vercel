@@ -18,7 +18,8 @@ import {
   Phone,
   Handshake,
   CheckSquare,
-  Plus
+  Plus,
+  FolderKanban
 } from 'lucide-react';
 import { useAuth } from '../../app/auth/useAuth';
 import { LeadCreateWithSelectionModal } from './LeadCreateWithSelectionModal';
@@ -30,6 +31,7 @@ interface NavItem {
   description?: string;
   subItems?: NavItem[];
   onClick?: () => void;
+  alwaysShowSubItems?: boolean; // If true, sub-items are always visible without expand/collapse
 }
 
 // Get navigation items based on user role
@@ -135,6 +137,8 @@ export const AdminNavPanel = () => {
       if (newSet.has(itemLabel)) {
         newSet.delete(itemLabel);
       } else {
+        // Close all other items and open only this one
+        newSet.clear();
         newSet.add(itemLabel);
       }
       return newSet;
@@ -212,8 +216,15 @@ export const AdminNavPanel = () => {
                       }`}
                       onClick={(e) => {
                         if (hasSubItems) {
-                          e.preventDefault();
+                          // Navigate to the page first
+                          if (item.href) {
+                            router.push(item.href);
+                          }
+                          // Then toggle expansion (this will close other items)
                           toggleItemExpanded(item.label);
+                        } else {
+                          // If no sub-items, close all expanded items when navigating
+                          setExpandedItems(new Set());
                         }
                       }}
                     >
@@ -223,6 +234,7 @@ export const AdminNavPanel = () => {
                         onClick={(e) => {
                           if (hasSubItems) {
                             e.preventDefault();
+                            // Navigation is handled by parent div onClick
                           }
                         }}
                         title={!isExpanded ? item.label : undefined}

@@ -224,6 +224,23 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
     return icons;
   };
 
+  // Show loading state if data is being fetched and no leads are available yet
+  const isLoading = loading || statusesLoading || sourcesLoading;
+  
+  if (isLoading && leads.length === 0) {
+    return (
+      <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+        {/* Loading State */}
+        <div className="flex-1 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400"></div>
+            <p className="text-gray-600 dark:text-gray-400 font-medium">Loading leads...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="space-y-6">

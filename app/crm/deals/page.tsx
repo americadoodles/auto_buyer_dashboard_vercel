@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { DealPipeline } from '../../../components/organisms/DealPipeline';
 import { useDeals, useDealStages, useDealPipeline } from '../../../lib/hooks/useDeals';
@@ -12,35 +12,16 @@ export default function DealsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [stageFilter, setStageFilter] = useState<number | undefined>(undefined);
   const [categoryFilter, setCategoryFilter] = useState<number | undefined>(undefined);
-  const [shouldFetch, setShouldFetch] = useState(false);
-  const isInitialMount = useRef(true);
 
   const { deals, loading, error, refreshDeals } = useDeals({
     skip: (currentPage - 1) * pageSize,
     limit: pageSize,
     search: searchTerm || undefined,
     stage_id: stageFilter,
-    category_id: categoryFilter,
-    enabled: shouldFetch
+    category_id: categoryFilter
   });
   const { stages } = useDealStages();
   const { pipeline } = useDealPipeline();
-
-  // Enable fetching when filters/search change (but not on initial mount)
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
-    // Enable fetching when any filter/search changes
-    setShouldFetch(true);
-  }, [searchTerm, stageFilter, categoryFilter, currentPage]);
-
-  // Wrapper for refreshDeals that ensures fetching is enabled
-  const handleRefreshDeals = () => {
-    setShouldFetch(true);
-    refreshDeals();
-  };
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -55,7 +36,7 @@ export default function DealsPage() {
       // Here you would call the API to create a new deal
       console.log('Create deal clicked');
       // Refresh the deals list
-      handleRefreshDeals();
+      refreshDeals();
     } catch (error) {
       console.error('Error creating deal:', error);
     }
@@ -164,7 +145,7 @@ export default function DealsPage() {
               </div>
               <div className="mt-4">
                 <button
-                  onClick={handleRefreshDeals}
+                  onClick={refreshDeals}
                   className="bg-red-100 dark:bg-red-900/30 px-3 py-2 rounded-md text-sm font-medium text-red-800 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-900/50"
                 >
                   Try again
@@ -198,7 +179,7 @@ export default function DealsPage() {
           onCategoryFilter={handleCategoryFilter}
           stages={stages}
           loading={loading}
-          onDealUpdated={handleRefreshDeals}
+          onDealUpdated={refreshDeals}
         />
       </div>
   );

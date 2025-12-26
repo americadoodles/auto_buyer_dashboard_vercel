@@ -7,7 +7,7 @@ from ..core.db import DB_ENABLED
 from ..core.db_helpers import get_db_connection
 from ..schemas.listing import ListingIn, ListingOut
 from ..schemas.listing import Decision
-from ..services.ai_service import extract_vehicle_info_from_title
+from ..services.ai_service import extract_vehicle_info_from_title, calculate_listing_score
 
 # In-memory fallback for listings
 _BY_ID: dict[str, ListingOut] = {}
@@ -273,12 +273,67 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                         buy_max = float(norm.get("buyMax", 0)) if norm.get("buyMax") is not None else None
                         status = norm.get("status", "")
                         
+                        # Calculate AI-based score automatically during ingestion
+                        score_val = None
+                        calculated_buy_max = buy_max
+                        calculated_reason_codes = reason_codes
+                        
+                        try:
+                            # Prepare listing data for AI scoring
+                            listing_data = {
+                                "year": year,
+                                "make": make,
+                                "model": model,
+                                "trim": trim,
+                                "vin": vin,
+                                "price": norm["price"],
+                                "mmr": norm.get("mmr"),
+                                "miles": norm["miles"],
+                                "dom": norm["dom"],
+                                "condition": norm.get("condition"),
+                                "overallRating": norm.get("overallRating"),
+                                "detailedRatings": norm.get("detailedRatings"),
+                                "cleanTitle": norm.get("cleanTitle"),
+                                "bodyStyle": body_style or extracted_bodystyle,
+                                "transmission": norm.get("transmission"),
+                                "fuelType": norm.get("fuelType"),
+                                "driveType": norm.get("driveType"),
+                                "engine": norm.get("engine"),
+                                "mpg": norm.get("mpg"),
+                                "exteriorColor": norm.get("exteriorColor"),
+                                "interiorColor": norm.get("interiorColor"),
+                                "location": norm.get("location"),
+                                "source": norm.get("source"),
+                                "sellerName": norm.get("sellerName"),
+                                "phoneNumber": norm.get("phoneNumber"),
+                                "sellerDescription": norm.get("sellerDescription"),
+                                "sellerJoinedDate": norm.get("sellerJoinedDate"),
+                                "paidStatus": norm.get("paidStatus"),
+                                "notes": norm.get("notes")
+                            }
+                            
+                            # Calculate score using AI (no contact info available during ingestion)
+                            score_result = calculate_listing_score(listing_data, None)
+                            score_val = score_result["score"]
+                            calculated_buy_max = score_result["buyMax"]
+                            calculated_reason_codes = score_result["reasonCodes"]
+                            
+                            # Store score in database
+                            if vin:
+                                insert_score(vehicle_key, vin, score_val, calculated_buy_max, calculated_reason_codes)
+                                update_cached_score(vin, score_val, calculated_buy_max, calculated_reason_codes)
+                            
+                            logging.info(f"Calculated AI score for listing {new_id}: score={score_val}, buyMax={calculated_buy_max}")
+                        except Exception as score_error:
+                            logging.warning(f"Failed to calculate AI score for listing {new_id}: {str(score_error)}")
+                            # Continue with ingestion even if scoring fails
+                        
                         out.append(ListingOut(
                             id=new_id, vehicle_key=vehicle_key, vin=vin, year=year, make=make, model=model,
                             trim=trim, miles=norm["miles"], price=norm["price"], dom=norm["dom"],
                             source=norm["source"], location=norm.get("location"), buyer_id=buyer_from_id,
-                            radius=norm.get("radius", 25), reasonCodes=reason_codes,
-                            buyMax=buy_max, status=status, score=None, decision=decision, bodyStyle=body_style
+                            radius=norm.get("radius", 25), reasonCodes=calculated_reason_codes,
+                            buyMax=calculated_buy_max, status=status, score=score_val, decision=decision, bodyStyle=body_style
                         ))
             except Exception as e:
                 logging.error(f"Database error in ingest_listings: {e}")

@@ -12,7 +12,8 @@ import {
   updateListing,
   getListingDetails,
   getListingActivities,
-  getContacts
+  getContacts,
+  calculateListingScore
 } from '../../../lib/services/listingManagementApi';
 import { ContactEditModal } from '../../../components/organisms/ContactEditModal';
 import { LeadCreateModal } from '../../../components/organisms/LeadCreateModal';
@@ -208,6 +209,22 @@ export default function ListingDetailPage() {
       // Invalidate listings cache since listing was updated
       invalidateListingsCache();
       
+      // Automatically recalculate score after field update
+      try {
+        const scoreResult = await calculateListingScore(parseInt(listingId));
+        // Update listing with new score
+        setListing(prev => prev ? {
+          ...prev,
+          score: scoreResult.score,
+          buyMax: scoreResult.buyMax,
+          reasonCodes: scoreResult.reasonCodes
+        } : null);
+        console.log(`Score recalculated: ${scoreResult.score}, buyMax: ${scoreResult.buyMax}`);
+      } catch (scoreError) {
+        // Log error but don't fail the update
+        console.warn('Failed to recalculate score:', scoreError);
+      }
+      
       showSuccess('Field Updated', `${field} has been successfully updated`);
       
       // Reload activities after update
@@ -307,6 +324,22 @@ export default function ListingDetailPage() {
       
       // Invalidate listings cache since listing was updated
       invalidateListingsCache();
+      
+      // Automatically recalculate score after bulk update
+      try {
+        const scoreResult = await calculateListingScore(parseInt(listingId));
+        // Update listing with new score
+        setListing(prev => prev ? {
+          ...prev,
+          score: scoreResult.score,
+          buyMax: scoreResult.buyMax,
+          reasonCodes: scoreResult.reasonCodes
+        } : null);
+        console.log(`Score recalculated: ${scoreResult.score}, buyMax: ${scoreResult.buyMax}`);
+      } catch (scoreError) {
+        // Log error but don't fail the update
+        console.warn('Failed to recalculate score:', scoreError);
+      }
       
       showSuccess('Listing Updated', 'Listing has been successfully updated');
       

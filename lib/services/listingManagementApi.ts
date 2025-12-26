@@ -47,6 +47,19 @@ export const getListingDetails = async (listingId: number): Promise<Listing> => 
 // ACTIVITY HISTORY FUNCTIONS
 // ==============================================
 
+export const calculateListingScore = async (listingId: number): Promise<{
+  score: number;
+  buyMax: number;
+  reasonCodes: string[];
+}> => {
+  const response = await fetch(`${API_BASE}/listings/${listingId}/score`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  
+  return handleResponse(response);
+};
+
 export const getListingActivities = async (
   listingId: number, 
   limit: number = 50

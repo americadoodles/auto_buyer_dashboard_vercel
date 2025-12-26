@@ -445,3 +445,261 @@ Respond in JSON format with these exact keys:
         description=description
     )
 
+
+def calculate_listing_score(listing_data: Dict[str, Any], contact_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """
+    Calculate listing score using AI based on all listing fields and contact information.
+    
+    Args:
+        listing_data: Dictionary containing all listing fields (price, miles, dom, condition, etc.)
+        contact_data: Optional dictionary containing contact information (name, email, phone, company, etc.)
+    
+    Returns:
+        Dictionary with keys: score (int 0-100), buyMax (float), reasonCodes (list of strings)
+    """
+    # Check API key configuration
+    if not settings.OPENAI_API_KEY:
+        logging.warning("OpenAI API key not configured, falling back to default scoring")
+        # Fallback to basic scoring if AI is not available
+        return _fallback_score_calculation(listing_data)
+    
+    try:
+        client = _get_openai_client()
+    except ValueError:
+        logging.warning("Failed to initialize OpenAI client, falling back to default scoring")
+        return _fallback_score_calculation(listing_data)
+    
+    # Build comprehensive listing information string
+    listing_info_parts = []
+    
+    # Vehicle information
+    if listing_data.get('year'):
+        listing_info_parts.append(f"Year: {listing_data.get('year')}")
+    if listing_data.get('make'):
+        listing_info_parts.append(f"Make: {listing_data.get('make')}")
+    if listing_data.get('model'):
+        listing_info_parts.append(f"Model: {listing_data.get('model')}")
+    if listing_data.get('trim'):
+        listing_info_parts.append(f"Trim: {listing_data.get('trim')}")
+    if listing_data.get('vin'):
+        listing_info_parts.append(f"VIN: {listing_data.get('vin')}")
+    
+    # Pricing and market data
+    if listing_data.get('price'):
+        listing_info_parts.append(f"Price: ${listing_data.get('price'):,.0f}")
+    if listing_data.get('mmr'):
+        listing_info_parts.append(f"MMR (Manheim Market Report): ${listing_data.get('mmr'):,.0f}")
+    if listing_data.get('miles'):
+        listing_info_parts.append(f"Miles: {listing_data.get('miles'):,}")
+    if listing_data.get('dom'):
+        listing_info_parts.append(f"Days on Market: {listing_data.get('dom')}")
+    
+    # Vehicle condition and details
+    if listing_data.get('condition'):
+        listing_info_parts.append(f"Condition: {listing_data.get('condition')}")
+    if listing_data.get('overallRating'):
+        listing_info_parts.append(f"Overall Rating: {listing_data.get('overallRating')}")
+    if listing_data.get('detailedRatings'):
+        listing_info_parts.append(f"Detailed Ratings: {', '.join(listing_data.get('detailedRatings', []))}")
+    if listing_data.get('cleanTitle') is not None:
+        listing_info_parts.append(f"Clean Title: {'Yes' if listing_data.get('cleanTitle') else 'No'}")
+    
+    # Vehicle specifications
+    if listing_data.get('bodyStyle'):
+        listing_info_parts.append(f"Body Style: {listing_data.get('bodyStyle')}")
+    if listing_data.get('transmission'):
+        listing_info_parts.append(f"Transmission: {listing_data.get('transmission')}")
+    if listing_data.get('fuelType'):
+        listing_info_parts.append(f"Fuel Type: {listing_data.get('fuelType')}")
+    if listing_data.get('driveType'):
+        listing_info_parts.append(f"Drivetrain: {listing_data.get('driveType')}")
+    if listing_data.get('engine'):
+        listing_info_parts.append(f"Engine: {listing_data.get('engine')}")
+    if listing_data.get('mpg'):
+        listing_info_parts.append(f"MPG: {listing_data.get('mpg')}")
+    if listing_data.get('exteriorColor'):
+        listing_info_parts.append(f"Exterior Color: {listing_data.get('exteriorColor')}")
+    if listing_data.get('interiorColor'):
+        listing_info_parts.append(f"Interior Color: {listing_data.get('interiorColor')}")
+    
+    # Location and source
+    if listing_data.get('location'):
+        listing_info_parts.append(f"Location: {listing_data.get('location')}")
+    if listing_data.get('source'):
+        listing_info_parts.append(f"Source: {listing_data.get('source')}")
+    
+    # Seller information
+    if listing_data.get('sellerName'):
+        listing_info_parts.append(f"Seller Name: {listing_data.get('sellerName')}")
+    if listing_data.get('phoneNumber'):
+        listing_info_parts.append(f"Phone Number: {listing_data.get('phoneNumber')}")
+    if listing_data.get('sellerDescription'):
+        listing_info_parts.append(f"Seller Description: {listing_data.get('sellerDescription')}")
+    if listing_data.get('sellerJoinedDate'):
+        listing_info_parts.append(f"Seller Joined Date: {listing_data.get('sellerJoinedDate')}")
+    if listing_data.get('paidStatus'):
+        listing_info_parts.append(f"Paid Status: {listing_data.get('paidStatus')}")
+    
+    # Additional notes
+    if listing_data.get('notes'):
+        listing_info_parts.append(f"Notes: {listing_data.get('notes')}")
+    
+    listing_info = "\n".join(listing_info_parts)
+    
+    # Build contact information string
+    contact_info = ""
+    if contact_data:
+        contact_parts = []
+        if contact_data.get('first_name') or contact_data.get('last_name'):
+            contact_parts.append(f"Name: {contact_data.get('first_name', '')} {contact_data.get('last_name', '')}".strip())
+        if contact_data.get('email'):
+            contact_parts.append(f"Email: {contact_data.get('email')}")
+        if contact_data.get('phone'):
+            contact_parts.append(f"Phone: {contact_data.get('phone')}")
+        if contact_data.get('company'):
+            contact_parts.append(f"Company: {contact_data.get('company')}")
+        if contact_parts:
+            contact_info = "\nContact Information:\n" + "\n".join(contact_parts)
+    
+    # Create comprehensive prompt for OpenAI
+    prompt = f"""You are an expert automotive valuation and scoring system. Analyze the following vehicle listing and calculate a score from 0-100 based on:
+1. Price competitiveness (compare to MMR if available)
+2. Vehicle condition and ratings
+3. Days on market (lower is better)
+4. Mileage (lower is better for most vehicles)
+5. Vehicle specifications and features
+6. Seller information and credibility
+7. Market factors and location
+8. Contact information quality (if available)
+
+Vehicle Listing Information:
+{listing_info}
+{contact_info}
+
+Provide a comprehensive score analysis. Consider:
+- Price vs MMR (if available): Is the price competitive?
+- Condition: Excellent condition vehicles score higher
+- DOM: Lower days on market indicate higher demand
+- Mileage: Lower mileage generally increases value
+- Clean title: Vehicles with clean titles are more valuable
+- Seller credibility: Established sellers with good ratings score higher
+- Market factors: Location, demand, and market conditions
+
+Respond in JSON format with these exact keys:
+{{
+    "score": 75,
+    "buyMax": 25000.00,
+    "reasonCodes": ["LowMiles", "GoodCondition", "CompetitivePrice"],
+    "explanation": "Brief explanation of the score"
+}}
+
+Score Guidelines:
+- 90-100: Exceptional deal, highly recommended
+- 80-89: Very good deal, strong recommendation
+- 70-79: Good deal, worth considering
+- 60-69: Average deal, proceed with caution
+- 50-59: Below average, negotiate or pass
+- 0-49: Poor deal, not recommended
+
+BuyMax should be a realistic maximum purchase price recommendation based on the analysis.
+ReasonCodes should be 1-5 short descriptive codes explaining the score (e.g., "LowMiles", "HighPrice", "AgedInventory", "CleanTitle", "GoodCondition", "CompetitivePrice", "HighDOM", "LowMMR", etc.)."""
+
+    try:
+        # Call OpenAI API
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are an expert automotive valuation and scoring system. Always respond with valid JSON only. Provide accurate, data-driven scores based on comprehensive vehicle analysis."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.3,  # Lower temperature for more consistent scoring
+            max_tokens=500
+        )
+        
+        # Parse response
+        content = response.choices[0].message.content
+        if content is None:
+            logging.error("OpenAI API returned None content for scoring")
+            return _fallback_score_calculation(listing_data)
+        
+        content = content.strip()
+        
+        # Try to extract JSON from response (handle markdown code blocks)
+        if "```json" in content:
+            content = content.split("```json")[1].split("```")[0].strip()
+        elif "```" in content:
+            content = content.split("```")[1].split("```")[0].strip()
+        
+        try:
+            ai_data = json.loads(content)
+        except json.JSONDecodeError as e:
+            logging.warning(f"Failed to parse AI scoring response as JSON: {content}")
+            return _fallback_score_calculation(listing_data)
+        
+        # Validate and extract score data
+        score = ai_data.get("score", 50)
+        buy_max = ai_data.get("buyMax", 0.0)
+        reason_codes = ai_data.get("reasonCodes", [])
+        
+        # Ensure score is within valid range
+        score = max(0, min(100, int(score)))
+        
+        # Ensure buyMax is a valid float
+        try:
+            buy_max = float(buy_max)
+        except (ValueError, TypeError):
+            # Calculate buyMax based on price if AI didn't provide valid value
+            price = listing_data.get('price', 0)
+            buy_max = price * 1.03 if price > 0 else 0.0
+        
+        # Ensure reasonCodes is a list
+        if not isinstance(reason_codes, list):
+            reason_codes = ["Heuristic"]
+        
+        return {
+            "score": score,
+            "buyMax": round(buy_max, 2),
+            "reasonCodes": reason_codes
+        }
+        
+    except Exception as e:
+        logging.error(f"Error calculating AI score: {str(e)}")
+        logging.error(traceback.format_exc())
+        return _fallback_score_calculation(listing_data)
+
+
+def _fallback_score_calculation(listing_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Fallback scoring calculation when AI is not available.
+    Uses a simplified version of the original scoring logic.
+    """
+    reasons = []
+    dom = listing_data.get('dom', 30)
+    miles = listing_data.get('miles', 50000)
+    price = listing_data.get('price', 25000)
+    
+    dom_penalty = max(0, 30 - dom) / 30
+    miles_penalty = max(0, 100_000 - miles) / 100_000
+    base = 40 * dom_penalty + 40 * miles_penalty
+    
+    price_boost = 0
+    if price < 25_000:
+        price_boost = min(20, (25_000 - price) / 1000)
+        reasons.append("PriceVsBaseline")
+    if dom < 20:
+        reasons.append("LowDOM")
+    if miles < 50_000:
+        reasons.append("LowMiles")
+    
+    score_val = int(max(0, min(100, base + price_boost)))
+    buy_max = max(0.0, price * 1.03)
+    if dom > 45:
+        buy_max = price * 0.98
+        reasons.append("AgedInventory")
+    
+    return {
+        "score": score_val,
+        "buyMax": round(buy_max, 2),
+        "reasonCodes": reasons or ["Heuristic"]
+    }
+

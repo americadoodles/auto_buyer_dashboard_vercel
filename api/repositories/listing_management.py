@@ -116,6 +116,98 @@ def update_listing(listing_id: int, update_data: ListingUpdate, updated_by: str)
     
     return None
 
+def get_contact_for_listing(listing_id: int) -> Optional[Dict[str, Any]]:
+    """Get contact information for a listing through leads"""
+    if not DB_ENABLED:
+        return None
+    
+    with get_db_connection() as conn:
+        if not conn:
+            return None
+        
+        try:
+            with conn.cursor() as cur:
+                # Get contact through lead
+                query = """
+                    SELECT 
+                        c.id, c.first_name, c.last_name, c.email, c.phone, c.mobile,
+                        c.company, c.job_title, c.address, c.social_profiles, c.preferences, c.notes
+                    FROM leads l
+                    INNER JOIN contacts c ON l.contact_id = c.id
+                    WHERE l.listing_id = %s
+                    LIMIT 1
+                """
+                
+                cur.execute(query, (listing_id,))
+                result = cur.fetchone()
+                
+                if result:
+                    return {
+                        "id": str(result[0]),
+                        "first_name": result[1],
+                        "last_name": result[2],
+                        "email": result[3],
+                        "phone": result[4],
+                        "mobile": result[5],
+                        "company": result[6],
+                        "job_title": result[7],
+                        "address": result[8],
+                        "social_profiles": result[9],
+                        "preferences": result[10],
+                        "notes": result[11]
+                    }
+                
+                return None
+        except Exception as e:
+            logging.error(f"Error getting contact for listing {listing_id}: {str(e)}")
+            return None
+
+def get_contact_for_listing(listing_id: int) -> Optional[Dict[str, Any]]:
+    """Get contact information for a listing through leads"""
+    if not DB_ENABLED:
+        return None
+    
+    with get_db_connection() as conn:
+        if not conn:
+            return None
+        
+        try:
+            with conn.cursor() as cur:
+                # Get contact through lead
+                query = """
+                    SELECT 
+                        c.id, c.first_name, c.last_name, c.email, c.phone, c.mobile,
+                        c.company, c.job_title, c.address, c.social_profiles, c.preferences, c.notes
+                    FROM leads l
+                    INNER JOIN contacts c ON l.contact_id = c.id
+                    WHERE l.listing_id = %s
+                    LIMIT 1
+                """
+                
+                cur.execute(query, (listing_id,))
+                result = cur.fetchone()
+                
+                if result:
+                    return {
+                        "id": str(result[0]),
+                        "first_name": result[1],
+                        "last_name": result[2],
+                        "email": result[3],
+                        "phone": result[4],
+                        "mobile": result[5],
+                        "company": result[6],
+                        "job_title": result[7],
+                        "address": result[8],
+                        "social_profiles": result[9],
+                        "preferences": result[10],
+                        "notes": result[11]
+                    }
+                
+                return None
+        except Exception as e:
+            logging.error(f"Error getting contact for listing {listing_id}: {str(e)}")
+            return None
+
 def get_listing_by_id(listing_id: int) -> Optional[ListingOut]:
     """Get a listing by ID with full details including contacts"""
     if not DB_ENABLED:

@@ -9,8 +9,10 @@ from ..schemas.user import UserOut
 from ..core.auth import get_current_user
 from ..core.config import settings
 from ..repositories.listing_management import (
-    update_listing, get_listing_by_id, get_listing_activities
+    update_listing, get_listing_by_id, get_listing_activities, get_contact_for_listing
 )
+from ..services.ai_service import calculate_listing_score
+from ..repositories.repositories import update_cached_score, insert_score
 from ..core.db import DB_ENABLED
 from ..core.db_helpers import get_db_connection
 import logging
@@ -478,3 +480,78 @@ async def delete_listing_image(
         logging.error(f"Error deleting image for listing {listing_id}: {str(e)}")
         logging.error(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Failed to delete image: {str(e)}")
+
+# ==============================================
+# AI SCORING ENDPOINTS
+# ==============================================
+
+@listing_management_router.post("/{listing_id}/score")
+def calculate_listing_score_ai(
+    listing_id: int = Path(..., description="ID of the listing to score"),
+    current_user: UserOut = Depends(get_current_user)
+):
+    """Calculate AI-based score for a listing using all listing fields and contact information"""
+    try:
+        # Get listing details
+        listing = get_listing_by_id(listing_id)
+        if not listing:
+            raise HTTPException(status_code=404, detail="Listing not found")
+        
+        # Get contact information if available
+        contact_data = get_contact_for_listing(listing_id)
+        
+        # Convert listing to dictionary format for scoring
+        listing_data = {
+            "year": listing.year,
+            "make": listing.make,
+            "model": listing.model,
+            "trim": listing.trim,
+            "vin": listing.vin,
+            "price": listing.price,
+            "mmr": listing.mmr,
+            "miles": listing.miles,
+            "dom": listing.dom,
+            "condition": listing.condition,
+            "overallRating": listing.overallRating,
+            "detailedRatings": listing.detailedRatings,
+            "cleanTitle": listing.cleanTitle,
+            "bodyStyle": listing.bodyStyle,
+            "transmission": listing.transmission,
+            "fuelType": listing.fuelType,
+            "driveType": listing.driveType,
+            "engine": listing.engine,
+            "mpg": listing.mpg,
+            "exteriorColor": listing.exteriorColor,
+            "interiorColor": listing.interiorColor,
+            "location": listing.location,
+            "source": listing.source,
+            "sellerName": listing.sellerName,
+            "phoneNumber": listing.phoneNumber,
+            "sellerDescription": listing.sellerDescription,
+            "sellerJoinedDate": listing.sellerJoinedDate,
+            "paidStatus": listing.paidStatus,
+            "notes": listing.notes
+        }
+        
+        # Calculate score using AI
+        score_result = calculate_listing_score(listing_data, contact_data)
+        
+        # Update score in database
+        if listing.vin:
+            vin_key = listing.vin.strip().upper()
+            insert_score(listing.vehicle_key, vin_key, score_result["score"], score_result["buyMax"], score_result["reasonCodes"])
+            update_cached_score(vin_key, score_result["score"], score_result["buyMax"], score_result["reasonCodes"])
+        
+        return {
+            "score": score_result["score"],
+            "buyMax": score_result["buyMax"],
+            "reasonCodes": score_result["reasonCodes"],
+            "listing_id": listing_id
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error calculating AI score for listing {listing_id}: {str(e)}")
+        logging.error(f"Traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Failed to calculate score: {str(e)}")

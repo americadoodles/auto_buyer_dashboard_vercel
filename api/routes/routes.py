@@ -1,23 +1,21 @@
 from fastapi import APIRouter, HTTPException, Depends, Query
 from typing import List, Optional
 from datetime import datetime
-from ..schemas.listing import ListingIn, ListingOut, ListingScoreIn
+from ..schemas.listing import ListingIn, ListingOut
 from ..schemas.notify import NotifyItem, NotifyResponse
-from ..schemas.scoring import ScoreResponse
 from ..schemas.kpi import KpiResponse, KpiMetrics
 from ..schemas.chart import ChartDistributionResponse, DistributionItem, ChartTimeSeriesResponse, TimeSeriesDataPoint
-from ..repositories.repositories import ingest_listings, list_listings, list_listings_by_buyer, get_buyer_stats, update_cached_score, insert_score
+from ..repositories.repositories import ingest_listings, list_listings, list_listings_by_buyer, get_buyer_stats
 from ..repositories.kpi_repository import get_trends_data, get_kpi_metrics
 from ..repositories.chart_repository import get_sourcing_activities_per_agent, get_car_categories_performance, get_states_regions_performance, get_lead_to_purchase_funnel, get_lead_source_performance
 from ..core.auth import get_current_user
 from ..schemas.user import UserOut
-from ..services.services import score_listing, notify as do_notify
+from ..services.services import notify as do_notify
 from .activity_heatmap import activity_heatmap_router
 
 # Create routers for each endpoint group
 ingest_router = APIRouter(prefix="/ingest", tags=["ingest"])
 listings_router = APIRouter(prefix="/listings", tags=["listings"])
-score_router = APIRouter(prefix="/score", tags=["score"])
 notify_router = APIRouter(prefix="/notify", tags=["notify"])
 trends_router = APIRouter(prefix="/trends", tags=["trends"])
 kpi_router = APIRouter(prefix="/kpi", tags=["kpi"])
@@ -57,20 +55,6 @@ def get_buyer_performance_stats(
 ):
     """Get performance statistics for a specific buyer"""
     return get_buyer_stats(buyer_id, start_date, end_date)
-
-# Score routes
-@score_router.post("", include_in_schema=False, response_model=List[ScoreResponse])  # /api/score
-@score_router.post("/", response_model=List[ScoreResponse])  # /api/score/
-def score(payload: List[ListingScoreIn]):
-    out: list[ScoreResponse] = []
-    for item in payload:
-        score_val, buy_max, reasons = score_listing(item)
-        vin_key = item.vin.strip().upper() if item.vin and item.vin.strip() else None
-        if vin_key:
-            insert_score(item.vehicle_key, vin_key, score_val, buy_max, reasons)
-            update_cached_score(vin_key, score_val, buy_max, reasons)
-        out.append(ScoreResponse(vehicle_key=item.vehicle_key, vin=item.vin, score=score_val, buyMax=buy_max, reasonCodes=reasons))
-    return out
 
 # Notify routes
 @notify_router.post("", include_in_schema=False, response_model=List[NotifyResponse])  # /api/notify

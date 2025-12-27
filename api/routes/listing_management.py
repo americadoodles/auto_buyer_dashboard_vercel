@@ -12,7 +12,7 @@ from ..repositories.listing_management import (
     update_listing, get_listing_by_id, get_listing_activities, get_contact_for_listing
 )
 from ..services.ai_service import calculate_listing_score
-from ..repositories.repositories import update_cached_score, insert_score
+from ..repositories.repositories import update_cached_score, update_score
 from ..core.db import DB_ENABLED
 from ..core.db_helpers import get_db_connection
 import logging
@@ -537,9 +537,9 @@ def calculate_listing_score_ai(
         score_result = calculate_listing_score(listing_data, contact_data)
         
         # Update score in database
-        if listing.vin:
+        if listing.vin and listing.vehicle_key:
             vin_key = listing.vin.strip().upper()
-            insert_score(listing.vehicle_key, vin_key, score_result["score"], score_result["buyMax"], score_result["reasonCodes"])
+            update_score(listing.vehicle_key, vin_key, score_result["score"], score_result["buyMax"], score_result["reasonCodes"])
             update_cached_score(vin_key, score_result["score"], score_result["buyMax"], score_result["reasonCodes"])
         
         return {

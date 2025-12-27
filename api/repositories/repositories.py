@@ -187,15 +187,9 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                              on conflict (vehicle_key) do update set vin=excluded.vin, year=excluded.year, make=excluded.make, model=excluded.model, trim=excluded.trim
                          """, (vehicle_key, vin, year, make, model, trim))
                         
-                        # Store decision data in scores table if provided
-                        if decision and vin:
-                            try:
-                                cur.execute("""
-                                    insert into scores (vehicle_key, vin, score, buy_max, reason_codes)
-                                    values (%s, %s, %s, %s, %s)
-                                """, (vehicle_key, vin, 0, decision.buyMax, decision.reasons))
-                            except Exception as log_exc:
-                                logging.error(f"Failed to insert score data: {log_exc}")
+                        # Note: Decision data is used for ListingOut response only
+                        # Score records are now always created by AI scoring (see below)
+                        # This prevents duplicate score records
                         
                         # listings
                         # Convert datetime objects to ISO format strings for JSON serialization
@@ -813,6 +807,7 @@ def update_cached_score(vin: str, score: int, buy_max: float, reasons: list[str]
 # ============================================================================
 
 def insert_score(vehicle_key: str, vin: str, score: int, buy_max: float, reasons: list[str]):
+    """Insert a new score record (used during ingestion)"""
     if not DB_ENABLED:
         return
     with get_db_connection() as conn:
@@ -826,6 +821,45 @@ def insert_score(vehicle_key: str, vin: str, score: int, buy_max: float, reasons
                 """,
                 (vehicle_key, vin, score, buy_max, reasons or ["Heuristic"]),
             )
+
+
+def update_score(vehicle_key: str, vin: str, score: int, buy_max: float, reasons: list[str]):
+    """Update the latest score record for a vehicle (used during updates)"""
+    if not DB_ENABLED:
+        return
+    with get_db_connection() as conn:
+        if not conn:
+            return
+        with conn.cursor() as cur:
+            # Update the most recent score record for this vehicle_key
+            # If no record exists, insert a new one
+            cur.execute(
+                """
+                WITH latest_score AS (
+                    SELECT id 
+                    FROM scores 
+                    WHERE vehicle_key = %s 
+                    ORDER BY created_at DESC, id DESC 
+                    LIMIT 1
+                )
+                UPDATE scores 
+                SET score = %s, 
+                    buy_max = %s, 
+                    reason_codes = %s,
+                    created_at = NOW()
+                WHERE id IN (SELECT id FROM latest_score)
+                """,
+                (vehicle_key, score, buy_max, reasons or ["Heuristic"]),
+            )
+            # If no rows were updated (no existing record), insert a new one
+            if cur.rowcount == 0:
+                cur.execute(
+                    """
+                    insert into scores (vehicle_key, vin, score, buy_max, reason_codes)
+                    values (%s, %s, %s, %s, %s)
+                    """,
+                    (vehicle_key, vin, score, buy_max, reasons or ["Heuristic"]),
+                )
 
 
 # ============================================================================

@@ -35,6 +35,26 @@ def ingest(
     return result
 
 
+@accu_trade_router.get("/vin/{vin}/exists", response_model=dict)
+async def check_vin_exists(
+    vin: str = Path(..., description="Vehicle Identification Number"),
+    current_user: UserOut = Depends(get_current_user)
+):
+    """Check if AccuTrade data exists for a VIN"""
+    result = get_accu_trade_data_by_vin(vin)
+    return {"exists": result is not None}
+
+
+@accu_trade_router.get("/vin/{vin}/exists", response_model=dict)
+async def check_vin_exists(
+    vin: str = Path(..., description="Vehicle Identification Number"),
+    current_user: UserOut = Depends(get_current_user)
+):
+    """Check if AccuTrade data exists for a VIN"""
+    result = get_accu_trade_data_by_vin(vin)
+    return {"exists": result is not None}
+
+
 @accu_trade_router.get("/vin/{vin}", response_model=AccuTradeDataOut)
 async def get_by_vin(
     vin: str = Path(..., description="Vehicle Identification Number"),

@@ -7,6 +7,7 @@ import { formatCurrency, formatNumber, formatLocationWithStateCode } from '../..
 import { getMarketplaceInfo } from '../../lib/utils/marketplace';
 import { Badge } from '../atoms/Badge';
 import { Icon } from '../atoms/Icon';
+import { useAccuTradeData } from '../../lib/hooks/useAccuTradeData';
 import { 
   Gauge, 
   Clock, 
@@ -16,7 +17,8 @@ import {
   User,
   Mail,
   Phone,
-  MapPin
+  MapPin,
+  Check
 } from 'lucide-react';
 
 // Extended Lead type matching LeadManagement's transformed type
@@ -56,6 +58,30 @@ export const LeadCard: React.FC<LeadCardProps> = ({
   const [showActions, setShowActions] = useState(false);
   
   const marketplaceInfo = lead.listing?.source ? getMarketplaceInfo(lead.listing.source) : null;
+  const { hasData: hasAccuTradeData, refresh: refreshAccuTradeData } = useAccuTradeData(lead.listing?.vin);
+  
+  const handleAccuTradeClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!lead.listing?.vin) return;
+    
+    const accuTradeUrl = `https://appraiser3.accu-trade.com/appraisal/new?vin=${encodeURIComponent(lead.listing.vin)}`;
+    window.open(accuTradeUrl, '_blank');
+    
+    // Refresh the data status after a delay to check if data was added
+    setTimeout(() => {
+      refreshAccuTradeData();
+    }, 2000);
+    
+    // Also set up periodic refresh while the window might be open
+    const refreshInterval = setInterval(() => {
+      refreshAccuTradeData();
+    }, 5000);
+    
+    // Clear interval after 2 minutes (assuming user might take time to add data)
+    setTimeout(() => {
+      clearInterval(refreshInterval);
+    }, 120000);
+  };
   const primaryImage = lead.listing?.images && lead.listing.images.length > 0 ? lead.listing.images[0] : null;
   const vehicleTitle = lead.listing 
     ? `${lead.listing.year || ''} ${lead.listing.make || ''} ${lead.listing.model || ''}${lead.listing.trim ? ` ${lead.listing.trim}` : ''}`.trim()
@@ -250,13 +276,32 @@ export const LeadCard: React.FC<LeadCardProps> = ({
                             <div
                               key={iconName}
                               title={iconName.charAt(0).toUpperCase() + iconName.slice(1)}
-                              className="inline-flex"
+                              className="inline-flex relative"
                             >
-                              <Icon
-                                name={iconName}
-                                size={24}
-                                className="opacity-80 hover:opacity-100 transition-opacity rounded"
-                              />
+                              {iconName === 'accutrade' ? (
+                                <button
+                                  onClick={handleAccuTradeClick}
+                                  className="relative inline-flex items-center justify-center"
+                                  title={hasAccuTradeData ? 'AccuTrade data available - Click to open AccuTrade' : 'Click to open AccuTrade'}
+                                >
+                                  <Icon
+                                    name={iconName}
+                                    size={24}
+                                    className="opacity-80 hover:opacity-100 transition-opacity rounded"
+                                  />
+                                  {hasAccuTradeData && (
+                                    <div className="absolute -top-1 -right-1 bg-red-500 rounded-full p-0.5">
+                                      <Check className="h-3 w-3 text-white" strokeWidth={3} />
+                                    </div>
+                                  )}
+                                </button>
+                              ) : (
+                                <Icon
+                                  name={iconName}
+                                  size={24}
+                                  className="opacity-80 hover:opacity-100 transition-opacity rounded"
+                                />
+                              )}
                             </div>
                           ))}
                         </div>

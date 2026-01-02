@@ -176,43 +176,37 @@ export const crmApi = {
     return handleResponse<DealForecast[]>(response);
   },
 
-  // High scoring vehicles (mock data for now - can be replaced with real API)
-  async getHighScoringVehicles(): Promise<HighScoringVehicle[]> {
-    // This would be replaced with a real API call when the feature is implemented
-    return [
-      {
-        id: '1',
-        make: 'Honda',
-        model: 'Civic',
-        year: 2023,
-        trim: 'EX',
-        score: 95,
-        price: 25000,
-        miles: 15000,
-        location: 'Los Angeles, CA'
-      },
-      {
-        id: '2',
-        make: 'Toyota',
-        model: 'Camry',
-        year: 2022,
-        trim: 'LE',
-        score: 92,
-        price: 28000,
-        miles: 22000,
-        location: 'San Francisco, CA'
-      },
-      {
-        id: '3',
-        make: 'BMW',
-        model: '3 Series',
-        year: 2023,
-        trim: '330i',
-        score: 88,
-        price: 45000,
-        miles: 8000,
-        location: 'New York, NY'
-      }
-    ];
+  // High scoring vehicles - fetches real vehicles with highest scores from listings
+  async getHighScoringVehicles(limit: number = 10): Promise<HighScoringVehicle[]> {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL ?? '/api'}/listings`, {
+        headers: getAuthHeaders()
+      });
+      
+      const listings = await handleResponse<any[]>(response);
+      
+      // Filter listings with scores, sort by score descending, and take top results
+      const highScoringVehicles = listings
+        .filter(listing => listing.score != null && listing.score > 0)
+        .sort((a, b) => (b.score || 0) - (a.score || 0))
+        .slice(0, limit)
+        .map(listing => ({
+          id: String(listing.id),
+          make: listing.make || '',
+          model: listing.model || '',
+          year: listing.year || 0,
+          trim: listing.trim || '',
+          score: listing.score || 0,
+          price: listing.price || 0,
+          miles: listing.miles || 0,
+          location: listing.location || ''
+        }));
+      
+      return highScoringVehicles;
+    } catch (error) {
+      console.error('Error fetching high scoring vehicles:', error);
+      // Return empty array on error instead of throwing
+      return [];
+    }
   }
 };

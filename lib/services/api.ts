@@ -548,6 +548,13 @@ export class ApiService {
       message?: string;
     }>(response);
   }
+
+  static async checkAccuTradeDataExists(vin: string): Promise<{ exists: boolean }> {
+    const response = await fetch(`${BACKEND_URL}/accu-trade/vin/${encodeURIComponent(vin)}/exists`, {
+      headers: this.authHeaders()
+    });
+    return this.handleResponse<{ exists: boolean }>(response);
+  }
 }
 
 // Helper function to make API calls using unified ApiService

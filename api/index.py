@@ -12,6 +12,7 @@ from .routes.slack import slack_router
 from .routes.user_activity import user_activity_router
 from .routes.activity_heatmap import activity_heatmap_router
 from .routes.listing_management import listing_management_router
+from .routes.accu_trade import accu_trade_router
 
 # CRM Routes
 from .routes.crm_leads import lead_router
@@ -59,6 +60,7 @@ app.include_router(slack_router, prefix="/api")
 app.include_router(user_activity_router, prefix="/api")
 app.include_router(activity_heatmap_router, prefix="/api")
 app.include_router(listing_management_router, prefix="/api")
+app.include_router(accu_trade_router, prefix="/api")
 
 # CRM Routes
 app.include_router(lead_router, prefix="/api")

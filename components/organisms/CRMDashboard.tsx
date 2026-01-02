@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { Card } from '../molecules/Card';
 import { KpiCard } from '../molecules/KpiCard';
 import { TableHeader } from '../molecules/TableHeader';
@@ -56,6 +57,7 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
   highScoringVehicles,
   leadConversionRate
 }) => {
+  const router = useRouter();
   const [timeRange, setTimeRange] = React.useState<TimeRange>('1w');
   const { data: chartData, loading: chartLoading } = useChartData(timeRange);
   const kpiData: Array<{
@@ -301,12 +303,15 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
                 { key: 'price', label: 'Price', sortable: true },
                 { key: 'miles', label: 'Miles', sortable: true },
                 { key: 'location', label: 'Location', sortable: true },
-                { key: 'actions', label: 'Actions', sortable: false }
+                // { key: 'actions', label: 'Actions', sortable: false }
               ]}
             />
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {highScoringVehicles.map((vehicle) => (
-                <TableRow key={vehicle.id}>
+                <TableRow 
+                  key={vehicle.id}
+                  onClick={() => router.push(`/listings/${vehicle.id}`)}
+                >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
                       <div className="text-sm font-medium text-gray-900 dark:text-white">
@@ -330,7 +335,7 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {vehicle.location}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  {/* <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
                       <Button variant="ghost" size="sm">
                         View
@@ -339,7 +344,7 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
                         <Icon name="plus" className="w-4 h-4" />
                       </Button>
                     </div>
-                  </td>
+                  </td> */}
                 </TableRow>
               ))}
             </tbody>

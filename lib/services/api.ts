@@ -555,6 +555,13 @@ export class ApiService {
     });
     return this.handleResponse<{ exists: boolean }>(response);
   }
+
+  static async checkMMRDataExists(vin: string): Promise<{ exists: boolean }> {
+    const response = await fetch(`${BACKEND_URL}/mmr/vin/${encodeURIComponent(vin)}/exists`, {
+      headers: this.authHeaders()
+    });
+    return this.handleResponse<{ exists: boolean }>(response);
+  }
 }
 
 // Helper function to make API calls using unified ApiService

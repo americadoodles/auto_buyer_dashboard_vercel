@@ -8,6 +8,7 @@ import { getMarketplaceInfo } from '../../lib/utils/marketplace';
 import { Badge } from '../atoms/Badge';
 import { Icon } from '../atoms/Icon';
 import { useAccuTradeData } from '../../lib/hooks/useAccuTradeData';
+import { useMMRData } from '../../lib/hooks/useMMRData';
 import { 
   Gauge, 
   Clock, 
@@ -59,6 +60,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({
   
   const marketplaceInfo = lead.listing?.source ? getMarketplaceInfo(lead.listing.source) : null;
   const { hasData: hasAccuTradeData, refresh: refreshAccuTradeData } = useAccuTradeData(lead.listing?.vin);
+  const { hasData: hasMMRData, refresh: refreshMMRData } = useMMRData(lead.listing?.vin);
   
   const handleAccuTradeClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -81,6 +83,45 @@ export const LeadCard: React.FC<LeadCardProps> = ({
     setTimeout(() => {
       clearInterval(refreshInterval);
     }, 120000);
+  };
+
+  const handleMMRClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!lead.listing?.vin) return;
+    
+    const vin = lead.listing.vin;
+    
+    // Copy VIN to clipboard for easy pasting
+    try {
+      await navigator.clipboard.writeText(vin);
+    } catch (err) {
+      console.error('Failed to copy VIN to clipboard:', err);
+    }
+    
+    // Open MMR page - try with VIN as URL parameter first
+    // If MMR supports URL parameters, this will auto-fill
+    // Otherwise, the VIN is in clipboard for manual paste (Ctrl+V or Cmd+V)
+    const mmrUrl = `https://mmr.manheim.com/ui-mmr/?country=US&popup=true&source=man&vin=${encodeURIComponent(vin)}`;
+    window.open(mmrUrl, '_blank');
+    
+    // Refresh the data status after a delay to check if data was added
+    setTimeout(() => {
+      refreshMMRData();
+    }, 2000);
+    
+    // Also set up periodic refresh while the window might be open
+    const refreshInterval = setInterval(() => {
+      refreshMMRData();
+    }, 5000);
+    
+    // Clear interval after 2 minutes (assuming user might take time to add data)
+    setTimeout(() => {
+      clearInterval(refreshInterval);
+    }, 120000);
+    
+    // Note: Due to browser security (Same-Origin Policy), we cannot programmatically
+    // fill forms on cross-origin pages like MMR. If the URL parameter approach
+    // doesn't work, the VIN is already copied to clipboard for manual entry.
   };
   const primaryImage = lead.listing?.images && lead.listing.images.length > 0 ? lead.listing.images[0] : null;
   const vehicleTitle = lead.listing 
@@ -113,8 +154,10 @@ export const LeadCard: React.FC<LeadCardProps> = ({
     if (!listing) {
       return icons;
     }
-    icons.push('mmr');
-    icons.push('accutrade');
+    if (listing.vin) {
+      icons.push('mmr');
+      icons.push('accutrade');
+    }
     icons.push('autocheck');
     icons.push('carfax');
     return icons;
@@ -290,6 +333,23 @@ export const LeadCard: React.FC<LeadCardProps> = ({
                                     className="opacity-80 hover:opacity-100 transition-opacity rounded"
                                   />
                                   {hasAccuTradeData && (
+                                    <div className="absolute -top-1 -right-1 bg-red-500 rounded-full p-0.5">
+                                      <Check className="h-3 w-3 text-white" strokeWidth={3} />
+                                    </div>
+                                  )}
+                                </button>
+                              ) : iconName === 'mmr' ? (
+                                <button
+                                  onClick={handleMMRClick}
+                                  className="relative inline-flex items-center justify-center"
+                                  title={hasMMRData ? 'MMR data available - Click to open MMR' : 'Click to open MMR (Manheim Market Report)'}
+                                >
+                                  <Icon
+                                    name={iconName}
+                                    size={24}
+                                    className="opacity-80 hover:opacity-100 transition-opacity rounded cursor-pointer"
+                                  />
+                                  {hasMMRData && (
                                     <div className="absolute -top-1 -right-1 bg-red-500 rounded-full p-0.5">
                                       <Check className="h-3 w-3 text-white" strokeWidth={3} />
                                     </div>

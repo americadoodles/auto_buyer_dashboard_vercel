@@ -562,6 +562,20 @@ export class ApiService {
     });
     return this.handleResponse<{ exists: boolean }>(response);
   }
+
+  static async getAccuTradeData(vin: string): Promise<any> {
+    const response = await fetch(`${BACKEND_URL}/accu-trade/vin/${encodeURIComponent(vin)}`, {
+      headers: this.authHeaders()
+    });
+    return this.handleResponse<any>(response);
+  }
+
+  static async getMMRData(vin: string): Promise<any> {
+    const response = await fetch(`${BACKEND_URL}/mmr/vin/${encodeURIComponent(vin)}`, {
+      headers: this.authHeaders()
+    });
+    return this.handleResponse<any>(response);
+  }
 }
 
 // Helper function to make API calls using unified ApiService

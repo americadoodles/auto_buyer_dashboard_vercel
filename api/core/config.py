@@ -45,6 +45,12 @@ class Settings(BaseSettings):
     # OpenAI settings
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
 
+    # Google Cloud Storage settings
+    GCP_BUCKET_NAME: str = os.getenv("GCP_BUCKET_NAME", "")
+    GCP_PROJECT_ID: str = os.getenv("GCP_PROJECT_ID", "")
+    GCP_CREDENTIALS_JSON: str = os.getenv("GCP_CREDENTIALS_JSON", "")  # JSON string or path to JSON file
+    GCP_STORAGE_ENABLED: bool = bool(os.getenv("GCP_STORAGE_ENABLED", "false").lower() == "true")
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 

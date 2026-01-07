@@ -7,6 +7,8 @@ import requests
 from typing import Optional, List
 import json
 import os
+import re
+from urllib.parse import urlparse
 
 try:
     from google.cloud import storage
@@ -60,14 +62,62 @@ def _get_gcp_client():
         return None
 
 
-def upload_image_to_gcp(image_url_or_data: str, listing_id: Optional[str] = None, vin: Optional[str] = None) -> Optional[str]:
+def _extract_source_name(source_url: Optional[str]) -> Optional[str]:
+    """
+    Extract a clean source name from a source URL.
+    Examples:
+        https://www.facebook.com/marketplace/... -> facebook
+        https://www.carfax.com/vehicle/... -> carfax
+        https://cars.com/... -> cars
+    """
+    if not source_url or not source_url.strip():
+        return None
+    
+    try:
+        # Parse the URL
+        parsed = urlparse(source_url.strip().lower())
+        domain = parsed.netloc or parsed.path
+        
+        # Remove www. prefix
+        domain = re.sub(r'^www\.', '', domain)
+        
+        # Extract the main domain name (e.g., facebook.com -> facebook)
+        # Handle cases like: facebook.com, www.facebook.com, m.facebook.com
+        parts = domain.split('.')
+        if len(parts) >= 2:
+            # Get the main domain (second to last part, or last if only one)
+            # facebook.com -> facebook
+            # carfax.com -> carfax
+            main_domain = parts[-2] if len(parts) > 1 else parts[0]
+            
+            # Common domain mappings
+            domain_mappings = {
+                'fb': 'facebook',
+                'fbcom': 'facebook',
+            }
+            
+            main_domain = domain_mappings.get(main_domain, main_domain)
+            
+            # Only allow alphanumeric and dash for folder names
+            main_domain = re.sub(r'[^a-z0-9\-]', '', main_domain)
+            
+            return main_domain if main_domain else None
+    except Exception as e:
+        logging.warning(f"Failed to extract source name from {source_url}: {str(e)}")
+        return None
+    
+    return None
+
+
+def upload_image_to_gcp(image_url_or_data: str, listing_id: Optional[str] = None, vin: Optional[str] = None, source: Optional[str] = None) -> Optional[str]:
     """
     Upload an image to GCP Storage.
     
     Args:
         image_url_or_data: Either a URL to download the image from, or base64 data URI
         listing_id: Optional listing ID for organizing images
-        vin: Optional VIN for organizing images
+        vin: Optional VIN for organizing images (not used for folder structure)
+        source: Source URL - used to determine folder structure (e.g., facebook, carfax)
     
     Returns:
         Public URL of the uploaded image, or None if upload failed
@@ -148,13 +198,20 @@ def upload_image_to_gcp(image_url_or_data: str, listing_id: Optional[str] = None
     
     unique_filename = f"{uuid.uuid4()}{file_extension}"
     
-    # Create folder structure: listings/{listing_id or vin}/{filename}
-    if listing_id:
+    # Create folder structure: listings/{source_name}/{filename}
+    # Organize by source name (e.g., facebook, carfax) extracted from source URL
+    # Priority: source name > listing_id > generic folder
+    source_name = _extract_source_name(source) if source else None
+    
+    if source_name:
+        # Organize by source name: listings/facebook/uuid.jpg, listings/carfax/uuid.jpg
+        blob_path = f"listings/{source_name}/{unique_filename}"
+    elif listing_id:
+        # Fallback to listing_id if source name cannot be extracted
         blob_path = f"listings/{listing_id}/{unique_filename}"
-    elif vin:
-        blob_path = f"listings/vin/{vin}/{unique_filename}"
     else:
-        blob_path = f"listings/{unique_filename}"
+        # Fallback to generic folder if no source or listing_id
+        blob_path = f"listings/unknown/{unique_filename}"
     
     try:
         # Upload to GCP
@@ -174,7 +231,7 @@ def upload_image_to_gcp(image_url_or_data: str, listing_id: Optional[str] = None
         return None
 
 
-def upload_images_to_gcp(images: List[str], listing_id: Optional[str] = None, vin: Optional[str] = None) -> List[str]:
+def upload_images_to_gcp(images: List[str], listing_id: Optional[str] = None, vin: Optional[str] = None, source: Optional[str] = None) -> List[str]:
     """
     Upload multiple images to GCP Storage.
     
@@ -182,6 +239,7 @@ def upload_images_to_gcp(images: List[str], listing_id: Optional[str] = None, vi
         images: List of image URLs or data URIs
         listing_id: Optional listing ID for organizing images
         vin: Optional VIN for organizing images
+        source: Optional source URL for organizing images when no VIN
     
     Returns:
         List of public URLs of uploaded images (failed uploads are skipped)
@@ -194,7 +252,7 @@ def upload_images_to_gcp(images: List[str], listing_id: Optional[str] = None, vi
         if not image or not image.strip():
             continue
         
-        uploaded_url = upload_image_to_gcp(image.strip(), listing_id, vin)
+        uploaded_url = upload_image_to_gcp(image.strip(), listing_id, vin, source)
         if uploaded_url:
             uploaded_urls.append(uploaded_url)
         else:

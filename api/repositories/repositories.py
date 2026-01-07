@@ -8,6 +8,7 @@ from ..core.db_helpers import get_db_connection
 from ..schemas.listing import ListingIn, ListingOut
 from ..schemas.listing import Decision
 from ..services.ai_service import extract_vehicle_info_from_title, calculate_listing_score
+from ..utils.gcp_storage import upload_images_to_gcp
 
 # In-memory fallback for listings
 _BY_ID: dict[str, ListingOut] = {}
@@ -234,6 +235,30 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                         # Use buyer_id from authenticated context when provided; fallback to incoming buyer_id
                         buyer_from_id = buyer_id or norm.get("buyer_id") or None
 
+                        # Upload images to GCP and get URLs
+                        original_images = norm.get("images", [])
+                        gcp_image_urls = []
+                        if original_images:
+                            try:
+                                # Upload images to GCP before inserting listing
+                                # We'll use a temporary ID that will be replaced with the actual listing ID after insert
+                                gcp_image_urls = upload_images_to_gcp(
+                                    original_images,
+                                    listing_id=None,  # Will update after we get the listing ID
+                                    vin=vin
+                                )
+                                if gcp_image_urls:
+                                    logging.info(f"Uploaded {len(gcp_image_urls)} images to GCP for listing with VIN {vin}")
+                                else:
+                                    logging.warning(f"Failed to upload images to GCP, using original URLs")
+                                    gcp_image_urls = original_images
+                            except Exception as img_error:
+                                logging.error(f"Error uploading images to GCP: {str(img_error)}")
+                                # Fallback to original images if GCP upload fails
+                                gcp_image_urls = original_images
+                        else:
+                            gcp_image_urls = []
+
                         # Prefer writing to buyer_id column;
                         try:
                             cur.execute("""
@@ -251,7 +276,7 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                               ) returning id
                             """, (
                                 vehicle_key, vin, lpn, norm["source"], norm["price"], norm["miles"], norm["dom"],
-                                norm.get("location"), buyer_from_id, json.dumps(payload_data), norm.get("images", []),
+                                norm.get("location"), buyer_from_id, json.dumps(payload_data), gcp_image_urls,
                                 interior_color, exterior_color, transmission, fuel_type, drivetrain, engine_size, body_style,
                                 clean_title, condition_txt, json.dumps(detailed_ratings) if detailed_ratings is not None else None,
                                 engine_desc, mpg, overall_rating, paid_status, phone_number,
@@ -327,7 +352,8 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                             trim=trim, miles=norm["miles"], price=norm["price"], dom=norm["dom"],
                             source=norm["source"], location=norm.get("location"), buyer_id=buyer_from_id,
                             radius=norm.get("radius", 25), reasonCodes=calculated_reason_codes,
-                            buyMax=calculated_buy_max, status=status, score=score_val, decision=decision, bodyStyle=body_style
+                            buyMax=calculated_buy_max, status=status, score=score_val, decision=decision, 
+                            bodyStyle=body_style, images=gcp_image_urls if gcp_image_urls else None
                         ))
             except Exception as e:
                 logging.error(f"Database error in ingest_listings: {e}")

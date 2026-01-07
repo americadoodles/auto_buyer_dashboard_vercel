@@ -8,6 +8,7 @@ from ..core.db_helpers import get_db_connection
 from ..schemas.listing import ListingIn, ListingOut
 from ..schemas.listing import Decision
 from ..services.ai_service import extract_vehicle_info_from_title, calculate_listing_score
+from ..utils.gcp_storage import upload_images_to_gcp
 
 # In-memory fallback for listings
 _BY_ID: dict[str, ListingOut] = {}
@@ -91,21 +92,26 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                     "source": source_normalized
                 })
             
-            # Query existing VINs
+            # Query existing VINs - normalize in query to catch all variations
             existing_vins = set()
             if vins:
                 vin_placeholders = ','.join(['%s'] * len(vins))
-                cur.execute(f"SELECT DISTINCT UPPER(TRIM(vin)) FROM listings WHERE vin IN ({vin_placeholders})", vins)
+                # Normalize VIN in query: UPPER(TRIM(vin)) to match our normalization
+                cur.execute(
+                    f"SELECT DISTINCT UPPER(TRIM(vin)) FROM listings WHERE UPPER(TRIM(vin)) IN ({vin_placeholders}) AND vin IS NOT NULL",
+                    vins
+                )
                 for record in cur.fetchall():
                     if record[0]:
                         existing_vins.add(record[0].strip().upper())
             
-            # Query existing source URLs (only for rows without VIN or with VIN not found)
+            # Query existing source URLs - normalize in query to catch all variations
             existing_sources = set()
             if source_urls:
                 source_placeholders = ','.join(['%s'] * len(source_urls))
+                # Normalize source in query: LOWER(TRIM(source)) to match our normalization
                 cur.execute(
-                    f"SELECT DISTINCT LOWER(TRIM(source)) FROM listings WHERE LOWER(TRIM(source)) IN ({source_placeholders})",
+                    f"SELECT DISTINCT LOWER(TRIM(source)) FROM listings WHERE LOWER(TRIM(source)) IN ({source_placeholders}) AND source IS NOT NULL",
                     source_urls
                 )
                 for record in cur.fetchall():
@@ -122,16 +128,19 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                 
                 # First check: if VIN exists, skip
                 if vin and vin in existing_vins:
-                    logging.debug(f"Skipping duplicate VIN: {vin}")
+                    logging.info(f"Skipping duplicate VIN: {vin}")
                     continue
                 
-                # Second check: if no VIN or VIN not found, check source URL
-                if source and source in existing_sources:
-                    logging.debug(f"Skipping duplicate source URL: {source}")
+                # Second check: if no VIN, check source URL
+                # Only check source if VIN is None or empty (not if VIN just wasn't found in DB)
+                if not vin and source and source in existing_sources:
+                    logging.info(f"Skipping duplicate source URL (no VIN): {source}")
                     continue
                 
                 # No duplicate found, add to create list
                 rows_to_create.append(item)
+            
+            logging.info(f"After duplicate check: {len(rows_to_create)} new listings to create out of {len(rows)} incoming")
             
             # Only process create for rows_to_create from here
             rows = rows_to_create
@@ -234,6 +243,60 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                         # Use buyer_id from authenticated context when provided; fallback to incoming buyer_id
                         buyer_from_id = buyer_id or norm.get("buyer_id") or None
 
+                        # Upload images to GCP and get URLs
+                        original_images = norm.get("images", [])
+                        gcp_image_urls = []
+                        if original_images:
+                            try:
+                                # Upload images to GCP before inserting listing
+                                # Images are organized by source name (e.g., facebook, carfax)
+                                # Structure: listings/{source_name}/{uuid}.jpg
+                                source_url = norm.get("source")
+                                gcp_image_urls = upload_images_to_gcp(
+                                    original_images,
+                                    listing_id=None,  # Not available yet - will be set after insert
+                                    vin=vin,  # Passed for logging but not used for folder structure
+                                    source=source_url  # Used to determine folder structure
+                                )
+                                if gcp_image_urls:
+                                    source_info = f"source: {source_url}" if source_url else "no source"
+                                    vin_info = f"VIN: {vin}" if vin else "no VIN"
+                                    logging.info(f"Uploaded {len(gcp_image_urls)} images to GCP ({source_info}, {vin_info})")
+                                else:
+                                    logging.warning(f"Failed to upload images to GCP, using original URLs")
+                                    gcp_image_urls = original_images
+                            except Exception as img_error:
+                                logging.error(f"Error uploading images to GCP: {str(img_error)}")
+                                # Fallback to original images if GCP upload fails
+                                gcp_image_urls = original_images
+                        else:
+                            gcp_image_urls = []
+
+                        # Final duplicate check right before insertion (handles race conditions)
+                        # Check if VIN already exists
+                        if vin:
+                            cur.execute(
+                                "SELECT id FROM listings WHERE UPPER(TRIM(vin)) = %s LIMIT 1",
+                                (vin,)
+                            )
+                            existing = cur.fetchone()
+                            if existing:
+                                logging.info(f"Skipping duplicate VIN (final check): {vin} - listing ID: {existing[0]}")
+                                continue
+                        
+                        # If no VIN, check source URL
+                        if not vin:
+                            source_normalized_for_check = norm.get("source", "").strip().lower() if norm.get("source") else None
+                            if source_normalized_for_check and source_normalized_for_check != "unknown":
+                                cur.execute(
+                                    "SELECT id FROM listings WHERE LOWER(TRIM(source)) = %s AND (vin IS NULL OR vin = '') LIMIT 1",
+                                    (source_normalized_for_check,)
+                                )
+                                existing = cur.fetchone()
+                                if existing:
+                                    logging.info(f"Skipping duplicate source URL (final check): {source_normalized_for_check} - listing ID: {existing[0]}")
+                                    continue
+                        
                         # Prefer writing to buyer_id column;
                         try:
                             cur.execute("""
@@ -251,13 +314,14 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                               ) returning id
                             """, (
                                 vehicle_key, vin, lpn, norm["source"], norm["price"], norm["miles"], norm["dom"],
-                                norm.get("location"), buyer_from_id, json.dumps(payload_data), norm.get("images", []),
+                                norm.get("location"), buyer_from_id, json.dumps(payload_data), gcp_image_urls,
                                 interior_color, exterior_color, transmission, fuel_type, drivetrain, engine_size, body_style,
                                 clean_title, condition_txt, json.dumps(detailed_ratings) if detailed_ratings is not None else None,
                                 engine_desc, mpg, overall_rating, paid_status, phone_number,
                                 seller_description, seller_joined_date, seller_name
                             ))
                             new_id = str(cur.fetchone()[0])
+                            logging.debug(f"Successfully inserted listing with ID: {new_id}, VIN: {vin}, source: {norm.get('source')}")
                         except Exception as log_exc:
                             logging.error(f"Failed to insert listing into database: {log_exc}")
                             new_id = f"error-{len(out)+1}"
@@ -327,7 +391,8 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                             trim=trim, miles=norm["miles"], price=norm["price"], dom=norm["dom"],
                             source=norm["source"], location=norm.get("location"), buyer_id=buyer_from_id,
                             radius=norm.get("radius", 25), reasonCodes=calculated_reason_codes,
-                            buyMax=calculated_buy_max, status=status, score=score_val, decision=decision, bodyStyle=body_style
+                            buyMax=calculated_buy_max, status=status, score=score_val, decision=decision, 
+                            bodyStyle=body_style, images=gcp_image_urls if gcp_image_urls else None
                         ))
             except Exception as e:
                 logging.error(f"Database error in ingest_listings: {e}")

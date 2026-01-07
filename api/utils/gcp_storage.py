@@ -9,6 +9,7 @@ import json
 import os
 import re
 from urllib.parse import urlparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 try:
     from google.cloud import storage
@@ -231,15 +232,16 @@ def upload_image_to_gcp(image_url_or_data: str, listing_id: Optional[str] = None
         return None
 
 
-def upload_images_to_gcp(images: List[str], listing_id: Optional[str] = None, vin: Optional[str] = None, source: Optional[str] = None) -> List[str]:
+def upload_images_to_gcp(images: List[str], listing_id: Optional[str] = None, vin: Optional[str] = None, source: Optional[str] = None, max_workers: int = 5) -> List[str]:
     """
-    Upload multiple images to GCP Storage.
+    Upload multiple images to GCP Storage in parallel (batch upload).
     
     Args:
         images: List of image URLs or data URIs
         listing_id: Optional listing ID for organizing images
         vin: Optional VIN for organizing images
         source: Optional source URL for organizing images when no VIN
+        max_workers: Maximum number of concurrent upload threads (default: 5)
     
     Returns:
         List of public URLs of uploaded images (failed uploads are skipped)
@@ -247,15 +249,39 @@ def upload_images_to_gcp(images: List[str], listing_id: Optional[str] = None, vi
     if not images:
         return []
     
-    uploaded_urls = []
-    for image in images:
-        if not image or not image.strip():
-            continue
-        
-        uploaded_url = upload_image_to_gcp(image.strip(), listing_id, vin, source)
-        if uploaded_url:
-            uploaded_urls.append(uploaded_url)
-        else:
-            logging.warning(f"Failed to upload image, skipping: {image[:100]}")
+    # Filter out empty images
+    valid_images = [img.strip() for img in images if img and img.strip()]
     
+    if not valid_images:
+        return []
+    
+    uploaded_urls = []
+    failed_count = 0
+    
+    # Use ThreadPoolExecutor for parallel uploads
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        # Submit all upload tasks
+        future_to_image = {
+            executor.submit(upload_image_to_gcp, image, listing_id, vin, source): image
+            for image in valid_images
+        }
+        
+        # Collect results as they complete
+        for future in as_completed(future_to_image):
+            image = future_to_image[future]
+            try:
+                uploaded_url = future.result()
+                if uploaded_url:
+                    uploaded_urls.append(uploaded_url)
+                else:
+                    failed_count += 1
+                    logging.warning(f"Failed to upload image, skipping: {image[:100]}")
+            except Exception as e:
+                failed_count += 1
+                logging.error(f"Exception while uploading image {image[:100]}: {str(e)}")
+    
+    if failed_count > 0:
+        logging.warning(f"Failed to upload {failed_count} out of {len(valid_images)} images")
+    
+    logging.info(f"Successfully uploaded {len(uploaded_urls)}/{len(valid_images)} images to GCP")
     return uploaded_urls

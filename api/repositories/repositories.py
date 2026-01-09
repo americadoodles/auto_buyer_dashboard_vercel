@@ -186,15 +186,23 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                         make = make.strip() if make and make.strip() else None
                         model = model.strip() if model and model.strip() else None
                         trim = trim.strip() if trim and trim.strip() else None
+                        
+                        # Skip vehicle insert/update if both make and model are empty/None
+                        # A vehicle must have at least make or model to be valid
+                        should_insert_vehicle = (make is not None and make != "") or (model is not None and model != "")
+                        
                         # Handle external API data: map status, reasonCodes, buyMax to Decision object
                         decision = create_decision_from_data(norm)
 
-                        # vehicles
-                        cur.execute("""
-                             insert into vehicles (vehicle_key, vin, year, make, model, trim)
-                             values (%s,%s,%s,%s,%s,%s)
-                             on conflict (vehicle_key) do update set vin=excluded.vin, year=excluded.year, make=excluded.make, model=excluded.model, trim=excluded.trim
-                         """, (vehicle_key, vin, year, make, model, trim))
+                        # vehicles - only insert/update if make or model is present
+                        if should_insert_vehicle:
+                            cur.execute("""
+                                 insert into vehicles (vehicle_key, vin, year, make, model, trim)
+                                 values (%s,%s,%s,%s,%s,%s)
+                                 on conflict (vehicle_key) do update set vin=excluded.vin, year=excluded.year, make=excluded.make, model=excluded.model, trim=excluded.trim
+                             """, (vehicle_key, vin, year, make, model, trim))
+                        else:
+                            logging.info(f"Skipping vehicle insert/update for vehicle_key={vehicle_key}: make and model are both empty/None")
                         
                         # Note: Decision data is used for ListingOut response only
                         # Score records are now always created by AI scoring (see below)

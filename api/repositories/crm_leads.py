@@ -72,9 +72,21 @@ def _build_lead_from_row(result: tuple) -> LeadOut:
             role_id=result[54], role=result[55] or "Unknown", is_confirmed=result[56]
         )
     
-    # Listing fields (57-68)
+    # Listing fields (57-69)
     listing = None
     if result[57]:  # listing.id
+        # Handle images array - convert to list if it's not None
+        images = result[69] if result[69] else []
+        if isinstance(images, str):
+            # If it's a string representation, try to parse it
+            import json
+            try:
+                images = json.loads(images) if images else []
+            except:
+                images = [images] if images else []
+        elif not isinstance(images, list):
+            images = list(images) if images else []
+        
         listing = {
             "id": str(result[57]),
             "vehicle_key": result[58],
@@ -88,6 +100,7 @@ def _build_lead_from_row(result: tuple) -> LeadOut:
             "make": result[66] or "",
             "model": result[67] or "",
             "trim": result[68],
+            "images": images,
             "score": 0,
             "buyMax": 0,
             "reasonCodes": [],
@@ -215,7 +228,7 @@ def get_lead(lead_id: UUID) -> Optional[LeadOut]:
                         u_created.id, u_created.email, u_created.username, u_created.role_id, r_created.name, u_created.is_confirmed,
                         -- Listing fields (basic for now)
                         lst.id, lst.vehicle_key, lst.vin, lst.price, lst.miles, lst.dom, lst.source, lst.location,
-                        v.year, v.make, v.model, v.trim
+                        v.year, v.make, v.model, v.trim, lst.images
                     FROM leads l
                     LEFT JOIN contacts c ON l.contact_id = c.id
                     LEFT JOIN lead_statuses ls ON l.status_id = ls.id
@@ -363,7 +376,7 @@ def list_leads(skip: int = 0, limit: int = 100, status_id: Optional[int] = None,
                         u_created.id, u_created.email, u_created.username, u_created.role_id, r_created.name, u_created.is_confirmed,
                         -- Listing fields
                         lst.id, lst.vehicle_key, lst.vin, lst.price, lst.miles, lst.dom, lst.source, lst.location,
-                        v.year, v.make, v.model, v.trim
+                        v.year, v.make, v.model, v.trim, lst.images
                     FROM leads l
                     LEFT JOIN contacts c ON l.contact_id = c.id
                     LEFT JOIN lead_statuses ls ON l.status_id = ls.id

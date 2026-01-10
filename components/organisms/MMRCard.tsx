@@ -94,17 +94,19 @@ export const MMRCard: React.FC<MMRCardProps> = ({
         {mmrData?.features && typeof mmrData.features === 'object' && Object.keys(mmrData.features).length > 0 && (
           <div>
             <h2 className="text-sm font-semibold text-white mb-3">Features</h2>
-            <div className="grid grid-cols-2 gap-2">
-              {Object.entries(mmrData.features).map(([key, value]) => (
-                <div key={key} className="border border-gray-700 rounded-lg p-3 bg-gray-800/50">
-                  <div className="flex flex-col">
-                    <div className="text-xs font-medium text-gray-400 mb-1">{key}</div>
-                    <div className="text-lg font-bold text-white">
-                      {value ? (typeof value === 'number' ? formatCurrency(value) : String(value)) : 'N/A'}
+            <div className="flex gap-2 overflow-x-auto">
+              {Object.entries(mmrData.features)
+                .filter(([key]) => key !== 'Base MMR' && key !== 'base_mmr')
+                .map(([key, value]) => (
+                  <div key={key} className="border border-gray-700 rounded-lg p-3 bg-gray-800/50 flex-shrink-0">
+                    <div className="flex flex-col">
+                      <div className="text-xs font-medium text-gray-400 mb-1">{key}</div>
+                      <div className="text-lg font-bold text-white">
+                        {value ? (typeof value === 'number' ? formatCurrency(value) : String(value)) : 'N/A'}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
         )}

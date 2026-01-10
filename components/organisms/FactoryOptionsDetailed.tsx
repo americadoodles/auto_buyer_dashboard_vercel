@@ -107,12 +107,12 @@ export const FactoryOptionsDetailed: React.FC<FactoryOptionsDetailedProps> = ({
         : defaultOptions.reduce((sum, opt) => sum + (opt.price ?? 0), 0)));
 
   return (
-    <div className="flex flex-col gap-6 rounded-xl border bg-[#1a1d29] border-gray-700/50 p-5">
-      <div className="flex items-center justify-between mb-4">
+    <div className="flex flex-col gap-1 rounded-xl border bg-[#1a1d29] border-gray-700/50 px-5 py-2">
+      <div className="flex items-center justify-between ">
         <h3 className="text-white font-semibold">Factory Equipped Options</h3>
         <div className="text-green-400 text-lg font-bold">{formatCurrency(calculatedTotal)}</div>
       </div>
-      <div className="space-y-3">
+      <div className="space-y-1">
         {(processedOptions.length > 0 ? processedOptions : defaultOptions).map((option, index) => (
           <div key={index} className="flex items-start justify-between">
             <div className="flex items-start gap-2 flex-1">
@@ -127,7 +127,7 @@ export const FactoryOptionsDetailed: React.FC<FactoryOptionsDetailedProps> = ({
             <div className="text-sm text-gray-300 font-semibold">{formatCurrency(option.price)}</div>
           </div>
         ))}
-        <div className="flex items-center justify-between pt-3 border-t border-gray-700/50">
+        <div className="flex items-center justify-between pt-1 border-t border-gray-700/50">
           <span className="text-white font-semibold">TOTAL</span>
           <span className="text-green-400 text-lg font-bold">{formatCurrency(calculatedTotal)}</span>
         </div>

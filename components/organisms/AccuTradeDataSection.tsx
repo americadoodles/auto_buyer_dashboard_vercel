@@ -43,15 +43,15 @@ export const AccuTradeDataSection: React.FC<AccuTradeDataSectionProps> = ({
       )}
       {/* Price Bar */}
       {accuTradeData.pricebar && (
-        <div className="bg-[#1a1d29] border border-gray-700/50 rounded-lg p-5">
-          <h2 className="text-sm font-semibold text-white mb-3">Price Bar</h2>
-          <div className="grid grid-cols-2 gap-2">
+        <div className="flex flex-col gap-1 rounded-xl border bg-[#1a1d29] border-gray-700/50 px-5 py-2">
+          <div className="flex items-center justify-between mb-1">
+            <h2 className="text-sm font-semibold text-white">Price Bar</h2>
+          </div>
+          <div className="space-y-1">
             {Object.entries(accuTradeData.pricebar).map(([key, value]) => (
-              <div key={key} className="border border-gray-700 rounded-lg p-3 bg-gray-800/50">
-                <div className="flex flex-col">
-                  <div className="text-xs font-medium text-gray-400 mb-1">{key}</div>
-                  <div className="text-lg font-bold text-white">{String(value)}</div>
-                </div>
+              <div key={key} className="flex items-center justify-between">
+                <div className="text-sm text-gray-300">{key}</div>
+                <div className="text-sm text-green-400 font-semibold">{String(value)}</div>
               </div>
             ))}
           </div>

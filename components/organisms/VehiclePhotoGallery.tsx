@@ -40,14 +40,14 @@ export const VehiclePhotoGallery: React.FC<VehiclePhotoGalleryProps> = ({ images
             <Button
               onClick={goToPrevious}
               variant="ghost"
-              className="absolute left-2 top-1/2 -translate-y-1/2 bg-gray-800/80 hover:bg-gray-700/80 text-white size-9 rounded-md"
+              className="!absolute !left-2 !top-1/2 !-translate-y-1/2 !bg-gray-800 hover:!bg-gray-700 !text-white !size-9 !rounded-md !z-10 !p-0"
             >
               <ChevronLeft className="h-6 w-6" />
             </Button>
             <Button
               onClick={goToNext}
               variant="ghost"
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-gray-800/80 hover:bg-gray-700/80 text-white size-9 rounded-md"
+              className="!absolute !right-2 !top-1/2 !-translate-y-1/2 !bg-gray-800 hover:!bg-gray-700 !text-white !size-9 !rounded-md !z-10 !p-0"
             >
               <ChevronRight className="h-6 w-6" />
             </Button>

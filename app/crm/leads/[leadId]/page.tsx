@@ -389,7 +389,7 @@ export default function LeadDetailPage() {
           {displayListing ? (
             <div className="mb-2 grid grid-cols-1 lg:grid-cols-12 gap-6">
               {/* First Column - Vehicle Images and SMS */}
-              <div className="lg:col-span-4 space-y-6">
+              <div className="lg:col-span-4 flex flex-col gap-6">
                 {/* Vehicle Photo Gallery */}
                 {displayListing.images && displayListing.images.length > 0 && (
                   <VehiclePhotoGallery images={displayListing.images} />

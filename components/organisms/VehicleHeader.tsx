@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { Badge } from '../atoms/Badge';
 import { CheckCircle } from 'lucide-react';
 
 interface VehicleHeaderProps {
@@ -55,22 +54,34 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
           )}
         </div>
         <div className="flex items-center gap-3 pt-2">
-          <Badge className={`flex items-center gap-1 ${hasAutoCheck ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-gray-500/10 border-gray-500/30 text-gray-400'}`}>
+          <button
+            type="button"
+            className={`flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition-colors cursor-pointer ${hasAutoCheck ? 'bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500/20' : 'bg-black border border-gray-600 text-white hover:bg-gray-900'}`}
+          >
             <CheckCircle className="h-3 w-3" />
             AutoCheck
-          </Badge>
-          <Badge className={`flex items-center gap-1 ${hasCarfax ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-gray-500/10 border-gray-500/30 text-gray-400'}`}>
+          </button>
+          <button
+            type="button"
+            className={`flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition-colors cursor-pointer ${hasCarfax ? 'bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500/20' : 'bg-black border border-gray-600 text-white hover:bg-gray-900'}`}
+          >
             <CheckCircle className="h-3 w-3" />
             CARFAX
-          </Badge>
-          <Badge className={`flex items-center gap-1 ${hasMMR ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-gray-500/10 border-gray-500/30 text-gray-400'}`}>
+          </button>
+          <button
+            type="button"
+            className={`flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition-colors cursor-pointer ${hasMMR ? 'bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500/20' : 'bg-black border border-gray-600 text-white hover:bg-gray-900'}`}
+          >
             <CheckCircle className="h-3 w-3" />
             MMR
-          </Badge>
-          <Badge className={`flex items-center gap-1 ${hasAccuTrade ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-gray-500/10 border-gray-500/30 text-gray-400'}`}>
+          </button>
+          <button
+            type="button"
+            className={`flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition-colors cursor-pointer ${hasAccuTrade ? 'bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500/20' : 'bg-black border border-gray-600 text-white hover:bg-gray-900'}`}
+          >
             <CheckCircle className="h-3 w-3" />
             AccuTrade
-          </Badge>
+          </button>
         </div>
       </div>
     </div>

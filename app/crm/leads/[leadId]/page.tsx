@@ -343,7 +343,7 @@ export default function LeadDetailPage() {
       <div className="flex-1 overflow-y-auto bg-[#0f1117]">
         <div className="max-w-[1800px] mx-auto px-6 py-6">
           {/* Status Badges */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-4">
               {lead.status && (
                 <Badge color="blue" className="bg-blue-500 dark:bg-blue-600 text-white font-semibold shadow-sm">
@@ -410,7 +410,7 @@ export default function LeadDetailPage() {
                   trim={displayListing.trim || undefined}
                   miles={displayListing.miles || undefined}
                   vin={displayListing.vin || undefined}
-                  hasAutoCheck={hasAccuTradeData || false}
+                  hasAutoCheck={true}
                   hasCarfax={true}
                   hasMMR={hasMMRData || false}
                   hasAccuTrade={hasAccuTradeData || false}

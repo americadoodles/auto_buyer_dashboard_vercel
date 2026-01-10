@@ -60,7 +60,7 @@ export const SMSThreadCompact: React.FC<SMSThreadCompactProps> = ({
   };
 
   return (
-    <div className="flex flex-col gap-6 rounded-xl border bg-[#1a1d29] border-gray-700/50 p-4 h-full">
+    <div className="flex flex-col gap-4 rounded-xl border bg-[#1a1d29] border-gray-700/50 p-4 h-full">
       <div className="relative flex-1 pr-4 mb-4 overflow-y-auto min-h-0">
         <div className="space-y-4">
           {displayMessages.map((message) => (

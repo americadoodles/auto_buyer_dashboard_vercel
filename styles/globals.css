@@ -39,3 +39,27 @@ body {
 .kanban-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;  /* Chrome, Safari and Opera */
 }
+
+/* Visible scrollbar for gallery thumbnails */
+.gallery-scrollbar {
+  scrollbar-width: thin;  /* Firefox */
+  scrollbar-color: #4B5563 #1F2937;  /* Firefox: thumb and track */
+}
+
+.gallery-scrollbar::-webkit-scrollbar {
+  height: 8px;  /* Chrome, Safari and Opera - horizontal scrollbar */
+}
+
+.gallery-scrollbar::-webkit-scrollbar-track {
+  background: #1F2937;  /* Chrome, Safari and Opera */
+  border-radius: 4px;
+}
+
+.gallery-scrollbar::-webkit-scrollbar-thumb {
+  background: #4B5563;  /* Chrome, Safari and Opera */
+  border-radius: 4px;
+}
+
+.gallery-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #6B7280;  /* Chrome, Safari and Opera */
+}

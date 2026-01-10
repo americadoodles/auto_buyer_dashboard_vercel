@@ -27,8 +27,8 @@ export const PricingCard: React.FC<PricingCardProps> = ({
   };
 
   return (
-    <div className="flex flex-col gap-6 rounded-xl border bg-[#1a1d29] border-gray-700/50 p-5">
-      <div className="space-y-4">
+    <div className="flex flex-col gap-4 rounded-xl border bg-[#1a1d29] border-gray-700/50 p-5">
+      <div className="space-y-3">
         <div className="flex items-center justify-between pb-4 border-b border-gray-700/50">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-sm text-white">

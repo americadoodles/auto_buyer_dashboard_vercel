@@ -386,9 +386,9 @@ export default function LeadDetailPage() {
 
           {/* 3-Column Grid Layout */}
           {displayListing ? (
-            <div className="mb-2 grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="mb-2 grid grid-cols-1 lg:grid-cols-12 gap-4">
               {/* First Column - Vehicle Images and SMS */}
-              <div className="lg:col-span-4 flex flex-col gap-6">
+              <div className="lg:col-span-4 flex flex-col gap-4">
                 {/* Vehicle Photo Gallery */}
                 {displayListing.images && displayListing.images.length > 0 && (
                   <VehiclePhotoGallery images={displayListing.images} />
@@ -401,7 +401,7 @@ export default function LeadDetailPage() {
       </div>
 
               {/* Second Column - Vehicle Header, MMR, AutoCheck, CARFAX */}
-              <div className="lg:col-span-4 space-y-6">
+              <div className="lg:col-span-4 space-y-4">
                 {/* Vehicle Header */}
                 <VehicleHeader
                   year={displayListing.year}
@@ -466,7 +466,7 @@ export default function LeadDetailPage() {
               </div>
 
               {/* Third Column - Pricing and Factory Options */}
-              <div className="lg:col-span-4 space-y-6">
+              <div className="lg:col-span-4 space-y-4">
                 {/* Pricing Card */}
                 <PricingCard
                   sellerName={displayListing.sellerName || undefined}

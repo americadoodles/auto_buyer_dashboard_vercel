@@ -19,7 +19,7 @@ export const AccuTradeDataSection: React.FC<AccuTradeDataSectionProps> = ({
   if (!accuTradeData) return null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* AccuTrade View Details Button */}
       {vin && hasAccuTradeData && (
         <Button
@@ -60,12 +60,12 @@ export const AccuTradeDataSection: React.FC<AccuTradeDataSectionProps> = ({
 
       {/* Local Market Listing */}
       {accuTradeData.local_market_listing && (
-        <div className="bg-[#1a1d29] border border-gray-700/50 rounded-lg p-5">
-          <h2 className="text-lg font-semibold text-white mb-4">Local Market Listing</h2>
+        <div className="bg-[#1a1d29] border border-gray-700/50 rounded-lg px-5 py-2">
+          <h2 className="text-lg font-semibold text-white">Local Market Listing</h2>
           <div className="local-market-most-recent-listing">
             <div className="content">
               {/* Heading Row */}
-              <div className="heading-row mb-4">
+              <div className="heading-row mb-3">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="flex items-center gap-2 flex-wrap">
                     <div className="label-and-age flex items-center gap-2">
@@ -152,8 +152,8 @@ export const AccuTradeDataSection: React.FC<AccuTradeDataSectionProps> = ({
 
       {/* Local Market Stats */}
       {accuTradeData.local_market_stats && (
-        <div className="bg-[#1a1d29] border border-gray-700/50 rounded-lg p-5">
-          <h2 className="text-lg font-semibold text-white mb-4">Local Market Stats</h2>
+        <div className="bg-[#1a1d29] border border-gray-700/50 rounded-lg px-5 py-2">
+          <h2 className="text-lg font-semibold text-white">Local Market Stats</h2>
           <div className="local-market-stats grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {(() => {
               // Define the order of fields

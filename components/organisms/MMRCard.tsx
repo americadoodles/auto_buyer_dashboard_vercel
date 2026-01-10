@@ -73,7 +73,7 @@ export const MMRCard: React.FC<MMRCardProps> = ({
   const typicalRange = getTypicalRange();
 
   return (
-    <div className="flex flex-col gap-6 rounded-xl border bg-[#1a1d29] border-gray-700/50 p-5">
+    <div className="flex flex-col gap-4 rounded-xl border bg-[#1a1d29] border-gray-700/50 p-5">
       <div className="flex items-center justify-between ">
         <div className="flex items-center gap-2">
           <span className="text-gray-400">📊</span>
@@ -93,7 +93,7 @@ export const MMRCard: React.FC<MMRCardProps> = ({
         {/* Features */}
         {mmrData?.features && typeof mmrData.features === 'object' && Object.keys(mmrData.features).length > 0 && (
           <div>
-            <h2 className="text-sm font-semibold text-white mb-3">Features</h2>
+            <h2 className="text-sm font-semibold text-white mb-2">Features</h2>
             <div className="flex gap-2 overflow-x-auto">
               {Object.entries(mmrData.features)
                 .filter(([key]) => key !== 'Base MMR' && key !== 'base_mmr')
@@ -141,7 +141,7 @@ export const MMRCard: React.FC<MMRCardProps> = ({
         {/* Projected Average */}
         {mmrData?.projected_average && typeof mmrData.projected_average === 'object' && Object.keys(mmrData.projected_average).length > 0 && (
           <div>
-            <h3 className="text-sm font-semibold text-white mb-3">Projected Average</h3>
+            <h3 className="text-sm font-semibold text-white mb-2">Projected Average</h3>
             <div className="space-y-2">
               {Object.entries(mmrData.projected_average).map(([key, value]) => (
                 <div key={key} className="flex flex-col">
@@ -165,7 +165,7 @@ export const MMRCard: React.FC<MMRCardProps> = ({
               </div>
             </h3>
             <div className="mt-3">
-              <div className="text-xl font-bold text-white mb-3">{formatCurrency(estimatedRetail)}</div>
+              <div className="text-xl font-bold text-white mb-2">{formatCurrency(estimatedRetail)}</div>
               {typicalRange && (
                 <div>
                   <div className="text-xs font-medium text-gray-400 mb-2">Typical Range</div>

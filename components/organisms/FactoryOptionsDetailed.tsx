@@ -38,10 +38,8 @@ export const FactoryOptionsDetailed: React.FC<FactoryOptionsDetailedProps> = ({
     // Handle object format from AccuTrade
     // AccuTrade options format: { "OPTION NAME": price_or_status, ... }
     processedOptions = Object.entries(options)
-      .map(([key, value]: [string, any]) => {
-        // Skip internal fields like _total_options_price (but we can use it for total)
-        if (key.startsWith('_')) return null;
-        
+      .filter(([key]) => !key.startsWith('_')) // Skip internal fields like _total_options_price
+      .map(([key, value]: [string, any]): FactoryOption => {
         let price = 0;
         // Handle different value formats
         if (typeof value === 'number') {
@@ -65,8 +63,7 @@ export const FactoryOptionsDetailed: React.FC<FactoryOptionsDetailedProps> = ({
           price: price,
           isFactoryUpgrade: price > 0, // Factory upgrade if it has a price
         };
-      })
-      .filter((opt): opt is FactoryOption => opt !== null); // Show all options, even if price is 0
+      });
   }
   
   // Default options if none provided
@@ -106,8 +103,8 @@ export const FactoryOptionsDetailed: React.FC<FactoryOptionsDetailedProps> = ({
     : (optionsTotal > 0
       ? optionsTotal
       : (processedOptions.length > 0 
-        ? processedOptions.reduce((sum, opt) => sum + (opt.price || 0), 0)
-        : defaultOptions.reduce((sum, opt) => sum + opt.price, 0)));
+        ? processedOptions.reduce((sum, opt) => sum + (opt.price ?? 0), 0)
+        : defaultOptions.reduce((sum, opt) => sum + (opt.price ?? 0), 0)));
 
   return (
     <div className="flex flex-col gap-6 rounded-xl border bg-[#1a1d29] border-gray-700/50 p-5">

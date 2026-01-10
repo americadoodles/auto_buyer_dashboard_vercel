@@ -19,7 +19,6 @@ import { MMRCard } from '../../../../components/organisms/MMRCard';
 import { CompactAutocheckSection } from '../../../../components/organisms/CompactAutocheckSection';
 import { CompactCarfaxSection } from '../../../../components/organisms/CompactCarfaxSection';
 import { PricingCard } from '../../../../components/organisms/PricingCard';
-import { FactoryOptionsDetailed } from '../../../../components/organisms/FactoryOptionsDetailed';
 import { SMSThreadCompact } from '../../../../components/organisms/SMSThreadCompact';
 import { AccuTradeDataSection } from '../../../../components/organisms/AccuTradeDataSection';
 import { ArrowLeft, ExternalLink, Check, X, Edit2, Save } from 'lucide-react';
@@ -474,34 +473,16 @@ export default function LeadDetailPage() {
                   askingPrice={displayListing.price || undefined}
                   suggestedPrice={displayListing.buyMax || undefined}
                 />
-                  {/* AccuTrade View Details Button */}
-                  {displayListing.vin && hasAccuTradeData && (
-                    <Button
-                      onClick={() => {
-                        const accuTradeUrl = `https://appraiser3.accu-trade.com/appraisal/new?vin=${encodeURIComponent(displayListing.vin!)}`;
-                        window.open(accuTradeUrl, '_blank');
-                      }}
-                      className="w-full bg-blue-600 hover:bg-blue-500 text-white transition-colors flex items-center justify-center gap-2"
-                    >
-                      View Full AccuTrade Details
-                      <ExternalLink className="h-4 w-4" />
-                    </Button>
-                  )}
-                {/* Factory Options */}
-                {accuTradeData?.options && (
-                  <FactoryOptionsDetailed
-                    options={accuTradeData.options}
-                    total={accuTradeData.pricebar?.total || undefined}
-                  />
-                )}
-                
-               
                 
                 {/* AccuTrade Data - Always show if VIN exists */}
                 {displayListing.vin && (
                   <>
                     {hasAccuTradeData && accuTradeData ? (
-                      <AccuTradeDataSection accuTradeData={accuTradeData} />
+                      <AccuTradeDataSection 
+                        accuTradeData={accuTradeData}
+                        vin={displayListing.vin}
+                        hasAccuTradeData={hasAccuTradeData}
+                      />
                     ) : (
                       <div className="bg-[#1a1d29] border border-gray-700/50 rounded-lg p-5">
                         <h3 className="text-white font-semibold mb-2">AccuTrade Data</h3>

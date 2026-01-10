@@ -1,18 +1,46 @@
 'use client';
 
 import React from 'react';
+import { Button } from '../atoms/Button';
+import { ExternalLink } from 'lucide-react';
+import { FactoryOptionsDetailed } from './FactoryOptionsDetailed';
 
 interface AccuTradeDataSectionProps {
   accuTradeData: any;
+  vin?: string;
+  hasAccuTradeData?: boolean;
 }
 
 export const AccuTradeDataSection: React.FC<AccuTradeDataSectionProps> = ({
   accuTradeData,
+  vin,
+  hasAccuTradeData,
 }) => {
   if (!accuTradeData) return null;
 
   return (
     <div className="space-y-6">
+      {/* AccuTrade View Details Button */}
+      {vin && hasAccuTradeData && (
+        <Button
+          onClick={() => {
+            const accuTradeUrl = `https://appraiser3.accu-trade.com/appraisal/new?vin=${encodeURIComponent(vin)}`;
+            window.open(accuTradeUrl, '_blank');
+          }}
+          className="w-full bg-blue-600 hover:bg-blue-500 text-white transition-colors flex items-center justify-center gap-2"
+        >
+          View Full AccuTrade Details
+          <ExternalLink className="h-4 w-4" />
+        </Button>
+      )}
+      
+      {/* Factory Options */}
+      {accuTradeData?.options && (
+        <FactoryOptionsDetailed
+          options={accuTradeData.options}
+          total={accuTradeData.pricebar?.total || undefined}
+        />
+      )}
       {/* Price Bar */}
       {accuTradeData.pricebar && (
         <div className="bg-[#1a1d29] border border-gray-700/50 rounded-lg p-5">

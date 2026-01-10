@@ -386,7 +386,7 @@ export default function LeadDetailPage() {
 
           {/* 3-Column Grid Layout */}
           {displayListing ? (
-            <div className="mb-2 grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <div className="mb-2 grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
               {/* First Column - Vehicle Images and SMS */}
               <div className="lg:col-span-4 flex flex-col gap-4">
                 {/* Vehicle Photo Gallery */}
@@ -398,10 +398,10 @@ export default function LeadDetailPage() {
                 <SMSThreadCompact
                   contactName={lead?.contact ? `${lead.contact.first_name} ${lead.contact.last_name}` : 'Contact'}
                 />
-      </div>
+              </div>
 
               {/* Second Column - Vehicle Header, MMR, AutoCheck, CARFAX */}
-              <div className="lg:col-span-4 space-y-4">
+              <div className="lg:col-span-4 flex flex-col space-y-4">
                 {/* Vehicle Header */}
                 <VehicleHeader
                   year={displayListing.year}
@@ -466,7 +466,7 @@ export default function LeadDetailPage() {
               </div>
 
               {/* Third Column - Pricing and Factory Options */}
-              <div className="lg:col-span-4 space-y-4">
+              <div className="lg:col-span-4 flex flex-col space-y-4">
                 {/* Pricing Card */}
                 <PricingCard
                   sellerName={displayListing.sellerName || undefined}
@@ -475,53 +475,57 @@ export default function LeadDetailPage() {
                 />
                 
                 {/* AccuTrade Data - Always show if VIN exists */}
-                {displayListing.vin && (
-                  <>
-                    {hasAccuTradeData && accuTradeData ? (
-                      <AccuTradeDataSection 
-                        accuTradeData={accuTradeData}
-                        vin={displayListing.vin}
-                        hasAccuTradeData={hasAccuTradeData}
-                      />
-                    ) : (
-                      <div className="bg-[#1a1d29] border border-gray-700/50 rounded-lg p-5">
-                        <h3 className="text-white font-semibold mb-2">AccuTrade Data</h3>
-                        <p className="text-sm text-gray-400 mb-2">
-                          No AccuTrade data found for VIN: {displayListing.vin}
-                        </p>
-                        <Button
-                          onClick={() => {
-                            const accuTradeUrl = `https://appraiser3.accu-trade.com/appraisal/new?vin=${encodeURIComponent(displayListing.vin!)}`;
-                            window.open(accuTradeUrl, '_blank');
-                          }}
-                          className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                        >
-                          Open AccuTrade Appraisal
-                        </Button>
-                      </div>
+                <div className="flex-1 flex flex-col min-h-0 overflow-y-auto">
+                  <div className="space-y-4">
+                    {displayListing.vin && (
+                      <>
+                        {hasAccuTradeData && accuTradeData ? (
+                          <AccuTradeDataSection 
+                            accuTradeData={accuTradeData}
+                            vin={displayListing.vin}
+                            hasAccuTradeData={hasAccuTradeData}
+                          />
+                        ) : (
+                          <div className="bg-[#1a1d29] border border-gray-700/50 rounded-lg p-5">
+                            <h3 className="text-white font-semibold mb-2">AccuTrade Data</h3>
+                            <p className="text-sm text-gray-400 mb-2">
+                              No AccuTrade data found for VIN: {displayListing.vin}
+                            </p>
+                            <Button
+                              onClick={() => {
+                                const accuTradeUrl = `https://appraiser3.accu-trade.com/appraisal/new?vin=${encodeURIComponent(displayListing.vin!)}`;
+                                window.open(accuTradeUrl, '_blank');
+                              }}
+                              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                            >
+                              Open AccuTrade Appraisal
+                            </Button>
+                          </div>
+                        )}
+                      </>
                     )}
-                  </>
-                )}
+                  </div>
+                </div>
               </div>
             </div>
           ) : null}
 
           {/* Edit Fields Section */}
-          <div className="mb-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-3">
-              <h4 className="text-lg font-bold text-gray-900 dark:text-gray-100">Lead Information</h4>
+          <div className="mb-2 bg-[#1a1d29] rounded-lg shadow-sm border border-gray-700/50 p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-gray-700/50 pb-3">
+              <h4 className="text-lg font-bold text-white">Lead Information</h4>
                   </div>
             
             <div className="grid grid-cols-2 gap-x-8 gap-y-1">
               {/* Status */}
               <div className="flex items-center w-full group">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Status:</span>
+                <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Status:</span>
                 {editingField === 'status_id' ? (
                   <div className="flex items-center gap-2 flex-1">
                     <select
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm rounded-md bg-white dark:bg-gray-700"
+                      className="border-gray-600 focus:border-blue-500 focus:ring-blue-500 text-white flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm rounded-md bg-gray-800"
                       autoFocus
                     >
                       <option value="">Select status</option>
@@ -534,7 +538,7 @@ export default function LeadDetailPage() {
                     <button
                       onClick={() => saveField('status_id')}
                       disabled={savingField === 'status_id'}
-                      className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                      className="p-1 text-green-400 hover:bg-green-900/30 rounded"
                       title="Save"
                     >
                       <Check className="h-4 w-4" />
@@ -542,7 +546,7 @@ export default function LeadDetailPage() {
                     <button
                       onClick={cancelEditing}
                       disabled={savingField === 'status_id'}
-                      className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                      className="p-1 text-red-400 hover:bg-red-900/30 rounded"
                       title="Cancel"
                     >
                       <X className="h-4 w-4" />
@@ -552,13 +556,13 @@ export default function LeadDetailPage() {
                   <div className="flex items-center gap-2">
                     <span 
                       onClick={() => startEditing('status_id', lead.status_id || '')}
-                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      className="text-sm text-gray-300 cursor-pointer hover:text-blue-400 transition-colors"
                     >
                       {lead.status?.name || ''}
                     </span>
                     <button
                       onClick={() => startEditing('status_id', lead.status_id || '')}
-                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      className="p-1 text-gray-400 hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
                       title="Edit"
                     >
                       <Edit2 className="h-4 w-4" />
@@ -569,13 +573,13 @@ export default function LeadDetailPage() {
 
               {/* Source */}
               <div className="flex items-center w-full group">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Source:</span>
+                <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Source:</span>
                 {editingField === 'source_id' ? (
                   <div className="flex items-center gap-2 flex-1">
                     <select
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm rounded-md bg-white dark:bg-gray-700"
+                      className="border-gray-600 focus:border-blue-500 focus:ring-blue-500 text-white flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm rounded-md bg-gray-800"
                       autoFocus
                     >
                       <option value="">Select source</option>
@@ -588,7 +592,7 @@ export default function LeadDetailPage() {
                     <button
                       onClick={() => saveField('source_id')}
                       disabled={savingField === 'source_id'}
-                      className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                      className="p-1 text-green-400 hover:bg-green-900/30 rounded"
                       title="Save"
                     >
                       <Check className="h-4 w-4" />
@@ -596,7 +600,7 @@ export default function LeadDetailPage() {
                     <button
                       onClick={cancelEditing}
                       disabled={savingField === 'source_id'}
-                      className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                      className="p-1 text-red-400 hover:bg-red-900/30 rounded"
                       title="Cancel"
                     >
                       <X className="h-4 w-4" />
@@ -606,13 +610,13 @@ export default function LeadDetailPage() {
                   <div className="flex items-center gap-2">
                     <span 
                       onClick={() => startEditing('source_id', lead.source_id || '')}
-                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      className="text-sm text-gray-300 cursor-pointer hover:text-blue-400 transition-colors"
                     >
                       {lead.source?.name || ''}
                     </span>
                     <button
                       onClick={() => startEditing('source_id', lead.source_id || '')}
-                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      className="p-1 text-gray-400 hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
                       title="Edit"
                     >
                       <Edit2 className="h-4 w-4" />
@@ -623,20 +627,20 @@ export default function LeadDetailPage() {
 
               {/* Lead Score */}
               <div className="flex items-center w-full group">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Lead Score:</span>
+                <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Lead Score:</span>
                 {editingField === 'lead_score' ? (
                   <div className="flex items-center gap-2 flex-1">
                     <Input
                       type="text"
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      className="border-gray-600 focus:border-blue-500 focus:ring-blue-500 text-white flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm bg-gray-800"
                       autoFocus
                     />
                     <button
                       onClick={() => saveField('lead_score')}
                       disabled={savingField === 'lead_score'}
-                      className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                      className="p-1 text-green-400 hover:bg-green-900/30 rounded"
                       title="Save"
                     >
                       <Check className="h-4 w-4" />
@@ -644,7 +648,7 @@ export default function LeadDetailPage() {
                     <button
                       onClick={cancelEditing}
                       disabled={savingField === 'lead_score'}
-                      className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                      className="p-1 text-red-400 hover:bg-red-900/30 rounded"
                       title="Cancel"
                     >
                       <X className="h-4 w-4" />
@@ -654,13 +658,13 @@ export default function LeadDetailPage() {
                   <div className="flex items-center gap-2">
                     <span 
                       onClick={() => startEditing('lead_score', lead.lead_score !== undefined ? lead.lead_score.toString() : '')}
-                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      className="text-sm text-gray-300 cursor-pointer hover:text-blue-400 transition-colors"
                     >
                       {lead.lead_score !== undefined ? lead.lead_score.toString() : ''}
                     </span>
                     <button
                       onClick={() => startEditing('lead_score', lead.lead_score !== undefined ? lead.lead_score.toString() : '')}
-                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      className="p-1 text-gray-400 hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
                       title="Edit"
                     >
                       <Edit2 className="h-4 w-4" />
@@ -671,9 +675,9 @@ export default function LeadDetailPage() {
 
               {/* Assigned To */}
               <div className="flex items-center w-full group">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Assigned To:</span>
+                <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Assigned To:</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-900 dark:text-gray-100">
+                  <span className="text-sm text-gray-300">
                     {lead.assigned_to_user?.username || 'Unassigned'}
                   </span>
                                 </div>
@@ -683,27 +687,27 @@ export default function LeadDetailPage() {
               {lead.contact && (
                 <>
                   <div className="flex items-center w-full group">
-                    <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Contact Name:</span>
+                    <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Contact Name:</span>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-900 dark:text-gray-100">
+                      <span className="text-sm text-gray-300">
                         {lead.contact.first_name} {lead.contact.last_name}
                       </span>
                     </div>
                   </div>
 
                   <div className="flex items-center w-full group">
-                    <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Email:</span>
+                    <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Email:</span>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-900 dark:text-gray-100">
+                      <span className="text-sm text-gray-300">
                         {lead.contact.email || ''}
                       </span>
                     </div>
                   </div>
 
                   <div className="flex items-center w-full group">
-                    <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Phone:</span>
+                    <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Phone:</span>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-900 dark:text-gray-100">
+                      <span className="text-sm text-gray-300">
                         {lead.contact.phone || ''}
                       </span>
                     </div>
@@ -713,13 +717,13 @@ export default function LeadDetailPage() {
 
               {/* Notes */}
               <div className="flex items-start col-span-2 w-full group">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0 pt-1">Notes:</span>
+                <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0 pt-1">Notes:</span>
                 {editingField === 'notes' ? (
                   <div className="flex items-start gap-2 flex-1">
                     <textarea
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      className="flex-1 px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      className="flex-1 px-3 py-1 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-800 text-white"
                       rows={3}
                       autoFocus
                     />
@@ -727,7 +731,7 @@ export default function LeadDetailPage() {
                       <button
                         onClick={() => saveField('notes')}
                         disabled={savingField === 'notes'}
-                        className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                        className="p-1 text-green-400 hover:bg-green-900/30 rounded"
                         title="Save"
                       >
                         <Check className="h-4 w-4" />
@@ -735,7 +739,7 @@ export default function LeadDetailPage() {
                       <button
                         onClick={cancelEditing}
                         disabled={savingField === 'notes'}
-                        className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                        className="p-1 text-red-400 hover:bg-red-900/30 rounded"
                         title="Cancel"
                       >
                         <X className="h-4 w-4" />
@@ -746,13 +750,13 @@ export default function LeadDetailPage() {
                   <div className="flex items-start gap-2">
                     <span 
                       onClick={() => startEditing('notes', lead.notes || '')}
-                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      className="text-sm text-gray-300 cursor-pointer hover:text-blue-400 transition-colors"
                     >
                       {lead.notes || ''}
                     </span>
                     <button
                       onClick={() => startEditing('notes', lead.notes || '')}
-                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100 mt-1"
+                      className="p-1 text-gray-400 hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100 mt-1"
                       title="Edit"
                     >
                       <Edit2 className="h-4 w-4" />
@@ -765,9 +769,9 @@ export default function LeadDetailPage() {
 
           {/* Vehicle Information Section */}
           {displayListing && (
-            <div className="mb-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-4">
-              <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-3">
-                <h4 className="text-lg font-bold text-gray-900 dark:text-gray-100">Vehicle Information</h4>
+            <div className="mb-2 bg-[#1a1d29] rounded-lg shadow-sm border border-gray-700/50 p-6 space-y-4">
+              <div className="flex items-center justify-between border-b border-gray-700/50 pb-3">
+                <h4 className="text-lg font-bold text-white">Vehicle Information</h4>
                 {lead.listing_id && (
                   <Button
                     onClick={() => router.push(`/listings/${lead.listing_id}`)}
@@ -783,187 +787,187 @@ export default function LeadDetailPage() {
               
               <div className="grid grid-cols-2 gap-x-8 gap-y-1">
                 <div className="flex items-center w-full group">
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">VIN Number:</span>
+                  <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">VIN Number:</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-900 dark:text-gray-100 uppercase">
+                    <span className="text-sm text-gray-300 uppercase">
                       {displayListing.vin || ''}
                     </span>
                       </div>
                     </div>
 
                 <div className="flex items-center w-full group">
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">LPN:</span>
+                  <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">LPN:</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-900 dark:text-gray-100 uppercase">
+                    <span className="text-sm text-gray-300 uppercase">
                       {displayListing.lpn || '—'}
                     </span>
                       </div>
                     </div>
                 
                 <div className="flex items-center w-full group">
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Location:</span>
+                  <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Location:</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-900 dark:text-gray-100">
+                    <span className="text-sm text-gray-300">
                       {displayListing.location || ''}
                     </span>
                   </div>
                 </div>
                 
                 <div className="flex items-center w-full group">
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Price:</span>
+                  <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Price:</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-900 dark:text-gray-100">
+                    <span className="text-sm text-gray-300">
                       {displayListing.price ? `$${formatNumberWithCommas(displayListing.price)}` : ''}
                     </span>
                 </div>
               </div>
 
                 <div className="flex items-center w-full group">
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Miles:</span>
+                  <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Miles:</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-900 dark:text-gray-100">
+                    <span className="text-sm text-gray-300">
                       {displayListing.miles ? formatNumberWithCommas(displayListing.miles) : ''}
                     </span>
                     </div>
                       </div>
 
                 <div className="flex items-center w-full group">
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">MMR:</span>
+                  <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">MMR:</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-900 dark:text-gray-100">
+                    <span className="text-sm text-gray-300">
                       {displayListing.mmr ? formatNumberWithCommas(displayListing.mmr) : ''}
                     </span>
                   </div>
                     </div>
                 
                 <div className="flex items-center w-full group">
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">DOM:</span>
+                  <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">DOM:</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-900 dark:text-gray-100">
+                    <span className="text-sm text-gray-300">
                       {displayListing.dom || ''}
                     </span>
                       </div>
                   </div>
 
                 <div className="flex items-center w-full group">
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Status:</span>
+                  <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Status:</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-900 dark:text-gray-100">
+                    <span className="text-sm text-gray-300">
                       {displayListing.status || displayListing.decision?.status || ''}
                     </span>
                 </div>
               </div>
 
                 <div className="flex items-center w-full group">
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Score:</span>
+                  <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Score:</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-900 dark:text-gray-100">
+                    <span className="text-sm text-gray-300">
                       {displayListing.score !== undefined ? displayListing.score.toString() : ''}
                       </span>
                     </div>
                   </div>
 
                 <div className="flex items-center w-full group">
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Buy Max:</span>
+                  <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Buy Max:</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-900 dark:text-gray-100">
+                    <span className="text-sm text-gray-300">
                       {displayListing.buyMax ? `$${displayListing.buyMax.toLocaleString()}` : ''}
                       </span>
                     </div>
                   </div>
 
                 <div className="flex items-center w-full group">
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Interior Color:</span>
+                  <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Interior Color:</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-900 dark:text-gray-100">
+                    <span className="text-sm text-gray-300">
                       {displayListing.interiorColor || ''}
                       </span>
                     </div>
                   </div>
                 
                 <div className="flex items-center w-full group">
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Exterior Color:</span>
+                  <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Exterior Color:</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-900 dark:text-gray-100">
+                    <span className="text-sm text-gray-300">
                       {displayListing.exteriorColor || ''}
                     </span>
                 </div>
               </div>
 
                 <div className="flex items-center w-full group">
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Transmission:</span>
+                  <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Transmission:</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-900 dark:text-gray-100">
+                    <span className="text-sm text-gray-300">
                       {displayListing.transmission || ''}
                     </span>
                   </div>
                 </div>
                 
                 <div className="flex items-center w-full group">
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Fuel Type:</span>
+                  <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Fuel Type:</span>
                           <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-900 dark:text-gray-100">
+                    <span className="text-sm text-gray-300">
                       {displayListing.fuelType || ''}
                     </span>
                           </div>
                 </div>
 
                 <div className="flex items-center w-full group">
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Drivetrain:</span>
+                  <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Drivetrain:</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-900 dark:text-gray-100">
+                    <span className="text-sm text-gray-300">
                       {displayListing.driveType || ''}
                           </span>
                         </div>
                   </div>
                 
                 <div className="flex items-center w-full group">
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Engine:</span>
+                  <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Engine:</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-900 dark:text-gray-100">
+                    <span className="text-sm text-gray-300">
                       {displayListing.engine || ''}
                         </span>
                       </div>
                     </div>
 
                 <div className="flex items-center w-full group">
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Body Style:</span>
+                  <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Body Style:</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-900 dark:text-gray-100">
+                    <span className="text-sm text-gray-300">
                       {displayListing.bodyStyle || ''}
                     </span>
                   </div>
                 </div>
 
                 <div className="flex items-center w-full group">
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">MPG:</span>
+                  <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">MPG:</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-900 dark:text-gray-100">
+                    <span className="text-sm text-gray-300">
                       {displayListing.mpg || ''}
                     </span>
                   </div>
                 </div>
                 
                 <div className="flex items-center w-full group">
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Overall Rating:</span>
+                  <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Overall Rating:</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-900 dark:text-gray-100">
+                    <span className="text-sm text-gray-300">
                       {displayListing.overallRating || ''}
                     </span>
                 </div>
               </div>
 
                 <div className="flex items-center w-full group">
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Condition:</span>
+                  <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Condition:</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-900 dark:text-gray-100">
+                    <span className="text-sm text-gray-300">
                       {displayListing.condition || ''}
                     </span>
                     </div>
                     </div>
 
                 <div className="flex items-center w-full group">
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Detailed Ratings:</span>
+                  <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Detailed Ratings:</span>
                   <div className="flex items-center gap-2">
                     <div className="flex flex-wrap gap-2">
                       {displayListing.detailedRatings && displayListing.detailedRatings.length > 0 ? (
@@ -971,52 +975,52 @@ export default function LeadDetailPage() {
                           <Badge key={idx} color="blue" className="bg-blue-500 dark:bg-blue-600 text-white">{rating}</Badge>
                         ))
                       ) : (
-                        <span className="text-sm text-gray-500 dark:text-gray-400"></span>
+                        <span className="text-sm text-gray-400"></span>
                       )}
                     </div>
                     </div>
                     </div>
                 
                 <div className="flex items-center w-full group">
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Clean Title:</span>
+                  <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Clean Title:</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-900 dark:text-gray-100">
+                    <span className="text-sm text-gray-300">
                       {displayListing.cleanTitle ? 'Yes' : 'No'}
                     </span>
                     </div>
                 </div>
                 
                 <div className="flex items-center w-full group">
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Paid Status:</span>
+                  <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Paid Status:</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-900 dark:text-gray-100">
+                    <span className="text-sm text-gray-300">
                       {displayListing.paidStatus || ''}
                     </span>
                   </div>
                 </div>
 
                 <div className="flex items-center w-full group">
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Seller Name:</span>
+                  <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Seller Name:</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-900 dark:text-gray-100">
+                    <span className="text-sm text-gray-300">
                       {displayListing.sellerName || ''}
                     </span>
                     </div>
                     </div>
 
                 <div className="flex items-center w-full group">
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Phone Number:</span>
+                  <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Phone Number:</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-900 dark:text-gray-100">
+                    <span className="text-sm text-gray-300">
                       {displayListing.phoneNumber || ''}
                     </span>
                   </div>
                 </div>
 
                 <div className="flex items-center w-full group">
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Seller Joined Date:</span>
+                  <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Seller Joined Date:</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-900 dark:text-gray-100">
+                    <span className="text-sm text-gray-300">
                       {displayListing.sellerJoinedDate || ''}
                     </span>
               </div>
@@ -1024,17 +1028,17 @@ export default function LeadDetailPage() {
               </div>
 
               <div className="flex items-start col-span-2 w-full group">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0 pt-1">Seller Description:</span>
+                <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0 pt-1">Seller Description:</span>
                 <div className="flex items-start gap-2">
-                  <span className="text-sm text-gray-900 dark:text-gray-100">
+                  <span className="text-sm text-gray-300">
                     {displayListing.sellerDescription || ''}
                   </span>
                 </div>
               </div>
               <div className="flex items-start col-span-2 w-full group">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0 pt-1">Notes:</span>
+                <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0 pt-1">Notes:</span>
                 <div className="flex items-start gap-2">
-                  <span className="text-sm text-gray-900 dark:text-gray-100">
+                  <span className="text-sm text-gray-300">
                     {displayListing.notes || ''}
                   </span>
                 </div>
@@ -1045,10 +1049,10 @@ export default function LeadDetailPage() {
         
 
           {/* Activity Log Timeline */}
-          <div className="mb-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-2">
-            <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 pb-2">Activity Log</h4>
+          <div className="mb-2 bg-[#1a1d29] rounded-lg shadow-sm border border-gray-700/50 p-6 space-y-2">
+            <h4 className="text-md font-semibold text-white border-b border-gray-700/50 pb-2">Activity Log</h4>
             {activities.length === 0 ? (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400 text-sm font-medium">
+              <div className="text-center py-8 text-gray-400 text-sm font-medium">
                 No activities yet
                 </div>
             ) : (
@@ -1057,24 +1061,24 @@ export default function LeadDetailPage() {
                   <div key={activity.id} className="relative flex items-start space-x-3 pb-4">
                     {/* Timeline line */}
                     {index < activities.length - 1 && (
-                      <div className="absolute left-4 top-8 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-600"></div>
+                      <div className="absolute left-4 top-8 bottom-0 w-0.5 bg-gray-600"></div>
                     )}
                     {/* Icon */}
                     <div className="relative flex-shrink-0 mt-1 z-10">
-                      <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
-                        <Icon name={getActivityIcon(activity.activity_type)} className="w-4 h-4 text-green-600 dark:text-green-400" />
+                      <div className="w-8 h-8 rounded-full bg-green-900/50 flex items-center justify-center">
+                        <Icon name={getActivityIcon(activity.activity_type)} className="w-4 h-4 text-green-400" />
                 </div>
                 </div>
                     {/* Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
-                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          <span className="text-sm font-medium text-white">
                             {activity.description || activity.subject || activity.activity_type}
                           </span>
                           <Badge color="green" className="bg-green-500 dark:bg-green-600 text-white">{activity.activity_type}</Badge>
                 </div>
-                        <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
+                        <span className="text-xs text-gray-400 font-medium">
                           {formatDateTime(activity.activity_date || activity.created_at)}
                         </span>
               </div>
@@ -1086,31 +1090,31 @@ export default function LeadDetailPage() {
             </div>
 
           {/* Lead Metadata */}
-          <div className="mb-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-2">
-            <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 pb-2">Lead Information</h4>
+          <div className="mb-2 bg-[#1a1d29] rounded-lg shadow-sm border border-gray-700/50 p-6 space-y-2">
+            <h4 className="text-md font-semibold text-white border-b border-gray-700/50 pb-2">Lead Information</h4>
             <div className="flex flex-col space-y-2 text-sm">
                 <div>
-                <span className="font-medium text-gray-800 dark:text-gray-200">Created:</span>
-                <span className="ml-2 text-gray-700 dark:text-gray-300 font-medium">
+                <span className="font-medium text-gray-300">Created:</span>
+                <span className="ml-2 text-gray-300 font-medium">
                   {lead.created_at ? formatDateTime(lead.created_at) : ''}
                 </span>
                 </div>
                 <div>
-                <span className="font-medium text-gray-800 dark:text-gray-200">Updated:</span>
-                <span className="ml-2 text-gray-700 dark:text-gray-300 font-medium">
+                <span className="font-medium text-gray-300">Updated:</span>
+                <span className="ml-2 text-gray-300 font-medium">
                   {lead.updated_at ? formatDateTime(lead.updated_at) : ''}
                 </span>
                 </div>
               {lead.qualified_at && (
                 <div>
-                  <span className="font-medium text-gray-800 dark:text-gray-200">Qualified:</span>
-                  <span className="ml-2 text-gray-700 dark:text-gray-300 font-medium">{formatDateTime(lead.qualified_at)}</span>
+                  <span className="font-medium text-gray-300">Qualified:</span>
+                  <span className="ml-2 text-gray-300 font-medium">{formatDateTime(lead.qualified_at)}</span>
                 </div>
               )}
               {lead.converted_at && (
                 <div>
-                  <span className="font-medium text-gray-800 dark:text-gray-200">Converted:</span>
-                  <span className="ml-2 text-gray-700 dark:text-gray-300 font-medium">{formatDateTime(lead.converted_at)}</span>
+                  <span className="font-medium text-gray-300">Converted:</span>
+                  <span className="ml-2 text-gray-300 font-medium">{formatDateTime(lead.converted_at)}</span>
                 </div>
               )}
             </div>

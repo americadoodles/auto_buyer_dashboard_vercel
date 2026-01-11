@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { CheckCircle } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { CheckCircle, ExternalLink, FileText } from 'lucide-react';
 
 interface VehicleHeaderProps {
   year?: number;
@@ -10,6 +11,9 @@ interface VehicleHeaderProps {
   trim?: string;
   miles?: number;
   vin?: string;
+  price?: number;
+  source?: string;
+  listingId?: number;
   hasAutoCheck?: boolean;
   hasCarfax?: boolean;
   hasMMR?: boolean;
@@ -23,22 +27,46 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
   trim,
   miles,
   vin,
+  price,
+  source,
+  listingId,
   hasAutoCheck,
   hasCarfax,
   hasMMR,
   hasAccuTrade,
 }) => {
+  const router = useRouter();
+  
   const formatNumberWithCommas = (value: number | undefined): string => {
     if (value === undefined || value === null) return '';
     return value.toLocaleString('en-US');
   };
 
+  const handleMarketplaceClick = () => {
+    if (source) {
+      window.open(source, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const handleListingDetailClick = () => {
+    if (listingId) {
+      router.push(`/listings/${listingId}`);
+    }
+  };
+
   return (
     <div className="bg-[#1a1d29] border border-gray-700/50 rounded-lg p-5">
       <div className="space-y-3">
-        <h2 className={`text-xl ${(year && make && model) ? 'text-green-400' : 'text-gray-400'}`}>
-          {year} {make} {model} {trim ? trim : ''}
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className={`text-xl ${(year && make && model) ? 'text-green-400' : 'text-gray-400'}`}>
+            {year} {make} {model} {trim ? trim : ''}
+          </h2>
+          {price !== undefined && (
+            <div className="text-xl font-bold text-green-400">
+              ${formatNumberWithCommas(price)}
+            </div>
+          )}
+        </div>
         <div className="flex items-center gap-6 text-sm">
           {miles !== undefined && (
             <div className="flex items-center gap-2">
@@ -53,7 +81,7 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
             </div>
           )}
         </div>
-        <div className="flex items-center gap-3 pt-2">
+        <div className="flex items-center gap-3 pt-2 flex-wrap">
           <button
             type="button"
             className={`flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition-colors cursor-pointer ${hasAutoCheck ? 'bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500/20' : 'bg-black border border-gray-600 text-white hover:bg-gray-900'}`}
@@ -82,6 +110,26 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
             <CheckCircle className="h-3 w-3" />
             AccuTrade
           </button>
+          {source && (
+            <button
+              type="button"
+              onClick={handleMarketplaceClick}
+              className="flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition-colors cursor-pointer bg-blue-500/10 border border-blue-500/30 text-blue-400 hover:bg-blue-500/20"
+            >
+              <ExternalLink className="h-3 w-3" />
+              Marketplace
+            </button>
+          )}
+          {listingId && (
+            <button
+              type="button"
+              onClick={handleListingDetailClick}
+              className="flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition-colors cursor-pointer bg-purple-500/10 border border-purple-500/30 text-purple-400 hover:bg-purple-500/20"
+            >
+              <FileText className="h-3 w-3" />
+              Listing Detail
+            </button>
+          )}
         </div>
       </div>
     </div>

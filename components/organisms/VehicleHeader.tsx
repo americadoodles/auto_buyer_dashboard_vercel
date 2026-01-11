@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { ExternalLink, FileText } from 'lucide-react';
+import { Check, ExternalLink, FileText } from 'lucide-react';
 import { Icon } from '../atoms/Icon';
 
 interface VehicleHeaderProps {
@@ -85,7 +85,7 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
         <div className="flex items-center gap-3 pt-2 flex-wrap">
           <button
             type="button"
-            className={`flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition-colors cursor-pointer ${hasAutoCheck ? 'bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500/20' : 'bg-black border border-gray-600 text-white hover:bg-gray-900'}`}
+            className={`relative flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition-colors cursor-pointer ${hasAutoCheck ? 'bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500/20' : 'bg-black border border-gray-600 text-white hover:bg-gray-900'}`}
           >
             <Icon
               name="autocheck"
@@ -93,10 +93,15 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
               className="opacity-80 hover:opacity-100 transition-opacity rounded"
             />
             AutoCheck
+            {hasAutoCheck && (
+              <div className="absolute -top-1 -right-1 bg-red-500 rounded-full p-0.5">
+                <Check className="h-3 w-3 text-white" strokeWidth={3} />
+              </div>
+            )}
           </button>
           <button
             type="button"
-            className={`flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition-colors cursor-pointer ${hasCarfax ? 'bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500/20' : 'bg-black border border-gray-600 text-white hover:bg-gray-900'}`}
+            className={`relative flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition-colors cursor-pointer ${hasCarfax ? 'bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500/20' : 'bg-black border border-gray-600 text-white hover:bg-gray-900'}`}
           >
             <Icon
               name="carfax"
@@ -104,10 +109,15 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
               className="opacity-80 hover:opacity-100 transition-opacity rounded"
             />
             CARFAX
+            {hasCarfax && (
+              <div className="absolute -top-1 -right-1 bg-red-500 rounded-full p-0.5">
+                <Check className="h-3 w-3 text-white" strokeWidth={3} />
+              </div>
+            )}
           </button>
           <button
             type="button"
-            className={`flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition-colors cursor-pointer ${hasMMR ? 'bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500/20' : 'bg-black border border-gray-600 text-white hover:bg-gray-900'}`}
+            className={`relative flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition-colors cursor-pointer ${hasMMR ? 'bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500/20' : 'bg-black border border-gray-600 text-white hover:bg-gray-900'}`}
           >
             <Icon
               name="mmr"
@@ -115,10 +125,15 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
               className="opacity-80 hover:opacity-100 transition-opacity rounded"
             />
             MMR
+            {hasMMR && (
+              <div className="absolute -top-1 -right-1 bg-red-500 rounded-full p-0.5">
+                <Check className="h-3 w-3 text-white" strokeWidth={3} />
+              </div>
+            )}
           </button>
           <button
             type="button"
-            className={`flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition-colors cursor-pointer ${hasAccuTrade ? 'bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500/20' : 'bg-black border border-gray-600 text-white hover:bg-gray-900'}`}
+            className={`relative flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition-colors cursor-pointer ${hasAccuTrade ? 'bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500/20' : 'bg-black border border-gray-600 text-white hover:bg-gray-900'}`}
           >
             <Icon
               name="accutrade"
@@ -126,6 +141,11 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
               className="opacity-80 hover:opacity-100 transition-opacity rounded"
             />
             AccuTrade
+            {hasAccuTrade && (
+              <div className="absolute -top-1 -right-1 bg-red-500 rounded-full p-0.5">
+                <Check className="h-3 w-3 text-white" strokeWidth={3} />
+              </div>
+            )}
           </button>
           {source && (
             <button

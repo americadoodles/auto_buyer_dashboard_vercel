@@ -3,6 +3,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckCircle, X, ExternalLink } from 'lucide-react';
+import { Icon } from '../atoms/Icon';
 
 interface MMRCardProps {
   mmrValue?: number;
@@ -76,7 +77,11 @@ export const MMRCard: React.FC<MMRCardProps> = ({
     <div className="flex flex-col gap-4 rounded-xl border bg-[#1a1d29] border-gray-700/50 p-5">
       <div className="flex items-center justify-between ">
         <div className="flex items-center gap-2">
-          <span className="text-gray-400">📊</span>
+          <Icon
+            name="mmr"
+            size={24}
+            className="opacity-80 hover:opacity-100 transition-opacity rounded"
+          />
           <span 
             onClick={handleMMRClick}
             className={`text-white font-semibold flex items-center gap-1.5 ${vin ? 'cursor-pointer hover:text-blue-400 transition-colors' : ''}`}

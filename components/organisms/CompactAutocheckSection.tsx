@@ -3,6 +3,7 @@
 import React from 'react';
 import { Badge } from '../atoms/Badge';
 import { CheckCircle } from 'lucide-react';
+import { Icon } from '../atoms/Icon';
 
 interface CompactAutocheckSectionProps {
   status?: string;
@@ -17,7 +18,11 @@ export const CompactAutocheckSection: React.FC<CompactAutocheckSectionProps> = (
     <div className="flex flex-col gap-6 rounded-xl border bg-[#1a1d29] border-gray-700/50 p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <CheckCircle className="h-5 w-5 text-blue-500" />
+          <Icon
+            name="autocheck"
+            size={24}
+            className="opacity-80 hover:opacity-100 transition-opacity rounded"
+          />
           <span className="text-blue-400 font-semibold">AutoCheck</span>
         </div>
         <Badge className={`${

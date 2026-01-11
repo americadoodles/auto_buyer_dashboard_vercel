@@ -3,18 +3,26 @@
 import React from 'react';
 import { Button } from '../atoms/Button';
 import { ExternalLink } from 'lucide-react';
+import { Icon } from '../atoms/Icon';
 import { FactoryOptionsDetailed } from './FactoryOptionsDetailed';
+import { PricingCard } from './PricingCard';
 
 interface AccuTradeDataSectionProps {
   accuTradeData: any;
   vin?: string;
   hasAccuTradeData?: boolean;
+  sellerName?: string;
+  askingPrice?: number;
+  suggestedPrice?: number;
 }
 
 export const AccuTradeDataSection: React.FC<AccuTradeDataSectionProps> = ({
   accuTradeData,
   vin,
   hasAccuTradeData,
+  sellerName,
+  askingPrice,
+  suggestedPrice,
 }) => {
   if (!accuTradeData) return null;
 
@@ -27,11 +35,27 @@ export const AccuTradeDataSection: React.FC<AccuTradeDataSectionProps> = ({
             const accuTradeUrl = `https://appraiser3.accu-trade.com/appraisal/new?vin=${encodeURIComponent(vin)}`;
             window.open(accuTradeUrl, '_blank');
           }}
-          className="w-full bg-blue-600 hover:bg-blue-500 text-white transition-colors flex items-center justify-center gap-2"
+          className="w-full bg-blue-600 hover:bg-blue-500 text-white transition-colors flex items-center justify-between gap-2"
         >
-          View Full AccuTrade Details
+          <div className="flex items-center gap-2">
+            <Icon
+              name="accutrade"
+              size={24}
+              className="opacity-80 hover:opacity-100 transition-opacity rounded"
+            />
+            <span>View Full AccuTrade Details</span>
+          </div>
           <ExternalLink className="h-4 w-4" />
         </Button>
+      )}
+
+      {/* Pricing Card */}
+      {(sellerName || askingPrice || suggestedPrice) && (
+        <PricingCard
+          sellerName={sellerName}
+          askingPrice={askingPrice}
+          suggestedPrice={suggestedPrice}
+        />
       )}
       
       {/* Factory Options */}

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { CheckCircle } from 'lucide-react';
+import { Icon } from '../atoms/Icon';
 
 interface CompactCarfaxSectionProps {
   status?: string;
@@ -20,7 +21,11 @@ export const CompactCarfaxSection: React.FC<CompactCarfaxSectionProps> = ({
     <div className="flex flex-col gap-6 rounded-xl border bg-[#1a1d29] border-gray-700/50 p-4">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <CheckCircle className="h-5 w-5 text-green-500" />
+          <Icon
+            name="carfax"
+            size={24}
+            className="opacity-80 hover:opacity-100 transition-opacity rounded"
+          />
           <span className="text-white font-semibold">CARFAX</span>
         </div>
         <span className={`text-sm ${isClean ? 'text-green-400' : 'text-gray-400'}`}>

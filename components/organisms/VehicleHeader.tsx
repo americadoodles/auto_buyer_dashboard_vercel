@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { CheckCircle, ExternalLink, FileText } from 'lucide-react';
+import { ExternalLink, FileText } from 'lucide-react';
+import { Icon } from '../atoms/Icon';
 
 interface VehicleHeaderProps {
   year?: number;
@@ -86,28 +87,44 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
             type="button"
             className={`flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition-colors cursor-pointer ${hasAutoCheck ? 'bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500/20' : 'bg-black border border-gray-600 text-white hover:bg-gray-900'}`}
           >
-            <CheckCircle className="h-3 w-3" />
+            <Icon
+              name="autocheck"
+              size={12}
+              className="opacity-80 hover:opacity-100 transition-opacity rounded"
+            />
             AutoCheck
           </button>
           <button
             type="button"
             className={`flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition-colors cursor-pointer ${hasCarfax ? 'bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500/20' : 'bg-black border border-gray-600 text-white hover:bg-gray-900'}`}
           >
-            <CheckCircle className="h-3 w-3" />
+            <Icon
+              name="carfax"
+              size={12}
+              className="opacity-80 hover:opacity-100 transition-opacity rounded"
+            />
             CARFAX
           </button>
           <button
             type="button"
             className={`flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition-colors cursor-pointer ${hasMMR ? 'bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500/20' : 'bg-black border border-gray-600 text-white hover:bg-gray-900'}`}
           >
-            <CheckCircle className="h-3 w-3" />
+            <Icon
+              name="mmr"
+              size={12}
+              className="opacity-80 hover:opacity-100 transition-opacity rounded"
+            />
             MMR
           </button>
           <button
             type="button"
             className={`flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition-colors cursor-pointer ${hasAccuTrade ? 'bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500/20' : 'bg-black border border-gray-600 text-white hover:bg-gray-900'}`}
           >
-            <CheckCircle className="h-3 w-3" />
+            <Icon
+              name="accutrade"
+              size={12}
+              className="opacity-80 hover:opacity-100 transition-opacity rounded"
+            />
             AccuTrade
           </button>
           {source && (

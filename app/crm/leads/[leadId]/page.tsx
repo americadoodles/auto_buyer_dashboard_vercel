@@ -18,7 +18,6 @@ import { VehicleHeader } from '../../../../components/organisms/VehicleHeader';
 import { MMRCard } from '../../../../components/organisms/MMRCard';
 import { CompactAutocheckSection } from '../../../../components/organisms/CompactAutocheckSection';
 import { CompactCarfaxSection } from '../../../../components/organisms/CompactCarfaxSection';
-import { PricingCard } from '../../../../components/organisms/PricingCard';
 import { SMSThreadCompact } from '../../../../components/organisms/SMSThreadCompact';
 import { AccuTradeDataSection } from '../../../../components/organisms/AccuTradeDataSection';
 import { ArrowLeft, ExternalLink, Check, X, Edit2, Save } from 'lucide-react';
@@ -764,13 +763,6 @@ export default function LeadDetailPage() {
 
               {/* Third Column - Pricing and Factory Options */}
               <div className="lg:col-span-4 flex flex-col space-y-4">
-                {/* Pricing Card */}
-                <PricingCard
-                  sellerName={displayListing.sellerName || undefined}
-                  askingPrice={displayListing.price || undefined}
-                  suggestedPrice={displayListing.buyMax || undefined}
-                />
-                
                 {/* AccuTrade Data - Always show if VIN exists */}
                 <div className="flex-1 flex flex-col min-h-0 overflow-y-auto">
                   <div className="space-y-4">
@@ -781,6 +773,9 @@ export default function LeadDetailPage() {
                             accuTradeData={accuTradeData}
                             vin={displayListing.vin}
                             hasAccuTradeData={hasAccuTradeData}
+                            sellerName={displayListing.sellerName || undefined}
+                            askingPrice={displayListing.price || undefined}
+                            suggestedPrice={displayListing.buyMax || undefined}
                           />
                         ) : (
                           <div className="bg-[#1a1d29] border border-gray-700/50 rounded-lg p-5">

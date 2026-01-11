@@ -387,21 +387,13 @@ export default function LeadDetailPage() {
           {/* 3-Column Grid Layout */}
           {displayListing ? (
             <div className="mb-2 grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
-              {/* First Column - Vehicle Images and SMS */}
+              {/* First Column - Vehicle Images, Vehicle Header, and SMS */}
               <div className="lg:col-span-4 flex flex-col gap-4">
                 {/* Vehicle Photo Gallery */}
                 {displayListing.images && displayListing.images.length > 0 && (
                   <VehiclePhotoGallery images={displayListing.images} />
                 )}
                 
-                {/* SMS Thread */}
-                <SMSThreadCompact
-                  contactName={lead?.contact ? `${lead.contact.first_name} ${lead.contact.last_name}` : 'Contact'}
-                />
-              </div>
-
-              {/* Second Column - Vehicle Header, MMR, AutoCheck, CARFAX */}
-              <div className="lg:col-span-4 flex flex-col space-y-4">
                 {/* Vehicle Header */}
                 <VehicleHeader
                   year={displayListing.year}
@@ -416,6 +408,14 @@ export default function LeadDetailPage() {
                   hasAccuTrade={hasAccuTradeData || false}
                 />
                 
+                {/* SMS Thread */}
+                {/* <SMSThreadCompact
+                  contactName={lead?.contact ? `${lead.contact.first_name} ${lead.contact.last_name}` : 'Contact'}
+                /> */}
+              </div>
+
+              {/* Second Column - MMR, AutoCheck, CARFAX */}
+              <div className="lg:col-span-4 flex flex-col space-y-4">
                 {/* MMR Card */}
                 <MMRCard
                   mmrValue={

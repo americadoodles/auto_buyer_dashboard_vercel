@@ -93,7 +93,6 @@ export const MMRCard: React.FC<MMRCardProps> = ({
         {/* Features */}
         {mmrData?.features && typeof mmrData.features === 'object' && Object.keys(mmrData.features).length > 0 && (
           <div>
-            <h2 className="text-sm font-semibold text-white mb-2">Features</h2>
             <div className="flex gap-2 overflow-x-auto">
               {Object.entries(mmrData.features)
                 .filter(([key]) => key !== 'Base MMR' && key !== 'base_mmr')
@@ -119,19 +118,19 @@ export const MMRCard: React.FC<MMRCardProps> = ({
               {historical30Days !== undefined && (
                 <div className="flex items-center justify-between py-2 border-b border-gray-700/50">
                   <span className="text-gray-300 text-sm">Past 30 Days</span>
-                  <div className="text-white font-semibold">{formatCurrency(historical30Days)}</div>
+                  <div className="text-green-400 font-semibold">{formatCurrency(historical30Days)}</div>
                 </div>
               )}
               {historical6Months !== undefined && (
                 <div className="flex items-center justify-between py-2 border-b border-gray-700/50">
                   <span className="text-gray-300 text-sm">6 Months Ago</span>
-                  <div className="text-white font-semibold">{formatCurrency(historical6Months)}</div>
+                  <div className="text-green-400 font-semibold">{formatCurrency(historical6Months)}</div>
                 </div>
               )}
               {historicalLastYear !== undefined && (
                 <div className="flex items-center justify-between py-2">
                   <span className="text-gray-300 text-sm">Last Year</span>
-                  <div className="text-white font-semibold">{formatCurrency(historicalLastYear)}</div>
+                  <div className="text-green-400 font-semibold">{formatCurrency(historicalLastYear)}</div>
                 </div>
               )}
             </div>
@@ -141,42 +140,34 @@ export const MMRCard: React.FC<MMRCardProps> = ({
         {/* Projected Average */}
         {mmrData?.projected_average && typeof mmrData.projected_average === 'object' && Object.keys(mmrData.projected_average).length > 0 && (
           <div>
-            <h3 className="text-sm font-semibold text-white mb-2">Projected Average</h3>
-            <div className="space-y-2">
-              {Object.entries(mmrData.projected_average).map(([key, value]) => (
-                <div key={key} className="flex flex-col">
-                  <span className="text-xs text-gray-400 mb-1">{key}</span>
-                  <div className="text-base font-bold text-white">
-                    {value ? String(value) : '--'}
-                  </div>
+            {Object.entries(mmrData.projected_average).map(([key, value]) => (
+              <div key={key} className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-white">Projected Average {key}</span>
+                <div className="text-base font-bold text-green-400">
+                  {value ? String(value) : '--'}
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         )}
 
         {/* Estimated Retail */}
         {estimatedRetail !== undefined && (
           <div>
-            <h3 className="text-sm font-semibold text-white mb-1">
-              Estimated Retail Value
-              <div className="text-xs font-normal text-gray-400 mt-1">
-                Based on Cox Automotive Retail Transactions
-              </div>
-            </h3>
-            <div className="mt-3">
-              <div className="text-xl font-bold text-white mb-2">{formatCurrency(estimatedRetail)}</div>
-              {typicalRange && (
-                <div>
-                  <div className="text-xs font-medium text-gray-400 mb-2">Typical Range</div>
-                  <div className="text-sm text-gray-300">
-                    {typicalRange.min && formatCurrency(typicalRange.min)}
-                    {typicalRange.min && typicalRange.max && <span className="mx-2 text-gray-400">-</span>}
-                    {typicalRange.max && formatCurrency(typicalRange.max)}
-                  </div>
-                </div>
-              )}
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-white">Estimated Retail Value</span>
+              <span className="text-xl font-bold text-green-400">{formatCurrency(estimatedRetail)}</span>
             </div>
+            {typicalRange && (
+              <div className="flex items-center justify-between mt-2">
+                <span className="text-xs font-medium text-gray-400">Typical Range</span>
+                <span className="text-sm text-green-400">
+                  {typicalRange.min && formatCurrency(typicalRange.min)}
+                  {typicalRange.min && typicalRange.max && <span className="mx-1 text-gray-400">-</span>}
+                  {typicalRange.max && formatCurrency(typicalRange.max)}
+                </span>
+              </div>
+            )}
           </div>
         )}
 

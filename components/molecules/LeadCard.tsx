@@ -9,6 +9,7 @@ import { Badge } from '../atoms/Badge';
 import { Icon } from '../atoms/Icon';
 import { useAccuTradeData } from '../../lib/hooks/useAccuTradeData';
 import { useMMRData } from '../../lib/hooks/useMMRData';
+import { MMR_BASE_URL, ACCU_TRADE_BASE_URL } from '../../lib/constants/url';
 import { 
   Gauge, 
   Clock, 
@@ -70,7 +71,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({
     if (hasAccuTradeData) {
       router.push(`/crm/leads/accu-trade/${encodeURIComponent(lead.listing.vin)}`);
     } else {
-      const accuTradeUrl = `https://appraiser3.accu-trade.com/appraisal/new?vin=${encodeURIComponent(lead.listing.vin)}`;
+      const accuTradeUrl = `${ACCU_TRADE_BASE_URL}=${encodeURIComponent(lead.listing.vin)}`;
       window.open(accuTradeUrl, '_blank');
       
       // Refresh the data status after a delay to check if data was added
@@ -110,7 +111,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({
       // Open MMR page - try with VIN as URL parameter first
       // If MMR supports URL parameters, this will auto-fill
       // Otherwise, the VIN is in clipboard for manual paste (Ctrl+V or Cmd+V)
-      const mmrUrl = `https://mmr.manheim.com/ui-mmr/?country=US&popup=true&source=man&vin=${encodeURIComponent(vin)}`;
+      const mmrUrl = `${MMR_BASE_URL}=${encodeURIComponent(vin)}`;
       window.open(mmrUrl, '_blank');
       
       // Refresh the data status after a delay to check if data was added

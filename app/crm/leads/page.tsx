@@ -11,7 +11,7 @@ export default function LeadsPage() {
   const isAdmin = user?.role?.toLowerCase() === 'admin';
   
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(10);
+  const [pageSize] = useState(12);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<number | undefined>(undefined);
   const [sourceFilter, setSourceFilter] = useState<number | undefined>(undefined);

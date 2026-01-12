@@ -4,6 +4,9 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { Check, ExternalLink, FileText } from 'lucide-react';
 import { Icon } from '../atoms/Icon';
+import { useAccuTradeData } from '../../lib/hooks/useAccuTradeData';
+import { useMMRData } from '../../lib/hooks/useMMRData';
+import { AUTOCHECK_BASE_URL, CARFAX_BASE_URL, MMR_BASE_URL, ACCU_TRADE_BASE_URL } from '../../lib/constants/url';
 
 interface VehicleHeaderProps {
   year?: number;
@@ -37,6 +40,8 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
   hasAccuTrade,
 }) => {
   const router = useRouter();
+  const { hasData: hasAccuTradeData, refresh: refreshAccuTradeData } = useAccuTradeData(vin);
+  const { hasData: hasMMRData, refresh: refreshMMRData } = useMMRData(vin);
   
   const formatNumberWithCommas = (value: number | undefined): string => {
     if (value === undefined || value === null) return '';
@@ -53,6 +58,94 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
     if (listingId) {
       router.push(`/listings/${listingId}`);
     }
+  };
+
+  const handleBadgeClick = async (
+    type: 'autocheck' | 'carfax' | 'mmr' | 'accutrade',
+    config: {
+      hasData?: boolean | null;
+      hasDataProp?: boolean;
+      externalUrl: string;
+      detailPagePath?: string;
+      refreshFn?: () => void;
+      copyToClipboard?: boolean;
+    }
+  ) => {
+    if (!vin) return;
+
+    const { hasData, hasDataProp, externalUrl, detailPagePath, refreshFn, copyToClipboard } = config;
+    
+    // Determine if data exists (use hook data if available, otherwise fall back to prop)
+    const dataExists = hasData ?? hasDataProp ?? false;
+
+    // If data exists and detail page exists, navigate to detail page
+    if (dataExists && detailPagePath) {
+      router.push(detailPagePath);
+      return;
+    }
+
+    // Otherwise, open external URL
+    // Copy VIN to clipboard if needed (for MMR)
+    if (copyToClipboard) {
+      try {
+        await navigator.clipboard.writeText(vin);
+      } catch (err) {
+        console.error('Failed to copy VIN to clipboard:', err);
+      }
+    }
+
+    window.open(externalUrl, '_blank');
+
+    // Set up refresh intervals if refresh function is provided
+    if (refreshFn) {
+      // Refresh the data status after a delay to check if data was added
+      setTimeout(() => {
+        refreshFn();
+      }, 2000);
+
+      // Also set up periodic refresh while the window might be open
+      const refreshInterval = setInterval(() => {
+        refreshFn();
+      }, 5000);
+
+      // Clear interval after 2 minutes (assuming user might take time to add data)
+      setTimeout(() => {
+        clearInterval(refreshInterval);
+      }, 120000);
+    }
+  };
+
+  const handleAutoCheckClick = () => {
+    handleBadgeClick('autocheck', {
+      externalUrl: `${AUTOCHECK_BASE_URL}/${encodeURIComponent(vin!)}`,
+    });
+  };
+
+  const handleCarfaxClick = () => {
+    handleBadgeClick('carfax', {
+      externalUrl: `${CARFAX_BASE_URL}/${encodeURIComponent(vin!)}`,
+    });
+  };
+
+  const handleMMRClick = () => {
+    handleBadgeClick('mmr', {
+      hasData: hasMMRData,
+      hasDataProp: hasMMR,
+      externalUrl: `${MMR_BASE_URL}=${encodeURIComponent(vin!)}`,
+      detailPagePath: `/crm/leads/mmr/${encodeURIComponent(vin!)}`,
+      refreshFn: refreshMMRData,
+      copyToClipboard: true,
+    });
+  };
+
+  const handleAccuTradeClick = () => {
+    handleBadgeClick('accutrade', {
+      hasData: hasAccuTradeData,
+      hasDataProp: hasAccuTrade,
+      externalUrl: `${ACCU_TRADE_BASE_URL}=${encodeURIComponent(vin!)}`,
+      detailPagePath: `/crm/leads/accu-trade/${encodeURIComponent(vin!)}`,
+      refreshFn: refreshAccuTradeData,
+    });
   };
 
   return (
@@ -85,6 +178,7 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
         <div className="flex items-center gap-3 pt-2 flex-wrap">
           <button
             type="button"
+            onClick={handleAutoCheckClick}
             className={`relative flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition-colors cursor-pointer ${hasAutoCheck ? 'bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500/20' : 'bg-black border border-gray-600 text-white hover:bg-gray-900'}`}
           >
             <Icon
@@ -101,6 +195,7 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
           </button>
           <button
             type="button"
+            onClick={handleCarfaxClick}
             className={`relative flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition-colors cursor-pointer ${hasCarfax ? 'bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500/20' : 'bg-black border border-gray-600 text-white hover:bg-gray-900'}`}
           >
             <Icon
@@ -117,6 +212,7 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
           </button>
           <button
             type="button"
+            onClick={handleMMRClick}
             className={`relative flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition-colors cursor-pointer ${hasMMR ? 'bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500/20' : 'bg-black border border-gray-600 text-white hover:bg-gray-900'}`}
           >
             <Icon
@@ -133,6 +229,7 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
           </button>
           <button
             type="button"
+            onClick={handleAccuTradeClick}
             className={`relative flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition-colors cursor-pointer ${hasAccuTrade ? 'bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500/20' : 'bg-black border border-gray-600 text-white hover:bg-gray-900'}`}
           >
             <Icon

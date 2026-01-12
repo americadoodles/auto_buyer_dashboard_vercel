@@ -404,8 +404,8 @@ export default function LeadDetailPage() {
                   price={displayListing.price || undefined}
                   source={displayListing.source || undefined}
                   listingId={lead?.listing_id || undefined}
-                  hasAutoCheck={true}
-                  hasCarfax={true}
+                  hasAutoCheck={false}
+                  hasCarfax={false}
                   hasMMR={hasMMRData || false}
                   hasAccuTrade={hasAccuTradeData || false}
                 />

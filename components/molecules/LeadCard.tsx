@@ -111,7 +111,8 @@ export const LeadCard: React.FC<LeadCardProps> = ({
       // Open MMR page - try with VIN as URL parameter first
       // If MMR supports URL parameters, this will auto-fill
       // Otherwise, the VIN is in clipboard for manual paste (Ctrl+V or Cmd+V)
-      const mmrUrl = `${MMR_BASE_URL}=${encodeURIComponent(vin)}`;
+      const mileageParam = lead.listing?.miles !== undefined ? `&mileage=${encodeURIComponent(lead.listing.miles)}` : '';
+      const mmrUrl = `${MMR_BASE_URL}=${encodeURIComponent(vin)}${mileageParam}`;
       window.open(mmrUrl, '_blank');
       
       // Refresh the data status after a delay to check if data was added

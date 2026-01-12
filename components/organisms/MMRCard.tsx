@@ -100,7 +100,7 @@ export const MMRCard: React.FC<MMRCardProps> = ({
           <div>
             <div className="flex gap-2 overflow-x-auto">
               {Object.entries(mmrData.features)
-                .filter(([key]) => key !== 'Base MMR' && key !== 'base_mmr')
+                .filter(([key]) => key !== 'Adjust MMR' )
                 .map(([key, value]) => (
                   <div key={key} className="border border-gray-700 rounded-lg p-3 bg-gray-800/50 flex-shrink-0">
                     <div className="flex flex-col">

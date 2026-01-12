@@ -79,10 +79,10 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
     const dataExists = hasData ?? hasDataProp ?? false;
 
     // If data exists and detail page exists, navigate to detail page
-    if (dataExists && detailPagePath) {
-      router.push(detailPagePath);
-      return;
-    }
+    // if (dataExists && detailPagePath) {
+    //   router.push(detailPagePath);
+    //   return;
+    // }
 
     // Otherwise, open external URL
     // Copy VIN to clipboard if needed (for MMR)
@@ -128,10 +128,11 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
   };
 
   const handleMMRClick = () => {
+    const mileageParam = miles !== undefined ? `&mileage=${encodeURIComponent(miles)}` : '';
     handleBadgeClick('mmr', {
       hasData: hasMMRData,
       hasDataProp: hasMMR,
-      externalUrl: `${MMR_BASE_URL}=${encodeURIComponent(vin!)}`,
+      externalUrl: `${MMR_BASE_URL}=${encodeURIComponent(vin!)}${mileageParam}`,
       detailPagePath: `/crm/leads/mmr/${encodeURIComponent(vin!)}`,
       refreshFn: refreshMMRData,
       copyToClipboard: true,

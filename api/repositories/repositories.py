@@ -3,6 +3,7 @@ import logging
 import datetime
 from typing import List, Optional
 from datetime import timezone
+from uuid import UUID, uuid4
 from ..core.db import DB_ENABLED
 from ..core.db_helpers import get_db_connection
 from ..schemas.listing import ListingIn, ListingOut
@@ -264,7 +265,7 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                                     listing_id=None,  # Not available yet - will be set after insert
                                     vin=vin,  # Passed for logging but not used for folder structure
                                     source=source_url,  # Used to determine folder structure
-                                    max_workers=original_images.count() if original_images.count() < 5 else 5
+                                    max_workers=min(len(original_images), 30)
                                 )
                                 if gcp_image_urls:
                                     source_info = f"source: {source_url}" if source_url else "no source"
@@ -333,6 +334,103 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                         except Exception as log_exc:
                             logging.error(f"Failed to insert listing into database: {log_exc}")
                             new_id = f"error-{len(out)+1}"
+                        
+                        # Create contact and lead if phoneNumber exists
+                        contact_id = None
+                        if phone_number and phone_number.strip():
+                            try:
+                                # Check if contact with this phone already exists
+                                cur.execute("""
+                                    SELECT id FROM contacts 
+                                    WHERE phone = %s OR mobile = %s 
+                                    LIMIT 1
+                                """, (phone_number.strip(), phone_number.strip()))
+                                existing_contact = cur.fetchone()
+                                
+                                if existing_contact:
+                                    contact_id = existing_contact[0]
+                                    logging.info(f"Found existing contact {contact_id} with phone {phone_number}")
+                                else:
+                                    # Parse seller_name for first_name and last_name
+                                    first_name = "Seller"
+                                    last_name = "Unknown"
+                                    if seller_name and seller_name.strip():
+                                        name_parts = seller_name.strip().split()
+                                        if len(name_parts) >= 2:
+                                            first_name = name_parts[0]
+                                            last_name = " ".join(name_parts[1:])
+                                        elif len(name_parts) == 1:
+                                            first_name = name_parts[0]
+                                    
+                                    # Get default created_by user (use buyer_from_id if available, otherwise get first admin user)
+                                    created_by_user = None
+                                    if buyer_from_id:
+                                        try:
+                                            cur.execute("SELECT id FROM users WHERE id::text = %s", (buyer_from_id,))
+                                            user_result = cur.fetchone()
+                                            if user_result:
+                                                created_by_user = user_result[0]
+                                        except Exception:
+                                            pass
+                                    else:
+                                        created_by_user = "unknown"
+
+                                    if not created_by_user:
+                                        logging.warning("No user found for contact creation, skipping contact/lead creation")
+                                    else:
+                                        # Create contact directly in the database
+                                        try:
+                                            cur.execute("""
+                                                INSERT INTO contacts (
+                                                    first_name, last_name, phone, company, notes,
+                                                    is_active, created_by, created_at, updated_at
+                                                ) VALUES (
+                                                    %s, %s, %s, %s, %s, %s, %s, NOW(), NOW()
+                                                ) RETURNING id
+                                            """, (
+                                                first_name,
+                                                last_name,
+                                                phone_number.strip(),
+                                                seller_name if seller_name else None,
+                                                f"Auto-created from listing {new_id}. Source: {norm.get('source', 'Unknown')}",
+                                                True,
+                                                created_by_user
+                                            ))
+                                            
+                                            contact_result = cur.fetchone()
+                                            if contact_result:
+                                                contact_id = contact_result[0]
+                                                logging.info(f"Created contact {contact_id} for phone {phone_number}")
+                                                
+                                                # Create lead linking listing to contact
+                                                cur.execute("""
+                                                    INSERT INTO leads (
+                                                        listing_id, contact_id, notes, lead_score,
+                                                        created_by, created_at, updated_at
+                                                    ) VALUES (
+                                                        %s, %s, %s, %s, %s, NOW(), NOW()
+                                                    ) RETURNING id
+                                                """, (
+                                                    int(new_id),
+                                                    contact_id,
+                                                    f"Auto-created lead from listing {new_id}. Vehicle: {year} {make} {model}",
+                                                    0,
+                                                    created_by_user
+                                                ))
+                                                
+                                                lead_result = cur.fetchone()
+                                                if lead_result:
+                                                    logging.info(f"Created lead {lead_result[0]} for listing {new_id} and contact {contact_id}")
+                                                else:
+                                                    logging.warning(f"Failed to create lead for listing {new_id}")
+                                            else:
+                                                logging.warning(f"Failed to create contact for phone {phone_number}")
+                                        except Exception as contact_error:
+                                            logging.error(f"Failed to create contact/lead for phone {phone_number}: {str(contact_error)}")
+                                            # Continue with listing ingestion even if contact/lead creation fails
+                            except Exception as contact_lead_error:
+                                logging.error(f"Error creating contact/lead for listing {new_id}: {str(contact_lead_error)}")
+                                # Continue with listing ingestion even if contact/lead creation fails
                         
                         # Extract reasonCodes, buyMax, and status for ListingOut
                         reason_codes = norm.get("reasonCodes", [])

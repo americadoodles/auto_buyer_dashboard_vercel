@@ -26,6 +26,7 @@ import { formatDateTime } from '../../../../lib/utils/formatters';
 import { ApiService } from '../../../../lib/services/api';
 import { useAccuTradeData } from '../../../../lib/hooks/useAccuTradeData';
 import { useMMRData } from '../../../../lib/hooks/useMMRData';
+import { ACCU_TRADE_BASE_URL } from '../../../../lib/constants/url';
 
 export default function LeadDetailPage() {
   const params = useParams();
@@ -785,7 +786,7 @@ export default function LeadDetailPage() {
                             </p>
                             <Button
                               onClick={() => {
-                                const accuTradeUrl = `https://appraiser3.accu-trade.com/appraisal/new?vin=${encodeURIComponent(displayListing.vin!)}`;
+                                const accuTradeUrl = `${ACCU_TRADE_BASE_URL}=${encodeURIComponent(displayListing.vin!)}`;
                                 window.open(accuTradeUrl, '_blank');
                               }}
                               className="w-full bg-blue-600 hover:bg-blue-700 text-white"

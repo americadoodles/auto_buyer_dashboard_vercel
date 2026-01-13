@@ -6,6 +6,7 @@ import { ApiService } from '../../../../../lib/services/api';
 import { Card } from '../../../../../components/molecules/Card';
 import { Button } from '../../../../../components/atoms/Button';
 import { ArrowLeft, ExternalLink, Loader2 } from 'lucide-react';
+import { MMR_BASE_URL } from '../../../../../lib/constants/url';
 
 export default function MMRDetailPage() {
   const params = useParams();
@@ -35,7 +36,7 @@ export default function MMRDetailPage() {
   }, [vin]);
 
   const handleOpenExternal = () => {
-    const mmrUrl = `https://mmr.manheim.com/ui-mmr/?country=US&popup=true&source=man&vin=${encodeURIComponent(vin)}`;
+    const mmrUrl = `${MMR_BASE_URL}=${encodeURIComponent(vin)}`;
     window.open(mmrUrl, '_blank');
   };
 

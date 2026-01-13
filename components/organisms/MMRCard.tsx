@@ -73,6 +73,9 @@ export const MMRCard: React.FC<MMRCardProps> = ({
   const estimatedRetail = getEstimatedRetail();
   const typicalRange = getTypicalRange();
 
+  // Extract Adjusted MMR from features
+  const adjustedMMR = mmrData?.features?.['Adjust MMR'] || mmrData?.features?.['Adjusted MMR'] || undefined;
+
   return (
     <div className="flex flex-col gap-4 rounded-xl border bg-[#1a1d29] border-gray-700/50 p-5">
       <div className="flex items-center justify-between ">
@@ -90,8 +93,18 @@ export const MMRCard: React.FC<MMRCardProps> = ({
             {vin && <ExternalLink className="h-4 w-4" />}
           </span>
         </div>
-        <div className="text-green-400 text-xl font-bold">
-          {mmrValue ? formatCurrency(mmrValue) : ''}
+        <div className="text-right">
+          {adjustedMMR !== undefined ? (
+            <div>
+              <div className="text-green-400 text-xl font-bold">
+                {formatCurrency(adjustedMMR)}
+              </div>
+            </div>
+          ) : (
+            <div className="text-green-400 text-xl font-bold">
+              {mmrValue ? formatCurrency(mmrValue) : ''}
+            </div>
+          )}
         </div>
       </div>
       <div className="space-y-4">
@@ -100,7 +113,7 @@ export const MMRCard: React.FC<MMRCardProps> = ({
           <div>
             <div className="flex gap-2 overflow-x-auto">
               {Object.entries(mmrData.features)
-                .filter(([key]) => key !== 'Base MMR' && key !== 'base_mmr')
+                .filter(([key]) => key !== 'Adjust MMR' && key !== 'Adjusted MMR')
                 .map(([key, value]) => (
                   <div key={key} className="border border-gray-700 rounded-lg p-3 bg-gray-800/50 flex-shrink-0">
                     <div className="flex flex-col">

@@ -66,11 +66,6 @@ export const LeadCard: React.FC<LeadCardProps> = ({
   const handleAccuTradeClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!lead.listing?.vin) return;
-    
-    // If data exists, navigate to detail page; otherwise, redirect to external site
-    if (hasAccuTradeData) {
-      router.push(`/crm/leads/accu-trade/${encodeURIComponent(lead.listing.vin)}`);
-    } else {
       const accuTradeUrl = `${ACCU_TRADE_BASE_URL}=${encodeURIComponent(lead.listing.vin)}`;
       window.open(accuTradeUrl, '_blank');
       
@@ -88,7 +83,6 @@ export const LeadCard: React.FC<LeadCardProps> = ({
       setTimeout(() => {
         clearInterval(refreshInterval);
       }, 120000);
-    }
   };
 
   const handleMMRClick = async (e: React.MouseEvent) => {
@@ -96,43 +90,34 @@ export const LeadCard: React.FC<LeadCardProps> = ({
     if (!lead.listing?.vin) return;
     
     const vin = lead.listing.vin;
-    
-    // If data exists, navigate to detail page; otherwise, redirect to external site
-    if (hasMMRData) {
-      router.push(`/crm/leads/mmr/${encodeURIComponent(vin)}`);
-    } else {
-      // Copy VIN to clipboard for easy pasting
-      try {
-        await navigator.clipboard.writeText(vin);
-      } catch (err) {
-        console.error('Failed to copy VIN to clipboard:', err);
-      }
-      
-      // Open MMR page - try with VIN as URL parameter first
-      // If MMR supports URL parameters, this will auto-fill
-      // Otherwise, the VIN is in clipboard for manual paste (Ctrl+V or Cmd+V)
-      const mmrUrl = `${MMR_BASE_URL}=${encodeURIComponent(vin)}`;
-      window.open(mmrUrl, '_blank');
-      
-      // Refresh the data status after a delay to check if data was added
-      setTimeout(() => {
-        refreshMMRData();
-      }, 2000);
-      
-      // Also set up periodic refresh while the window might be open
-      const refreshInterval = setInterval(() => {
-        refreshMMRData();
-      }, 5000);
-      
-      // Clear interval after 2 minutes (assuming user might take time to add data)
-      setTimeout(() => {
-        clearInterval(refreshInterval);
-      }, 120000);
-      
-      // Note: Due to browser security (Same-Origin Policy), we cannot programmatically
-      // fill forms on cross-origin pages like MMR. If the URL parameter approach
-      // doesn't work, the VIN is already copied to clipboard for manual entry.
+    // Copy VIN to clipboard for easy pasting
+    try {
+      await navigator.clipboard.writeText(vin);
+    } catch (err) {
+      console.error('Failed to copy VIN to clipboard:', err);
     }
+    
+    // Open MMR page - try with VIN as URL parameter first
+    // If MMR supports URL parameters, this will auto-fill
+    // Otherwise, the VIN is in clipboard for manual paste (Ctrl+V or Cmd+V)
+    const mileageParam = lead.listing?.miles !== undefined ? `&mileage=${encodeURIComponent(lead.listing.miles)}` : '';
+    const mmrUrl = `${MMR_BASE_URL}=${encodeURIComponent(vin)}${mileageParam}`;
+    window.open(mmrUrl, '_blank');
+    
+    // Refresh the data status after a delay to check if data was added
+    setTimeout(() => {
+      refreshMMRData();
+    }, 2000);
+    
+    // Also set up periodic refresh while the window might be open
+    const refreshInterval = setInterval(() => {
+      refreshMMRData();
+    }, 5000);
+    
+    // Clear interval after 2 minutes (assuming user might take time to add data)
+    setTimeout(() => {
+      clearInterval(refreshInterval);
+    }, 120000);
   };
   const primaryImage = lead.listing?.images && lead.listing.images.length > 0 ? lead.listing.images[0] : null;
   const vehicleTitle = lead.listing 

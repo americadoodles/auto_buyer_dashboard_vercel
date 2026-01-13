@@ -78,13 +78,6 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
     // Determine if data exists (use hook data if available, otherwise fall back to prop)
     const dataExists = hasData ?? hasDataProp ?? false;
 
-    // If data exists and detail page exists, navigate to detail page
-    if (dataExists && detailPagePath) {
-      router.push(detailPagePath);
-      return;
-    }
-
-    // Otherwise, open external URL
     // Copy VIN to clipboard if needed (for MMR)
     if (copyToClipboard) {
       try {
@@ -128,11 +121,12 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
   };
 
   const handleMMRClick = () => {
+    const mileageParam = miles !== undefined ? `&mileage=${encodeURIComponent(miles)}` : '';
     handleBadgeClick('mmr', {
       hasData: hasMMRData,
       hasDataProp: hasMMR,
-      externalUrl: `${MMR_BASE_URL}=${encodeURIComponent(vin!)}`,
-      detailPagePath: `/crm/leads/mmr/${encodeURIComponent(vin!)}`,
+      externalUrl: `${MMR_BASE_URL}=${encodeURIComponent(vin!)}${mileageParam}`,
+      // detailPagePath: `/crm/leads/mmr/${encodeURIComponent(vin!)}`,
       refreshFn: refreshMMRData,
       copyToClipboard: true,
     });
@@ -143,7 +137,7 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
       hasData: hasAccuTradeData,
       hasDataProp: hasAccuTrade,
       externalUrl: `${ACCU_TRADE_BASE_URL}=${encodeURIComponent(vin!)}`,
-      detailPagePath: `/crm/leads/accu-trade/${encodeURIComponent(vin!)}`,
+      // detailPagePath: `/crm/leads/accu-trade/${encodeURIComponent(vin!)}`,
       refreshFn: refreshAccuTradeData,
     });
   };

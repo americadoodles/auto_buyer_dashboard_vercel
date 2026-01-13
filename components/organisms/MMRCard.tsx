@@ -77,7 +77,7 @@ export const MMRCard: React.FC<MMRCardProps> = ({
   const adjustedMMR = mmrData?.features?.['Adjust MMR'] || mmrData?.features?.['Adjusted MMR'] || undefined;
 
   return (
-    <div className="flex flex-col gap-4 rounded-xl border bg-[#1a1d29] border-gray-700/50 p-5">
+    <div className="flex flex-col gap-2 rounded-xl border bg-[#1a1d29] border-gray-700/50 p-5">
       <div className="flex items-center justify-between ">
         <div className="flex items-center gap-2">
           <Icon
@@ -107,7 +107,7 @@ export const MMRCard: React.FC<MMRCardProps> = ({
           )}
         </div>
       </div>
-      <div className="space-y-4">
+      <div className="space-y-2">
         {/* Features */}
         {mmrData?.features && typeof mmrData.features === 'object' && Object.keys(mmrData.features).length > 0 && (
           <div>
@@ -117,7 +117,7 @@ export const MMRCard: React.FC<MMRCardProps> = ({
                 .map(([key, value]) => (
                   <div key={key} className="border border-gray-700 rounded-lg p-3 bg-gray-800/50 flex-shrink-0">
                     <div className="flex flex-col">
-                      <div className="text-xs font-medium text-gray-400 mb-1">{key}</div>
+                      <div className="text-xs font-medium text-gray-400 mb-0.5">{key}</div>
                       <div className="text-lg font-bold text-white">
                         {value ? (typeof value === 'number' ? formatCurrency(value) : String(value)) : 'N/A'}
                       </div>
@@ -131,22 +131,22 @@ export const MMRCard: React.FC<MMRCardProps> = ({
         {/* Historical Average */}
         {(historical30Days !== undefined || historical6Months !== undefined || historicalLastYear !== undefined) && (
           <div>
-            <div className="text-sm text-gray-400 mb-2">Historical Average</div>
-            <div className="space-y-2">
+            <div className="text-sm text-gray-400 mb-1">Historical Average</div>
+            <div className="space-y-1">
               {historical30Days !== undefined && (
-                <div className="flex items-center justify-between py-2 border-b border-gray-700/50">
+                <div className="flex items-center justify-between py-1 border-b border-gray-700/50">
                   <span className="text-gray-300 text-sm">Past 30 Days</span>
                   <div className="text-green-400 font-semibold">{formatCurrency(historical30Days)}</div>
                 </div>
               )}
               {historical6Months !== undefined && (
-                <div className="flex items-center justify-between py-2 border-b border-gray-700/50">
+                <div className="flex items-center justify-between py-1 border-b border-gray-700/50">
                   <span className="text-gray-300 text-sm">6 Months Ago</span>
                   <div className="text-green-400 font-semibold">{formatCurrency(historical6Months)}</div>
                 </div>
               )}
               {historicalLastYear !== undefined && (
-                <div className="flex items-center justify-between py-2">
+                <div className="flex items-center justify-between py-1">
                   <span className="text-gray-300 text-sm">Last Year</span>
                   <div className="text-green-400 font-semibold">{formatCurrency(historicalLastYear)}</div>
                 </div>
@@ -177,7 +177,7 @@ export const MMRCard: React.FC<MMRCardProps> = ({
               <span className="text-xl font-bold text-green-400">{formatCurrency(estimatedRetail)}</span>
             </div>
             {typicalRange && (
-              <div className="flex items-center justify-between mt-2">
+              <div className="flex items-center justify-between mt-1">
                 <span className="text-xs font-medium text-gray-400">Typical Range</span>
                 <span className="text-sm text-green-400">
                   {typicalRange.min && formatCurrency(typicalRange.min)}
@@ -192,9 +192,9 @@ export const MMRCard: React.FC<MMRCardProps> = ({
         {/* Auction Values (fallback if no other data) */}
         {!mmrData?.features && !historical30Days && !estimatedRetail && (
           <div>
-            <div className="text-sm text-gray-400 mb-2">Auction Values</div>
+            <div className="text-sm text-gray-400 mb-1">Auction Values</div>
             {above !== undefined && (
-              <div className="flex items-center justify-between py-2 border-b border-gray-700/50">
+              <div className="flex items-center justify-between py-1 border-b border-gray-700/50">
                 <div className="flex items-center gap-2">
                   <span className="text-gray-300">Above</span>
                   <CheckCircle className="h-4 w-4 text-green-500" />
@@ -205,7 +205,7 @@ export const MMRCard: React.FC<MMRCardProps> = ({
               </div>
             )}
             {average !== undefined && (
-              <div className="flex items-center justify-between py-2 border-b border-gray-700/50">
+              <div className="flex items-center justify-between py-1 border-b border-gray-700/50">
                 <div className="flex items-center gap-2">
                   <span className="text-gray-300">Average</span>
                   <CheckCircle className="h-4 w-4 text-green-500" />
@@ -216,7 +216,7 @@ export const MMRCard: React.FC<MMRCardProps> = ({
               </div>
             )}
             {below !== undefined && (
-              <div className="flex items-center justify-between py-2">
+              <div className="flex items-center justify-between py-1">
                 <div className="flex items-center gap-2">
                   <span className="text-gray-300">Below</span>
                   <X className="h-4 w-4 text-gray-500" />

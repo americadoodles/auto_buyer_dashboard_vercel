@@ -168,14 +168,15 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                         model = None
                         trim = None
                         extracted_bodystyle = None
+                        extracted_info = {}
                         
                         if title and title.strip():
                             try:
                                 extracted_info = extract_vehicle_info_from_title(title.strip())
-                                year = extracted_info.get("year")
-                                make = extracted_info.get("make")
-                                model = extracted_info.get("model")
-                                trim = extracted_info.get("trim")
+                                year = extracted_info.get("year") or year
+                                make = extracted_info.get("make") or make
+                                model = extracted_info.get("model") or model
+                                trim = extracted_info.get("trim") or trim
                                 extracted_bodystyle = extracted_info.get("bodystyle")
                                 logging.info(f"Extracted vehicle info from title: year={year}, make={make}, model={model}, trim={trim}, bodystyle={extracted_bodystyle}")
                             except Exception as e:
@@ -224,22 +225,20 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                                 return val if val else None
                             return val
 
-                        interior_color = _norm_str(norm.get("interiorColor"))
-                        exterior_color = _norm_str(norm.get("exteriorColor"))
-                        transmission = _norm_str(norm.get("transmission"))
-                        fuel_type = _norm_str(norm.get("fuelType"))
-                        drivetrain = _norm_str(norm.get("driveType"))
-                        engine_size = _norm_str(norm.get("engine_size"))  # if provided
-                        body_style = _norm_str(norm.get("bodyStyle"))
-                        # Use extracted bodystyle if input bodystyle is empty
-                        if not body_style and extracted_bodystyle:
-                            body_style = extracted_bodystyle
+                        # Extract fields from norm, fallback to extracted_info if not available
+                        interior_color = _norm_str(norm.get("interiorColor")) or _norm_str(extracted_info.get("interiorColor"))
+                        exterior_color = _norm_str(norm.get("exteriorColor")) or _norm_str(extracted_info.get("exteriorColor"))
+                        transmission = _norm_str(norm.get("transmission")) or _norm_str(extracted_info.get("transmission"))
+                        fuel_type = _norm_str(norm.get("fuelType")) or _norm_str(extracted_info.get("fuelType"))
+                        drivetrain = _norm_str(norm.get("driveType")) or _norm_str(extracted_info.get("driveType"))
+                        engine_size = _norm_str(norm.get("engine_size")) or _norm_str(extracted_info.get("engine_size"))
+                        body_style = _norm_str(norm.get("bodyStyle")) or _norm_str(extracted_bodystyle)
+                        engine_desc = _norm_str(norm.get("engine")) or _norm_str(extracted_info.get("engine"))
+                        mpg = _norm_str(norm.get("mpg")) or _norm_str(extracted_info.get("mpg"))
 
                         clean_title = norm.get("cleanTitle")
                         condition_txt = _norm_str(norm.get("condition"))
                         detailed_ratings = norm.get("detailedRatings")
-                        engine_desc = _norm_str(norm.get("engine"))
-                        mpg = _norm_str(norm.get("mpg"))
                         overall_rating = _norm_str(norm.get("overallRating"))
                         paid_status = _norm_str(norm.get("paidStatus"))
                         phone_number = _norm_str(norm.get("phoneNumber"))
@@ -264,7 +263,8 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                                     original_images,
                                     listing_id=None,  # Not available yet - will be set after insert
                                     vin=vin,  # Passed for logging but not used for folder structure
-                                    source=source_url  # Used to determine folder structure
+                                    source=source_url,  # Used to determine folder structure
+                                    max_workers=original_images.count() if original_images.count() < 5 else 5
                                 )
                                 if gcp_image_urls:
                                     source_info = f"source: {source_url}" if source_url else "no source"

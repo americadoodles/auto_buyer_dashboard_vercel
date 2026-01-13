@@ -34,14 +34,17 @@ def extract_vehicle_info_from_title(title: str) -> Dict[str, Any]:
     """
     Extract vehicle information from a title string using AI.
     
-    Extracts: used, year, make, model, trim, bodystyle, doors
-    Returns: dict with year, make, model, trim, and optionally bodystyle
+    Extracts all possible vehicle features that can be determined from the title:
+    - Basic info: used, year, make, model, trim, bodystyle, doors
+    - Colors: exteriorColor, interiorColor
+    - Specifications: transmission, fuelType, driveType, engine, engine_size, mpg
     
     Args:
-        title: String containing vehicle information (e.g., "Used 2020 Toyota Camry XLE Sedan 4D")
+        title: String containing vehicle information (e.g., "Used 2020 Toyota Camry XLE Sedan 4D Automatic")
     
     Returns:
-        Dictionary with keys: year (int), make (str), model (str), trim (Optional[str]), bodystyle (Optional[str])
+        Dictionary with keys: year, make, model, trim, bodystyle, exteriorColor, interiorColor,
+        transmission, fuelType, driveType, engine, engine_size, mpg (all optional except year/make/model)
     """
     if not title or not title.strip():
         raise ValueError("Title cannot be empty")
@@ -56,19 +59,27 @@ def extract_vehicle_info_from_title(title: str) -> Dict[str, Any]:
     except ValueError:
         raise
     
-    # Create prompt for OpenAI
-    prompt = f"""Extract vehicle information from the following title string:
+    # Create comprehensive prompt for OpenAI
+    prompt = f"""Extract ALL possible vehicle information from the following title string:
 
 Title: {title}
 
-Extract the following information:
+Extract the following information if mentioned:
 1. used - whether the vehicle is used (true/false)
 2. year - the model year (integer, e.g., 2020)
 3. make - the manufacturer (e.g., Toyota, Ford, Honda)
 4. model - the model name (e.g., Camry, F-150, Accord)
 5. trim - the trim level if mentioned (e.g., XLE, Limited, SE)
-6. bodystyle - the body style (e.g., Sedan, SUV, Truck, Coupe, Hatchback)
+6. bodystyle - the body style (e.g., Sedan, SUV, Truck, Coupe, Hatchback, Wagon)
 7. doors - number of doors if mentioned (e.g., 2, 4)
+8. exteriorColor - exterior color if mentioned (e.g., Black, White, Silver, Red, Blue)
+9. interiorColor - interior color if mentioned (e.g., Black, Beige, Gray, Tan)
+10. transmission - transmission type if mentioned (e.g., Automatic, Manual, CVT, DCT)
+11. fuelType - fuel type if mentioned (e.g., Gasoline, Diesel, Hybrid, Electric, Plug-in Hybrid)
+12. driveType - drivetrain if mentioned (e.g., FWD, RWD, AWD, 4WD, Front-Wheel Drive, All-Wheel Drive)
+13. engine - engine description if mentioned (e.g., "3.5L V6", "2.0L Turbo", "Electric")
+14. engine_size - engine size if mentioned (e.g., "3.5", "2.0", "1.8")
+15. mpg - fuel economy if mentioned (e.g., "25", "30", "35 mpg")
 
 Respond in JSON format with these exact keys:
 {{
@@ -78,21 +89,30 @@ Respond in JSON format with these exact keys:
     "model": "Camry",
     "trim": "XLE" or null,
     "bodystyle": "Sedan" or null,
-    "doors": 4 or null
+    "doors": 4 or null,
+    "exteriorColor": "Black" or null,
+    "interiorColor": "Beige" or null,
+    "transmission": "Automatic" or null,
+    "fuelType": "Gasoline" or null,
+    "driveType": "FWD" or null,
+    "engine": "3.5L V6" or null,
+    "engine_size": "3.5" or null,
+    "mpg": "25" or null
 }}
 
-If any field cannot be determined, use null for that field. Always return valid JSON."""
+If any field cannot be determined, use null for that field. Always return valid JSON.
+Be thorough and extract all information that can be reasonably inferred from the title."""
 
     try:
         # Call OpenAI API
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "You are a vehicle information extraction assistant. Always respond with valid JSON only. Extract vehicle details accurately from title strings."},
+                {"role": "system", "content": "You are a vehicle information extraction assistant. Always respond with valid JSON only. Extract ALL possible vehicle details accurately from title strings. Be thorough and extract colors, transmission, fuel type, drivetrain, engine, and other specifications when mentioned."},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.3,  # Lower temperature for more consistent extraction
-            max_tokens=200
+            max_tokens=400  # Increased for more fields
         )
         
         # Parse response
@@ -131,16 +151,30 @@ If any field cannot be determined, use null for that field. Always return valid 
             except (ValueError, TypeError):
                 raise ValueError(f"Invalid year format: {year}")
         
-        # Return extracted data (only year, make, model, trim, and bodystyle)
-        trim_value = ai_data.get("trim")
-        bodystyle_value = ai_data.get("bodystyle")
+        # Helper function to normalize string values
+        def _norm_str(value):
+            if value is None:
+                return None
+            if isinstance(value, str):
+                value = value.strip()
+                return value if value else None
+            return str(value).strip() if value else None
         
+        # Return extracted data with all possible features
         result = {
             "year": year,
-            "make": str(make).strip() if make else None,
-            "model": str(model).strip() if model else None,
-            "trim": str(trim_value).strip() if trim_value else None,
-            "bodystyle": str(bodystyle_value).strip() if bodystyle_value else None
+            "make": _norm_str(make),
+            "model": _norm_str(model),
+            "trim": _norm_str(ai_data.get("trim")),
+            "bodystyle": _norm_str(ai_data.get("bodystyle")),
+            "exteriorColor": _norm_str(ai_data.get("exteriorColor")),
+            "interiorColor": _norm_str(ai_data.get("interiorColor")),
+            "transmission": _norm_str(ai_data.get("transmission")),
+            "fuelType": _norm_str(ai_data.get("fuelType")),
+            "driveType": _norm_str(ai_data.get("driveType")),
+            "engine": _norm_str(ai_data.get("engine")),
+            "engine_size": _norm_str(ai_data.get("engine_size")),
+            "mpg": _norm_str(ai_data.get("mpg"))
         }
         
         return result

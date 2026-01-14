@@ -133,18 +133,38 @@ export default function LeadDetailPage() {
     if (!leadId || !lead) return;
 
     try {
-      // Update lead information
-      const updatedLead = await leadsApi.updateLead(leadId, {
-        [field]: value
-      });
+      // Check if this is a contact field
+      const contactFields = ['first_name', 'last_name', 'email', 'phone', 'mobile', 'company', 'job_title'];
       
-      setLead(updatedLead);
-      
-      // Reload activities after update
-      const updatedActivities = await leadsApi.getLeadActivities(leadId).catch(() => []);
-      setActivities(updatedActivities);
-      
-      showSuccess('Field Updated', `${field} has been successfully updated`);
+      if (contactFields.includes(field) && lead.contact_id) {
+        // Update contact information
+        const updatedContact = await updateContact(lead.contact_id, {
+          [field]: value
+        });
+        
+        // Reload lead to get updated contact information
+        const updatedLead = await leadsApi.getLead(leadId);
+        setLead(updatedLead);
+        
+        // Reload activities after update
+        const updatedActivities = await leadsApi.getLeadActivities(leadId).catch(() => []);
+        setActivities(updatedActivities);
+        
+        showSuccess('Field Updated', `${field} has been successfully updated`);
+      } else {
+        // Update lead information
+        const updatedLead = await leadsApi.updateLead(leadId, {
+          [field]: value
+        });
+        
+        setLead(updatedLead);
+        
+        // Reload activities after update
+        const updatedActivities = await leadsApi.getLeadActivities(leadId).catch(() => []);
+        setActivities(updatedActivities);
+        
+        showSuccess('Field Updated', `${field} has been successfully updated`);
+      }
     } catch (error) {
       console.error('Error updating field:', error);
       showError('Failed to save', error instanceof Error ? error.message : 'Unknown error');

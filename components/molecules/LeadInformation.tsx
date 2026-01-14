@@ -253,31 +253,196 @@ export const LeadInformation: React.FC<LeadInformationProps> = ({
         {/* Contact Information */}
         {lead.contact && (
           <>
+            {/* First Name */}
             <div className="flex items-center w-full group">
-              <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Contact Name:</span>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-300">
-                  {lead.contact.first_name} {lead.contact.last_name}
-                </span>
-              </div>
+              <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">First Name:</span>
+              {editingField === 'first_name' ? (
+                <div className="flex items-center gap-2 flex-1">
+                  <Input
+                    type="text"
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    className="border-gray-600 focus:border-blue-500 focus:ring-blue-500 text-white flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm bg-gray-800"
+                    autoFocus
+                  />
+                  <button
+                    onClick={() => saveField('first_name')}
+                    disabled={savingField === 'first_name'}
+                    className="p-1 text-green-400 hover:bg-green-900/30 rounded"
+                    title="Save"
+                  >
+                    <Check className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={cancelEditing}
+                    disabled={savingField === 'first_name'}
+                    className="p-1 text-red-400 hover:bg-red-900/30 rounded"
+                    title="Cancel"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span 
+                    onClick={() => startEditing('first_name', lead.contact?.first_name || '')}
+                    className="text-sm text-gray-300 cursor-pointer hover:text-blue-400 transition-colors"
+                  >
+                    {lead.contact.first_name || ''}
+                  </span>
+                  <button
+                    onClick={() => startEditing('first_name', lead.contact?.first_name || '')}
+                    className="p-1 text-gray-400 hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                    title="Edit"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
             </div>
 
+            {/* Last Name */}
+            <div className="flex items-center w-full group">
+              <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Last Name:</span>
+              {editingField === 'last_name' ? (
+                <div className="flex items-center gap-2 flex-1">
+                  <Input
+                    type="text"
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    className="border-gray-600 focus:border-blue-500 focus:ring-blue-500 text-white flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm bg-gray-800"
+                    autoFocus
+                  />
+                  <button
+                    onClick={() => saveField('last_name')}
+                    disabled={savingField === 'last_name'}
+                    className="p-1 text-green-400 hover:bg-green-900/30 rounded"
+                    title="Save"
+                  >
+                    <Check className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={cancelEditing}
+                    disabled={savingField === 'last_name'}
+                    className="p-1 text-red-400 hover:bg-red-900/30 rounded"
+                    title="Cancel"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span 
+                    onClick={() => startEditing('last_name', lead.contact?.last_name || '')}
+                    className="text-sm text-gray-300 cursor-pointer hover:text-blue-400 transition-colors"
+                  >
+                    {lead.contact.last_name || ''}
+                  </span>
+                  <button
+                    onClick={() => startEditing('last_name', lead.contact?.last_name || '')}
+                    className="p-1 text-gray-400 hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                    title="Edit"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Email */}
             <div className="flex items-center w-full group">
               <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Email:</span>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-300">
-                  {lead.contact.email || ''}
-                </span>
-              </div>
+              {editingField === 'email' ? (
+                <div className="flex items-center gap-2 flex-1">
+                  <Input
+                    type="email"
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    className="border-gray-600 focus:border-blue-500 focus:ring-blue-500 text-white flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm bg-gray-800"
+                    autoFocus
+                  />
+                  <button
+                    onClick={() => saveField('email')}
+                    disabled={savingField === 'email'}
+                    className="p-1 text-green-400 hover:bg-green-900/30 rounded"
+                    title="Save"
+                  >
+                    <Check className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={cancelEditing}
+                    disabled={savingField === 'email'}
+                    className="p-1 text-red-400 hover:bg-red-900/30 rounded"
+                    title="Cancel"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span 
+                    onClick={() => startEditing('email', lead.contact?.email || '')}
+                    className="text-sm text-gray-300 cursor-pointer hover:text-blue-400 transition-colors"
+                  >
+                    {lead.contact.email || ''}
+                  </span>
+                  <button
+                    onClick={() => startEditing('email', lead.contact?.email || '')}
+                    className="p-1 text-gray-400 hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                    title="Edit"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
             </div>
 
+            {/* Phone */}
             <div className="flex items-center w-full group">
               <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Phone:</span>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-300">
-                  {lead.contact.phone || ''}
-                </span>
-              </div>
+              {editingField === 'phone' ? (
+                <div className="flex items-center gap-2 flex-1">
+                  <Input
+                    type="tel"
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    className="border-gray-600 focus:border-blue-500 focus:ring-blue-500 text-white flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm bg-gray-800"
+                    autoFocus
+                  />
+                  <button
+                    onClick={() => saveField('phone')}
+                    disabled={savingField === 'phone'}
+                    className="p-1 text-green-400 hover:bg-green-900/30 rounded"
+                    title="Save"
+                  >
+                    <Check className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={cancelEditing}
+                    disabled={savingField === 'phone'}
+                    className="p-1 text-red-400 hover:bg-red-900/30 rounded"
+                    title="Cancel"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span 
+                    onClick={() => startEditing('phone', lead.contact?.phone || '')}
+                    className="text-sm text-gray-300 cursor-pointer hover:text-blue-400 transition-colors"
+                  >
+                    {lead.contact.phone || ''}
+                  </span>
+                  <button
+                    onClick={() => startEditing('phone', lead.contact?.phone || '')}
+                    className="p-1 text-gray-400 hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                    title="Edit"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
             </div>
           </>
         )}

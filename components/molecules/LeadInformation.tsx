@@ -78,21 +78,21 @@ export const LeadInformation: React.FC<LeadInformationProps> = ({
   };
 
   return (
-    <div className="bg-[#1a1d29] rounded-lg shadow-sm border border-gray-700/50 px-6 py-3 space-y-2">
-      <div className="flex items-center justify-between border-b border-gray-700/50 pb-1">
-        <h4 className="text-lg font-bold text-white">Lead Information</h4>
+    <div className="bg-white dark:bg-[#1a1d29] rounded-lg shadow-sm border border-gray-200 dark:border-gray-700/50 px-6 py-3 space-y-2">
+      <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700/50 pb-1">
+        <h4 className="text-lg font-bold text-black dark:text-white">Lead Information</h4>
       </div>
     
       <div className="grid grid-cols-1 gap-x-8 gap-y-0.5">
         {/* Status */}
         <div className="flex items-center w-full group">
-          <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Status:</span>
+          <span className="text-sm font-semibold text-black dark:text-gray-300 w-32 flex-shrink-0">Status:</span>
           {editingField === 'status_id' ? (
             <div className="flex items-center gap-2 flex-1">
               <select
                 value={editValue}
                 onChange={(e) => setEditValue(e.target.value)}
-                className="border-gray-600 focus:border-blue-500 focus:ring-blue-500 text-white flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm rounded-md bg-gray-800"
+                className="border-gray-300 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 text-black dark:text-white flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm rounded-md bg-white dark:bg-gray-800"
                 autoFocus
               >
                 <option value="">Select status</option>
@@ -113,7 +113,7 @@ export const LeadInformation: React.FC<LeadInformationProps> = ({
               <button
                 onClick={cancelEditing}
                 disabled={savingField === 'status_id'}
-                className="p-1 text-red-400 hover:bg-red-900/30 rounded"
+                className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
                 title="Cancel"
               >
                 <X className="h-4 w-4" />
@@ -123,7 +123,7 @@ export const LeadInformation: React.FC<LeadInformationProps> = ({
             <div className="flex items-center gap-2">
               <span 
                 onClick={() => startEditing('status_id', lead.status_id || '')}
-                className="text-sm text-gray-300 cursor-pointer hover:text-blue-400 transition-colors"
+                className="text-sm text-black dark:text-gray-300 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
               >
                 {lead.status?.name || ''}
               </span>
@@ -140,13 +140,13 @@ export const LeadInformation: React.FC<LeadInformationProps> = ({
 
         {/* Source */}
         <div className="flex items-center w-full group">
-          <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Source:</span>
+          <span className="text-sm font-semibold text-black dark:text-gray-300 w-32 flex-shrink-0">Source:</span>
           {editingField === 'source_id' ? (
             <div className="flex items-center gap-2 flex-1">
               <select
                 value={editValue}
                 onChange={(e) => setEditValue(e.target.value)}
-                className="border-gray-600 focus:border-blue-500 focus:ring-blue-500 text-white flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm rounded-md bg-gray-800"
+                className="border-gray-300 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 text-black dark:text-white flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm rounded-md bg-white dark:bg-gray-800"
                 autoFocus
               >
                 <option value="">Select source</option>
@@ -167,7 +167,7 @@ export const LeadInformation: React.FC<LeadInformationProps> = ({
               <button
                 onClick={cancelEditing}
                 disabled={savingField === 'source_id'}
-                className="p-1 text-red-400 hover:bg-red-900/30 rounded"
+                className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
                 title="Cancel"
               >
                 <X className="h-4 w-4" />
@@ -177,7 +177,7 @@ export const LeadInformation: React.FC<LeadInformationProps> = ({
             <div className="flex items-center gap-2">
               <span 
                 onClick={() => startEditing('source_id', lead.source_id || '')}
-                className="text-sm text-gray-300 cursor-pointer hover:text-blue-400 transition-colors"
+                className="text-sm text-black dark:text-gray-300 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
               >
                 {lead.source?.name || ''}
               </span>
@@ -194,7 +194,7 @@ export const LeadInformation: React.FC<LeadInformationProps> = ({
 
         {/* Lead Score */}
         <div className="flex items-center w-full group">
-          <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Lead Score:</span>
+          <span className="text-sm font-semibold text-black dark:text-gray-300 w-32 flex-shrink-0">Lead Score:</span>
           {editingField === 'lead_score' ? (
             <div className="flex items-center gap-2 flex-1">
               <Input
@@ -215,7 +215,7 @@ export const LeadInformation: React.FC<LeadInformationProps> = ({
               <button
                 onClick={cancelEditing}
                 disabled={savingField === 'lead_score'}
-                className="p-1 text-red-400 hover:bg-red-900/30 rounded"
+                className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
                 title="Cancel"
               >
                 <X className="h-4 w-4" />
@@ -225,7 +225,7 @@ export const LeadInformation: React.FC<LeadInformationProps> = ({
             <div className="flex items-center gap-2">
               <span 
                 onClick={() => startEditing('lead_score', lead.lead_score !== undefined ? lead.lead_score.toString() : '')}
-                className="text-sm text-gray-300 cursor-pointer hover:text-blue-400 transition-colors"
+                className="text-sm text-black dark:text-gray-300 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
               >
                 {lead.lead_score !== undefined ? lead.lead_score.toString() : ''}
               </span>
@@ -242,7 +242,7 @@ export const LeadInformation: React.FC<LeadInformationProps> = ({
 
         {/* Assigned To */}
         <div className="flex items-center w-full group">
-          <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Assigned To:</span>
+          <span className="text-sm font-semibold text-black dark:text-gray-300 w-32 flex-shrink-0">Assigned To:</span>
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-300">
               {lead.assigned_to_user?.username || 'Unassigned'}
@@ -255,7 +255,7 @@ export const LeadInformation: React.FC<LeadInformationProps> = ({
           <>
             {/* First Name */}
             <div className="flex items-center w-full group">
-              <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">First Name:</span>
+              <span className="text-sm font-semibold text-black dark:text-gray-300 w-32 flex-shrink-0">First Name:</span>
               {editingField === 'first_name' ? (
                 <div className="flex items-center gap-2 flex-1">
                   <Input
@@ -276,7 +276,7 @@ export const LeadInformation: React.FC<LeadInformationProps> = ({
                   <button
                     onClick={cancelEditing}
                     disabled={savingField === 'first_name'}
-                    className="p-1 text-red-400 hover:bg-red-900/30 rounded"
+                    className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
                     title="Cancel"
                   >
                     <X className="h-4 w-4" />
@@ -286,7 +286,7 @@ export const LeadInformation: React.FC<LeadInformationProps> = ({
                 <div className="flex items-center gap-2">
                   <span 
                     onClick={() => startEditing('first_name', lead.contact?.first_name || '')}
-                    className="text-sm text-gray-300 cursor-pointer hover:text-blue-400 transition-colors"
+                    className="text-sm text-black dark:text-gray-300 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                   >
                     {lead.contact.first_name || ''}
                   </span>
@@ -303,7 +303,7 @@ export const LeadInformation: React.FC<LeadInformationProps> = ({
 
             {/* Last Name */}
             <div className="flex items-center w-full group">
-              <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Last Name:</span>
+              <span className="text-sm font-semibold text-black dark:text-gray-300 w-32 flex-shrink-0">Last Name:</span>
               {editingField === 'last_name' ? (
                 <div className="flex items-center gap-2 flex-1">
                   <Input
@@ -324,7 +324,7 @@ export const LeadInformation: React.FC<LeadInformationProps> = ({
                   <button
                     onClick={cancelEditing}
                     disabled={savingField === 'last_name'}
-                    className="p-1 text-red-400 hover:bg-red-900/30 rounded"
+                    className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
                     title="Cancel"
                   >
                     <X className="h-4 w-4" />
@@ -334,7 +334,7 @@ export const LeadInformation: React.FC<LeadInformationProps> = ({
                 <div className="flex items-center gap-2">
                   <span 
                     onClick={() => startEditing('last_name', lead.contact?.last_name || '')}
-                    className="text-sm text-gray-300 cursor-pointer hover:text-blue-400 transition-colors"
+                    className="text-sm text-black dark:text-gray-300 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                   >
                     {lead.contact.last_name || ''}
                   </span>
@@ -351,7 +351,7 @@ export const LeadInformation: React.FC<LeadInformationProps> = ({
 
             {/* Email */}
             <div className="flex items-center w-full group">
-              <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Email:</span>
+              <span className="text-sm font-semibold text-black dark:text-gray-300 w-32 flex-shrink-0">Email:</span>
               {editingField === 'email' ? (
                 <div className="flex items-center gap-2 flex-1">
                   <Input
@@ -372,7 +372,7 @@ export const LeadInformation: React.FC<LeadInformationProps> = ({
                   <button
                     onClick={cancelEditing}
                     disabled={savingField === 'email'}
-                    className="p-1 text-red-400 hover:bg-red-900/30 rounded"
+                    className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
                     title="Cancel"
                   >
                     <X className="h-4 w-4" />
@@ -382,7 +382,7 @@ export const LeadInformation: React.FC<LeadInformationProps> = ({
                 <div className="flex items-center gap-2">
                   <span 
                     onClick={() => startEditing('email', lead.contact?.email || '')}
-                    className="text-sm text-gray-300 cursor-pointer hover:text-blue-400 transition-colors"
+                    className="text-sm text-black dark:text-gray-300 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                   >
                     {lead.contact.email || ''}
                   </span>
@@ -399,7 +399,7 @@ export const LeadInformation: React.FC<LeadInformationProps> = ({
 
             {/* Phone */}
             <div className="flex items-center w-full group">
-              <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Phone:</span>
+              <span className="text-sm font-semibold text-black dark:text-gray-300 w-32 flex-shrink-0">Phone:</span>
               {editingField === 'phone' ? (
                 <div className="flex items-center gap-2 flex-1">
                   <Input
@@ -420,7 +420,7 @@ export const LeadInformation: React.FC<LeadInformationProps> = ({
                   <button
                     onClick={cancelEditing}
                     disabled={savingField === 'phone'}
-                    className="p-1 text-red-400 hover:bg-red-900/30 rounded"
+                    className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
                     title="Cancel"
                   >
                     <X className="h-4 w-4" />
@@ -430,7 +430,7 @@ export const LeadInformation: React.FC<LeadInformationProps> = ({
                 <div className="flex items-center gap-2">
                   <span 
                     onClick={() => startEditing('phone', lead.contact?.phone || '')}
-                    className="text-sm text-gray-300 cursor-pointer hover:text-blue-400 transition-colors"
+                    className="text-sm text-black dark:text-gray-300 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                   >
                     {lead.contact.phone || ''}
                   </span>
@@ -471,7 +471,7 @@ export const LeadInformation: React.FC<LeadInformationProps> = ({
                 <button
                   onClick={cancelEditing}
                   disabled={savingField === 'notes'}
-                  className="p-1 text-red-400 hover:bg-red-900/30 rounded"
+                  className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
                   title="Cancel"
                 >
                   <X className="h-4 w-4" />
@@ -482,7 +482,7 @@ export const LeadInformation: React.FC<LeadInformationProps> = ({
             <div className="flex items-start gap-2">
               <span 
                 onClick={() => startEditing('notes', lead.notes || '')}
-                className="text-sm text-gray-300 cursor-pointer hover:text-blue-400 transition-colors"
+                className="text-sm text-black dark:text-gray-300 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
               >
                 {lead.notes || ''}
               </span>
@@ -500,7 +500,7 @@ export const LeadInformation: React.FC<LeadInformationProps> = ({
         {/* Created Date */}
         {lead.created_at && (
           <div className="flex items-center w-full group">
-            <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Created:</span>
+            <span className="text-sm font-semibold text-black dark:text-gray-300 w-32 flex-shrink-0">Created:</span>
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-300">
                 {formatDateTime(lead.created_at)}
@@ -511,7 +511,7 @@ export const LeadInformation: React.FC<LeadInformationProps> = ({
       </div>
 
       {/* Action Buttons */}
-      <div className="flex justify-end space-x-2 pt-2 border-t border-gray-700/50">
+      <div className="flex justify-end space-x-2 pt-2 border-t border-gray-200 dark:border-gray-700/50">
         <Button 
           variant="outline" 
           onClick={() => router.push('/crm/leads')} 
@@ -520,7 +520,7 @@ export const LeadInformation: React.FC<LeadInformationProps> = ({
         >
           Cancel
         </Button>
-        <Button onClick={onSaveAll} disabled={saving} className="bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-black flex items-center gap-2 font-medium">
+        <Button onClick={onSaveAll} disabled={saving} className="bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white flex items-center gap-2 font-medium">
           {saving ? (
             <>
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>

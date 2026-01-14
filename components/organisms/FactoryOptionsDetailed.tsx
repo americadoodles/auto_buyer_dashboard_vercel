@@ -107,10 +107,10 @@ export const FactoryOptionsDetailed: React.FC<FactoryOptionsDetailedProps> = ({
         : defaultOptions.reduce((sum, opt) => sum + (opt.price ?? 0), 0)));
 
   return (
-    <div className="flex flex-col gap-1 rounded-xl border bg-[#1a1d29] border-gray-700/50 px-5 py-2">
+    <div className="flex flex-col gap-1 rounded-xl border bg-white dark:bg-[#1a1d29] border-gray-200 dark:border-gray-700/50 px-5 py-2">
       <div className="flex items-center justify-between ">
-        <h3 className="text-white font-semibold">Factory Equipped Options</h3>
-        <div className="text-green-400 text-lg font-bold">{formatCurrency(calculatedTotal)}</div>
+        <h3 className="text-black dark:text-white font-semibold">Factory Equipped Options</h3>
+        <div className="text-green-600 dark:text-green-400 text-lg font-bold">{formatCurrency(calculatedTotal)}</div>
       </div>
       <div className="space-y-1">
         {(processedOptions.length > 0 ? processedOptions : defaultOptions).map((option, index) => (
@@ -118,18 +118,18 @@ export const FactoryOptionsDetailed: React.FC<FactoryOptionsDetailedProps> = ({
             <div className="flex items-start gap-2 flex-1">
               <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
               <div>
-                <div className="text-sm text-gray-300">{option.name}</div>
+                <div className="text-sm text-black dark:text-gray-300">{option.name}</div>
                 {option.isFactoryUpgrade && (
-                  <div className="text-xs text-gray-500">(Factory Upgrade)</div>
+                  <div className="text-xs text-black dark:text-gray-500">(Factory Upgrade)</div>
                 )}
               </div>
             </div>
-            <div className="text-sm text-gray-300 font-semibold">{formatCurrency(option.price)}</div>
+            <div className="text-sm text-black dark:text-gray-300 font-semibold">{formatCurrency(option.price)}</div>
           </div>
         ))}
-        <div className="flex items-center justify-between pt-1 border-t border-gray-700/50">
-          <span className="text-white font-semibold">TOTAL</span>
-          <span className="text-green-400 text-lg font-bold">{formatCurrency(calculatedTotal)}</span>
+        <div className="flex items-center justify-between pt-1 border-t border-gray-200 dark:border-gray-700/50">
+          <span className="text-black dark:text-white font-semibold">TOTAL</span>
+          <span className="text-green-600 dark:text-green-400 text-lg font-bold">{formatCurrency(calculatedTotal)}</span>
         </div>
       </div>
     </div>

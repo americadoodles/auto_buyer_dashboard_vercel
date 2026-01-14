@@ -289,7 +289,7 @@ export default function LeadDetailPage() {
       <div className="h-full overflow-y-auto bg-white dark:bg-gray-900">
         <div className="p-6 flex items-center justify-center min-h-screen">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
-          <span className="ml-3 text-gray-800 dark:text-gray-200 font-medium">Loading lead details...</span>
+          <span className="ml-3 text-black dark:text-gray-200 font-medium">Loading lead details...</span>
         </div>
       </div>
     );
@@ -300,8 +300,8 @@ export default function LeadDetailPage() {
       <div className="h-full overflow-y-auto bg-white dark:bg-gray-900">
         <div className="p-6">
           <div className="text-center py-12">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Lead Not Found</h2>
-            <p className="text-gray-700 dark:text-gray-300 mb-2 font-medium">{error || 'The lead you are looking for does not exist.'}</p>
+            <h2 className="text-2xl font-bold text-black dark:text-gray-100 mb-2">Lead Not Found</h2>
+            <p className="text-black dark:text-gray-300 mb-2 font-medium">{error || 'The lead you are looking for does not exist.'}</p>
             <Button onClick={() => router.push('/crm/leads')} variant="outline">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Leads
@@ -319,9 +319,9 @@ export default function LeadDetailPage() {
     : 'Lead Details';
 
   return (
-    <div className="h-full flex flex-col bg-[#0f1117]">
+    <div className="h-full flex flex-col bg-white dark:bg-[#0f1117]">
       {/* Main Content Layout */}
-      <div className="flex-1 overflow-y-auto bg-[#0f1117]">
+      <div className="flex-1 overflow-y-auto bg-white dark:bg-[#0f1117]">
         <div className="max-w-[1800px] mx-auto px-6 py-6">
           {/* Status Badges */}
           <div className="flex items-center justify-between mb-4">
@@ -347,7 +347,7 @@ export default function LeadDetailPage() {
               onClick={() => setIsUpdateListingModalOpen(true)}
                 variant="outline"
               size="sm"
-                className="flex items-center gap-2 bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-black border-0 shadow-md font-semibold cursor-pointer"
+                className="flex items-center gap-2 bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white dark:text-white border-0 shadow-md font-semibold cursor-pointer"
             >
                 <Icon name="edit" className="w-4 h-4" />
               Update Lead
@@ -475,9 +475,9 @@ export default function LeadDetailPage() {
                             suggestedPrice={displayListing.buyMax || undefined}
                           />
                         ) : (
-                          <div className="bg-[#1a1d29] border border-gray-700/50 rounded-lg p-5">
-                            <h3 className="text-white font-semibold mb-2">AccuTrade Data</h3>
-                            <p className="text-sm text-gray-400 mb-2">
+                          <div className="bg-white dark:bg-[#1a1d29] border border-gray-200 dark:border-gray-700/50 rounded-lg p-5">
+                            <h3 className="text-black dark:text-white font-semibold mb-2">AccuTrade Data</h3>
+                            <p className="text-sm text-black dark:text-gray-400 mb-2">
                               No AccuTrade data found for VIN: {displayListing.vin}
                             </p>
                             <Button

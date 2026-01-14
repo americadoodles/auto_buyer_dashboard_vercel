@@ -253,6 +253,7 @@ export const AccuTradeDataSection: React.FC<AccuTradeDataSectionProps> = ({
       <ConditionReportModal
         isOpen={isConditionReportModalOpen}
         onClose={() => setIsConditionReportModalOpen(false)}
+        vin={vin}
       />
     </div>
   );

@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
+import { ApiService } from '../../../lib/services/api';
 import { CONDITION_REPORT_TEMP_DATA } from '../../../lib/constants/temp';
 
 // Types - Export for use in other components
@@ -56,6 +57,7 @@ interface ConditionReportModalProps {
   isOpen: boolean;
   onClose: () => void;
   data?: ConditionReportData;
+  vin?: string;
 }
 
 // Helper function to get price color class
@@ -933,11 +935,48 @@ export const ConditionReportModal: React.FC<ConditionReportModalProps> = ({
   isOpen,
   onClose,
   data,
+  vin,
 }) => {
-  if (!isOpen) return null;
+  const [reportData, setReportData] = useState<ConditionReportData | null>(data || null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Use provided data or fall back to temp data
-  const reportData: ConditionReportData = data || CONDITION_REPORT_TEMP_DATA;
+  useEffect(() => {
+    // If data is provided, use it directly
+    if (data) {
+      setReportData(data);
+      return;
+    }
+
+    // If no data but VIN is provided, fetch from API
+    if (vin && isOpen) {
+      setIsLoading(true);
+      setError(null);
+      ApiService.getConditionReport(vin)
+        .then((response) => {
+          // Transform API response to match ConditionReportData format
+          const transformedData: ConditionReportData = {
+            sections: response.sections || [],
+            keyValuePairs: response.key_value_pairs || undefined,
+          };
+          setReportData(transformedData);
+        })
+        .catch((err) => {
+          console.error('Error fetching condition report:', err);
+          setError(err.message || 'Failed to load condition report');
+          // Fall back to temp data if fetch fails
+          setReportData(CONDITION_REPORT_TEMP_DATA);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    } else if (!data && !vin) {
+      // No VIN and no data provided, use temp data
+      setReportData(CONDITION_REPORT_TEMP_DATA);
+    }
+  }, [vin, data, isOpen]);
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
@@ -957,8 +996,19 @@ export const ConditionReportModal: React.FC<ConditionReportModalProps> = ({
         {/* Content - Scrollable */}
           <div className="flex-1 overflow-y-auto p-6">
             <div className="max-w-6xl mx-auto">
-              <div className="appraisal-adjustments-panels flex flex-col gap-2">
-                {reportData.sections.length > 0 ? (
+              {isLoading ? (
+                <div className="flex items-center justify-center h-64">
+                  <p className="text-gray-400 text-lg">Loading condition report...</p>
+                </div>
+              ) : error && !reportData ? (
+                <div className="flex items-center justify-center h-64">
+                  <div className="text-center">
+                    <p className="text-red-400 text-lg mb-2">Error loading condition report</p>
+                    <p className="text-gray-400 text-sm">{error}</p>
+                  </div>
+                </div>
+              ) : reportData && reportData.sections.length > 0 ? (
+                <div className="appraisal-adjustments-panels flex flex-col gap-2">
                   <div className="flex flex-row gap-2">
                     {[0, 1, 2].map((colIndex) => (
                       <div key={colIndex} className="flex-1 flex flex-col gap-2">
@@ -972,12 +1022,12 @@ export const ConditionReportModal: React.FC<ConditionReportModalProps> = ({
                       </div>
                     ))}
                   </div>
-                ) : (
-                  <div className="flex items-center justify-center h-64">
-                    <p className="text-gray-400 text-lg">No condition report data available</p>
-                  </div>
-                )}
-              </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-64">
+                  <p className="text-gray-400 text-lg">No condition report data available</p>
+                </div>
+              )}
             </div>
           </div>
       </div>

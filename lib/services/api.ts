@@ -576,6 +576,20 @@ export class ApiService {
     });
     return this.handleResponse<any>(response);
   }
+
+  static async getConditionReport(vin: string): Promise<any> {
+    const response = await fetch(`${BACKEND_URL}/accu-trade-report/vin/${encodeURIComponent(vin)}`, {
+      headers: this.authHeaders()
+    });
+    return this.handleResponse<any>(response);
+  }
+
+  static async checkConditionReportExists(vin: string): Promise<{ exists: boolean }> {
+    const response = await fetch(`${BACKEND_URL}/accu-trade-report/vin/${encodeURIComponent(vin)}/exists`, {
+      headers: this.authHeaders()
+    });
+    return this.handleResponse<{ exists: boolean }>(response);
+  }
 }
 
 // Helper function to make API calls using unified ApiService

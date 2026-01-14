@@ -167,13 +167,6 @@ const StandardPanel: React.FC<{
             </ul>
           </div>
         ) : null}
-        {section.unselectedItems.length > 0 && (
-          <div className="appraisal-panel-unselected-items mt-2 pt-2 border-t border-gray-700/50">
-            <div className="text-gray-400 text-xs">
-              Not Selected: {section.unselectedItems.join(', ')}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -819,9 +812,9 @@ const TiresPanel: React.FC<{
           icon={section.icon}
           panelClass={section.panelClass}
         />
-        <div className="appraisal-panel-content p-3">
+        <div className="appraisal-panel-content py-3 px-5">
           {/* Tread Section */}
-          <header className="grid grid-cols-6 gap-2 mb-2 pb-1 border-b border-gray-700/50">
+          <header className="mb-2 pb-1 border-b border-gray-700/50">
             <div className="title text-white font-medium text-sm">Tread</div>
             <div className="tire text-gray-400 text-xs text-center">FL</div>
             <div className="tire text-gray-400 text-xs text-center">FR</div>
@@ -831,50 +824,45 @@ const TiresPanel: React.FC<{
           </header>
 
           {tread.map((row, index) => (
-            <div key={index} className="row grid grid-cols-6 gap-2 items-center mb-1">
+            <div key={index} className="row mb-1">
               <div className="title text-white text-sm">{row.title}</div>
               {row.tires.map((tire, tireIndex) => (
-                <div key={tireIndex} className="circle-container flex justify-center">
-                  <div className={`circle w-4 h-4 rounded-full border-2 ${
-                    tire.selected ? 'border-green-400 bg-green-400/20' : 'border-gray-600'
-                  }`} />
+                <div key={tireIndex} className="circle-container">
+                  <div className="circle w-4 h-4 rounded-full border-2 border-gray-600"></div>
                 </div>
               ))}
-              <div className="price text-right">
+              <div className="price">
                 <FormattedPrice price={row.price} className="text-sm" />
               </div>
             </div>
           ))}
 
           {/* Wheel Issues Section */}
-          <header className="wheels grid grid-cols-6 gap-2 mt-2 mb-2 pb-1 border-b border-gray-700/50">
+          <header className="wheels mt-2 mb-2 pb-1 border-b border-gray-700/50">
             <div className="title text-white font-medium text-sm">Wheel Issues</div>
           </header>
 
           {wheelIssues.map((row, index) => {
             const hasSelection = row.tires.some(t => t.selected);
             return (
-              <div key={index} className={`row ${!hasSelection ? 'no-damage' : ''} grid grid-cols-6 gap-2 items-center mb-1 ${!hasSelection ? 'opacity-60' : ''}`}>
-                <div className="title text-white text-sm">{row.title}</div>
+              <div key={index} className={`row ${!hasSelection ? 'no-damage' : ''} mb-1`}>
+                <div className="title text-white text-sm"> {row.title} </div>
                 {row.tires.map((tire, tireIndex) => (
-                  <div key={tireIndex} className="circle-container flex justify-center">
-                    <div className={`circle w-4 h-4 rounded-full border-2 ${
-                      tire.selected ? 'border-red-400 bg-red-400/20' : 'border-gray-600'
-                    }`} />
+                  <div key={tireIndex} className="circle-container">
+                    <div className="circle w-4 h-4 rounded-full border-2 border-gray-600"></div>
                   </div>
                 ))}
-                <div className="price text-right">
+                <div className="price">
                   <FormattedPrice price={row.price} className="text-sm" />
                 </div>
               </div>
             );
           })}
 
-          {section.unselectedItems.length > 0 && (
-            <div className="appraisal-panel-unselected-items mt-2 pt-2 border-t border-gray-700/50">
-              <div className="text-gray-400 text-xs">
-                Not Selected: {section.unselectedItems.join(', ')}
-              </div>
+          {/* No Damage section if no wheel issues are selected */}
+          {wheelIssues.length > 0 && !wheelIssues.some(row => row.tires.some(t => t.selected)) && (
+            <div className="appraisal-panel-damage-list">
+              <div className="no-items text-center py-1 text-gray-400 text-sm">No Damage</div>
             </div>
           )}
         </div>
@@ -940,6 +928,27 @@ export const ConditionReportModal: React.FC<ConditionReportModalProps> = ({
   const [reportData, setReportData] = useState<ConditionReportData | null>(data || null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [numColumns, setNumColumns] = useState(3);
+
+  // Handle responsive columns based on window width
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    const updateColumns = () => {
+      if (typeof window !== 'undefined') {
+        const width = window.innerWidth;
+        const newNumColumns = width >= 1920 ? 4 : 3;
+        setNumColumns(newNumColumns);
+      }
+    };
+
+    // Set initial value
+    updateColumns();
+
+    // Listen for window resize
+    window.addEventListener('resize', updateColumns);
+    return () => window.removeEventListener('resize', updateColumns);
+  }, [isOpen]);
 
   useEffect(() => {
     // If data is provided, use it directly
@@ -995,7 +1004,7 @@ export const ConditionReportModal: React.FC<ConditionReportModalProps> = ({
         
         {/* Content - Scrollable */}
           <div className="flex-1 overflow-y-auto p-6">
-            <div className="max-w-6xl mx-auto">
+            <div className={`${numColumns === 4 ? 'max-w-[1920px]' : 'max-w-6xl'} mx-auto`}>
               {isLoading ? (
                 <div className="flex items-center justify-center h-64">
                   <p className="text-gray-400 text-lg">Loading condition report...</p>
@@ -1010,10 +1019,10 @@ export const ConditionReportModal: React.FC<ConditionReportModalProps> = ({
               ) : reportData && reportData.sections.length > 0 ? (
                 <div className="appraisal-adjustments-panels flex flex-col gap-2">
                   <div className="flex flex-row gap-2">
-                    {[0, 1, 2].map((colIndex) => (
+                    {Array.from({ length: numColumns }, (_, colIndex) => (
                       <div key={colIndex} className="flex-1 flex flex-col gap-2">
                         {reportData.sections
-                          .filter((_, index) => index % 3 === colIndex)
+                          .filter((_, index) => index % numColumns === colIndex)
                           .map((section) => (
                             <div key={section.dataQa}>
                               {renderPanel(section)}

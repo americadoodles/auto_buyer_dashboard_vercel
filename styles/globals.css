@@ -63,3 +63,48 @@ body {
 .gallery-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #6B7280;  /* Chrome, Safari and Opera */
 }
+
+/* Condition Report Tires Panel Styles - matching Angular layout */
+.appraisal-panel-content header {
+  display: flex;
+  align-items: center;
+  /* gap: 8px; */
+}
+
+.appraisal-panel-content header .title {
+  min-width: 140px;
+}
+
+.appraisal-panel-content header .tire {
+  flex: 0 0 40px;
+  text-align: center;
+}
+
+.appraisal-panel-content header .placeholder {
+  flex: 1;
+}
+
+.appraisal-panel-content .row {
+  display: flex;
+  align-items: center;
+  /* gap: 8px; */
+}
+
+.appraisal-panel-content .row .title {
+  min-width: 140px;
+}
+
+.appraisal-panel-content .row .circle-container {
+  flex: 0 0 40px;
+  display: flex;
+  justify-content: center;
+}
+
+.appraisal-panel-content .row .price {
+  margin-left: auto;
+  text-align: right;
+}
+
+.appraisal-panel-content .wheels {
+  display: block;
+}

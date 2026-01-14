@@ -249,16 +249,6 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ listing }) => {
           </div>
         )}
 
-        {/* Seller Description */}
-        {listing.sellerDescription && (
-          <div className="flex items-start w-full group">
-            <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0 pt-1">Description:</span>
-            <div className="flex items-start gap-2 flex-1">
-              <span className="text-sm text-gray-300">{listing.sellerDescription}</span>
-            </div>
-          </div>
-        )}
-
         {/* Status */}
         {listing.status && (
           <div className="flex items-center w-full group">

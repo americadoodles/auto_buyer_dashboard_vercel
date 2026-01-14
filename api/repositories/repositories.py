@@ -8,7 +8,7 @@ from ..core.db import DB_ENABLED
 from ..core.db_helpers import get_db_connection
 from ..schemas.listing import ListingIn, ListingOut
 from ..schemas.listing import Decision
-from ..services.ai_service import extract_vehicle_info_from_title, calculate_listing_score
+from ..services.ai_service import extract_vehicle_info_from_title, calculate_listing_score, extract_phone_number_from_text
 from ..utils.gcp_storage import upload_images_to_gcp
 
 # In-memory fallback for listings
@@ -244,6 +244,16 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                         paid_status = _norm_str(norm.get("paidStatus"))
                         phone_number = _norm_str(norm.get("phoneNumber"))
                         seller_description = _norm_str(norm.get("sellerDescription"))
+                        
+                        # Extract phone number from seller description if not provided
+                        if not phone_number and seller_description:
+                            try:
+                                extracted_phone = extract_phone_number_from_text(seller_description)
+                                if extracted_phone:
+                                    phone_number = extracted_phone
+                                    logging.info(f"Extracted phone number from seller description: {phone_number}")
+                            except Exception as e:
+                                logging.warning(f"Failed to extract phone number from seller description: {str(e)}")
                         seller_joined_date = _norm_str(norm.get("sellerJoinedDate"))
                         seller_name = _norm_str(norm.get("sellerName"))
                         lpn = _norm_str(norm.get("lpn"))

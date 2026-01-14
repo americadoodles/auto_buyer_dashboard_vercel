@@ -186,6 +186,87 @@ Be thorough and extract all information that can be reasonably inferred from the
         raise ValueError(f"Failed to extract vehicle information: {str(e)}")
 
 
+def extract_phone_number_from_text(text: str) -> Optional[str]:
+    """
+    Extract phone number from text using AI.
+    
+    This function uses OpenAI to intelligently extract phone numbers from text,
+    handling various formats like (555) 123-4567, 555-123-4567, 555.123.4567, etc.
+    
+    Args:
+        text: String containing potential phone number information
+    
+    Returns:
+        Extracted phone number as string, or None if no phone number found
+    """
+    if not text or not text.strip():
+        return None
+    
+    # Check API key configuration
+    if not settings.OPENAI_API_KEY:
+        logging.warning("OpenAI API key not configured, cannot extract phone number from text")
+        return None
+    
+    try:
+        client = _get_openai_client()
+    except ValueError:
+        logging.warning("Failed to initialize OpenAI client for phone extraction")
+        return None
+    
+    # Create prompt for OpenAI
+    prompt = f"""Extract the phone number from the following text. 
+The phone number may be in various formats like (555) 123-4567, 555-123-4567, 555.123.4567, 5551234567, etc.
+
+Text: {text}
+
+Respond with ONLY the phone number in a standardized format (e.g., (555) 123-4567 or 555-123-4567).
+If no phone number is found, respond with exactly: null
+
+Do not include any explanation or additional text, just the phone number or null."""
+    
+    try:
+        # Call OpenAI API
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a phone number extraction assistant. Extract phone numbers from text and return them in a standardized format. If no phone number is found, return exactly 'null'."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.1,  # Very low temperature for consistent extraction
+            max_tokens=50  # Phone numbers are short
+        )
+        
+        # Parse response
+        content = response.choices[0].message.content
+        if content is None:
+            logging.warning("OpenAI API returned None content for phone extraction")
+            return None
+        
+        content = content.strip()
+        
+        # Check if response is null or indicates no phone number found
+        if content.lower() in ['null', 'none', 'no phone number', 'no phone', '']:
+            return None
+        
+        # Clean up the phone number (remove any extra text)
+        # Remove common prefixes/suffixes that AI might add
+        content = content.replace('Phone:', '').replace('Phone Number:', '').strip()
+        content = content.split('\n')[0].strip()  # Take first line only
+        
+        # Basic validation: check if it looks like a phone number
+        # Remove common formatting characters for validation
+        digits_only = ''.join(filter(str.isdigit, content))
+        if len(digits_only) >= 10:  # US phone numbers have at least 10 digits
+            return content
+        else:
+            logging.warning(f"Extracted value doesn't look like a phone number: {content}")
+            return None
+        
+    except Exception as e:
+        logging.error(f"Error extracting phone number from text: {str(e)}")
+        return None
+
+
 def generate_deal_draft(request: DealAIDraftRequest) -> DealAIDraftResponse:
     """Generate AI-powered draft for deal creation"""
     # Step 1: Check OpenAI library version

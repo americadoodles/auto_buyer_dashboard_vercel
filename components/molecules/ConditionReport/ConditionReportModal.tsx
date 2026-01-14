@@ -4,6 +4,13 @@ import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { ApiService } from '../../../lib/services/api';
 import { CONDITION_REPORT_TEMP_DATA } from '../../../lib/constants/temp';
+import TiresIcon from '../../../assets/svg/tires';
+import GlassIcon from '../../../assets/svg/glass';
+import BodyIcon from '../../../assets/svg/body';
+import InteriorIcon from '../../../assets/svg/interior';
+import MechanicalIcon from '../../../assets/svg/mechanical';
+import AftermarketIcon from '../../../assets/svg/aftermarket';
+import OtherIcon from '../../../assets/svg/other';
 
 // Types - Export for use in other components
 export interface LineItem {
@@ -100,12 +107,34 @@ const PanelHeader: React.FC<{
                      panelClass === 'negative' ? 'text-red-400' : 
                      'text-gray-400';
 
+  // Get the appropriate icon component based on title
+  const getIconComponent = () => {
+    switch (title) {
+      case 'Tire/Wheel':
+        return <TiresIcon />;
+      case 'Glass Damage':
+        return <GlassIcon />;
+      case 'Body Damage':
+        return <BodyIcon />;
+      case 'Interior Damage':
+        return <InteriorIcon />;
+      case 'Mechanical':
+      case 'Warning Lights':
+        return <MechanicalIcon />;
+      case 'Aftermarket Modifications':
+        return <AftermarketIcon />;
+      case 'Disclosures':
+        return <OtherIcon />;
+      default:
+        // Fallback to image if icon path is provided
+        return icon ? <img src={icon} alt={title} className="w-6 h-6" /> : null;
+    }
+  };
+
   return (
     <header className="flex items-center justify-between px-3 py-2 border-b border-gray-700/50">
       <div className="flex items-center gap-3">
-        {icon && (
-          <img src={icon} alt={title} className="w-6 h-6" />
-        )}
+        {getIconComponent()}
         <div className="title-container">
           <div className="title text-white font-semibold text-base">{title}</div>
           {subtitle && (

@@ -1,11 +1,12 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '../atoms/Button';
 import { ExternalLink } from 'lucide-react';
 import { Icon } from '../atoms/Icon';
 import { FactoryOptionsDetailed } from './FactoryOptionsDetailed';
 import { PricingCard } from './PricingCard';
+import { ConditionReportModal } from '../molecules/ConditionReport/ConditionReportModal';
 
 interface AccuTradeDataSectionProps {
   accuTradeData: any;
@@ -24,29 +25,40 @@ export const AccuTradeDataSection: React.FC<AccuTradeDataSectionProps> = ({
   askingPrice,
   suggestedPrice,
 }) => {
+  const [isConditionReportModalOpen, setIsConditionReportModalOpen] = useState(false);
+
   if (!accuTradeData) return null;
 
   return (
     <div className="space-y-4">
       {/* AccuTrade View Details Button */}
       {vin && hasAccuTradeData && (
-        <Button
-          onClick={() => {
-            const accuTradeUrl = `https://appraiser3.accu-trade.com/appraisal/new?vin=${encodeURIComponent(vin)}`;
-            window.open(accuTradeUrl, '_blank');
-          }}
-          className="w-full bg-blue-600 hover:bg-blue-500 text-white transition-colors flex items-center justify-between gap-2"
-        >
-          <div className="flex items-center gap-2">
-            <Icon
-              name="accutrade"
-              size={24}
-              className="opacity-80 hover:opacity-100 transition-opacity rounded"
-            />
-            <span>View Full AccuTrade Details</span>
-          </div>
-          <ExternalLink className="h-4 w-4" />
-        </Button>
+        <>
+          <Button
+            onClick={() => {
+              const accuTradeUrl = `https://appraiser3.accu-trade.com/appraisal/new?vin=${encodeURIComponent(vin)}`;
+              window.open(accuTradeUrl, '_blank');
+            }}
+            className="w-full bg-blue-600 hover:bg-blue-500 text-white transition-colors flex items-center justify-between gap-2"
+          >
+            <div className="flex items-center gap-2">
+              <Icon
+                name="accutrade"
+                size={24}
+                className="opacity-80 hover:opacity-100 transition-opacity rounded"
+              />
+              <span>View Full AccuTrade Details</span>
+            </div>
+            <ExternalLink className="h-4 w-4" />
+          </Button>
+          
+          <Button
+            onClick={() => setIsConditionReportModalOpen(true)}
+            className="w-full bg-gray-700 hover:bg-gray-600 text-white transition-colors flex items-center justify-center gap-2"
+          >
+            <span>View Condition Report</span>
+          </Button>
+        </>
       )}
 
       {/* Pricing Card */}
@@ -236,6 +248,12 @@ export const AccuTradeDataSection: React.FC<AccuTradeDataSectionProps> = ({
           </div>
         </div>
       )}
+
+      {/* Condition Report Modal */}
+      <ConditionReportModal
+        isOpen={isConditionReportModalOpen}
+        onClose={() => setIsConditionReportModalOpen(false)}
+      />
     </div>
   );
 };

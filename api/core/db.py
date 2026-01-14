@@ -119,6 +119,29 @@ def _read_crm_schema_file() -> Optional[str]:
         return None
 
 
+def _read_migration_file(migration_number: str) -> Optional[str]:
+    """Read a numbered migration file."""
+    db_dir = pathlib.Path(__file__).parents[2] / "db"
+    # Try different naming patterns
+    patterns = [
+        f"{migration_number}_*.sql",
+        f"{migration_number}.sql",
+    ]
+    
+    for pattern in patterns:
+        matches = list(db_dir.glob(pattern))
+        if matches:
+            p = matches[0]
+            try:
+                return p.read_text(encoding="utf-8")
+            except Exception as e:
+                logger.error("Failed reading migration file %s: %s", p, e, exc_info=True)
+                return None
+    
+    logger.warning("Migration file not found for number: %s", migration_number)
+    return None
+
+
 def _exec_sql_script(cur: "psycopg.Cursor", script: str) -> None:
     """
     Execute a multi-statement SQL script safely enough for simple schemas.
@@ -224,6 +247,24 @@ def apply_schema_if_needed() -> None:
 
                 # Seed default roles
                 seed_default_roles(conn)
+
+                # Apply numbered migrations
+                migrations_to_apply = [
+                    "013_create_accu_trade_data",
+                    "014_create_mmr_data",
+                    "015_create_condition_reports",
+                ]
+                
+                for migration_name in migrations_to_apply:
+                    migration_content = _read_migration_file(migration_name)
+                    if migration_content:
+                        try:
+                            logger.info(f"Applying migration: {migration_name}...")
+                            _exec_sql_script(cur, migration_content)
+                            logger.info(f"Migration {migration_name} applied.")
+                        except Exception as e:
+                            # Log but don't fail - migrations might already be applied
+                            logger.warning(f"Migration {migration_name} failed (may already be applied): {e}")
 
                 logger.info("Schema ensured OK.")
             except Exception as e:

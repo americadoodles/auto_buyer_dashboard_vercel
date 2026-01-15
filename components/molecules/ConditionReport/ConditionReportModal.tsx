@@ -208,7 +208,7 @@ const StandardPanel: React.FC<{
 const BodyDamageGraphic: React.FC<{ noDamage: boolean; svgImage?: string }> = ({ noDamage, svgImage }) => {
   const svgToUse = svgImage || angularBodySvg;
   return (
-    <div className="w-full h-auto max-w-md mx-auto">
+    <div className="w-full h-auto max-w-md mx-auto bg-white">
       {/* Example usage: Using dangerouslySetInnerHTML with converted SVG */}
       <div dangerouslySetInnerHTML={getSvgHtml(svgToUse)} />
       
@@ -220,7 +220,7 @@ const BodyDamageGraphic: React.FC<{ noDamage: boolean; svgImage?: string }> = ({
 const InteriorDamageGraphic: React.FC<{ noDamage: boolean; svgImage?: string }> = ({ noDamage, svgImage }) => {
   const svgToUse = svgImage || angularInteriorSvg;
   return (
-    <div className="w-full h-auto max-w-md mx-auto">
+    <div className="w-full h-auto max-w-md mx-auto bg-white">
       <div dangerouslySetInnerHTML={getSvgHtml(svgToUse)} />
     </div>
   );
@@ -230,7 +230,7 @@ const InteriorDamageGraphic: React.FC<{ noDamage: boolean; svgImage?: string }> 
 const GlassDamageGraphic: React.FC<{ noDamage: boolean; svgImage?: string }> = ({ noDamage, svgImage }) => {
   const svgToUse = svgImage || angularGlassSvg;
   return (
-    <div className="w-full h-auto max-w-md mx-auto">
+    <div className="w-full h-auto max-w-md mx-auto bg-white">
       <div dangerouslySetInnerHTML={getSvgHtml(svgToUse)} />
     </div>
   );

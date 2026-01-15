@@ -108,3 +108,25 @@ body {
 .appraisal-panel-content .wheels {
   display: block;
 }
+
+/* SVG Element Styles for Condition Report */
+/* Base styles for SVG elements (replaces Angular _nghost/_ngcontent selectors) */
+svg path,
+svg rect,
+svg circle,
+svg polygon {
+  fill: #f7f9fa;
+  stroke: #fff;
+}
+
+.ExtSVGElem {
+  fill: #f7f9fa;
+  stroke: #fff;
+}
+
+.ExtSVGElem.enabled,
+.enabled {
+  fill: #07a86833;
+  stroke: none;
+  stroke-width: 2px;
+}

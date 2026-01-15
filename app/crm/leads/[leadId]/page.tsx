@@ -22,7 +22,8 @@ import { CompactAutocheckSection } from '../../../../components/organisms/Compac
 import { CompactCarfaxSection } from '../../../../components/organisms/CompactCarfaxSection';
 import { SMSThreadCompact } from '../../../../components/organisms/SMSThreadCompact';
 import { AccuTradeDataSection } from '../../../../components/organisms/AccuTradeDataSection';
-import { ArrowLeft, ExternalLink } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Check, X, Edit2, Save } from 'lucide-react';
+import { ChatBoxComponent } from '../../../../components/atoms/ChatBoxComponent';
 import { useToast } from '../../../../hooks/useToast';
 import { formatDateTime } from '../../../../lib/utils/formatters';
 import { ApiService } from '../../../../lib/services/api';
@@ -522,6 +523,14 @@ export default function LeadDetailPage() {
         variant="danger"
         loading={deleting}
         loadingText="Deleting..."
+      />
+
+      {/* Chat Icon - Docked at bottom right */}
+      <ChatBoxComponent
+        onClick={() => {
+          // Handle chat click - can be extended to open chat interface
+          console.log('Chat clicked');
+        }}
       />
     </div>
   );

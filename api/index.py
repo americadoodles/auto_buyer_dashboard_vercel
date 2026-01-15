@@ -14,6 +14,7 @@ from .routes.activity_heatmap import activity_heatmap_router
 from .routes.listing_management import listing_management_router
 from .routes.accu_trade import accu_trade_router
 from .routes.mmr import mmr_router
+from .routes.condition_report import condition_report_router
 
 # CRM Routes
 from .routes.crm_leads import lead_router
@@ -63,6 +64,7 @@ app.include_router(activity_heatmap_router, prefix="/api")
 app.include_router(listing_management_router, prefix="/api")
 app.include_router(accu_trade_router, prefix="/api")
 app.include_router(mmr_router, prefix="/api")
+app.include_router(condition_report_router, prefix="/api")
 
 # CRM Routes
 app.include_router(lead_router, prefix="/api")

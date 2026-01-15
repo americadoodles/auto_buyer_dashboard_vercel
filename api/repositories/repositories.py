@@ -3,11 +3,12 @@ import logging
 import datetime
 from typing import List, Optional
 from datetime import timezone
+from uuid import UUID, uuid4
 from ..core.db import DB_ENABLED
 from ..core.db_helpers import get_db_connection
 from ..schemas.listing import ListingIn, ListingOut
 from ..schemas.listing import Decision
-from ..services.ai_service import extract_vehicle_info_from_title, calculate_listing_score
+from ..services.ai_service import extract_vehicle_info_from_title, calculate_listing_score, extract_phone_number_from_text
 from ..utils.gcp_storage import upload_images_to_gcp
 
 # In-memory fallback for listings
@@ -168,14 +169,15 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                         model = None
                         trim = None
                         extracted_bodystyle = None
+                        extracted_info = {}
                         
                         if title and title.strip():
                             try:
                                 extracted_info = extract_vehicle_info_from_title(title.strip())
-                                year = extracted_info.get("year")
-                                make = extracted_info.get("make")
-                                model = extracted_info.get("model")
-                                trim = extracted_info.get("trim")
+                                year = extracted_info.get("year") or year
+                                make = extracted_info.get("make") or make
+                                model = extracted_info.get("model") or model
+                                trim = extracted_info.get("trim") or trim
                                 extracted_bodystyle = extracted_info.get("bodystyle")
                                 logging.info(f"Extracted vehicle info from title: year={year}, make={make}, model={model}, trim={trim}, bodystyle={extracted_bodystyle}")
                             except Exception as e:
@@ -224,26 +226,34 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                                 return val if val else None
                             return val
 
-                        interior_color = _norm_str(norm.get("interiorColor"))
-                        exterior_color = _norm_str(norm.get("exteriorColor"))
-                        transmission = _norm_str(norm.get("transmission"))
-                        fuel_type = _norm_str(norm.get("fuelType"))
-                        drivetrain = _norm_str(norm.get("driveType"))
-                        engine_size = _norm_str(norm.get("engine_size"))  # if provided
-                        body_style = _norm_str(norm.get("bodyStyle"))
-                        # Use extracted bodystyle if input bodystyle is empty
-                        if not body_style and extracted_bodystyle:
-                            body_style = extracted_bodystyle
+                        # Extract fields from norm, fallback to extracted_info if not available
+                        interior_color = _norm_str(norm.get("interiorColor")) or _norm_str(extracted_info.get("interiorColor"))
+                        exterior_color = _norm_str(norm.get("exteriorColor")) or _norm_str(extracted_info.get("exteriorColor"))
+                        transmission = _norm_str(norm.get("transmission")) or _norm_str(extracted_info.get("transmission"))
+                        fuel_type = _norm_str(norm.get("fuelType")) or _norm_str(extracted_info.get("fuelType"))
+                        drivetrain = _norm_str(norm.get("driveType")) or _norm_str(extracted_info.get("driveType"))
+                        engine_size = _norm_str(norm.get("engine_size")) or _norm_str(extracted_info.get("engine_size"))
+                        body_style = _norm_str(norm.get("bodyStyle")) or _norm_str(extracted_bodystyle)
+                        engine_desc = _norm_str(norm.get("engine")) or _norm_str(extracted_info.get("engine"))
+                        mpg = _norm_str(norm.get("mpg")) or _norm_str(extracted_info.get("mpg"))
 
                         clean_title = norm.get("cleanTitle")
                         condition_txt = _norm_str(norm.get("condition"))
                         detailed_ratings = norm.get("detailedRatings")
-                        engine_desc = _norm_str(norm.get("engine"))
-                        mpg = _norm_str(norm.get("mpg"))
                         overall_rating = _norm_str(norm.get("overallRating"))
                         paid_status = _norm_str(norm.get("paidStatus"))
                         phone_number = _norm_str(norm.get("phoneNumber"))
                         seller_description = _norm_str(norm.get("sellerDescription"))
+                        
+                        # Extract phone number from seller description if not provided
+                        if not phone_number and seller_description:
+                            try:
+                                extracted_phone = extract_phone_number_from_text(seller_description)
+                                if extracted_phone:
+                                    phone_number = extracted_phone
+                                    logging.info(f"Extracted phone number from seller description: {phone_number}")
+                            except Exception as e:
+                                logging.warning(f"Failed to extract phone number from seller description: {str(e)}")
                         seller_joined_date = _norm_str(norm.get("sellerJoinedDate"))
                         seller_name = _norm_str(norm.get("sellerName"))
                         lpn = _norm_str(norm.get("lpn"))
@@ -264,7 +274,8 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                                     original_images,
                                     listing_id=None,  # Not available yet - will be set after insert
                                     vin=vin,  # Passed for logging but not used for folder structure
-                                    source=source_url  # Used to determine folder structure
+                                    source=source_url,  # Used to determine folder structure
+                                    max_workers=min(len(original_images), 30)
                                 )
                                 if gcp_image_urls:
                                     source_info = f"source: {source_url}" if source_url else "no source"
@@ -333,6 +344,103 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                         except Exception as log_exc:
                             logging.error(f"Failed to insert listing into database: {log_exc}")
                             new_id = f"error-{len(out)+1}"
+                        
+                        # Create contact and lead if phoneNumber exists
+                        contact_id = None
+                        if phone_number and phone_number.strip():
+                            try:
+                                # Check if contact with this phone already exists
+                                cur.execute("""
+                                    SELECT id FROM contacts 
+                                    WHERE phone = %s OR mobile = %s 
+                                    LIMIT 1
+                                """, (phone_number.strip(), phone_number.strip()))
+                                existing_contact = cur.fetchone()
+                                
+                                if existing_contact:
+                                    contact_id = existing_contact[0]
+                                    logging.info(f"Found existing contact {contact_id} with phone {phone_number}")
+                                else:
+                                    # Parse seller_name for first_name and last_name
+                                    first_name = "Seller"
+                                    last_name = "Unknown"
+                                    if seller_name and seller_name.strip():
+                                        name_parts = seller_name.strip().split()
+                                        if len(name_parts) >= 2:
+                                            first_name = name_parts[0]
+                                            last_name = " ".join(name_parts[1:])
+                                        elif len(name_parts) == 1:
+                                            first_name = name_parts[0]
+                                    
+                                    # Get default created_by user (use buyer_from_id if available, otherwise get first admin user)
+                                    created_by_user = None
+                                    if buyer_from_id:
+                                        try:
+                                            cur.execute("SELECT id FROM users WHERE id::text = %s", (buyer_from_id,))
+                                            user_result = cur.fetchone()
+                                            if user_result:
+                                                created_by_user = user_result[0]
+                                        except Exception:
+                                            pass
+                                    else:
+                                        created_by_user = "unknown"
+
+                                    if not created_by_user:
+                                        logging.warning("No user found for contact creation, skipping contact/lead creation")
+                                    else:
+                                        # Create contact directly in the database
+                                        try:
+                                            cur.execute("""
+                                                INSERT INTO contacts (
+                                                    first_name, last_name, phone, company, notes,
+                                                    is_active, created_by, created_at, updated_at
+                                                ) VALUES (
+                                                    %s, %s, %s, %s, %s, %s, %s, NOW(), NOW()
+                                                ) RETURNING id
+                                            """, (
+                                                first_name,
+                                                last_name,
+                                                phone_number.strip(),
+                                                seller_name if seller_name else None,
+                                                f"Auto-created from listing {new_id}. Source: {norm.get('source', 'Unknown')}",
+                                                True,
+                                                created_by_user
+                                            ))
+                                            
+                                            contact_result = cur.fetchone()
+                                            if contact_result:
+                                                contact_id = contact_result[0]
+                                                logging.info(f"Created contact {contact_id} for phone {phone_number}")
+                                                
+                                                # Create lead linking listing to contact
+                                                cur.execute("""
+                                                    INSERT INTO leads (
+                                                        listing_id, contact_id, notes, lead_score,
+                                                        created_by, created_at, updated_at
+                                                    ) VALUES (
+                                                        %s, %s, %s, %s, %s, NOW(), NOW()
+                                                    ) RETURNING id
+                                                """, (
+                                                    int(new_id),
+                                                    contact_id,
+                                                    f"Auto-created lead from listing {new_id}. Vehicle: {year} {make} {model}",
+                                                    0,
+                                                    created_by_user
+                                                ))
+                                                
+                                                lead_result = cur.fetchone()
+                                                if lead_result:
+                                                    logging.info(f"Created lead {lead_result[0]} for listing {new_id} and contact {contact_id}")
+                                                else:
+                                                    logging.warning(f"Failed to create lead for listing {new_id}")
+                                            else:
+                                                logging.warning(f"Failed to create contact for phone {phone_number}")
+                                        except Exception as contact_error:
+                                            logging.error(f"Failed to create contact/lead for phone {phone_number}: {str(contact_error)}")
+                                            # Continue with listing ingestion even if contact/lead creation fails
+                            except Exception as contact_lead_error:
+                                logging.error(f"Error creating contact/lead for listing {new_id}: {str(contact_lead_error)}")
+                                # Continue with listing ingestion even if contact/lead creation fails
                         
                         # Extract reasonCodes, buyMax, and status for ListingOut
                         reason_codes = norm.get("reasonCodes", [])

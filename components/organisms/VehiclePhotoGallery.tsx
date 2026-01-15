@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '../atoms/Button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 
 interface VehiclePhotoGalleryProps {
   images: string[];
@@ -10,6 +10,11 @@ interface VehiclePhotoGalleryProps {
 
 export const VehiclePhotoGallery: React.FC<VehiclePhotoGalleryProps> = ({ images }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [startPan, setStartPan] = useState({ x: 0, y: 0 });
 
   if (!images || images.length === 0) {
     return null;
@@ -27,54 +32,203 @@ export const VehiclePhotoGallery: React.FC<VehiclePhotoGalleryProps> = ({ images
     setCurrentIndex(index);
   };
 
+  const openViewer = () => {
+    setZoom(1);
+    setOffset({ x: 0, y: 0 });
+    setIsViewerOpen(true);
+  };
+
+  const closeViewer = () => {
+    setIsViewerOpen(false);
+    setZoom(1);
+    setOffset({ x: 0, y: 0 });
+  };
+
+  const handleWheel = (event: React.WheelEvent) => {
+    event.preventDefault();
+    const delta = event.deltaY > 0 ? -0.1 : 0.1;
+    setZoom((prev) => Math.min(4, Math.max(1, Number((prev + delta).toFixed(2)))));
+  };
+
+  const zoomIn = () => setZoom((prev) => Math.min(4, Number((prev + 0.2).toFixed(2))));
+  const zoomOut = () => setZoom((prev) => Math.max(1, Number((prev - 0.2).toFixed(2))));
+  const resetZoom = () => {
+    setZoom(1);
+    setOffset({ x: 0, y: 0 });
+  };
+
+  const onMouseDown = (event: React.MouseEvent) => {
+    // Only allow panning when zoomed in
+    if (zoom <= 1) return;
+    event.preventDefault();
+    setIsPanning(true);
+    setStartPan({ x: event.clientX - offset.x, y: event.clientY - offset.y });
+  };
+
+  const onMouseMove = (event: React.MouseEvent) => {
+    if (!isPanning) return;
+    event.preventDefault();
+    setOffset({
+      x: event.clientX - startPan.x,
+      y: event.clientY - startPan.y,
+    });
+  };
+
+  const onMouseUp = () => {
+    setIsPanning(false);
+  };
+
+  const handleViewerKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === 'Escape') {
+      closeViewer();
+    } else if (event.key === 'ArrowLeft') {
+      goToPrevious();
+    } else if (event.key === 'ArrowRight') {
+      goToNext();
+    }
+  };
+
   return (
-    <div className="flex flex-col gap-4 rounded-xl border overflow-hidden bg-[#1a1d29] border-gray-700/50">
-      <div className="relative aspect-[4/3] bg-gray-900">
-        <img
-          src={images[currentIndex]}
-          alt={`Vehicle photo ${currentIndex + 1}`}
-          className="w-full h-full object-cover"
-        />
+    <>
+      <div className="flex flex-col gap-4 rounded-xl border overflow-hidden bg-white dark:bg-[#1a1d29] border-gray-200 dark:border-gray-700/50">
+        <div className="relative aspect-[4/3] bg-gray-100 dark:bg-gray-900">
+          <img
+            src={images[currentIndex]}
+            alt={`Vehicle photo ${currentIndex + 1}`}
+            className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+            onClick={openViewer}
+          />
+          {images.length > 1 && (
+            <>
+              <Button
+                onClick={goToPrevious}
+                variant="ghost"
+                className="!absolute !left-2 !top-1/2 !-translate-y-1/2 !bg-white/90 dark:!bg-gray-800 hover:!bg-gray-100 dark:hover:!bg-gray-700 !text-black dark:!text-white !size-9 !rounded-md !z-10 !p-0"
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </Button>
+              <Button
+                onClick={goToNext}
+                variant="ghost"
+                className="!absolute !right-2 !top-1/2 !-translate-y-1/2 !bg-white/90 dark:!bg-gray-800 hover:!bg-gray-100 dark:hover:!bg-gray-700 !text-black dark:!text-white !size-9 !rounded-md !z-10 !p-0"
+              >
+                <ChevronRight className="h-6 w-6" />
+              </Button>
+            </>
+          )}
+        </div>
         {images.length > 1 && (
-          <>
-            <Button
-              onClick={goToPrevious}
-              variant="ghost"
-              className="!absolute !left-2 !top-1/2 !-translate-y-1/2 !bg-gray-800 hover:!bg-gray-700 !text-white !size-9 !rounded-md !z-10 !p-0"
-            >
-              <ChevronLeft className="h-6 w-6" />
-            </Button>
-            <Button
-              onClick={goToNext}
-              variant="ghost"
-              className="!absolute !right-2 !top-1/2 !-translate-y-1/2 !bg-gray-800 hover:!bg-gray-700 !text-white !size-9 !rounded-md !z-10 !p-0"
-            >
-              <ChevronRight className="h-6 w-6" />
-            </Button>
-          </>
+          <div className="flex gap-2 p-3 bg-white dark:bg-[#1a1d29] overflow-x-auto overflow-y-hidden flex-nowrap w-full gallery-scrollbar">
+            {images.map((image, index) => (
+              <button
+                key={index}
+                onClick={() => goToImage(index)}
+                className={`flex-shrink-0 aspect-video w-20 rounded overflow-hidden border transition-all ${
+                  index === currentIndex
+                    ? 'border-blue-500 ring-1 ring-blue-400'
+                    : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                }`}
+              >
+                <img
+                  src={image}
+                  alt={`Thumbnail ${index + 1}`}
+                  className="w-full h-full object-cover"
+                />
+              </button>
+            ))}
+          </div>
         )}
       </div>
-      {images.length > 1 && (
-        <div className="flex gap-2 p-3 bg-[#1a1d29] overflow-x-auto overflow-y-hidden flex-nowrap w-full gallery-scrollbar">
-          {images.map((image, index) => (
-            <button
-              key={index}
-              onClick={() => goToImage(index)}
-              className={`flex-shrink-0 aspect-video w-20 rounded overflow-hidden border transition-all ${
-                index === currentIndex
-                  ? 'border-blue-500 ring-1 ring-blue-400'
-                  : 'border-gray-600 hover:border-gray-500'
-              }`}
+
+      {/* Fullscreen zoomable viewer */}
+      {isViewerOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex flex-col"
+          onKeyDown={handleViewerKeyDown}
+          tabIndex={-1}
+        >
+          <div className="flex justify-between items-center p-4">
+            <div className="text-white text-sm">
+              Image {currentIndex + 1} of {images.length}
+            </div>
+            <Button
+              variant="ghost"
+              onClick={closeViewer}
+              className="text-white hover:text-gray-200 hover:bg-gray-800"
+            >
+              <X className="h-6 w-6" />
+            </Button>
+          </div>
+          <div className="flex-1 flex items-center justify-center overflow-auto">
+            <div
+              className="relative"
+              onWheel={handleWheel}
+              onMouseDown={onMouseDown}
+              onMouseMove={onMouseMove}
+              onMouseUp={onMouseUp}
+              onMouseLeave={onMouseUp}
+              style={{
+                cursor: zoom > 1 ? (isPanning ? 'grabbing' : 'grab') : 'zoom-in',
+              }}
             >
               <img
-                src={image}
-                alt={`Thumbnail ${index + 1}`}
-                className="w-full h-full object-cover"
+                src={images[currentIndex]}
+                alt={`Vehicle photo zoomed ${currentIndex + 1}`}
+                className="max-h-[80vh] max-w-[90vw] object-contain select-none"
+                style={{
+                  transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`,
+                  transition: isPanning ? 'none' : 'transform 80ms ease-out',
+                }}
+                draggable={false}
               />
-            </button>
-          ))}
+            </div>
+          </div>
+          <div className="flex justify-center items-center gap-3 p-4">
+            <Button
+              onClick={zoomOut}
+              variant="secondary"
+              className="px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-black dark:text-white"
+            >
+              <ZoomOut className="h-5 w-5" />
+            </Button>
+            <Button
+              onClick={resetZoom}
+              variant="secondary"
+              className="px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-black dark:text-white"
+            >
+              <RotateCcw className="h-5 w-5" />
+            </Button>
+            <Button
+              onClick={zoomIn}
+              variant="secondary"
+              className="px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-black dark:text-white"
+            >
+              <ZoomIn className="h-5 w-5" />
+            </Button>
+            {images.length > 1 && (
+              <>
+                <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-2" />
+                <Button
+                  onClick={goToPrevious}
+                  variant="secondary"
+                  className="px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-black dark:text-white"
+                  disabled={images.length === 1}
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </Button>
+                <Button
+                  onClick={goToNext}
+                  variant="secondary"
+                  className="px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-black dark:text-white"
+                  disabled={images.length === 1}
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       )}
-    </div>
+    </>
   );
 };

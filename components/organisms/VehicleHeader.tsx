@@ -143,14 +143,14 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
   };
 
   return (
-    <div className="bg-[#1a1d29] border border-gray-700/50 rounded-lg p-5">
+    <div className="bg-white dark:bg-[#1a1d29] border border-gray-200 dark:border-gray-700/50 rounded-lg p-5">
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className={`text-xl ${(year && make && model) ? 'text-green-400' : 'text-gray-400'}`}>
+          <h2 className={`text-xl ${(year && make && model) ? 'text-green-600 dark:text-green-400' : 'text-black dark:text-gray-400'}`}>
             {year} {make} {model} {trim ? trim : ''}
           </h2>
           {price !== undefined && (
-            <div className="text-xl font-bold text-green-400">
+            <div className="text-xl font-bold text-green-600 dark:text-green-400">
               ${formatNumberWithCommas(price)}
             </div>
           )}
@@ -158,14 +158,14 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
         <div className="flex items-center gap-6 text-sm">
           {miles !== undefined && (
             <div className="flex items-center gap-2">
-              <span className="text-gray-400">🚗</span>
-              <span className="text-gray-300">{formatNumberWithCommas(miles)} Miles</span>
+              <span className="text-black dark:text-gray-400">🚗</span>
+              <span className="text-black dark:text-gray-300">{formatNumberWithCommas(miles)} Miles</span>
             </div>
           )}
           {vin && (
             <div className="flex items-center gap-2">
-              <span className="text-gray-400">VIN:</span>
-              <span className="text-gray-300">{vin}</span>
+              <span className="text-black dark:text-gray-400">VIN:</span>
+              <span className="text-black dark:text-gray-300">{vin}</span>
             </div>
           )}
         </div>
@@ -173,7 +173,7 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
           <button
             type="button"
             onClick={handleAutoCheckClick}
-            className={`relative flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition-colors cursor-pointer ${hasAutoCheck ? 'bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500/20' : 'bg-black border border-gray-600 text-white hover:bg-gray-900'}`}
+            className={`relative flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition-colors cursor-pointer ${hasAutoCheck ? 'bg-green-500/10 border border-green-500/30 text-green-600 dark:text-green-400 hover:bg-green-500/20' : 'bg-gray-100 dark:bg-black border border-gray-300 dark:border-gray-600 text-black dark:text-white hover:bg-gray-200 dark:hover:bg-gray-900'}`}
           >
             <Icon
               name="autocheck"
@@ -242,7 +242,7 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
             <button
               type="button"
               onClick={handleMarketplaceClick}
-              className="flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition-colors cursor-pointer bg-blue-500/10 border border-blue-500/30 text-blue-400 hover:bg-blue-500/20"
+              className="flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition-colors cursor-pointer bg-blue-500/10 border border-blue-500/30 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20"
             >
               <ExternalLink className="h-3 w-3" />
               Marketplace
@@ -252,7 +252,7 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
             <button
               type="button"
               onClick={handleListingDetailClick}
-              className="flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition-colors cursor-pointer bg-purple-500/10 border border-purple-500/30 text-purple-400 hover:bg-purple-500/20"
+              className="flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition-colors cursor-pointer bg-purple-500/10 border border-purple-500/30 text-purple-600 dark:text-purple-400 hover:bg-purple-500/20"
             >
               <FileText className="h-3 w-3" />
               Listing Detail

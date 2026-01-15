@@ -18,7 +18,7 @@ export const CompactCarfaxSection: React.FC<CompactCarfaxSectionProps> = ({
   const isClean = status.toLowerCase() === 'clean';
 
   return (
-    <div className="flex flex-col gap-6 rounded-xl border bg-[#1a1d29] border-gray-700/50 p-4">
+    <div className="flex flex-col gap-6 rounded-xl border bg-white dark:bg-[#1a1d29] border-gray-200 dark:border-gray-700/50 p-4">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Icon
@@ -26,9 +26,9 @@ export const CompactCarfaxSection: React.FC<CompactCarfaxSectionProps> = ({
             size={24}
             className="opacity-80 hover:opacity-100 transition-opacity rounded"
           />
-          <span className="text-white font-semibold">CARFAX</span>
+          <span className="text-black dark:text-white font-semibold">CARFAX</span>
         </div>
-        <span className={`text-sm ${isClean ? 'text-green-400' : 'text-gray-400'}`}>
+        <span className={`text-sm ${isClean ? 'text-green-600 dark:text-green-400' : 'text-black dark:text-gray-400'}`}>
           {status}
         </span>
       </div>

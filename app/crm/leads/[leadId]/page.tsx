@@ -16,11 +16,14 @@ import { ConfirmationModal } from '../../../../components/organisms/Confirmation
 import { VehiclePhotoGallery } from '../../../../components/organisms/VehiclePhotoGallery';
 import { VehicleHeader } from '../../../../components/organisms/VehicleHeader';
 import { MMRCard } from '../../../../components/organisms/MMRCard';
+import { VehicleDetails } from '../../../../components/molecules/VehicleDetails';
+import { LeadInformation } from '../../../../components/molecules/LeadInformation';
 import { CompactAutocheckSection } from '../../../../components/organisms/CompactAutocheckSection';
 import { CompactCarfaxSection } from '../../../../components/organisms/CompactCarfaxSection';
 import { SMSThreadCompact } from '../../../../components/organisms/SMSThreadCompact';
 import { AccuTradeDataSection } from '../../../../components/organisms/AccuTradeDataSection';
 import { ArrowLeft, ExternalLink, Check, X, Edit2, Save } from 'lucide-react';
+import { ChatBoxComponent } from '../../../../components/atoms/ChatBoxComponent';
 import { useToast } from '../../../../hooks/useToast';
 import { formatDateTime } from '../../../../lib/utils/formatters';
 import { ApiService } from '../../../../lib/services/api';
@@ -44,9 +47,6 @@ export default function LeadDetailPage() {
   const [activities, setActivities] = useState<LeadActivity[]>([]);
   const [isUpdateListingModalOpen, setIsUpdateListingModalOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [editingField, setEditingField] = useState<string | null>(null);
-  const [editValue, setEditValue] = useState<string>('');
-  const [savingField, setSavingField] = useState<string | null>(null);
   const [mmrData, setMmrData] = useState<any>(null);
   const [accuTradeData, setAccuTradeData] = useState<any>(null);
   
@@ -128,66 +128,48 @@ export default function LeadDetailPage() {
     loadData();
   }, [leadId, statusesLoading, sourcesLoading]);
 
-  // Start editing a field
-  const startEditing = (field: string, currentValue: any) => {
-    setEditingField(field);
-    if (typeof currentValue === 'number') {
-      setEditValue(currentValue.toString());
-    } else {
-      setEditValue(currentValue || '');
-    }
-  };
 
-  // Cancel editing
-  const cancelEditing = () => {
-    setEditingField(null);
-    setEditValue('');
-  };
-
-  // Save a single field
-  const saveField = async (field: string) => {
+  // Save a single field (for LeadInformation component)
+  const handleFieldSave = async (field: string, value: any) => {
     if (!leadId || !lead) return;
 
     try {
-      setSavingField(field);
+      // Check if this is a contact field
+      const contactFields = ['first_name', 'last_name', 'email', 'phone', 'mobile', 'company', 'job_title'];
       
-      let updateData: any = {};
-      let value: any = editValue;
-
-      // Parse value based on field type
-      switch (field) {
-        case 'lead_score':
-          value = value ? parseInt(value, 10) : undefined;
-          if (isNaN(value)) value = undefined;
-          break;
-        case 'status_id':
-        case 'source_id':
-          value = value ? parseInt(value, 10) : undefined;
-          break;
-        default:
-          value = value || undefined;
+      if (contactFields.includes(field) && lead.contact_id) {
+        // Update contact information
+        const updatedContact = await updateContact(lead.contact_id, {
+          [field]: value
+        });
+        
+        // Reload lead to get updated contact information
+        const updatedLead = await leadsApi.getLead(leadId);
+        setLead(updatedLead);
+        
+        // Reload activities after update
+        const updatedActivities = await leadsApi.getLeadActivities(leadId).catch(() => []);
+        setActivities(updatedActivities);
+        
+        showSuccess('Field Updated', `${field} has been successfully updated`);
+      } else {
+        // Update lead information
+        const updatedLead = await leadsApi.updateLead(leadId, {
+          [field]: value
+        });
+        
+        setLead(updatedLead);
+        
+        // Reload activities after update
+        const updatedActivities = await leadsApi.getLeadActivities(leadId).catch(() => []);
+        setActivities(updatedActivities);
+        
+        showSuccess('Field Updated', `${field} has been successfully updated`);
       }
-
-      // Update lead information
-      const updatedLead = await leadsApi.updateLead(leadId, {
-        ...updateData,
-        [field]: value
-      });
-      
-      setLead(updatedLead);
-      setEditingField(null);
-      setEditValue('');
-      
-      // Reload activities after update
-      const updatedActivities = await leadsApi.getLeadActivities(leadId).catch(() => []);
-      setActivities(updatedActivities);
-      
-      showSuccess('Field Updated', `${field} has been successfully updated`);
     } catch (error) {
       console.error('Error updating field:', error);
       showError('Failed to save', error instanceof Error ? error.message : 'Unknown error');
-    } finally {
-      setSavingField(null);
+      throw error; // Re-throw so component can handle it
     }
   };
 
@@ -308,7 +290,7 @@ export default function LeadDetailPage() {
       <div className="h-full overflow-y-auto bg-white dark:bg-gray-900">
         <div className="p-6 flex items-center justify-center min-h-screen">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
-          <span className="ml-3 text-gray-800 dark:text-gray-200 font-medium">Loading lead details...</span>
+          <span className="ml-3 text-black dark:text-gray-200 font-medium">Loading lead details...</span>
         </div>
       </div>
     );
@@ -319,8 +301,8 @@ export default function LeadDetailPage() {
       <div className="h-full overflow-y-auto bg-white dark:bg-gray-900">
         <div className="p-6">
           <div className="text-center py-12">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Lead Not Found</h2>
-            <p className="text-gray-700 dark:text-gray-300 mb-2 font-medium">{error || 'The lead you are looking for does not exist.'}</p>
+            <h2 className="text-2xl font-bold text-black dark:text-gray-100 mb-2">Lead Not Found</h2>
+            <p className="text-black dark:text-gray-300 mb-2 font-medium">{error || 'The lead you are looking for does not exist.'}</p>
             <Button onClick={() => router.push('/crm/leads')} variant="outline">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Leads
@@ -338,9 +320,9 @@ export default function LeadDetailPage() {
     : 'Lead Details';
 
   return (
-    <div className="h-full flex flex-col bg-[#0f1117]">
+    <div className="h-full flex flex-col bg-white dark:bg-[#0f1117]">
       {/* Main Content Layout */}
-      <div className="flex-1 overflow-y-auto bg-[#0f1117]">
+      <div className="flex-1 overflow-y-auto bg-white dark:bg-[#0f1117]">
         <div className="max-w-[1800px] mx-auto px-6 py-6">
           {/* Status Badges */}
           <div className="flex items-center justify-between mb-4">
@@ -366,7 +348,7 @@ export default function LeadDetailPage() {
               onClick={() => setIsUpdateListingModalOpen(true)}
                 variant="outline"
               size="sm"
-                className="flex items-center gap-2 bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-black border-0 shadow-md font-semibold cursor-pointer"
+                className="flex items-center gap-2 bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white dark:text-white border-0 shadow-md font-semibold cursor-pointer"
             >
                 <Icon name="edit" className="w-4 h-4" />
               Update Lead
@@ -410,305 +392,20 @@ export default function LeadDetailPage() {
                   hasMMR={hasMMRData || false}
                   hasAccuTrade={hasAccuTradeData || false}
                 />
-                
+
+                {/* Listing Detail */}
+                {displayListing && <VehicleDetails listing={displayListing} />}
+
                 {/* Lead Information */}
-                <div className="bg-[#1a1d29] rounded-lg shadow-sm border border-gray-700/50 p-6 space-y-4">
-                  <div className="flex items-center justify-between border-b border-gray-700/50 pb-3">
-                    <h4 className="text-lg font-bold text-white">Lead Information</h4>
-                  </div>
+                <LeadInformation
+                  lead={lead}
+                  statuses={statuses}
+                  sources={sources}
+                  onFieldSave={handleFieldSave}
+                  onSaveAll={handleSave}
+                  saving={saving}
+                />
                 
-                  <div className="grid grid-cols-1 gap-x-8 gap-y-1">
-                    {/* Status */}
-                    <div className="flex items-center w-full group">
-                      <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Status:</span>
-                      {editingField === 'status_id' ? (
-                        <div className="flex items-center gap-2 flex-1">
-                          <select
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            className="border-gray-600 focus:border-blue-500 focus:ring-blue-500 text-white flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm rounded-md bg-gray-800"
-                            autoFocus
-                          >
-                            <option value="">Select status</option>
-                            {statuses.map((status) => (
-                              <option key={status.id} value={status.id}>
-                                {status.name}
-                              </option>
-                            ))}
-                          </select>
-                          <button
-                            onClick={() => saveField('status_id')}
-                            disabled={savingField === 'status_id'}
-                            className="p-1 text-green-400 hover:bg-green-900/30 rounded"
-                            title="Save"
-                          >
-                            <Check className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={cancelEditing}
-                            disabled={savingField === 'status_id'}
-                            className="p-1 text-red-400 hover:bg-red-900/30 rounded"
-                            title="Cancel"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <span 
-                            onClick={() => startEditing('status_id', lead.status_id || '')}
-                            className="text-sm text-gray-300 cursor-pointer hover:text-blue-400 transition-colors"
-                          >
-                            {lead.status?.name || ''}
-                          </span>
-                          <button
-                            onClick={() => startEditing('status_id', lead.status_id || '')}
-                            className="p-1 text-gray-400 hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
-                            title="Edit"
-                          >
-                            <Edit2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Source */}
-                    <div className="flex items-center w-full group">
-                      <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Source:</span>
-                      {editingField === 'source_id' ? (
-                        <div className="flex items-center gap-2 flex-1">
-                          <select
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            className="border-gray-600 focus:border-blue-500 focus:ring-blue-500 text-white flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm rounded-md bg-gray-800"
-                            autoFocus
-                          >
-                            <option value="">Select source</option>
-                            {sources.map((source) => (
-                              <option key={source.id} value={source.id}>
-                                {source.name}
-                              </option>
-                            ))}
-                          </select>
-                          <button
-                            onClick={() => saveField('source_id')}
-                            disabled={savingField === 'source_id'}
-                            className="p-1 text-green-400 hover:bg-green-900/30 rounded"
-                            title="Save"
-                          >
-                            <Check className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={cancelEditing}
-                            disabled={savingField === 'source_id'}
-                            className="p-1 text-red-400 hover:bg-red-900/30 rounded"
-                            title="Cancel"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <span 
-                            onClick={() => startEditing('source_id', lead.source_id || '')}
-                            className="text-sm text-gray-300 cursor-pointer hover:text-blue-400 transition-colors"
-                          >
-                            {lead.source?.name || ''}
-                          </span>
-                          <button
-                            onClick={() => startEditing('source_id', lead.source_id || '')}
-                            className="p-1 text-gray-400 hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
-                            title="Edit"
-                          >
-                            <Edit2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Lead Score */}
-                    <div className="flex items-center w-full group">
-                      <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Lead Score:</span>
-                      {editingField === 'lead_score' ? (
-                        <div className="flex items-center gap-2 flex-1">
-                          <Input
-                            type="text"
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            className="border-gray-600 focus:border-blue-500 focus:ring-blue-500 text-white flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm bg-gray-800"
-                            autoFocus
-                          />
-                          <button
-                            onClick={() => saveField('lead_score')}
-                            disabled={savingField === 'lead_score'}
-                            className="p-1 text-green-400 hover:bg-green-900/30 rounded"
-                            title="Save"
-                          >
-                            <Check className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={cancelEditing}
-                            disabled={savingField === 'lead_score'}
-                            className="p-1 text-red-400 hover:bg-red-900/30 rounded"
-                            title="Cancel"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <span 
-                            onClick={() => startEditing('lead_score', lead.lead_score !== undefined ? lead.lead_score.toString() : '')}
-                            className="text-sm text-gray-300 cursor-pointer hover:text-blue-400 transition-colors"
-                          >
-                            {lead.lead_score !== undefined ? lead.lead_score.toString() : ''}
-                          </span>
-                          <button
-                            onClick={() => startEditing('lead_score', lead.lead_score !== undefined ? lead.lead_score.toString() : '')}
-                            className="p-1 text-gray-400 hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
-                            title="Edit"
-                          >
-                            <Edit2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Assigned To */}
-                    <div className="flex items-center w-full group">
-                      <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Assigned To:</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-300">
-                          {lead.assigned_to_user?.username || 'Unassigned'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Contact Information */}
-                    {lead.contact && (
-                      <>
-                        <div className="flex items-center w-full group">
-                          <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Contact Name:</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-300">
-                              {lead.contact.first_name} {lead.contact.last_name}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center w-full group">
-                          <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Email:</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-300">
-                              {lead.contact.email || ''}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center w-full group">
-                          <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Phone:</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-300">
-                              {lead.contact.phone || ''}
-                            </span>
-                          </div>
-                        </div>
-                      </>
-                    )}
-
-                    {/* Notes */}
-                    <div className="flex items-start w-full group">
-                      <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0 pt-1">Notes:</span>
-                      {editingField === 'notes' ? (
-                        <div className="flex items-start gap-2 flex-1">
-                          <textarea
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            className="flex-1 px-3 py-1 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-800 text-white"
-                            rows={3}
-                            autoFocus
-                          />
-                          <div className="flex flex-col gap-1 pt-1">
-                            <button
-                              onClick={() => saveField('notes')}
-                              disabled={savingField === 'notes'}
-                              className="p-1 text-green-400 hover:bg-green-900/30 rounded"
-                              title="Save"
-                            >
-                              <Check className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={cancelEditing}
-                              disabled={savingField === 'notes'}
-                              className="p-1 text-red-400 hover:bg-red-900/30 rounded"
-                              title="Cancel"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-start gap-2">
-                          <span 
-                            onClick={() => startEditing('notes', lead.notes || '')}
-                            className="text-sm text-gray-300 cursor-pointer hover:text-blue-400 transition-colors"
-                          >
-                            {lead.notes || ''}
-                          </span>
-                          <button
-                            onClick={() => startEditing('notes', lead.notes || '')}
-                            className="p-1 text-gray-400 hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100 mt-1"
-                            title="Edit"
-                          >
-                            <Edit2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Created Date */}
-                    {lead.created_at && (
-                      <div className="flex items-center w-full group">
-                        <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0">Created:</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-gray-300">
-                            {formatDateTime(lead.created_at)}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex justify-end space-x-2 pt-4 border-t border-gray-700/50">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => router.push('/crm/leads')} 
-                      disabled={saving} 
-                      className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                    >
-                      Cancel
-                    </Button>
-                    <Button onClick={handleSave} disabled={saving} className="bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-black flex items-center gap-2 font-medium">
-                      {saving ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <Save className="h-4 w-4" />
-                          Save Changes
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-                
-                {/* SMS Thread */}
-                {/* <SMSThreadCompact
-                  contactName={lead?.contact ? `${lead.contact.first_name} ${lead.contact.last_name}` : 'Contact'}
-                /> */}
               </div>
 
               {/* Second Column - MMR, AutoCheck, CARFAX */}
@@ -779,9 +476,9 @@ export default function LeadDetailPage() {
                             suggestedPrice={displayListing.buyMax || undefined}
                           />
                         ) : (
-                          <div className="bg-[#1a1d29] border border-gray-700/50 rounded-lg p-5">
-                            <h3 className="text-white font-semibold mb-2">AccuTrade Data</h3>
-                            <p className="text-sm text-gray-400 mb-2">
+                          <div className="bg-white dark:bg-[#1a1d29] border border-gray-200 dark:border-gray-700/50 rounded-lg p-5">
+                            <h3 className="text-black dark:text-white font-semibold mb-2">AccuTrade Data</h3>
+                            <p className="text-sm text-black dark:text-gray-400 mb-2">
                               No AccuTrade data found for VIN: {displayListing.vin}
                             </p>
                             <Button
@@ -826,6 +523,14 @@ export default function LeadDetailPage() {
         variant="danger"
         loading={deleting}
         loadingText="Deleting..."
+      />
+
+      {/* Chat Icon - Docked at bottom right */}
+      <ChatBoxComponent
+        onClick={() => {
+          // Handle chat click - can be extended to open chat interface
+          console.log('Chat clicked');
+        }}
       />
     </div>
   );

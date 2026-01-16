@@ -110,22 +110,29 @@ body {
 }
 
 /* SVG Element Styles for Condition Report */
-/* Base styles for SVG elements (replaces Angular _nghost/_ngcontent selectors) */
-svg path,
-svg rect,
-svg circle,
-svg polygon {
+/* Scoped to condition report components only to avoid affecting charts and icons */
+.appraisal-damage-panel svg path,
+.appraisal-damage-panel svg rect,
+.appraisal-damage-panel svg circle,
+.appraisal-damage-panel svg polygon,
+.damage-graphic svg path,
+.damage-graphic svg rect,
+.damage-graphic svg circle,
+.damage-graphic svg polygon {
   fill: #f7f9fa;
   stroke: #fff;
 }
 
-.ExtSVGElem {
+.appraisal-damage-panel .ExtSVGElem,
+.damage-graphic .ExtSVGElem {
   fill: #f7f9fa;
   stroke: #fff;
 }
 
-.ExtSVGElem.enabled,
-.enabled {
+.appraisal-damage-panel .ExtSVGElem.enabled,
+.appraisal-damage-panel .enabled,
+.damage-graphic .ExtSVGElem.enabled,
+.damage-graphic .enabled {
   fill: #07a86833;
   stroke: none;
   stroke-width: 2px;

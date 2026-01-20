@@ -23,7 +23,7 @@ class SpecialData(BaseModel):
     hasIssues: Optional[bool] = None
     issues: Optional[List[Any]] = None
     noIssuesText: Optional[str] = None
-
+    svgImage: Optional[str] = None
 
 class Section(BaseModel):
     """Schema for condition report sections"""

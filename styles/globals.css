@@ -137,3 +137,10 @@ body {
   stroke: none;
   stroke-width: 2px;
 }
+
+.appraisal-damage-panel .ExtSVGElem.enabled.selected,
+.damage-graphic .ExtSVGElem.enabled.selected {
+  stroke: #fff !important;
+  fill: #bc3e12 !important;
+}
+ 

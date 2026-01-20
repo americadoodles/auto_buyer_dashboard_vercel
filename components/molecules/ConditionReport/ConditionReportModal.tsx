@@ -12,7 +12,6 @@ import MechanicalIcon from '../../../assets/svg/mechanical';
 import AftermarketIcon from '../../../assets/svg/aftermarket';
 import OtherIcon from '../../../assets/svg/other';
 import { convertAngularSvgToReact, getSvgHtml } from '../../../lib/utils/svgConverter';
-import { angularBodySvg, angularInteriorSvg, angularGlassSvg } from '../../../lib/constants/svg';
 // Types - Export for use in other components
 export interface LineItem {
   text: string;
@@ -206,7 +205,8 @@ const StandardPanel: React.FC<{
 // Body Damage SVG Component - Example of Angular SVG string
 
 const BodyDamageGraphic: React.FC<{ noDamage: boolean; svgImage?: string }> = ({ noDamage, svgImage }) => {
-  const svgToUse = svgImage || angularBodySvg;
+  if (!svgImage) return null;
+  const svgToUse = svgImage;
   return (
     <div className="w-full h-auto max-w-md mx-auto bg-white">
       {/* Example usage: Using dangerouslySetInnerHTML with converted SVG */}
@@ -218,7 +218,8 @@ const BodyDamageGraphic: React.FC<{ noDamage: boolean; svgImage?: string }> = ({
 };
 
 const InteriorDamageGraphic: React.FC<{ noDamage: boolean; svgImage?: string }> = ({ noDamage, svgImage }) => {
-  const svgToUse = svgImage || angularInteriorSvg;
+  if (!svgImage) return null;
+  const svgToUse = svgImage;
   return (
     <div className="w-full h-auto max-w-md mx-auto bg-white">
       <div dangerouslySetInnerHTML={getSvgHtml(svgToUse)} />
@@ -228,7 +229,8 @@ const InteriorDamageGraphic: React.FC<{ noDamage: boolean; svgImage?: string }> 
 
 
 const GlassDamageGraphic: React.FC<{ noDamage: boolean; svgImage?: string }> = ({ noDamage, svgImage }) => {
-  const svgToUse = svgImage || angularGlassSvg;
+  if (!svgImage) return null;
+  const svgToUse = svgImage;
   return (
     <div className="w-full h-auto max-w-md mx-auto bg-white">
       <div dangerouslySetInnerHTML={getSvgHtml(svgToUse)} />
@@ -276,20 +278,38 @@ const DamagePanel: React.FC<{
                   {specialData.noDamageText || 'No Damage'}
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {specialData.damageItems?.map((damage, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-800/50 rounded border border-gray-200 dark:border-gray-700/30"
-                    >
-                      <div className="text-black dark:text-white text-sm">{damage.name || damage}</div>
-                      {damage.cost !== undefined && (
-                        <span className="text-red-500 dark:text-red-400 font-semibold text-sm">
-                          ${damage.cost.toLocaleString()}
-                        </span>
-                      )}
-                    </div>
-                  ))}
+                <div className="appraisal-panel-adjustment-list">
+                  <div className="space-y-0">
+                    {specialData.damageItems?.map((damage, index) => {
+                      const damageText = typeof damage === 'string' ? damage : damage.issue || '';
+                      const damagePrice = typeof damage === 'object' && damage.price ? damage.price : '';
+                      const priceType = typeof damage === 'object' && damage.priceType ? damage.priceType : '';
+                      const priceClass = priceType === 'negative' ? 'negative' : priceType === 'positive' ? 'positive' : '';
+                      const itemClass = priceType === 'negative' ? 'negative' : priceType === 'positive' ? 'positive' : '';
+                      
+                      return (
+                        <div
+                          key={index}
+                          className={`${itemClass} flex items-center justify-between px-2 leading-none ${
+                            itemClass?.includes('negative') ? 'bg-red-50 dark:bg-red-900/10 border-l-2 border-red-500' : ''
+                          } ${
+                            itemClass?.includes('positive') ? 'bg-green-50 dark:bg-green-900/10 border-l-2 border-green-500' : ''
+                          }`}
+                        >
+                          <div className="line-item-with-notes">
+                            <div className="line-item text-black dark:text-white text-sm">
+                              <span>{damageText}</span>
+                            </div>
+                          </div>
+                          {damagePrice && (
+                            <div className="appraisal-panel-adjustment-list-price">
+                              <FormattedPrice price={damagePrice} priceClass={priceClass} className="text-sm" />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>
@@ -489,7 +509,6 @@ export const ConditionReportModal: React.FC<ConditionReportModalProps> = ({
       setReportData(CONDITION_REPORT_TEMP_DATA);
     }
   }, [vin, data, isOpen]);
-
   // Handle Escape key to close modal
   useEffect(() => {
     if (!isOpen) return;

@@ -38,9 +38,9 @@ def ingest_condition_report(data: ConditionReportIn) -> ConditionReportStatus:
                 cur.execute("SELECT id FROM condition_reports WHERE vin = %s", (vin,))
                 existing = cur.fetchone()
                 
-                # Convert sections to JSON
-                sections_json = json.dumps([section.model_dump() for section in data.sections])
-                key_value_pairs_json = json.dumps(data.keyValuePairs) if data.keyValuePairs else None
+                # Convert sections to JSON - model_dump() handles nested models including specialData.svgImage
+                sections_json = json.dumps([section.model_dump(mode='json') for section in data.sections], ensure_ascii=False)
+                key_value_pairs_json = json.dumps(data.keyValuePairs, ensure_ascii=False) if data.keyValuePairs else None
                 
                 if existing:
                     # Update existing record
@@ -228,7 +228,7 @@ def update_condition_report(record_id: int, data: ConditionReportUpdate) -> Opti
                 params = []
                 
                 if data.sections is not None:
-                    sections_json = json.dumps([section.model_dump() for section in data.sections])
+                    sections_json = json.dumps([section.model_dump(mode='json') for section in data.sections], ensure_ascii=False)
                     update_fields.append("sections = %s::jsonb")
                     params.append(sections_json)
                 

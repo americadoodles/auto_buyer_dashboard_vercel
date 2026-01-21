@@ -29,13 +29,25 @@ export interface SpecialData {
   svgImage?: string;
   tread?: Array<{
     title: string;
-    tires: Array<{ position: string; selected: boolean }>;
     price: string;
+    tires: Array<{
+      position: string;
+      circleClass: string;
+      circleState: string;
+    }>;
+    rowClass?: string;
+    titleClass?: string;
   }>;
   wheelIssues?: Array<{
     title: string;
-    tires: Array<{ position: string; selected: boolean }>;
     price: string;
+    tires: Array<{
+      position: string;
+      circleClass: string;
+      circleState: string;
+    }>;
+    rowClass?: string;
+    titleClass?: string;
   }>;
   hasIssues?: boolean;
   issues?: any[];
@@ -349,11 +361,11 @@ const TiresPanel: React.FC<{
           </header>
 
           {tread.map((row, index) => (
-            <div key={index} className="row mb-1">
-              <div className="title text-gray-900 dark:text-white text-sm">{row.title}</div>
+            <div key={index} className={`${row.rowClass || 'row'} mb-1`}>
+              <div className={`${row.titleClass || 'title'} text-gray-900 dark:text-white text-sm`}>{row.title}</div>
               {row.tires.map((tire, tireIndex) => (
                 <div key={tireIndex} className="circle-container">
-                  <div className="circle w-4 h-4 rounded-full border-2 border-gray-300 dark:border-gray-600"></div>
+                  <div className={`${tire.circleClass} w-4 h-4 rounded-full border-2 ${tire.circleState === 'bad' ? 'border-red-500 dark:border-red-400' : tire.circleState === 'good' ? 'border-green-500 dark:border-green-400' : 'border-gray-300 dark:border-gray-600'}`}></div>
                 </div>
               ))}
               <div className="price">
@@ -367,27 +379,65 @@ const TiresPanel: React.FC<{
             <div className="title text-black dark:text-white font-medium text-sm">Wheel Issues</div>
           </header>
 
-          {wheelIssues.map((row, index) => {
-            const hasSelection = row.tires.some(t => t.selected);
-            return (
-              <div key={index} className={`row ${!hasSelection ? 'no-damage' : ''} mb-1`}>
-                <div className="title text-black dark:text-white text-sm"> {row.title} </div>
-                {row.tires.map((tire, tireIndex) => (
-                  <div key={tireIndex} className="circle-container">
-                    <div className="circle w-4 h-4 rounded-full border-2 border-gray-300 dark:border-gray-600"></div>
-                  </div>
-                ))}
-                <div className="price">
-                  <FormattedPrice price={row.price} className="text-sm" />
+          {wheelIssues.map((row, index) => (
+            <div key={index} className={`${row.rowClass || 'row'} mb-1`}>
+              <div className={`${row.titleClass || 'title'} text-black dark:text-white text-sm`}>{row.title}</div>
+              {row.tires.map((tire, tireIndex) => (
+                <div key={tireIndex} className="circle-container">
+                  <div className={`${tire.circleClass} w-4 h-4 rounded-full border-2 ${tire.circleState === 'bad' ? 'border-red-500 dark:border-red-400' : tire.circleState === 'good' ? 'border-green-500 dark:border-green-400' : 'border-gray-300 dark:border-gray-600'}`}></div>
                 </div>
+              ))}
+              <div className="price">
+                <FormattedPrice price={row.price} className="text-sm" />
               </div>
-            );
-          })}
+            </div>
+          ))}
 
-          {/* No Damage section if no wheel issues are selected */}
-          {wheelIssues.length > 0 && !wheelIssues.some(row => row.tires.some(t => t.selected)) && (
+          {/* Damage Items Section */}
+          {specialData.damageItems && specialData.damageItems.length > 0 && (
+            <div className="appraisal-panel-damage-list mt-2">
+              <div className="space-y-0">
+                {specialData.damageItems.map((damage, index) => {
+                  const damageText = typeof damage === 'string' ? damage : damage.issue || '';
+                  const damagePrice = typeof damage === 'object' && damage.price ? damage.price : '';
+                  const priceType = typeof damage === 'object' && damage.priceType ? damage.priceType : '';
+                  const priceClass = priceType === 'negative' ? 'negative' : priceType === 'positive' ? 'positive' : '';
+                  const itemClass = priceType === 'negative' ? 'negative' : priceType === 'positive' ? 'positive' : '';
+                  
+                  return (
+                    <div
+                      key={index}
+                      className={`${itemClass} flex items-center justify-between px-2 py-1 leading-none ${
+                        itemClass?.includes('negative') ? 'bg-red-50 dark:bg-red-900/10 border-l-2 border-red-500' : ''
+                      } ${
+                        itemClass?.includes('positive') ? 'bg-green-50 dark:bg-green-900/10 border-l-2 border-green-500' : ''
+                      }`}
+                    >
+                      <div className="line-item-with-notes">
+                        <div className="line-item text-black dark:text-white text-sm">
+                          <span>{damageText}</span>
+                        </div>
+                      </div>
+                      {damagePrice && (
+                        <div className="appraisal-panel-adjustment-list-price">
+                          <FormattedPrice price={damagePrice} priceClass={priceClass} className="text-sm" />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* No Damage section if no wheel issues are selected and no damage items */}
+          {wheelIssues.length > 0 && 
+           !wheelIssues.some(row => row.tires.some(t => t.circleState === 'bad' || t.circleClass.includes('good'))) &&
+           (!specialData.damageItems || specialData.damageItems.length === 0) && (
             <div className="appraisal-panel-damage-list">
-              <div className="no-items text-center py-1 text-black dark:text-gray-400 text-sm">No Damage</div>
+              <div className="no-items text-center py-1 text-black dark:text-gray-400 text-sm">
+                {specialData.noDamageText || 'No Damage'}
+              </div>
             </div>
           )}
         </div>
@@ -509,6 +559,7 @@ export const ConditionReportModal: React.FC<ConditionReportModalProps> = ({
       setReportData(CONDITION_REPORT_TEMP_DATA);
     }
   }, [vin, data, isOpen]);
+  console.log('report data: ', reportData)
   // Handle Escape key to close modal
   useEffect(() => {
     if (!isOpen) return;

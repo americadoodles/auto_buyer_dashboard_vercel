@@ -158,6 +158,18 @@ body {
   stroke-width: 2px;
 }
 
-.circle.bad {
-  fill: #bc3e12;
+.circle-container .circle {
+  background-color: #e9ecf0;
+  border-radius: 50%;
+  height: 12px;
+  margin: auto;
+  width: 12px;
+}
+
+.circle-container .circle.bad {
+  background-color: #bc3e12;
+}
+.circle-container .circle.good {
+  /* fill: #008064; */
+  background-color: #008064;
 }

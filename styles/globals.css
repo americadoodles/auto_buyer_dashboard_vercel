@@ -129,18 +129,35 @@ body {
   stroke: #fff;
 }
 
-.appraisal-damage-panel .ExtSVGElem.enabled,
 .appraisal-damage-panel .enabled,
-.damage-graphic .ExtSVGElem.enabled,
 .damage-graphic .enabled {
   fill: #07a86833;
   stroke: none;
   stroke-width: 2px;
 }
 
-.appraisal-damage-panel .ExtSVGElem.enabled.selected,
-.damage-graphic .ExtSVGElem.enabled.selected {
+.appraisal-damage-panel .enabled.selected,
+.damage-graphic .enabled.selected {
   stroke: #fff !important;
   fill: #bc3e12 !important;
 }
- 
+
+.appraisal-damage-panel .enabled.minor.selected,
+.damage-graphic .enabled.minor.selected {
+  fill: #edb62480 !important;
+}
+
+.appraisal-damage-panel .minor,
+.damage-graphic .minor {
+  fill: #edb62480 !important;
+}
+
+.appraisal-damage-panel .minor.active,
+.damage-graphic .minor.active {
+  stroke: #edb624;
+  stroke-width: 2px;
+}
+
+.circle.bad {
+  fill: #bc3e12;
+}

@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { ApiService } from '../../../lib/services/api';
-import { CONDITION_REPORT_TEMP_DATA } from '../../../lib/constants/temp';
 import TiresIcon from '../../../assets/svg/tires';
 import GlassIcon from '../../../assets/svg/glass';
 import BodyIcon from '../../../assets/svg/body';
@@ -12,7 +11,6 @@ import MechanicalIcon from '../../../assets/svg/mechanical';
 import AftermarketIcon from '../../../assets/svg/aftermarket';
 import OtherIcon from '../../../assets/svg/other';
 import { convertAngularSvgToReact, getSvgHtml } from '../../../lib/utils/svgConverter';
-import { angularBodySvg, angularInteriorSvg, angularGlassSvg } from '../../../lib/constants/svg';
 // Types - Export for use in other components
 export interface LineItem {
   text: string;
@@ -30,13 +28,25 @@ export interface SpecialData {
   svgImage?: string;
   tread?: Array<{
     title: string;
-    tires: Array<{ position: string; selected: boolean }>;
     price: string;
+    tires: Array<{
+      position: string;
+      circleClass: string;
+      circleState: string;
+    }>;
+    rowClass?: string;
+    titleClass?: string;
   }>;
   wheelIssues?: Array<{
     title: string;
-    tires: Array<{ position: string; selected: boolean }>;
     price: string;
+    tires: Array<{
+      position: string;
+      circleClass: string;
+      circleState: string;
+    }>;
+    rowClass?: string;
+    titleClass?: string;
   }>;
   hasIssues?: boolean;
   issues?: any[];
@@ -57,9 +67,41 @@ export interface Section {
   headerPriceClass: string;
 }
 
+export interface VehicleInfo {
+  yearMakeModel: string;
+  style: string;
+  vin: string;
+  miles: string;
+  hasAutocheck?: boolean;
+  instantOffer: string;
+  priceLabel: string;
+}
+
+export interface EquipmentOption {
+  index: number;
+  header: string;
+  standardEquipment: string[];
+  commonProblems: string;
+}
+
+export interface PricingBreakdownRow {
+  label: string;
+  value: string;
+  isNegative: boolean;
+}
+
+export interface PricingBreakdown {
+  index: number;
+  header: string;
+  rows: PricingBreakdownRow[];
+}
+
 export interface ConditionReportData {
   sections: Section[];
   keyValuePairs?: Record<string, string>;
+  vehicleInfo?: VehicleInfo;
+  equipmentOptions?: EquipmentOption[];
+  pricingBreakdown?: PricingBreakdown[];
 }
 
 interface ConditionReportModalProps {
@@ -170,31 +212,43 @@ const StandardPanel: React.FC<{
         {section.lineItems.length > 0 ? (
           <div className="appraisal-panel-adjustment-list">
             <ul className="space-y-0">
-              {section.lineItems.map((item, index) => (
-                <li
-                  key={index}
-                  className={`${item.itemClass || ''} flex items-center justify-between px-2 leading-none ${
-                    item.itemClass?.includes('negative') ? 'bg-red-50 dark:bg-red-900/10 border-l-2 border-red-500' : ''
-                  } ${
-                    item.itemClass?.includes('positive') ? 'bg-green-50 dark:bg-green-900/10 border-l-2 border-green-500' : ''
-                  } ${
-                    item.itemClass?.includes('not-selected') ? 'opacity-60' : ''
-                  }`}
-                >
-                  <div className="line-item-with-notes">
-                    <div className="line-item text-black dark:text-white text-sm">
-                      {item.text.includes('<span>') ? (
-                        <span dangerouslySetInnerHTML={{ __html: item.text }} />
-                      ) : (
-                        <span>{item.text}</span>
-                      )}
+              {section.lineItems.map((item, index) => {
+                const priceClass = item.priceClass || '';
+                const textColorClass = priceClass.includes('positive') || item.price.includes('+') ? 'text-green-600 dark:text-green-400' : 
+                                     priceClass.includes('negative') || item.price.includes('-') ? 'text-red-600 dark:text-red-400' : 
+                                     'text-gray-600 dark:text-gray-400';
+                const dotColorClass = textColorClass.replace(/text-/g, 'bg-');
+                
+                // Remove bullet character (•) from text if present
+                const cleanText = item.text.replace(/^•\s*/, '');
+                
+                return (
+                  <li
+                    key={index}
+                    className={`${item.itemClass || ''} flex items-center justify-between px-2 leading-none ${
+                      item.itemClass?.includes('negative') ? 'bg-red-50 dark:bg-red-900/10' : ''
+                    } ${
+                      item.itemClass?.includes('positive') ? 'bg-green-50 dark:bg-green-900/10' : ''
+                    } ${
+                      item.itemClass?.includes('not-selected') ? 'opacity-60' : ''
+                    }`}
+                  >
+                    <div className="line-item-with-notes">
+                      <div className={`line-item ${textColorClass} text-sm flex items-center gap-2`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${dotColorClass} flex-shrink-0`}></span>
+                        {item.text.includes('<span>') ? (
+                          <span dangerouslySetInnerHTML={{ __html: cleanText }} />
+                        ) : (
+                          <span>{cleanText}</span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <div className="appraisal-panel-adjustment-list-price">
-                    <FormattedPrice price={item.price} priceClass={item.priceClass || ''} className="text-sm" />
-                  </div>
-                </li>
-              ))}
+                    <div className="appraisal-panel-adjustment-list-price">
+                      <FormattedPrice price={item.price} priceClass={priceClass} className="text-sm" />
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         ) : null}
@@ -206,7 +260,8 @@ const StandardPanel: React.FC<{
 // Body Damage SVG Component - Example of Angular SVG string
 
 const BodyDamageGraphic: React.FC<{ noDamage: boolean; svgImage?: string }> = ({ noDamage, svgImage }) => {
-  const svgToUse = svgImage || angularBodySvg;
+  if (!svgImage) return null;
+  const svgToUse = svgImage;
   return (
     <div className="w-full h-auto max-w-md mx-auto bg-white">
       {/* Example usage: Using dangerouslySetInnerHTML with converted SVG */}
@@ -218,7 +273,8 @@ const BodyDamageGraphic: React.FC<{ noDamage: boolean; svgImage?: string }> = ({
 };
 
 const InteriorDamageGraphic: React.FC<{ noDamage: boolean; svgImage?: string }> = ({ noDamage, svgImage }) => {
-  const svgToUse = svgImage || angularInteriorSvg;
+  if (!svgImage) return null;
+  const svgToUse = svgImage;
   return (
     <div className="w-full h-auto max-w-md mx-auto bg-white">
       <div dangerouslySetInnerHTML={getSvgHtml(svgToUse)} />
@@ -228,7 +284,8 @@ const InteriorDamageGraphic: React.FC<{ noDamage: boolean; svgImage?: string }> 
 
 
 const GlassDamageGraphic: React.FC<{ noDamage: boolean; svgImage?: string }> = ({ noDamage, svgImage }) => {
-  const svgToUse = svgImage || angularGlassSvg;
+  if (!svgImage) return null;
+  const svgToUse = svgImage;
   return (
     <div className="w-full h-auto max-w-md mx-auto bg-white">
       <div dangerouslySetInnerHTML={getSvgHtml(svgToUse)} />
@@ -276,20 +333,45 @@ const DamagePanel: React.FC<{
                   {specialData.noDamageText || 'No Damage'}
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {specialData.damageItems?.map((damage, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-800/50 rounded border border-gray-200 dark:border-gray-700/30"
-                    >
-                      <div className="text-black dark:text-white text-sm">{damage.name || damage}</div>
-                      {damage.cost !== undefined && (
-                        <span className="text-red-500 dark:text-red-400 font-semibold text-sm">
-                          ${damage.cost.toLocaleString()}
-                        </span>
-                      )}
-                    </div>
-                  ))}
+                <div className="appraisal-panel-adjustment-list">
+                  <div className="space-y-0">
+                    {specialData.damageItems?.map((damage, index) => {
+                      const damageText = typeof damage === 'string' ? damage : damage.issue || '';
+                      // Remove bullet character (•) from text if present
+                      const cleanDamageText = damageText.replace(/^•\s*/, '');
+                      const damagePrice = typeof damage === 'object' && damage.price ? damage.price : '';
+                      const priceType = typeof damage === 'object' && damage.priceType ? damage.priceType : '';
+                      const priceClass = priceType === 'negative' ? 'negative' : priceType === 'positive' ? 'positive' : '';
+                      const itemClass = priceType === 'negative' ? 'negative' : priceType === 'positive' ? 'positive' : '';
+                      const textColorClass = priceType === 'negative' ? 'text-red-600 dark:text-red-400' : 
+                                           priceType === 'positive' ? 'text-green-600 dark:text-green-400' : 
+                                           'text-gray-600 dark:text-gray-400';
+                      const dotColorClass = textColorClass.replace(/text-/g, 'bg-');
+                      
+                      return (
+                        <div
+                          key={index}
+                          className={`${itemClass} flex items-center justify-between px-2 leading-none ${
+                            itemClass?.includes('negative') ? 'bg-red-50 dark:bg-red-900/10' : ''
+                          } ${
+                            itemClass?.includes('positive') ? 'bg-green-50 dark:bg-green-900/10' : ''
+                          }`}
+                        >
+                          <div className="line-item-with-notes">
+                            <div className={`line-item ${textColorClass} text-sm flex items-center gap-2`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${dotColorClass} flex-shrink-0`}></span>
+                              <span>{cleanDamageText}</span>
+                            </div>
+                          </div>
+                          {damagePrice && (
+                            <div className="appraisal-panel-adjustment-list-price">
+                              <FormattedPrice price={damagePrice} priceClass={priceClass} className="text-sm" />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>
@@ -319,8 +401,10 @@ const TiresPanel: React.FC<{
         />
         <div className="appraisal-panel-content py-3 px-5">
           {/* Tread Section */}
-          <header className="mb-2 pb-1 border-b border-gray-200 dark:border-gray-700/50">
-            <div className="title text-gray-900 dark:text-white font-medium text-sm">Tread</div>
+          <header className="mb-2 pb-1">
+            <div className="title text-gray-900 dark:text-white font-medium text-sm">
+              Tread
+            </div>
             <div className="tire text-gray-600 dark:text-gray-400 text-xs text-center">FL</div>
             <div className="tire text-gray-600 dark:text-gray-400 text-xs text-center">FR</div>
             <div className="tire text-gray-600 dark:text-gray-400 text-xs text-center">RL</div>
@@ -329,11 +413,11 @@ const TiresPanel: React.FC<{
           </header>
 
           {tread.map((row, index) => (
-            <div key={index} className="row mb-1">
-              <div className="title text-gray-900 dark:text-white text-sm">{row.title}</div>
+            <div key={index} className={`${row.rowClass || 'row'} mb-1`}>
+              <div className={`${row.titleClass || 'title'} text-gray-900 dark:text-white text-sm`}>{row.title}</div>
               {row.tires.map((tire, tireIndex) => (
                 <div key={tireIndex} className="circle-container">
-                  <div className="circle w-4 h-4 rounded-full border-2 border-gray-300 dark:border-gray-600"></div>
+                  <div className={`${tire.circleClass} w-4 h-4 rounded-full border-2 ${tire.circleState === 'bad' ? 'border-red-500 dark:border-red-400' : tire.circleState === 'good' ? 'border-green-500 dark:border-green-400' : 'border-gray-300 dark:border-gray-600'}`}></div>
                 </div>
               ))}
               <div className="price">
@@ -343,31 +427,78 @@ const TiresPanel: React.FC<{
           ))}
 
           {/* Wheel Issues Section */}
-          <header className="wheels mt-2 mb-2 pb-1 border-b border-gray-200 dark:border-gray-700/50">
-            <div className="title text-black dark:text-white font-medium text-sm">Wheel Issues</div>
+          <header className="wheels mt-2 mb-2 pb-1">
+            <div className="title text-black dark:text-white font-medium text-sm">
+              Wheel Issues
+            </div>
           </header>
 
-          {wheelIssues.map((row, index) => {
-            const hasSelection = row.tires.some(t => t.selected);
-            return (
-              <div key={index} className={`row ${!hasSelection ? 'no-damage' : ''} mb-1`}>
-                <div className="title text-black dark:text-white text-sm"> {row.title} </div>
-                {row.tires.map((tire, tireIndex) => (
-                  <div key={tireIndex} className="circle-container">
-                    <div className="circle w-4 h-4 rounded-full border-2 border-gray-300 dark:border-gray-600"></div>
-                  </div>
-                ))}
-                <div className="price">
-                  <FormattedPrice price={row.price} className="text-sm" />
+          {wheelIssues.map((row, index) => (
+            <div key={index} className={`${row.rowClass || 'row'} mb-1`}>
+              <div className={`${row.titleClass || 'title'} text-black dark:text-white text-sm`}>{row.title}</div>
+              {row.tires.map((tire, tireIndex) => (
+                <div key={tireIndex} className="circle-container">
+                  <div className={`${tire.circleClass} w-4 h-4 rounded-full border-2 ${tire.circleState === 'bad' ? 'border-red-500 dark:border-red-400' : tire.circleState === 'good' ? 'border-green-500 dark:border-green-400' : 'border-gray-300 dark:border-gray-600'}`}></div>
                 </div>
+              ))}
+              <div className="price">
+                <FormattedPrice price={row.price} className="text-sm" />
               </div>
-            );
-          })}
+            </div>
+          ))}
 
-          {/* No Damage section if no wheel issues are selected */}
-          {wheelIssues.length > 0 && !wheelIssues.some(row => row.tires.some(t => t.selected)) && (
+          {/* Damage Items Section */}
+          {specialData.damageItems && specialData.damageItems.length > 0 && (
+            <div className="appraisal-panel-damage-list mt-2">
+              <div className="space-y-0">
+                {specialData.damageItems.map((damage, index) => {
+                  const damageText = typeof damage === 'string' ? damage : damage.issue || '';
+                  // Remove bullet character (•) from text if present
+                  const cleanDamageText = damageText.replace(/^•\s*/, '').replace(/^•/, '');
+                  const damagePrice = typeof damage === 'object' && damage.price ? damage.price : '';
+                  const priceType = typeof damage === 'object' && damage.priceType ? damage.priceType : '';
+                  const priceClass = priceType === 'negative' ? 'negative' : priceType === 'positive' ? 'positive' : '';
+                  const itemClass = priceType === 'negative' ? 'negative' : priceType === 'positive' ? 'positive' : '';
+                  const textColorClass = priceType === 'negative' ? 'text-red-600 dark:text-red-400' : 
+                                       priceType === 'positive' ? 'text-green-600 dark:text-green-400' : 
+                                       'text-gray-600 dark:text-gray-400';
+                  const dotColorClass = textColorClass.replace(/text-/g, 'bg-');
+                  
+                  return (
+                    <div
+                      key={index}
+                      className={`${itemClass} flex items-center justify-between px-2 py-1 leading-none ${
+                        itemClass?.includes('negative') ? 'bg-red-50 dark:bg-red-900/10' : ''
+                      } ${
+                        itemClass?.includes('positive') ? 'bg-green-50 dark:bg-green-900/10' : ''
+                      }`}
+                    >
+                      <div className="line-item-with-notes">
+                        <div className={`line-item ${textColorClass} text-sm flex items-center gap-2`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${dotColorClass} flex-shrink-0`}></span>
+                          <span>{cleanDamageText}</span>
+                        </div>
+                      </div>
+                      {damagePrice && (
+                        <div className="appraisal-panel-adjustment-list-price">
+                          <FormattedPrice price={damagePrice} priceClass={priceClass} className="text-sm" />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* No Damage section if no wheel issues are selected and no damage items */}
+          {wheelIssues.length > 0 && 
+           !wheelIssues.some(row => row.tires.some(t => t.circleState === 'bad' || t.circleClass.includes('good'))) &&
+           (!specialData.damageItems || specialData.damageItems.length === 0) && (
             <div className="appraisal-panel-damage-list">
-              <div className="no-items text-center py-1 text-black dark:text-gray-400 text-sm">No Damage</div>
+              <div className="no-items text-center py-1 text-black dark:text-gray-400 text-sm">
+                {specialData.noDamageText || 'No Damage'}
+              </div>
             </div>
           )}
         </div>
@@ -472,6 +603,9 @@ export const ConditionReportModal: React.FC<ConditionReportModalProps> = ({
           const transformedData: ConditionReportData = {
             sections: response.sections || [],
             keyValuePairs: response.key_value_pairs || undefined,
+            vehicleInfo: response.vehicle_info || undefined,
+            equipmentOptions: response.equipment_options || undefined,
+            pricingBreakdown: response.pricing_breakdown || undefined,
           };
           setReportData(transformedData);
         })
@@ -479,17 +613,12 @@ export const ConditionReportModal: React.FC<ConditionReportModalProps> = ({
           console.error('Error fetching condition report:', err);
           setError(err.message || 'Failed to load condition report');
           // Fall back to temp data if fetch fails
-          setReportData(CONDITION_REPORT_TEMP_DATA);
         })
         .finally(() => {
           setIsLoading(false);
         });
-    } else if (!data && !vin) {
-      // No VIN and no data provided, use temp data
-      setReportData(CONDITION_REPORT_TEMP_DATA);
     }
   }, [vin, data, isOpen]);
-
   // Handle Escape key to close modal
   useEffect(() => {
     if (!isOpen) return;
@@ -536,7 +665,110 @@ export const ConditionReportModal: React.FC<ConditionReportModalProps> = ({
                   </div>
                 </div>
               ) : reportData && reportData.sections.length > 0 ? (
-                <div className="appraisal-adjustments-panels flex flex-col gap-2">
+                <div className="appraisal-adjustments-panels flex flex-col gap-4">
+                  {/* Vehicle Info Section */}
+                  {reportData.vehicleInfo && (
+                    <div className="bg-white dark:bg-[#1a1d29] rounded-lg shadow-sm border border-gray-200 dark:border-gray-700/50 overflow-hidden p-4">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        {/* Left Column: Vehicle Details */}
+                        <section>
+                          <div className="year-make-model text-lg font-semibold text-black dark:text-white mb-1">
+                            {reportData.vehicleInfo.yearMakeModel}
+                          </div>
+                          <div className="style text-sm text-gray-600 dark:text-gray-400 mb-2">
+                            {reportData.vehicleInfo.style}
+                          </div>
+                          <div className="vin-mi-reports text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2 flex-wrap">
+                            <span>{reportData.vehicleInfo.vin}</span>
+                            <span className="pipe text-gray-400">|</span>
+                            <span className="miles">{reportData.vehicleInfo.miles}</span>
+                            {reportData.vehicleInfo.hasAutocheck && (
+                              <>
+                                <span className="pipe text-gray-400">|</span>
+                                <span className="text-blue-600 dark:text-blue-400">AutoCheck Available</span>
+                              </>
+                            )}
+                          </div>
+                        </section>
+                        
+                        {/* Right Column: Instant Offer */}
+                        {reportData.vehicleInfo.instantOffer && (
+                          <section className="flex items-start justify-end">
+                            <div className="price-label-container text-right">
+                              <label className="text-sm text-gray-600 dark:text-gray-400 mb-2 block">
+                                {reportData.vehicleInfo.priceLabel || 'Instant Offer'}
+                              </label>
+                              <div className="price text-3xl font-bold text-black dark:text-white">
+                                {reportData.vehicleInfo.instantOffer}
+                              </div>
+                              <div className="price-description"></div>
+                            </div>
+                          </section>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Equipment Options and Pricing Breakdown */}
+                  {(reportData.equipmentOptions && reportData.equipmentOptions.length > 0) || 
+                   (reportData.pricingBreakdown && reportData.pricingBreakdown.length > 0) ? (
+                    <div className="flex justify-between gap-1">
+                      {/* Equipment Options */}
+                      {reportData.equipmentOptions && reportData.equipmentOptions.map((equipment, index) => (
+                        <div key={index} className="bg-white dark:bg-[#1a1d29] rounded-lg shadow-sm border border-gray-200 dark:border-gray-700/50 overflow-hidden p-4" style={{ width: '100%' }}>
+                          <header className="text-base font-semibold text-black dark:text-white mb-3">
+                            {equipment.header}
+                          </header>
+                          {equipment.standardEquipment && equipment.standardEquipment.length > 0 && (
+                            <div className="mb-4">
+                              <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Standard Equipment:
+                              </div>
+                              <div className="options-list space-y-1">
+                                {equipment.standardEquipment.map((option, optIndex) => (
+                                  <div key={optIndex} className="option text-sm text-gray-600 dark:text-gray-400 flex items-start gap-2">
+                                    <span className="bullet text-gray-400">•</span>
+                                    <span>{option}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {equipment.commonProblems && (
+                            <div className="row common-problems">
+                              <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">
+                                Common Problems:
+                              </label>
+                              <div className="text-sm text-gray-600 dark:text-gray-400">
+                                {equipment.commonProblems}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+
+                      {/* Pricing Breakdown */}
+                      {reportData.pricingBreakdown && reportData.pricingBreakdown.map((breakdown, index) => (
+                        <div key={index} className="bg-white dark:bg-[#1a1d29] rounded-lg shadow-sm border border-gray-200 dark:border-gray-700/50 overflow-hidden p-4" style={{ minWidth: '350px', width: '350px' }}>
+                          <header className="text-base font-semibold text-black dark:text-white mb-3">
+                            {breakdown.header}
+                          </header>
+                          <div className="space-y-2">
+                            {breakdown.rows.map((row, rowIndex) => (
+                              <div key={rowIndex} className="row flex items-center justify-between">
+                                <div className="text-sm text-gray-600 dark:text-gray-400">{row.label}</div>
+                                <div className={`value text-sm font-medium ${row.isNegative ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'}`}>
+                                  {row.value}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+
+                  {/* Sections Grid */}
                   <div className="flex flex-row gap-2">
                     {Array.from({ length: numColumns }, (_, colIndex) => (
                       <div key={colIndex} className="flex-1 flex flex-col gap-2">

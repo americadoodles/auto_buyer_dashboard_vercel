@@ -31,7 +31,7 @@ def ingest(
     """
     Create or update condition report data for a VIN (upsert operation).
     If a record with the same VIN exists, it will be updated; otherwise, a new record will be created.
-    Accepts condition report data with sections and key-value pairs.
+    Accepts condition report data with sections, key-value pairs, vehicle info, equipment options, and pricing breakdown.
     """
     result = ingest_condition_report(data)
     if not result.success:

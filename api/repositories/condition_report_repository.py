@@ -38,9 +38,12 @@ def ingest_condition_report(data: ConditionReportIn) -> ConditionReportStatus:
                 cur.execute("SELECT id FROM condition_reports WHERE vin = %s", (vin,))
                 existing = cur.fetchone()
                 
-                # Convert sections to JSON
-                sections_json = json.dumps([section.model_dump() for section in data.sections])
-                key_value_pairs_json = json.dumps(data.keyValuePairs) if data.keyValuePairs else None
+                # Convert sections to JSON - model_dump() handles nested models including specialData.svgImage
+                sections_json = json.dumps([section.model_dump(mode='json') for section in data.sections], ensure_ascii=False)
+                key_value_pairs_json = json.dumps(data.keyValuePairs, ensure_ascii=False) if data.keyValuePairs else None
+                vehicle_info_json = json.dumps(data.vehicleInfo, ensure_ascii=False) if data.vehicleInfo else None
+                equipment_options_json = json.dumps(data.equipmentOptions, ensure_ascii=False) if data.equipmentOptions else None
+                pricing_breakdown_json = json.dumps(data.pricingBreakdown, ensure_ascii=False) if data.pricingBreakdown else None
                 
                 if existing:
                     # Update existing record
@@ -48,10 +51,13 @@ def ingest_condition_report(data: ConditionReportIn) -> ConditionReportStatus:
                     cur.execute("""
                         UPDATE condition_reports
                         SET sections = %s::jsonb,
-                            key_value_pairs = %s::jsonb
+                            key_value_pairs = %s::jsonb,
+                            vehicle_info = %s::jsonb,
+                            equipment_options = %s::jsonb,
+                            pricing_breakdown = %s::jsonb
                         WHERE vin = %s
                         RETURNING id
-                    """, (sections_json, key_value_pairs_json, vin))
+                    """, (sections_json, key_value_pairs_json, vehicle_info_json, equipment_options_json, pricing_breakdown_json, vin))
                     conn.commit()
                     logger.info(f"Updated condition_report for VIN: {vin}")
                     return ConditionReportStatus(
@@ -63,10 +69,10 @@ def ingest_condition_report(data: ConditionReportIn) -> ConditionReportStatus:
                 else:
                     # Insert new record
                     cur.execute("""
-                        INSERT INTO condition_reports (vin, sections, key_value_pairs)
-                        VALUES (%s, %s::jsonb, %s::jsonb)
+                        INSERT INTO condition_reports (vin, sections, key_value_pairs, vehicle_info, equipment_options, pricing_breakdown)
+                        VALUES (%s, %s::jsonb, %s::jsonb, %s::jsonb, %s::jsonb, %s::jsonb)
                         RETURNING id
-                    """, (vin, sections_json, key_value_pairs_json))
+                    """, (vin, sections_json, key_value_pairs_json, vehicle_info_json, equipment_options_json, pricing_breakdown_json))
                     record_id = cur.fetchone()[0]
                     conn.commit()
                     logger.info(f"Created condition_report for VIN: {vin}")
@@ -102,7 +108,7 @@ def get_condition_report_by_vin(vin: str) -> Optional[ConditionReportOut]:
             
             with conn.cursor() as cur:
                 cur.execute("""
-                    SELECT id, vin, sections, key_value_pairs, created_at, updated_at
+                    SELECT id, vin, sections, key_value_pairs, vehicle_info, equipment_options, pricing_breakdown, created_at, updated_at
                     FROM condition_reports
                     WHERE vin = %s
                     ORDER BY created_at DESC
@@ -116,8 +122,11 @@ def get_condition_report_by_vin(vin: str) -> Optional[ConditionReportOut]:
                         vin=row[1],
                         sections=row[2] if isinstance(row[2], list) else json.loads(row[2]) if isinstance(row[2], str) else row[2],
                         key_value_pairs=row[3] if isinstance(row[3], dict) else json.loads(row[3]) if isinstance(row[3], str) else row[3],
-                        created_at=row[4],
-                        updated_at=row[5]
+                        vehicle_info=row[4] if isinstance(row[4], dict) else json.loads(row[4]) if isinstance(row[4], str) and row[4] else None,
+                        equipment_options=row[5] if isinstance(row[5], list) else json.loads(row[5]) if isinstance(row[5], str) and row[5] else None,
+                        pricing_breakdown=row[6] if isinstance(row[6], list) else json.loads(row[6]) if isinstance(row[6], str) and row[6] else None,
+                        created_at=row[7],
+                        updated_at=row[8]
                     )
                 return None
     except Exception as e:
@@ -138,7 +147,7 @@ def get_condition_report_by_id(record_id: int) -> Optional[ConditionReportOut]:
             
             with conn.cursor() as cur:
                 cur.execute("""
-                    SELECT id, vin, sections, key_value_pairs, created_at, updated_at
+                    SELECT id, vin, sections, key_value_pairs, vehicle_info, equipment_options, pricing_breakdown, created_at, updated_at
                     FROM condition_reports
                     WHERE id = %s
                 """, (record_id,))
@@ -150,8 +159,11 @@ def get_condition_report_by_id(record_id: int) -> Optional[ConditionReportOut]:
                         vin=row[1],
                         sections=row[2] if isinstance(row[2], list) else json.loads(row[2]) if isinstance(row[2], str) else row[2],
                         key_value_pairs=row[3] if isinstance(row[3], dict) else json.loads(row[3]) if isinstance(row[3], str) else row[3],
-                        created_at=row[4],
-                        updated_at=row[5]
+                        vehicle_info=row[4] if isinstance(row[4], dict) else json.loads(row[4]) if isinstance(row[4], str) and row[4] else None,
+                        equipment_options=row[5] if isinstance(row[5], list) else json.loads(row[5]) if isinstance(row[5], str) and row[5] else None,
+                        pricing_breakdown=row[6] if isinstance(row[6], list) else json.loads(row[6]) if isinstance(row[6], str) and row[6] else None,
+                        created_at=row[7],
+                        updated_at=row[8]
                     )
                 return None
     except Exception as e:
@@ -172,7 +184,7 @@ def list_condition_reports(limit: Optional[int] = None, offset: Optional[int] = 
             
             with conn.cursor() as cur:
                 query = """
-                    SELECT id, vin, sections, key_value_pairs, created_at, updated_at
+                    SELECT id, vin, sections, key_value_pairs, vehicle_info, equipment_options, pricing_breakdown, created_at, updated_at
                     FROM condition_reports
                     ORDER BY created_at DESC
                 """
@@ -196,8 +208,11 @@ def list_condition_reports(limit: Optional[int] = None, offset: Optional[int] = 
                         vin=row[1],
                         sections=row[2] if isinstance(row[2], list) else json.loads(row[2]) if isinstance(row[2], str) else row[2],
                         key_value_pairs=row[3] if isinstance(row[3], dict) else json.loads(row[3]) if isinstance(row[3], str) else row[3],
-                        created_at=row[4],
-                        updated_at=row[5]
+                        vehicle_info=row[4] if isinstance(row[4], dict) else json.loads(row[4]) if isinstance(row[4], str) and row[4] else None,
+                        equipment_options=row[5] if isinstance(row[5], list) else json.loads(row[5]) if isinstance(row[5], str) and row[5] else None,
+                        pricing_breakdown=row[6] if isinstance(row[6], list) else json.loads(row[6]) if isinstance(row[6], str) and row[6] else None,
+                        created_at=row[7],
+                        updated_at=row[8]
                     ))
                 
                 return results
@@ -228,14 +243,29 @@ def update_condition_report(record_id: int, data: ConditionReportUpdate) -> Opti
                 params = []
                 
                 if data.sections is not None:
-                    sections_json = json.dumps([section.model_dump() for section in data.sections])
+                    sections_json = json.dumps([section.model_dump(mode='json') for section in data.sections], ensure_ascii=False)
                     update_fields.append("sections = %s::jsonb")
                     params.append(sections_json)
                 
                 if data.keyValuePairs is not None:
-                    key_value_pairs_json = json.dumps(data.keyValuePairs)
+                    key_value_pairs_json = json.dumps(data.keyValuePairs, ensure_ascii=False)
                     update_fields.append("key_value_pairs = %s::jsonb")
                     params.append(key_value_pairs_json)
+                
+                if data.vehicleInfo is not None:
+                    vehicle_info_json = json.dumps(data.vehicleInfo, ensure_ascii=False)
+                    update_fields.append("vehicle_info = %s::jsonb")
+                    params.append(vehicle_info_json)
+                
+                if data.equipmentOptions is not None:
+                    equipment_options_json = json.dumps(data.equipmentOptions, ensure_ascii=False)
+                    update_fields.append("equipment_options = %s::jsonb")
+                    params.append(equipment_options_json)
+                
+                if data.pricingBreakdown is not None:
+                    pricing_breakdown_json = json.dumps(data.pricingBreakdown, ensure_ascii=False)
+                    update_fields.append("pricing_breakdown = %s::jsonb")
+                    params.append(pricing_breakdown_json)
                 
                 if not update_fields:
                     # No fields to update, return existing record

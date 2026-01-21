@@ -129,11 +129,47 @@ body {
   stroke: #fff;
 }
 
-.appraisal-damage-panel .ExtSVGElem.enabled,
 .appraisal-damage-panel .enabled,
-.damage-graphic .ExtSVGElem.enabled,
 .damage-graphic .enabled {
   fill: #07a86833;
   stroke: none;
   stroke-width: 2px;
+}
+
+.appraisal-damage-panel .enabled.selected,
+.damage-graphic .enabled.selected {
+  stroke: #fff !important;
+  fill: #bc3e12 !important;
+}
+
+.appraisal-damage-panel .enabled.minor.selected,
+.damage-graphic .enabled.minor.selected {
+  fill: #edb62480 !important;
+}
+
+.appraisal-damage-panel .minor,
+.damage-graphic .minor {
+  fill: #edb62480 !important;
+}
+
+.appraisal-damage-panel .minor.active,
+.damage-graphic .minor.active {
+  stroke: #edb624;
+  stroke-width: 2px;
+}
+
+.circle-container .circle {
+  background-color: #e9ecf0;
+  border-radius: 50%;
+  height: 12px;
+  margin: auto;
+  width: 12px;
+}
+
+.circle-container .circle.bad {
+  background-color: #bc3e12;
+}
+.circle-container .circle.good {
+  /* fill: #008064; */
+  background-color: #008064;
 }

@@ -298,6 +298,9 @@ const DamagePanel: React.FC<{
                       const priceType = typeof damage === 'object' && damage.priceType ? damage.priceType : '';
                       const priceClass = priceType === 'negative' ? 'negative' : priceType === 'positive' ? 'positive' : '';
                       const itemClass = priceType === 'negative' ? 'negative' : priceType === 'positive' ? 'positive' : '';
+                      const textColorClass = priceType === 'negative' ? 'text-red-600 dark:text-red-400' : 
+                                           priceType === 'positive' ? 'text-green-600 dark:text-green-400' : 
+                                           'text-gray-600 dark:text-gray-400';
                       
                       return (
                         <div
@@ -309,7 +312,7 @@ const DamagePanel: React.FC<{
                           }`}
                         >
                           <div className="line-item-with-notes">
-                            <div className="line-item text-black dark:text-white text-sm">
+                            <div className={`line-item ${textColorClass} text-sm`}>
                               <span>{damageText}</span>
                             </div>
                           </div>
@@ -351,8 +354,11 @@ const TiresPanel: React.FC<{
         />
         <div className="appraisal-panel-content py-3 px-5">
           {/* Tread Section */}
-          <header className="mb-2 pb-1 border-b border-gray-200 dark:border-gray-700/50">
-            <div className="title text-gray-900 dark:text-white font-medium text-sm">Tread</div>
+          <header className="mb-2 pb-1">
+            <div className="title text-gray-900 dark:text-white font-medium text-sm flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-gray-600 dark:bg-gray-400"></span>
+              Tread
+            </div>
             <div className="tire text-gray-600 dark:text-gray-400 text-xs text-center">FL</div>
             <div className="tire text-gray-600 dark:text-gray-400 text-xs text-center">FR</div>
             <div className="tire text-gray-600 dark:text-gray-400 text-xs text-center">RL</div>
@@ -375,8 +381,11 @@ const TiresPanel: React.FC<{
           ))}
 
           {/* Wheel Issues Section */}
-          <header className="wheels mt-2 mb-2 pb-1 border-b border-gray-200 dark:border-gray-700/50">
-            <div className="title text-black dark:text-white font-medium text-sm">Wheel Issues</div>
+          <header className="wheels mt-2 mb-2 pb-1">
+            <div className="title text-black dark:text-white font-medium text-sm flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-gray-600 dark:bg-gray-400"></span>
+              Wheel Issues
+            </div>
           </header>
 
           {wheelIssues.map((row, index) => (
@@ -403,6 +412,9 @@ const TiresPanel: React.FC<{
                   const priceType = typeof damage === 'object' && damage.priceType ? damage.priceType : '';
                   const priceClass = priceType === 'negative' ? 'negative' : priceType === 'positive' ? 'positive' : '';
                   const itemClass = priceType === 'negative' ? 'negative' : priceType === 'positive' ? 'positive' : '';
+                  const textColorClass = priceType === 'negative' ? 'text-red-600 dark:text-red-400' : 
+                                       priceType === 'positive' ? 'text-green-600 dark:text-green-400' : 
+                                       'text-gray-600 dark:text-gray-400';
                   
                   return (
                     <div
@@ -414,7 +426,7 @@ const TiresPanel: React.FC<{
                       }`}
                     >
                       <div className="line-item-with-notes">
-                        <div className="line-item text-black dark:text-white text-sm">
+                        <div className={`line-item ${textColorClass} text-sm`}>
                           <span>{damageText}</span>
                         </div>
                       </div>

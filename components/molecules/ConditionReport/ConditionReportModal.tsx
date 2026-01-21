@@ -68,9 +68,41 @@ export interface Section {
   headerPriceClass: string;
 }
 
+export interface VehicleInfo {
+  yearMakeModel: string;
+  style: string;
+  vin: string;
+  miles: string;
+  hasAutocheck?: boolean;
+  instantOffer: string;
+  priceLabel: string;
+}
+
+export interface EquipmentOption {
+  index: number;
+  header: string;
+  standardEquipment: string[];
+  commonProblems: string;
+}
+
+export interface PricingBreakdownRow {
+  label: string;
+  value: string;
+  isNegative: boolean;
+}
+
+export interface PricingBreakdown {
+  index: number;
+  header: string;
+  rows: PricingBreakdownRow[];
+}
+
 export interface ConditionReportData {
   sections: Section[];
   keyValuePairs?: Record<string, string>;
+  vehicleInfo?: VehicleInfo;
+  equipmentOptions?: EquipmentOption[];
+  pricingBreakdown?: PricingBreakdown[];
 }
 
 interface ConditionReportModalProps {
@@ -568,10 +600,14 @@ export const ConditionReportModal: React.FC<ConditionReportModalProps> = ({
       setError(null);
       ApiService.getConditionReport(vin)
         .then((response) => {
+          console.log('response: ', response);
           // Transform API response to match ConditionReportData format
           const transformedData: ConditionReportData = {
             sections: response.sections || [],
             keyValuePairs: response.key_value_pairs || undefined,
+            vehicleInfo: response.vehicle_info || undefined,
+            equipmentOptions: response.equipment_options || undefined,
+            pricingBreakdown: response.pricing_breakdown || undefined,
           };
           setReportData(transformedData);
         })
@@ -636,7 +672,110 @@ export const ConditionReportModal: React.FC<ConditionReportModalProps> = ({
                   </div>
                 </div>
               ) : reportData && reportData.sections.length > 0 ? (
-                <div className="appraisal-adjustments-panels flex flex-col gap-2">
+                <div className="appraisal-adjustments-panels flex flex-col gap-4">
+                  {/* Vehicle Info Section */}
+                  {reportData.vehicleInfo && (
+                    <div className="bg-white dark:bg-[#1a1d29] rounded-lg shadow-sm border border-gray-200 dark:border-gray-700/50 overflow-hidden p-4">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        {/* Left Column: Vehicle Details */}
+                        <section>
+                          <div className="year-make-model text-lg font-semibold text-black dark:text-white mb-1">
+                            {reportData.vehicleInfo.yearMakeModel}
+                          </div>
+                          <div className="style text-sm text-gray-600 dark:text-gray-400 mb-2">
+                            {reportData.vehicleInfo.style}
+                          </div>
+                          <div className="vin-mi-reports text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2 flex-wrap">
+                            <span>{reportData.vehicleInfo.vin}</span>
+                            <span className="pipe text-gray-400">|</span>
+                            <span className="miles">{reportData.vehicleInfo.miles}</span>
+                            {reportData.vehicleInfo.hasAutocheck && (
+                              <>
+                                <span className="pipe text-gray-400">|</span>
+                                <span className="text-blue-600 dark:text-blue-400">AutoCheck Available</span>
+                              </>
+                            )}
+                          </div>
+                        </section>
+                        
+                        {/* Right Column: Instant Offer */}
+                        {reportData.vehicleInfo.instantOffer && (
+                          <section className="flex items-start justify-end">
+                            <div className="price-label-container text-right">
+                              <label className="text-sm text-gray-600 dark:text-gray-400 mb-2 block">
+                                {reportData.vehicleInfo.priceLabel || 'Instant Offer'}
+                              </label>
+                              <div className="price text-3xl font-bold text-black dark:text-white">
+                                {reportData.vehicleInfo.instantOffer}
+                              </div>
+                              <div className="price-description"></div>
+                            </div>
+                          </section>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Equipment Options and Pricing Breakdown */}
+                  {(reportData.equipmentOptions && reportData.equipmentOptions.length > 0) || 
+                   (reportData.pricingBreakdown && reportData.pricingBreakdown.length > 0) ? (
+                    <div className="flex justify-between gap-1">
+                      {/* Equipment Options */}
+                      {reportData.equipmentOptions && reportData.equipmentOptions.map((equipment, index) => (
+                        <div key={index} className="bg-white dark:bg-[#1a1d29] rounded-lg shadow-sm border border-gray-200 dark:border-gray-700/50 overflow-hidden p-4" style={{ width: '100%' }}>
+                          <header className="text-base font-semibold text-black dark:text-white mb-3">
+                            {equipment.header}
+                          </header>
+                          {equipment.standardEquipment && equipment.standardEquipment.length > 0 && (
+                            <div className="mb-4">
+                              <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Standard Equipment:
+                              </div>
+                              <div className="options-list space-y-1">
+                                {equipment.standardEquipment.map((option, optIndex) => (
+                                  <div key={optIndex} className="option text-sm text-gray-600 dark:text-gray-400 flex items-start gap-2">
+                                    <span className="bullet text-gray-400">•</span>
+                                    <span>{option}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {equipment.commonProblems && (
+                            <div className="row common-problems">
+                              <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">
+                                Common Problems:
+                              </label>
+                              <div className="text-sm text-gray-600 dark:text-gray-400">
+                                {equipment.commonProblems}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+
+                      {/* Pricing Breakdown */}
+                      {reportData.pricingBreakdown && reportData.pricingBreakdown.map((breakdown, index) => (
+                        <div key={index} className="bg-white dark:bg-[#1a1d29] rounded-lg shadow-sm border border-gray-200 dark:border-gray-700/50 overflow-hidden p-4" style={{ minWidth: '350px', width: '350px' }}>
+                          <header className="text-base font-semibold text-black dark:text-white mb-3">
+                            {breakdown.header}
+                          </header>
+                          <div className="space-y-2">
+                            {breakdown.rows.map((row, rowIndex) => (
+                              <div key={rowIndex} className="row flex items-center justify-between">
+                                <div className="text-sm text-gray-600 dark:text-gray-400">{row.label}</div>
+                                <div className={`value text-sm font-medium ${row.isNegative ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'}`}>
+                                  {row.value}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+
+                  {/* Sections Grid */}
                   <div className="flex flex-row gap-2">
                     {Array.from({ length: numColumns }, (_, colIndex) => (
                       <div key={colIndex} className="flex-1 flex flex-col gap-2">

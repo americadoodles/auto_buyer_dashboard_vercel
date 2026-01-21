@@ -45,6 +45,9 @@ class ConditionReportIn(BaseModel):
     vin: str = Field(..., description="Vehicle Identification Number")
     sections: List[Section] = Field(..., description="List of condition report sections")
     keyValuePairs: Optional[Dict[str, str]] = Field(None, description="Summary key-value pairs")
+    vehicleInfo: Optional[Dict[str, Any]] = Field(None, description="Vehicle information")
+    equipmentOptions: Optional[List[Dict[str, Any]]] = Field(None, description="Equipment options and common problems")
+    pricingBreakdown: Optional[List[Dict[str, Any]]] = Field(None, description="Pricing breakdown details")
     
     class Config:
         populate_by_name = True
@@ -56,6 +59,9 @@ class ConditionReportOut(BaseModel):
     vin: str
     sections: List[Dict[str, Any]]
     key_value_pairs: Optional[Dict[str, str]] = None
+    vehicle_info: Optional[Dict[str, Any]] = None
+    equipment_options: Optional[List[Dict[str, Any]]] = None
+    pricing_breakdown: Optional[List[Dict[str, Any]]] = None
     created_at: datetime
     updated_at: datetime
 
@@ -67,6 +73,9 @@ class ConditionReportUpdate(BaseModel):
     """Schema for updating condition report data"""
     sections: Optional[List[Section]] = None
     keyValuePairs: Optional[Dict[str, str]] = None
+    vehicleInfo: Optional[Dict[str, Any]] = None
+    equipmentOptions: Optional[List[Dict[str, Any]]] = None
+    pricingBreakdown: Optional[List[Dict[str, Any]]] = None
 
 
 class ConditionReportStatus(BaseModel):

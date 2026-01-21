@@ -325,19 +325,23 @@ export const CONDITION_REPORT_TEMP_DATA: ConditionReportData = {
                         "tires": [
                             {
                                 "position": "FL",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             },
                             {
                                 "position": "FR",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             },
                             {
                                 "position": "RL",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             },
                             {
                                 "position": "RR",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             }
                         ],
                         "price": "$0"
@@ -347,19 +351,23 @@ export const CONDITION_REPORT_TEMP_DATA: ConditionReportData = {
                         "tires": [
                             {
                                 "position": "FL",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             },
                             {
                                 "position": "FR",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             },
                             {
                                 "position": "RL",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             },
                             {
                                 "position": "RR",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             }
                         ],
                         "price": "$0"
@@ -369,19 +377,23 @@ export const CONDITION_REPORT_TEMP_DATA: ConditionReportData = {
                         "tires": [
                             {
                                 "position": "FL",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             },
                             {
                                 "position": "FR",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             },
                             {
                                 "position": "RL",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             },
                             {
                                 "position": "RR",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             }
                         ],
                         "price": "$0"
@@ -393,19 +405,23 @@ export const CONDITION_REPORT_TEMP_DATA: ConditionReportData = {
                         "tires": [
                             {
                                 "position": "FL",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             },
                             {
                                 "position": "FR",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             },
                             {
                                 "position": "RL",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             },
                             {
                                 "position": "RR",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             }
                         ],
                         "price": "$0"
@@ -415,19 +431,23 @@ export const CONDITION_REPORT_TEMP_DATA: ConditionReportData = {
                         "tires": [
                             {
                                 "position": "FL",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             },
                             {
                                 "position": "FR",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             },
                             {
                                 "position": "RL",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             },
                             {
                                 "position": "RR",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             }
                         ],
                         "price": "$0"
@@ -437,19 +457,23 @@ export const CONDITION_REPORT_TEMP_DATA: ConditionReportData = {
                         "tires": [
                             {
                                 "position": "FL",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             },
                             {
                                 "position": "FR",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             },
                             {
                                 "position": "RL",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             },
                             {
                                 "position": "RR",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             }
                         ],
                         "price": "$0"
@@ -459,19 +483,23 @@ export const CONDITION_REPORT_TEMP_DATA: ConditionReportData = {
                         "tires": [
                             {
                                 "position": "FL",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             },
                             {
                                 "position": "FR",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             },
                             {
                                 "position": "RL",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             },
                             {
                                 "position": "RR",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             }
                         ],
                         "price": "$0"
@@ -481,19 +509,23 @@ export const CONDITION_REPORT_TEMP_DATA: ConditionReportData = {
                         "tires": [
                             {
                                 "position": "FL",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             },
                             {
                                 "position": "FR",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             },
                             {
                                 "position": "RL",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             },
                             {
                                 "position": "RR",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             }
                         ],
                         "price": "$0"
@@ -503,19 +535,23 @@ export const CONDITION_REPORT_TEMP_DATA: ConditionReportData = {
                         "tires": [
                             {
                                 "position": "FL",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             },
                             {
                                 "position": "FR",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             },
                             {
                                 "position": "RL",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             },
                             {
                                 "position": "RR",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             }
                         ],
                         "price": "$0"
@@ -525,19 +561,23 @@ export const CONDITION_REPORT_TEMP_DATA: ConditionReportData = {
                         "tires": [
                             {
                                 "position": "FL",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             },
                             {
                                 "position": "FR",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             },
                             {
                                 "position": "RL",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             },
                             {
                                 "position": "RR",
-                                "selected": true
+                                "circleClass": "circle",
+                                "circleState": "normal"
                             }
                         ],
                         "price": "$0"

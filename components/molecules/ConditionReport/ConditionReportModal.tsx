@@ -181,31 +181,43 @@ const StandardPanel: React.FC<{
         {section.lineItems.length > 0 ? (
           <div className="appraisal-panel-adjustment-list">
             <ul className="space-y-0">
-              {section.lineItems.map((item, index) => (
-                <li
-                  key={index}
-                  className={`${item.itemClass || ''} flex items-center justify-between px-2 leading-none ${
-                    item.itemClass?.includes('negative') ? 'bg-red-50 dark:bg-red-900/10 border-l-2 border-red-500' : ''
-                  } ${
-                    item.itemClass?.includes('positive') ? 'bg-green-50 dark:bg-green-900/10 border-l-2 border-green-500' : ''
-                  } ${
-                    item.itemClass?.includes('not-selected') ? 'opacity-60' : ''
-                  }`}
-                >
-                  <div className="line-item-with-notes">
-                    <div className="line-item text-black dark:text-white text-sm">
-                      {item.text.includes('<span>') ? (
-                        <span dangerouslySetInnerHTML={{ __html: item.text }} />
-                      ) : (
-                        <span>{item.text}</span>
-                      )}
+              {section.lineItems.map((item, index) => {
+                const priceClass = item.priceClass || '';
+                const textColorClass = priceClass.includes('positive') || item.price.includes('+') ? 'text-green-600 dark:text-green-400' : 
+                                     priceClass.includes('negative') || item.price.includes('-') ? 'text-red-600 dark:text-red-400' : 
+                                     'text-gray-600 dark:text-gray-400';
+                const dotColorClass = textColorClass.replace(/text-/g, 'bg-');
+                
+                // Remove bullet character (•) from text if present
+                const cleanText = item.text.replace(/^•\s*/, '');
+                
+                return (
+                  <li
+                    key={index}
+                    className={`${item.itemClass || ''} flex items-center justify-between px-2 leading-none ${
+                      item.itemClass?.includes('negative') ? 'bg-red-50 dark:bg-red-900/10' : ''
+                    } ${
+                      item.itemClass?.includes('positive') ? 'bg-green-50 dark:bg-green-900/10' : ''
+                    } ${
+                      item.itemClass?.includes('not-selected') ? 'opacity-60' : ''
+                    }`}
+                  >
+                    <div className="line-item-with-notes">
+                      <div className={`line-item ${textColorClass} text-sm flex items-center gap-2`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${dotColorClass} flex-shrink-0`}></span>
+                        {item.text.includes('<span>') ? (
+                          <span dangerouslySetInnerHTML={{ __html: cleanText }} />
+                        ) : (
+                          <span>{cleanText}</span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <div className="appraisal-panel-adjustment-list-price">
-                    <FormattedPrice price={item.price} priceClass={item.priceClass || ''} className="text-sm" />
-                  </div>
-                </li>
-              ))}
+                    <div className="appraisal-panel-adjustment-list-price">
+                      <FormattedPrice price={item.price} priceClass={priceClass} className="text-sm" />
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         ) : null}
@@ -294,6 +306,8 @@ const DamagePanel: React.FC<{
                   <div className="space-y-0">
                     {specialData.damageItems?.map((damage, index) => {
                       const damageText = typeof damage === 'string' ? damage : damage.issue || '';
+                      // Remove bullet character (•) from text if present
+                      const cleanDamageText = damageText.replace(/^•\s*/, '');
                       const damagePrice = typeof damage === 'object' && damage.price ? damage.price : '';
                       const priceType = typeof damage === 'object' && damage.priceType ? damage.priceType : '';
                       const priceClass = priceType === 'negative' ? 'negative' : priceType === 'positive' ? 'positive' : '';
@@ -301,19 +315,21 @@ const DamagePanel: React.FC<{
                       const textColorClass = priceType === 'negative' ? 'text-red-600 dark:text-red-400' : 
                                            priceType === 'positive' ? 'text-green-600 dark:text-green-400' : 
                                            'text-gray-600 dark:text-gray-400';
+                      const dotColorClass = textColorClass.replace(/text-/g, 'bg-');
                       
                       return (
                         <div
                           key={index}
                           className={`${itemClass} flex items-center justify-between px-2 leading-none ${
-                            itemClass?.includes('negative') ? 'bg-red-50 dark:bg-red-900/10 border-l-2 border-red-500' : ''
+                            itemClass?.includes('negative') ? 'bg-red-50 dark:bg-red-900/10' : ''
                           } ${
-                            itemClass?.includes('positive') ? 'bg-green-50 dark:bg-green-900/10 border-l-2 border-green-500' : ''
+                            itemClass?.includes('positive') ? 'bg-green-50 dark:bg-green-900/10' : ''
                           }`}
                         >
                           <div className="line-item-with-notes">
-                            <div className={`line-item ${textColorClass} text-sm`}>
-                              <span>{damageText}</span>
+                            <div className={`line-item ${textColorClass} text-sm flex items-center gap-2`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${dotColorClass} flex-shrink-0`}></span>
+                              <span>{cleanDamageText}</span>
                             </div>
                           </div>
                           {damagePrice && (
@@ -355,8 +371,7 @@ const TiresPanel: React.FC<{
         <div className="appraisal-panel-content py-3 px-5">
           {/* Tread Section */}
           <header className="mb-2 pb-1">
-            <div className="title text-gray-900 dark:text-white font-medium text-sm flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-gray-600 dark:bg-gray-400"></span>
+            <div className="title text-gray-900 dark:text-white font-medium text-sm">
               Tread
             </div>
             <div className="tire text-gray-600 dark:text-gray-400 text-xs text-center">FL</div>
@@ -382,8 +397,7 @@ const TiresPanel: React.FC<{
 
           {/* Wheel Issues Section */}
           <header className="wheels mt-2 mb-2 pb-1">
-            <div className="title text-black dark:text-white font-medium text-sm flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-gray-600 dark:bg-gray-400"></span>
+            <div className="title text-black dark:text-white font-medium text-sm">
               Wheel Issues
             </div>
           </header>
@@ -408,6 +422,8 @@ const TiresPanel: React.FC<{
               <div className="space-y-0">
                 {specialData.damageItems.map((damage, index) => {
                   const damageText = typeof damage === 'string' ? damage : damage.issue || '';
+                  // Remove bullet character (•) from text if present
+                  const cleanDamageText = damageText.replace(/^•\s*/, '').replace(/^•/, '');
                   const damagePrice = typeof damage === 'object' && damage.price ? damage.price : '';
                   const priceType = typeof damage === 'object' && damage.priceType ? damage.priceType : '';
                   const priceClass = priceType === 'negative' ? 'negative' : priceType === 'positive' ? 'positive' : '';
@@ -415,19 +431,21 @@ const TiresPanel: React.FC<{
                   const textColorClass = priceType === 'negative' ? 'text-red-600 dark:text-red-400' : 
                                        priceType === 'positive' ? 'text-green-600 dark:text-green-400' : 
                                        'text-gray-600 dark:text-gray-400';
+                  const dotColorClass = textColorClass.replace(/text-/g, 'bg-');
                   
                   return (
                     <div
                       key={index}
                       className={`${itemClass} flex items-center justify-between px-2 py-1 leading-none ${
-                        itemClass?.includes('negative') ? 'bg-red-50 dark:bg-red-900/10 border-l-2 border-red-500' : ''
+                        itemClass?.includes('negative') ? 'bg-red-50 dark:bg-red-900/10' : ''
                       } ${
-                        itemClass?.includes('positive') ? 'bg-green-50 dark:bg-green-900/10 border-l-2 border-green-500' : ''
+                        itemClass?.includes('positive') ? 'bg-green-50 dark:bg-green-900/10' : ''
                       }`}
                     >
                       <div className="line-item-with-notes">
-                        <div className={`line-item ${textColorClass} text-sm`}>
-                          <span>{damageText}</span>
+                        <div className={`line-item ${textColorClass} text-sm flex items-center gap-2`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${dotColorClass} flex-shrink-0`}></span>
+                          <span>{cleanDamageText}</span>
                         </div>
                       </div>
                       {damagePrice && (

@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { ApiService } from '../../../lib/services/api';
-import { CONDITION_REPORT_TEMP_DATA } from '../../../lib/constants/temp';
 import TiresIcon from '../../../assets/svg/tires';
 import GlassIcon from '../../../assets/svg/glass';
 import BodyIcon from '../../../assets/svg/body';
@@ -600,7 +599,6 @@ export const ConditionReportModal: React.FC<ConditionReportModalProps> = ({
       setError(null);
       ApiService.getConditionReport(vin)
         .then((response) => {
-          console.log('response: ', response);
           // Transform API response to match ConditionReportData format
           const transformedData: ConditionReportData = {
             sections: response.sections || [],
@@ -615,17 +613,12 @@ export const ConditionReportModal: React.FC<ConditionReportModalProps> = ({
           console.error('Error fetching condition report:', err);
           setError(err.message || 'Failed to load condition report');
           // Fall back to temp data if fetch fails
-          setReportData(CONDITION_REPORT_TEMP_DATA);
         })
         .finally(() => {
           setIsLoading(false);
         });
-    } else if (!data && !vin) {
-      // No VIN and no data provided, use temp data
-      setReportData(CONDITION_REPORT_TEMP_DATA);
     }
   }, [vin, data, isOpen]);
-  console.log('report data: ', reportData)
   // Handle Escape key to close modal
   useEffect(() => {
     if (!isOpen) return;

@@ -51,6 +51,12 @@ class Settings(BaseSettings):
     GCP_CREDENTIALS_JSON: str = os.getenv("GCP_CREDENTIALS_JSON", "")  # JSON string or path to JSON file
     GCP_STORAGE_ENABLED: bool = bool(os.getenv("GCP_STORAGE_ENABLED", "false").lower() == "true")
 
+    # Twilio settings for calls and SMS
+    TWILIO_ACCOUNT_SID: str = os.getenv("TWILIO_ACCOUNT_SID", "")
+    TWILIO_AUTH_TOKEN: str = os.getenv("TWILIO_AUTH_TOKEN", "")
+    TWILIO_PHONE_NUMBER: str = os.getenv("TWILIO_PHONE_NUMBER", "")
+    TWILIO_ENABLED: bool = bool(os.getenv("TWILIO_ENABLED", "false").lower() == "true")
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 

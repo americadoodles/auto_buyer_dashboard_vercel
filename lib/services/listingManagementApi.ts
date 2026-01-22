@@ -157,3 +157,73 @@ export const getContactTypes = async (): Promise<Array<{ id: number; name: strin
   
   return handleResponse(response);
 };
+
+// ==============================================
+// COMMUNICATION FUNCTIONS (CALLS & SMS)
+// ==============================================
+
+export interface CallResponse {
+  success: boolean;
+  call_sid?: string;
+  status?: string;
+  message?: string;
+  error?: string;
+}
+
+export interface SMSResponse {
+  success: boolean;
+  message_sid?: string;
+  status?: string;
+  message?: string;
+  error?: string;
+}
+
+export const initiateCall = async (contactId: string, options?: {
+  phone_number?: string;
+  twiml?: string;
+  url?: string;
+}): Promise<CallResponse> => {
+  const response = await fetch(`${API_BASE}/crm/communications/calls`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({
+      contact_id: contactId,
+      ...options
+    }),
+  });
+  
+  return handleResponse(response);
+};
+
+export const getCallStatus = async (callSid: string): Promise<{
+  success: boolean;
+  call_sid?: string;
+  status?: string;
+  duration?: number;
+  to?: string;
+  from?: string;
+  start_time?: string;
+  end_time?: string;
+  error?: string;
+}> => {
+  const response = await fetch(`${API_BASE}/crm/communications/calls/${callSid}/status`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+  
+  return handleResponse(response);
+};
+
+export const sendSMS = async (contactId: string, message: string, phoneNumber?: string): Promise<SMSResponse> => {
+  const response = await fetch(`${API_BASE}/crm/communications/sms`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({
+      contact_id: contactId,
+      message: message,
+      phone_number: phoneNumber
+    }),
+  });
+  
+  return handleResponse(response);
+};

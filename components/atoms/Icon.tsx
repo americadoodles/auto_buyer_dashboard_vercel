@@ -29,6 +29,8 @@ import {
   MapPin,
   Sparkles,
   Loader2,
+  MessageSquare,
+  Send,
 } from 'lucide-react';
 
 // Import image icons
@@ -72,7 +74,10 @@ const iconMap: Record<string, LucideIcon> = {
   'file-text': FileText,
   'map-pin': MapPin,
   'sparkles': Sparkles,
-  'loader': Loader2
+  'loader': Loader2,
+  'loader-2': Loader2,
+  'message-square': MessageSquare,
+  'send': Send,
 };
 
 // Helper function to get image source from StaticImageData or string

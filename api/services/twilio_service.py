@@ -81,12 +81,6 @@ class TwilioService:
                 "error": self.error_message or "Twilio service not enabled or not configured"
             }
         
-        if not url and not twiml:
-            return {
-                "success": False,
-                "error": "Either url or twiml must be provided"
-            }
-        
         try:
             from_phone = from_phone or settings.TWILIO_PHONE_NUMBER
             
@@ -96,11 +90,21 @@ class TwilioService:
                     from_=from_phone,
                     twiml=twiml
                 )
-            else:
+            elif url:
                 call = self.client.calls.create(
                     to=to_phone,
                     from_=from_phone,
                     url=url
+                )
+            else:
+                # For outbound calls without TwiML, we need to provide a TwiML that keeps the call open
+                # Using a long pause to keep the call connected until either party hangs up
+                # The pause can be up to 1 hour (3600 seconds)
+                keep_alive_twiml = '<?xml version="1.0" encoding="UTF-8"?><Response><Pause length="3600"/></Response>'
+                call = self.client.calls.create(
+                    to=to_phone,
+                    from_=from_phone,
+                    twiml=keep_alive_twiml
                 )
             
             # Safely get the 'from' attribute (it's 'from_' in the SDK)
@@ -226,6 +230,36 @@ class TwilioService:
             return {
                 "success": False,
                 "error": f"Failed to fetch call status: {str(e)}"
+            }
+    
+    def stop_call(self, call_sid: str) -> Dict[str, Any]:
+        """Stop/end an active call"""
+        if not self.enabled or not self.client:
+            return {
+                "success": False,
+                "error": self.error_message or "Twilio service not enabled or not configured"
+            }
+        
+        try:
+            call = self.client.calls(call_sid).update(status='completed')
+            return {
+                "success": True,
+                "call_sid": call.sid,
+                "status": call.status,
+                "message": "Call ended successfully"
+            }
+        except TwilioRestException as e:
+            logger.error(f"Twilio API error: {str(e)}")
+            return {
+                "success": False,
+                "error": f"Twilio API error: {e.msg}",
+                "code": e.code
+            }
+        except Exception as e:
+            logger.error(f"Error stopping call: {str(e)}")
+            return {
+                "success": False,
+                "error": f"Failed to stop call: {str(e)}"
             }
 
 

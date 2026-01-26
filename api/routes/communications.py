@@ -134,18 +134,16 @@ def initiate_call(
                 detail="No phone number available for this contact. Please provide a phone number."
             )
         
-        # Default TwiML if not provided
+        # Use provided TwiML or URL, or let the service use default keep-alive TwiML
         twiml = call_request.twiml
-        if not twiml and not call_request.url:
-            # Simple greeting TwiML
-            contact_name = f"{contact.first_name} {contact.last_name}".strip()
-            twiml = f'<?xml version="1.0" encoding="UTF-8"?><Response><Say>Hello {contact_name}, this is a call from Auto Buyer. Please hold while we connect you.</Say></Response>'
+        url = call_request.url
         
         # Make the call
+        # If no TwiML/URL provided, the service will use a default keep-alive TwiML
         result = twilio_service.make_call(
             to_phone=phone_number,
             twiml=twiml if twiml else None,
-            url=call_request.url if call_request.url else None
+            url=url if url else None
         )
         
         if not result.get("success"):
@@ -226,6 +224,27 @@ def get_call_status(
     except Exception as e:
         logger.error(f"Error fetching call status: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to fetch call status")
+
+
+@communication_router.post("/calls/{call_sid}/stop", response_model=dict)
+def stop_call(
+    call_sid: str,
+    current_user: UserOut = Depends(get_current_user)
+):
+    """Stop/end an active call"""
+    try:
+        result = twilio_service.stop_call(call_sid)
+        if not result.get("success"):
+            raise HTTPException(
+                status_code=500,
+                detail=result.get("error", "Failed to stop call")
+            )
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error stopping call: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to stop call: {str(e)}")
 
 
 # ==============================================

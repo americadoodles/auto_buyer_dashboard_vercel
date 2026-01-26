@@ -214,6 +214,15 @@ export const getCallStatus = async (callSid: string): Promise<{
   return handleResponse(response);
 };
 
+export const stopCall = async (callSid: string): Promise<CallResponse> => {
+  const response = await fetch(`${API_BASE}/crm/communications/calls/${callSid}/stop`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  
+  return handleResponse(response);
+};
+
 export const sendSMS = async (contactId: string, message: string, phoneNumber?: string): Promise<SMSResponse> => {
   const response = await fetch(`${API_BASE}/crm/communications/sms`, {
     method: 'POST',

@@ -435,25 +435,60 @@ export const CallModal: React.FC<CallModalProps> = ({
 
             <div className="mt-4">
               <div className="flex items-center justify-center mb-6">
-                <div className={`w-20 h-20 rounded-full flex items-center justify-center ${
-                  callState === 'in-progress' 
-                    ? 'bg-green-100 dark:bg-green-900/30 animate-pulse' 
-                    : callState === 'ringing' || callState === 'initiating'
-                    ? 'bg-blue-100 dark:bg-blue-900/30 animate-pulse'
-                    : callState === 'completed'
-                    ? 'bg-gray-100 dark:bg-gray-700'
-                    : 'bg-blue-100 dark:bg-blue-900/30'
-                }`}>
-                  <Icon 
-                    name="phone" 
-                    className={`w-10 h-10 ${
-                      callState === 'in-progress'
-                        ? 'text-green-600 dark:text-green-400'
-                        : callState === 'ringing' || callState === 'initiating'
-                        ? 'text-blue-600 dark:text-blue-400'
-                        : 'text-blue-600 dark:text-blue-400'
-                    }`} 
-                  />
+                <div className="relative">
+                  {/* Outer solid line circles - voice amplitude animation (only when in-progress) */}
+                  {callState === 'in-progress' && (
+                    <>
+                      <div 
+                        className="absolute inset-0 w-20 h-20 rounded-full border-2 border-green-400 dark:border-green-500 animate-[ping_1.5s_ease-out_infinite]"
+                        style={{ animationDelay: '0s' }}
+                      />
+                      <div 
+                        className="absolute inset-0 w-20 h-20 rounded-full border-2 border-green-400 dark:border-green-500 animate-[ping_1.5s_ease-out_infinite]"
+                        style={{ animationDelay: '0.5s' }}
+                      />
+                      <div 
+                        className="absolute inset-0 w-20 h-20 rounded-full border-2 border-green-400 dark:border-green-500 animate-[ping_1.5s_ease-out_infinite]"
+                        style={{ animationDelay: '1s' }}
+                      />
+                    </>
+                  )}
+                  
+                  {/* Inner dotted line circles - only when in-progress */}
+                  {callState === 'in-progress' && (
+                    <>
+                      <div 
+                        className="absolute -inset-2 rounded-full border-2 border-dashed border-green-300 dark:border-green-600 animate-spin"
+                        style={{ animationDuration: '8s' }}
+                      />
+                      <div 
+                        className="absolute -inset-4 rounded-full border border-dashed border-green-200 dark:border-green-700 animate-spin"
+                        style={{ animationDuration: '12s', animationDirection: 'reverse' }}
+                      />
+                    </>
+                  )}
+                  
+                  {/* Main phone icon container */}
+                  <div className={`relative w-20 h-20 rounded-full flex items-center justify-center ${
+                    callState === 'in-progress' 
+                      ? 'bg-green-100 dark:bg-green-900/30' 
+                      : callState === 'ringing' || callState === 'initiating'
+                      ? 'bg-blue-100 dark:bg-blue-900/30'
+                      : callState === 'completed'
+                      ? 'bg-gray-100 dark:bg-gray-700'
+                      : 'bg-blue-100 dark:bg-blue-900/30'
+                  }`}>
+                    <Icon 
+                      name="phone" 
+                      className={`w-10 h-10 ${
+                        callState === 'in-progress'
+                          ? 'text-green-600 dark:text-green-400'
+                          : callState === 'ringing' || callState === 'initiating'
+                          ? 'text-blue-600 dark:text-blue-400'
+                          : 'text-blue-600 dark:text-blue-400'
+                      }`} 
+                    />
+                  </div>
                 </div>
               </div>
 

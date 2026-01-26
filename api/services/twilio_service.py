@@ -18,20 +18,43 @@ class TwilioService:
     """Service for handling Twilio calls and SMS"""
     
     def __init__(self):
-        self.enabled = settings.TWILIO_ENABLED and TWILIO_AVAILABLE
+        self.enabled = False
         self.client = None
+        self.error_message = None
         
-        if self.enabled:
-            if not settings.TWILIO_ACCOUNT_SID or not settings.TWILIO_AUTH_TOKEN:
-                logger.warning("Twilio enabled but credentials not configured")
-                self.enabled = False
-            else:
-                try:
-                    self.client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
-                    logger.info("Twilio client initialized successfully")
-                except Exception as e:
-                    logger.error(f"Failed to initialize Twilio client: {str(e)}")
-                    self.enabled = False
+        # Check if Twilio SDK is available
+        if not TWILIO_AVAILABLE:
+            self.error_message = "Twilio SDK not installed. Install with: pip install twilio"
+            logger.warning(self.error_message)
+            return
+        
+        # Check if Twilio is enabled in settings
+        if not settings.TWILIO_ENABLED:
+            self.error_message = "Twilio is not enabled. Set TWILIO_ENABLED=true in your environment variables."
+            logger.warning(self.error_message)
+            return
+        
+        # Check if credentials are configured
+        if not settings.TWILIO_ACCOUNT_SID or not settings.TWILIO_AUTH_TOKEN:
+            self.error_message = "Twilio credentials not configured. Please set TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN in your environment variables."
+            logger.warning(self.error_message)
+            return
+        
+        # Check if phone number is configured
+        if not settings.TWILIO_PHONE_NUMBER:
+            self.error_message = "Twilio phone number not configured. Please set TWILIO_PHONE_NUMBER in your environment variables."
+            logger.warning(self.error_message)
+            return
+        
+        # Try to initialize the client
+        try:
+            self.client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+            self.enabled = True
+            logger.info("Twilio client initialized successfully")
+        except Exception as e:
+            self.error_message = f"Failed to initialize Twilio client: {str(e)}"
+            logger.error(self.error_message)
+            self.enabled = False
     
     def make_call(
         self,
@@ -55,7 +78,7 @@ class TwilioService:
         if not self.enabled or not self.client:
             return {
                 "success": False,
-                "error": "Twilio service not enabled or not configured"
+                "error": self.error_message or "Twilio service not enabled or not configured"
             }
         
         if not url and not twiml:
@@ -80,13 +103,16 @@ class TwilioService:
                     url=url
                 )
             
+            # Safely get the 'from' attribute (it's 'from_' in the SDK)
+            call_from = getattr(call, 'from_', from_phone)
+            
             return {
                 "success": True,
                 "call_sid": call.sid,
                 "status": call.status,
                 "to": call.to,
-                "from": call.from_,
-                "direction": call.direction
+                "from": call_from,
+                "direction": getattr(call, 'direction', None)
             }
         except TwilioRestException as e:
             logger.error(f"Twilio API error: {str(e)}")
@@ -122,7 +148,7 @@ class TwilioService:
         if not self.enabled or not self.client:
             return {
                 "success": False,
-                "error": "Twilio service not enabled or not configured"
+                "error": self.error_message or "Twilio service not enabled or not configured"
             }
         
         if not message or not message.strip():
@@ -140,13 +166,16 @@ class TwilioService:
                 from_=from_phone
             )
             
+            # Safely get the 'from' attribute (it's 'from_' in the SDK)
+            message_from = getattr(message_obj, 'from_', from_phone)
+            
             return {
                 "success": True,
                 "message_sid": message_obj.sid,
                 "status": message_obj.status,
-                "to": message_obj.to,
-                "from": message_obj.from_,
-                "date_sent": message_obj.date_sent.isoformat() if message_obj.date_sent else None
+                "to": getattr(message_obj, 'to', to_phone),
+                "from": message_from,
+                "date_sent": message_obj.date_sent.isoformat() if hasattr(message_obj, 'date_sent') and message_obj.date_sent else None
             }
         except TwilioRestException as e:
             logger.error(f"Twilio API error: {str(e)}")
@@ -167,20 +196,23 @@ class TwilioService:
         if not self.enabled or not self.client:
             return {
                 "success": False,
-                "error": "Twilio service not enabled or not configured"
+                "error": self.error_message or "Twilio service not enabled or not configured"
             }
         
         try:
             call = self.client.calls(call_sid).fetch()
+            # Safely get the 'from' attribute (it's 'from_' in the SDK)
+            call_from = getattr(call, 'from_', None)
+            
             return {
                 "success": True,
                 "call_sid": call.sid,
                 "status": call.status,
-                "duration": call.duration,
-                "to": call.to,
-                "from": call.from_,
-                "start_time": call.start_time.isoformat() if call.start_time else None,
-                "end_time": call.end_time.isoformat() if call.end_time else None
+                "duration": getattr(call, 'duration', None),
+                "to": getattr(call, 'to', None),
+                "from": call_from,
+                "start_time": call.start_time.isoformat() if hasattr(call, 'start_time') and call.start_time else None,
+                "end_time": call.end_time.isoformat() if hasattr(call, 'end_time') and call.end_time else None
             }
         except TwilioRestException as e:
             logger.error(f"Twilio API error: {str(e)}")

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../atoms/Button';
 import { Icon } from '../atoms/Icon';
 import { initiateCall } from '../../lib/services/listingManagementApi';
@@ -11,7 +11,8 @@ interface CallModalProps {
   onClose: () => void;
   contactId: string;
   contactName: string;
-  phoneNumber?: string;
+  phone?: string;
+  mobile?: string;
   onCallInitiated?: () => void;
 }
 
@@ -20,16 +21,33 @@ export const CallModal: React.FC<CallModalProps> = ({
   onClose,
   contactId,
   contactName,
-  phoneNumber,
+  phone,
+  mobile,
   onCallInitiated
 }) => {
   const [calling, setCalling] = useState(false);
   const { showSuccess, showError } = useToast();
+  
+  // Determine available phone numbers
+  const hasPhone = !!phone;
+  const hasMobile = !!mobile;
+  const hasMultipleNumbers = hasPhone && hasMobile;
+  
+  // Default to mobile if available, otherwise phone
+  const defaultNumber = mobile || phone;
+  const [selectedPhoneNumber, setSelectedPhoneNumber] = useState<string>(defaultNumber || '');
+
+  // Update selected number when modal opens or props change
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedPhoneNumber(mobile || phone || '');
+    }
+  }, [isOpen, mobile, phone]);
 
   if (!isOpen) return null;
 
   const handleCall = async () => {
-    if (!phoneNumber) {
+    if (!selectedPhoneNumber) {
       showError('Phone Number Required', 'This contact does not have a phone number. Please add one first.');
       return;
     }
@@ -37,7 +55,7 @@ export const CallModal: React.FC<CallModalProps> = ({
     setCalling(true);
     try {
       const result = await initiateCall(contactId, {
-        phone_number: phoneNumber
+        phone_number: selectedPhoneNumber
       });
       
       if (result.success) {
@@ -102,13 +120,62 @@ export const CallModal: React.FC<CallModalProps> = ({
                 <p className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                   {contactName}
                 </p>
-                <div className="flex items-center justify-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-                  <Icon name="phone" className="w-4 h-4" />
-                  <span>{phoneNumber || 'No phone number available'}</span>
-                </div>
+                
+                {hasMultipleNumbers ? (
+                  <div className="mt-4">
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                      Select phone number to call:
+                    </p>
+                    <div className="space-y-2">
+                      {mobile && (
+                        <button
+                          onClick={() => setSelectedPhoneNumber(mobile)}
+                          disabled={calling}
+                          className={`w-full p-3 rounded-lg border-2 transition-all ${
+                            selectedPhoneNumber === mobile
+                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                              : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-500'
+                          } disabled:opacity-50 disabled:cursor-not-allowed`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              <Icon name="phone" className="w-4 h-4" />
+                              <span className="font-medium">Mobile</span>
+                            </div>
+                            <span className="text-sm">{mobile}</span>
+                          </div>
+                        </button>
+                      )}
+                      {phone && (
+                        <button
+                          onClick={() => setSelectedPhoneNumber(phone)}
+                          disabled={calling}
+                          className={`w-full p-3 rounded-lg border-2 transition-all ${
+                            selectedPhoneNumber === phone
+                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                              : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-500'
+                          } disabled:opacity-50 disabled:cursor-not-allowed`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              <Icon name="phone" className="w-4 h-4" />
+                              <span className="font-medium">Phone</span>
+                            </div>
+                            <span className="text-sm">{phone}</span>
+                          </div>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+                    <Icon name="phone" className="w-4 h-4" />
+                    <span>{selectedPhoneNumber || 'No phone number available'}</span>
+                  </div>
+                )}
               </div>
 
-              {!phoneNumber && (
+              {!selectedPhoneNumber && (
                 <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
                   <p className="text-sm text-yellow-800 dark:text-yellow-200">
                     This contact does not have a phone number. Please add one before making a call.
@@ -121,7 +188,7 @@ export const CallModal: React.FC<CallModalProps> = ({
           <div className="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
             <Button
               onClick={handleCall}
-              disabled={calling || !phoneNumber}
+              disabled={calling || !selectedPhoneNumber}
               className="w-full sm:w-auto sm:ml-3"
             >
               {calling ? (

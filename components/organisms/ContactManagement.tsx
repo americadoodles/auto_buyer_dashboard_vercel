@@ -494,7 +494,8 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
         }}
         contactId={selectedContactForCommunication?.id || ''}
         contactName={selectedContactForCommunication ? `${selectedContactForCommunication.first_name} ${selectedContactForCommunication.last_name}` : ''}
-        phoneNumber={selectedContactForCommunication?.mobile || selectedContactForCommunication?.phone}
+        phone={selectedContactForCommunication?.phone}
+        mobile={selectedContactForCommunication?.mobile}
         onCallInitiated={() => {
           if (onContactUpdated) {
             onContactUpdated();

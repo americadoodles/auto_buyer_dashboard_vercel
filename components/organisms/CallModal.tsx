@@ -219,6 +219,29 @@ export const CallModal: React.FC<CallModalProps> = ({
       return;
     }
 
+    // Prevent starting a new call if one is already in progress
+    if (callState !== 'idle' && callState !== 'completed' && callState !== 'failed' && callState !== 'busy') {
+      showError('Call in Progress', 'Please end the current call before starting a new one.');
+      return;
+    }
+
+    // Clear any existing call state before starting a new call
+    if (callSid) {
+      setCallSid(null);
+    }
+    if (statusIntervalRef.current) {
+      clearInterval(statusIntervalRef.current);
+      statusIntervalRef.current = null;
+    }
+    if (durationIntervalRef.current) {
+      clearInterval(durationIntervalRef.current);
+      durationIntervalRef.current = null;
+    }
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+
     setCalling(true);
     setCallState('initiating');
     setCallStartTime(Date.now());

@@ -97,10 +97,12 @@ class TwilioService:
                     url=url
                 )
             else:
-                # For outbound calls without TwiML, we need to provide a TwiML that keeps the call open
-                # Using a long pause to keep the call connected until either party hangs up
-                # The pause can be up to 1 hour (3600 seconds)
-                keep_alive_twiml = '<?xml version="1.0" encoding="UTF-8"?><Response><Pause length="3600"/></Response>'
+                # For outbound calls without TwiML, use <Gather> with a very long timeout
+                # This keeps the call open waiting for input (which never comes)
+                # The call will stay open until either party hangs up
+                # timeout="3600" = 1 hour, numDigits="0" = don't wait for digits
+                # Without an action URL, Gather will keep the call open indefinitely
+                keep_alive_twiml = '<?xml version="1.0" encoding="UTF-8"?><Response><Gather timeout="3600" numDigits="0"></Gather></Response>'
                 call = self.client.calls.create(
                     to=to_phone,
                     from_=from_phone,

@@ -11,6 +11,8 @@ import { Icon } from '../atoms/Icon';
 import { Pagination } from '../molecules/Pagination';
 import { ContactEditModal } from './ContactEditModal';
 import { ConfirmationModal } from './ConfirmationModal';
+import { CallModal } from './CallModal';
+import { SMSModal } from './SMSModal';
 import { Listing } from '../../lib/types/listing';
 import { deleteContact } from 'lib/services/listingManagementApi';
 import { leadsApi } from '../../lib/services/leadsApi';
@@ -82,6 +84,9 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [contactToDelete, setContactToDelete] = useState<Contact | undefined>(undefined);
   const [deleting, setDeleting] = useState(false);
+  const [showCallModal, setShowCallModal] = useState(false);
+  const [showSMSModal, setShowSMSModal] = useState(false);
+  const [selectedContactForCommunication, setSelectedContactForCommunication] = useState<Contact | undefined>(undefined);
 
   const getTypeColor = (type: string) => {
     switch (type.toLowerCase()) {
@@ -388,11 +393,29 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
                     </td>
                     <td className="px-2 py-2 whitespace-nowrap text-sm font-medium">
                       <div className="flex space-x-2">
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedContactForCommunication(contact);
+                            setShowCallModal(true);
+                          }}
+                          title="Call"
+                        >
                           <Icon name="phone" className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm">
-                          <Icon name="mail" className="w-4 h-4" />
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedContactForCommunication(contact);
+                            setShowSMSModal(true);
+                          }}
+                          title="Send SMS"
+                        >
+                          <Icon name="message-square" className="w-4 h-4" />
                         </Button>
                         {!isBuyer && (
                           <Button 
@@ -460,6 +483,41 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
         variant="danger"
         loading={deleting}
         loadingText="Deleting..."
+      />
+
+      {/* Call Modal */}
+      <CallModal
+        isOpen={showCallModal}
+        onClose={() => {
+          setShowCallModal(false);
+          setSelectedContactForCommunication(undefined);
+        }}
+        contactId={selectedContactForCommunication?.id || ''}
+        contactName={selectedContactForCommunication ? `${selectedContactForCommunication.first_name} ${selectedContactForCommunication.last_name}` : ''}
+        phone={selectedContactForCommunication?.phone}
+        mobile={selectedContactForCommunication?.mobile}
+        onCallInitiated={() => {
+          if (onContactUpdated) {
+            onContactUpdated();
+          }
+        }}
+      />
+
+      {/* SMS Modal */}
+      <SMSModal
+        isOpen={showSMSModal}
+        onClose={() => {
+          setShowSMSModal(false);
+          setSelectedContactForCommunication(undefined);
+        }}
+        contactId={selectedContactForCommunication?.id || ''}
+        contactName={selectedContactForCommunication ? `${selectedContactForCommunication.first_name} ${selectedContactForCommunication.last_name}` : ''}
+        phoneNumber={selectedContactForCommunication?.mobile || selectedContactForCommunication?.phone}
+        onSent={() => {
+          if (onContactUpdated) {
+            onContactUpdated();
+          }
+        }}
       />
     </div>
   );

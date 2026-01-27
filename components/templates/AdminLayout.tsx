@@ -6,6 +6,8 @@ import { Header } from '../organisms/Header';
 import { useAuth } from '../../app/auth/useAuth';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { TwilioProvider } from '../../lib/contexts/TwilioContext';
+import { IncomingCallNotification } from '../organisms/IncomingCallNotification';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -34,14 +36,18 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
-      <AdminNavPanel />
-      <div className="flex-1 overflow-hidden min-w-0 h-full flex flex-col">
-        <Header />
-        <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
-          {children}
+    <TwilioProvider>
+      <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
+        <AdminNavPanel />
+        <div className="flex-1 overflow-hidden min-w-0 h-full flex flex-col">
+          <Header />
+          <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+            {children}
+          </div>
         </div>
       </div>
-    </div>
+      {/* Global incoming call notification overlay */}
+      <IncomingCallNotification />
+    </TwilioProvider>
   );
 };

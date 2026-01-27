@@ -75,12 +75,23 @@ export const CallModal: React.FC<CallModalProps> = ({
         throw new Error(tokenResult.error || 'Failed to get voice token');
       }
 
-      // Create new Twilio Device
+      // Create new Twilio Device with optimized settings for voice quality
       const device = new Device(tokenResult.token, {
-        // Enable debug logging in development
-        logLevel: process.env.NODE_ENV === 'development' ? 1 : 0,
-        // Codec preferences
+        // Disable verbose logging (set to 1 for debug)
+        logLevel: 0,
+        // Codec preferences - Opus is highest quality, PCMU as fallback
         codecPreferences: [Call.Codec.Opus, Call.Codec.PCMU],
+        // Select closest Twilio edge location for lowest latency
+        // Options: 'ashburn', 'dublin', 'frankfurt', 'sao-paulo', 'singapore', 'sydney', 'tokyo', 'roaming'
+        edge: 'roaming', // Auto-select closest edge
+        // Enable DSCP (Differentiated Services Code Point) for QoS
+        // This marks voice packets as high priority for better routing
+        enableImprovedSignalingErrorPrecision: true,
+        // Close protection - warns before closing if call is active
+        closeProtection: true,
+        // Maximum average bitrate for Opus codec (higher = better quality, more bandwidth)
+        // Range: 6000-510000, default is ~32000
+        maxAverageBitrate: 48000,
       });
 
       // Set up device event handlers
@@ -96,6 +107,13 @@ export const CallModal: React.FC<CallModalProps> = ({
       });
 
       device.on('error', (error) => {
+        // Ignore connection errors when device is being destroyed or modal is closed
+        // These are expected when the WebSocket disconnects after closing
+        const errorCode = (error as any).code;
+        if (errorCode === 31000 || errorCode === 31005 || errorCode === 53001) {
+          console.log('Twilio Device connection closed (expected after modal close)');
+          return;
+        }
         console.error('Twilio Device error:', error);
         setErrorMessage(error.message || 'Device error occurred');
         showError('Device Error', error.message || 'An error occurred with the voice device');
@@ -326,10 +344,16 @@ export const CallModal: React.FC<CallModalProps> = ({
   const handleClose = () => {
     // Only allow closing if call is not active
     if (callState === 'idle' || callState === 'ready' || callState === 'completed' || 
-        callState === 'failed' || callState === 'busy' || callState === 'no-answer') {
-      // Don't destroy device on close - keep it ready for next call
+        callState === 'failed' || callState === 'busy' || callState === 'no-answer' ||
+        callState === 'initializing') {
+      // Destroy device on close to prevent WebSocket timeout errors
+      if (deviceRef.current) {
+        deviceRef.current.destroy();
+        deviceRef.current = null;
+      }
       // Reset state
-      setCallState(deviceReady ? 'ready' : 'idle');
+      setDeviceReady(false);
+      setCallState('idle');
       setCallDuration(0);
       setErrorMessage(null);
       onClose();

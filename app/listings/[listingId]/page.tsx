@@ -13,7 +13,8 @@ import {
   getListingDetails,
   getListingActivities,
   getContacts,
-  calculateListingScore
+  calculateListingScore,
+  deleteListing
 } from '../../../lib/services/listingManagementApi';
 import { ContactEditModal } from '../../../components/organisms/ContactEditModal';
 import { LeadCreateModal } from '../../../components/organisms/LeadCreateModal';
@@ -21,7 +22,7 @@ import { ImageCarousel } from '../../../components/organisms/ImageCarousel';
 import { leadsApi } from '../../../lib/services/leadsApi';
 import { Lead } from '../../../lib/types/lead';
 import { ListingActivity, Contact } from '../../../lib/types/listing';
-import { ArrowLeft, Plus, Upload, X, Save, Edit2, Check, ExternalLink, Bell, Send, Workflow } from 'lucide-react';
+import { ArrowLeft, Plus, Upload, X, Save, Edit2, Check, ExternalLink, Bell, Send, Workflow, Trash2 } from 'lucide-react';
 import { useToast } from '../../../hooks/useToast';
 import { formatDateTime } from 'lib/utils/formatters';
 import { invalidateListingsCache } from '../../../lib/hooks/useListings';
@@ -48,6 +49,9 @@ export default function ListingDetailPage() {
   const [editValue, setEditValue] = useState<string>('');
   const [savingField, setSavingField] = useState<string | null>(null);
   const [isCreateLeadFromContactOpen, setIsCreateLeadFromContactOpen] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
   // Load listing details
   useEffect(() => {
     if (!listingId) return;
@@ -411,6 +415,36 @@ export default function ListingDetailPage() {
     }
   };
 
+  // Handle delete listing
+  const handleDeleteListing = async () => {
+    if (!listingId) return;
+    
+    try {
+      setDeleting(true);
+      await deleteListing(parseInt(listingId));
+      
+      // Invalidate listings cache
+      invalidateListingsCache();
+      
+      showSuccess('Listing Deleted', 'The listing has been successfully deleted');
+      
+      // Navigate back to listings page
+      const page = searchParams.get('page');
+      const perPage = searchParams.get('perPage');
+      const params = new URLSearchParams();
+      if (page) params.set('page', page);
+      if (perPage) params.set('perPage', perPage);
+      const queryString = params.toString();
+      router.push(queryString ? `/listings?${queryString}` : '/listings');
+    } catch (error) {
+      console.error('Error deleting listing:', error);
+      showError('Failed to delete listing', error instanceof Error ? error.message : 'Unknown error');
+    } finally {
+      setDeleting(false);
+      setIsDeleteConfirmOpen(false);
+    }
+  };
+
   // Format number with commas
   const formatNumberWithCommas = (value: number | string | undefined): string => {
     if (value === undefined || value === null || value === '') return '';
@@ -568,8 +602,58 @@ export default function ListingDetailPage() {
                 <Plus className="h-4 w-4" />
                 {lead && lead.contact ? 'Update Lead' : 'Create Lead'}
               </Button>
+              <Button
+                onClick={() => setIsDeleteConfirmOpen(true)}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2 bg-red-600 dark:bg-red-500 hover:bg-red-700 dark:hover:bg-red-600 text-white border-0 shadow-md font-semibold cursor-pointer"
+              >
+                <Trash2 className="h-4 w-4" />
+                Remove
+              </Button>
             </div>
           </div>
+
+          {/* Delete Confirmation Modal */}
+          {isDeleteConfirmOpen && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+                    <Trash2 className="h-5 w-5 text-red-600 dark:text-red-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Delete Listing</h3>
+                </div>
+                <p className="text-gray-600 dark:text-gray-300 mb-6">
+                  Are you sure you want to delete this listing? This action cannot be undone and will remove all associated data including images.
+                </p>
+                <div className="flex justify-end gap-3">
+                  <Button
+                    onClick={() => setIsDeleteConfirmOpen(false)}
+                    variant="outline"
+                    disabled={deleting}
+                    className="border-gray-300 dark:border-gray-600"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleDeleteListing}
+                    disabled={deleting}
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    {deleting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Deleting...
+                      </>
+                    ) : (
+                      'Delete'
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Edit Fields Section */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-4">

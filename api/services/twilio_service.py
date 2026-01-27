@@ -377,11 +377,13 @@ class TwilioService:
                 "error": "No caller ID (from phone number) configured"
             }
         
-        # Generate TwiML for browser-to-phone call
+        # Generate TwiML for browser-to-phone call with optimized settings
         # The <Dial> verb connects the browser to the phone number
+        # answerOnBridge="true" - Rings in browser until remote party answers (better UX)
+        # timeout="30" - Ring for 30 seconds before giving up
         twiml = f'''<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-    <Dial callerId="{from_phone}">
+    <Dial callerId="{from_phone}" answerOnBridge="true" timeout="30">
         <Number>{to_phone}</Number>
     </Dial>
 </Response>'''

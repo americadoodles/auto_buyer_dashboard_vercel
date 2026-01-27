@@ -34,15 +34,15 @@ def create_contact(contact_data: ContactCreate, created_by: UUID) -> ContactOut:
             with conn.cursor() as cur:
                 cur.execute("""
                     INSERT INTO contacts (
-                        first_name, last_name, email, phone, company, job_title,
+                        first_name, last_name, email, phone, mobile, company, job_title,
                         contact_type_id, assigned_to, address, notes, is_active,
                         created_by, created_at, updated_at
                     ) VALUES (
-                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                     ) RETURNING id, created_at, updated_at
                 """, (
                     contact_data.first_name, contact_data.last_name, contact_data.email,
-                    contact_data.phone, contact_data.company, contact_data.job_title,
+                    contact_data.phone, contact_data.mobile, contact_data.company, contact_data.job_title,
                     contact_data.contact_type_id, contact_data.assigned_to, contact_data.address,
                     contact_data.notes, contact_data.is_active, created_by, datetime.now(), datetime.now()
                 ))
@@ -76,7 +76,7 @@ def get_contact(contact_id: UUID) -> Optional[ContactOut]:
         try:
             with conn.cursor() as cur:
                 cur.execute("""
-                    SELECT id, first_name, last_name, email, phone, company, job_title,
+                    SELECT id, first_name, last_name, email, phone, mobile, company, job_title,
                            contact_type_id, assigned_to, address, notes, is_active,
                            created_by, created_at, updated_at
                     FROM contacts WHERE id = %s
@@ -86,10 +86,10 @@ def get_contact(contact_id: UUID) -> Optional[ContactOut]:
                 if result:
                     return ContactOut(
                         id=result[0], first_name=result[1], last_name=result[2],
-                        email=result[3], phone=result[4], company=result[5], job_title=result[6],
-                        contact_type_id=result[7], assigned_to=result[8], address=result[9],
-                        notes=result[10], is_active=result[11], created_by=result[12],
-                        created_at=result[13], updated_at=result[14]
+                        email=result[3], phone=result[4], mobile=result[5], company=result[6], job_title=result[7],
+                        contact_type_id=result[8], assigned_to=result[9], address=result[10],
+                        notes=result[11], is_active=result[12], created_by=result[13],
+                        created_at=result[14], updated_at=result[15]
                     )
                 return None
                 
@@ -127,7 +127,7 @@ def update_contact(contact_id: UUID, contact_update: ContactUpdate) -> Optional[
                 cur.execute(f"""
                     UPDATE contacts SET {', '.join(update_fields)}
                     WHERE id = %s
-                    RETURNING id, first_name, last_name, email, phone, company, job_title,
+                    RETURNING id, first_name, last_name, email, phone, mobile, company, job_title,
                              contact_type_id, assigned_to, address, notes, is_active,
                              created_by, created_at, updated_at
                 """, values)
@@ -136,10 +136,10 @@ def update_contact(contact_id: UUID, contact_update: ContactUpdate) -> Optional[
                 if result:
                     return ContactOut(
                         id=result[0], first_name=result[1], last_name=result[2],
-                        email=result[3], phone=result[4], company=result[5], job_title=result[6],
-                        contact_type_id=result[7], assigned_to=result[8], address=result[9],
-                        notes=result[10], is_active=result[11], created_by=result[12],
-                        created_at=result[13], updated_at=result[14]
+                        email=result[3], phone=result[4], mobile=result[5], company=result[6], job_title=result[7],
+                        contact_type_id=result[8], assigned_to=result[9], address=result[10],
+                        notes=result[11], is_active=result[12], created_by=result[13],
+                        created_at=result[14], updated_at=result[15]
                     )
                 return None
                 
@@ -209,14 +209,14 @@ def list_contacts(skip: int = 0, limit: int = 100, contact_type_id: Optional[int
                     params.append(is_active)
                 
                 if search:
-                    where_conditions.append("(first_name ILIKE %s OR last_name ILIKE %s OR email ILIKE %s OR company ILIKE %s)")
+                    where_conditions.append("(first_name ILIKE %s OR last_name ILIKE %s OR email ILIKE %s OR company ILIKE %s OR mobile ILIKE %s)")
                     search_param = f"%{search}%"
-                    params.extend([search_param, search_param, search_param, search_param])
+                    params.extend([search_param, search_param, search_param, search_param, search_param])
                 
                 where_clause = "WHERE " + " AND ".join(where_conditions) if where_conditions else ""
                 
                 cur.execute(f"""
-                    SELECT id, first_name, last_name, email, phone, company, job_title,
+                    SELECT id, first_name, last_name, email, phone, mobile, company, job_title,
                            contact_type_id, assigned_to, address, notes, is_active,
                            created_by, created_at, updated_at
                     FROM contacts {where_clause}
@@ -229,10 +229,10 @@ def list_contacts(skip: int = 0, limit: int = 100, contact_type_id: Optional[int
                 for result in results:
                     contacts.append(ContactOut(
                         id=result[0], first_name=result[1], last_name=result[2],
-                        email=result[3], phone=result[4], company=result[5], job_title=result[6],
-                        contact_type_id=result[7], assigned_to=result[8], address=result[9],
-                        notes=result[10], is_active=result[11], created_by=result[12],
-                        created_at=result[13], updated_at=result[14]
+                        email=result[3], phone=result[4], mobile=result[5], company=result[6], job_title=result[7],
+                        contact_type_id=result[8], assigned_to=result[9], address=result[10],
+                        notes=result[11], is_active=result[12], created_by=result[13],
+                        created_at=result[14], updated_at=result[15]
                     ))
                 
                 return contacts

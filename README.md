@@ -9,6 +9,8 @@ A full-stack application demonstrating vehicle listing scoring and user manageme
 - **User Authentication**: Secure login/signup with role-based access control
 - **Admin Panel**: User management, role management, and signup request approval
 - **Real-time Scoring**: AI-powered vehicle scoring system
+- **Contact Management**: Full CRM contact management with calling and SMS capabilities
+- **Communication Tools**: Make calls and send SMS messages directly from the platform
 - **Responsive UI**: Modern React/Next.js frontend with Tailwind CSS
 
 ## 🏗️ Architecture
@@ -51,6 +53,12 @@ NEON_DATABASE_URL=postgresql://username:password@host/database
 
 # Backend URL (optional, defaults to /api)
 NEXT_PUBLIC_BACKEND_URL=http://localhost:8001/api
+
+# Twilio Configuration (for calls and SMS)
+TWILIO_ACCOUNT_SID=your_twilio_account_sid
+TWILIO_AUTH_TOKEN=your_twilio_auth_token
+TWILIO_PHONE_NUMBER=+1234567890
+TWILIO_ENABLED=true
 ```
 
 ### 3. Database Setup
@@ -158,6 +166,12 @@ npm run fastapi-dev   # Backend on http://localhost:8001
 ```env
 DATABASE_URL=your_production_database_url
 NODE_ENV=production
+
+# Twilio Configuration (for calls and SMS)
+TWILIO_ACCOUNT_SID=your_twilio_account_sid
+TWILIO_AUTH_TOKEN=your_twilio_auth_token
+TWILIO_PHONE_NUMBER=+1234567890
+TWILIO_ENABLED=true
 ```
 
 ## 🧪 Testing

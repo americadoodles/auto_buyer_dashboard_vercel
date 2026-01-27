@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@syncfusion/ej2-react-kanban": "^24.1.47",
+    "@twilio/voice-sdk": "^2.18.0",
     "apexcharts": "^5.3.6",
     "autoprefixer": "10.4.19",
     "concurrently": "^8.2.2",

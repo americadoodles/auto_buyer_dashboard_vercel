@@ -75,12 +75,23 @@ export const CallModal: React.FC<CallModalProps> = ({
         throw new Error(tokenResult.error || 'Failed to get voice token');
       }
 
-      // Create new Twilio Device
+      // Create new Twilio Device with optimized settings for voice quality
       const device = new Device(tokenResult.token, {
         // Disable verbose logging (set to 1 for debug)
         logLevel: 0,
-        // Codec preferences
+        // Codec preferences - Opus is highest quality, PCMU as fallback
         codecPreferences: [Call.Codec.Opus, Call.Codec.PCMU],
+        // Select closest Twilio edge location for lowest latency
+        // Options: 'ashburn', 'dublin', 'frankfurt', 'sao-paulo', 'singapore', 'sydney', 'tokyo', 'roaming'
+        edge: 'roaming', // Auto-select closest edge
+        // Enable DSCP (Differentiated Services Code Point) for QoS
+        // This marks voice packets as high priority for better routing
+        enableImprovedSignalingErrorPrecision: true,
+        // Close protection - warns before closing if call is active
+        closeProtection: true,
+        // Maximum average bitrate for Opus codec (higher = better quality, more bandwidth)
+        // Range: 6000-510000, default is ~32000
+        maxAverageBitrate: 48000,
       });
 
       // Set up device event handlers

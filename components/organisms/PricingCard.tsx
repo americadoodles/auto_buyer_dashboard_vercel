@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { Button } from '../atoms/Button';
 
 interface PricingCardProps {
   sellerName?: string;
@@ -47,14 +46,11 @@ export const PricingCard: React.FC<PricingCardProps> = ({
                 <span className="text-black dark:text-gray-300 font-semibold">Suggested Report</span>
                 <div className="text-blue-600 dark:text-blue-400 text-2xl font-bold">{formatCurrency(suggestedPrice)}</div>
               </div>
-              <p className="text-xs text-black dark:text-gray-400 mb-4">
+              <p className="text-xs text-black dark:text-gray-400">
                 Based on Condition Report, Factory Options, Distance by zip code, and aftermarket upgrades
               </p>
             </>
           )}
-          <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-            Accept Offer
-          </Button>
         </div>
       </div>
     </div>

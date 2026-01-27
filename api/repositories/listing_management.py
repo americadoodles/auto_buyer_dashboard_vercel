@@ -153,6 +153,125 @@ def get_contact_for_listing(listing_id: int) -> Optional[Dict[str, Any]]:
             logging.error(f"Error getting contact for listing {listing_id}: {str(e)}")
             return None
 
+def delete_listing(listing_id: int, deleted_by: str) -> bool:
+    """Delete a listing by ID, including related leads and contacts"""
+    if not DB_ENABLED:
+        return False
+    
+    with get_db_connection() as conn:
+        if not conn:
+            return False
+            
+        try:
+            with conn.cursor() as cur:
+                # First, check if the listing exists
+                cur.execute("SELECT id FROM listings WHERE id = %s", (listing_id,))
+                listing_exists = cur.fetchone()
+                
+                if not listing_exists:
+                    logging.error(f"Listing {listing_id} not found in database")
+                    return False
+                
+                # Find all leads associated with this listing and their contacts
+                cur.execute("""
+                    SELECT l.id as lead_id, l.contact_id 
+                    FROM leads l 
+                    WHERE l.listing_id = %s
+                """, (listing_id,))
+                leads_with_contacts = cur.fetchall()
+                
+                contact_ids_to_delete = []
+                lead_ids_to_delete = []
+                
+                for row in leads_with_contacts:
+                    lead_id = row[0]
+                    contact_id = row[1]
+                    lead_ids_to_delete.append(lead_id)
+                    if contact_id:
+                        contact_ids_to_delete.append(contact_id)
+                
+                logging.info(f"Found {len(lead_ids_to_delete)} leads and {len(contact_ids_to_delete)} contacts to delete for listing {listing_id}")
+                
+                # Delete lead activities for leads being deleted (cascade may handle this, but be explicit)
+                if lead_ids_to_delete:
+                    cur.execute("""
+                        DELETE FROM lead_activities WHERE lead_id = ANY(%s)
+                    """, (lead_ids_to_delete,))
+                    logging.info(f"Deleted lead activities for {len(lead_ids_to_delete)} leads")
+                
+                # Delete lead_vehicles for leads being deleted
+                if lead_ids_to_delete:
+                    cur.execute("""
+                        DELETE FROM lead_vehicles WHERE lead_id = ANY(%s)
+                    """, (lead_ids_to_delete,))
+                    logging.info(f"Deleted lead_vehicles for {len(lead_ids_to_delete)} leads")
+                
+                # Update tasks to unlink from leads being deleted
+                if lead_ids_to_delete:
+                    cur.execute("""
+                        UPDATE tasks SET related_lead_id = NULL WHERE related_lead_id = ANY(%s)
+                    """, (lead_ids_to_delete,))
+                
+                # Update deals to unlink from leads being deleted
+                if lead_ids_to_delete:
+                    cur.execute("""
+                        UPDATE deals SET lead_id = NULL WHERE lead_id = ANY(%s)
+                    """, (lead_ids_to_delete,))
+                
+                # Delete leads associated with this listing
+                if lead_ids_to_delete:
+                    cur.execute("""
+                        DELETE FROM leads WHERE id = ANY(%s)
+                    """, (lead_ids_to_delete,))
+                    logging.info(f"Deleted {len(lead_ids_to_delete)} leads for listing {listing_id}")
+                
+                # Delete contacts that were associated with the leads
+                # First, remove contact references from other tables
+                if contact_ids_to_delete:
+                    # Update deals to unlink contacts
+                    cur.execute("""
+                        UPDATE deals SET contact_id = NULL WHERE contact_id = ANY(%s)
+                    """, (contact_ids_to_delete,))
+                    
+                    # Update tasks to unlink contacts
+                    cur.execute("""
+                        UPDATE tasks SET related_contact_id = NULL WHERE related_contact_id = ANY(%s)
+                    """, (contact_ids_to_delete,))
+                    
+                    # Delete contact activities (cascade may handle this)
+                    cur.execute("""
+                        DELETE FROM contact_activities WHERE contact_id = ANY(%s)
+                    """, (contact_ids_to_delete,))
+                    
+                    # Delete the contacts
+                    cur.execute("""
+                        DELETE FROM contacts WHERE id = ANY(%s)
+                    """, (contact_ids_to_delete,))
+                    logging.info(f"Deleted {len(contact_ids_to_delete)} contacts for listing {listing_id}")
+                
+                # Delete related listing activities
+                cur.execute("DELETE FROM listing_activities WHERE listing_id = %s", (listing_id,))
+                
+                # Finally, delete the listing
+                cur.execute("DELETE FROM listings WHERE id = %s RETURNING id", (listing_id,))
+                result = cur.fetchone()
+                
+                if result:
+                    conn.commit()
+                    logging.info(f"Successfully deleted listing {listing_id} by user {deleted_by}")
+                    return True
+                else:
+                    logging.warning(f"No result returned when deleting listing {listing_id}")
+                    return False
+                
+        except Exception as e:
+            logging.error(f"Error deleting listing {listing_id}: {str(e)}")
+            import traceback
+            logging.error(f"Traceback: {traceback.format_exc()}")
+            return False
+    
+    return False
+
 def get_listing_by_id(listing_id: int) -> Optional[ListingOut]:
     """Get a listing by ID with full details including contacts"""
     if not DB_ENABLED:

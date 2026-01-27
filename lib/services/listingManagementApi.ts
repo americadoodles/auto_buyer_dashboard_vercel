@@ -43,6 +43,15 @@ export const getListingDetails = async (listingId: number): Promise<Listing> => 
   return handleResponse(response);
 };
 
+export const deleteListing = async (listingId: number): Promise<{ message: string; listing_id: number }> => {
+  const response = await fetch(`${API_BASE}/listings/${listingId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  
+  return handleResponse(response);
+};
+
 // ==============================================
 // ACTIVITY HISTORY FUNCTIONS
 // ==============================================

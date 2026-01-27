@@ -9,7 +9,7 @@ from ..schemas.user import UserOut
 from ..core.auth import get_current_user
 from ..core.config import settings
 from ..repositories.listing_management import (
-    update_listing, get_listing_by_id, get_listing_activities, get_contact_for_listing
+    update_listing, get_listing_by_id, get_listing_activities, get_contact_for_listing, delete_listing
 )
 from ..services.ai_service import calculate_listing_score
 from ..repositories.repositories import update_cached_score, update_score
@@ -97,6 +97,42 @@ def get_listing_details(
     except Exception as e:
         logging.error(f"Error getting listing {listing_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to retrieve listing")
+
+@listing_management_router.delete("/{listing_id}")
+def delete_listing_endpoint(
+    listing_id: int = Path(..., description="ID of the listing to delete"),
+    current_user: UserOut = Depends(get_current_user)
+):
+    """Delete a listing by ID"""
+    try:
+        # First check if the listing exists
+        existing_listing = get_listing_by_id(listing_id)
+        if not existing_listing:
+            raise HTTPException(status_code=404, detail="Listing not found")
+        
+        # Delete any images from blob storage
+        if existing_listing.images:
+            for image_url in existing_listing.images:
+                blob_deleted = delete_blob_from_vercel(image_url)
+                if blob_deleted:
+                    logging.info(f"Deleted blob for listing {listing_id}: {image_url}")
+                else:
+                    logging.warning(f"Failed to delete blob (continuing anyway): {image_url}")
+        
+        # Delete the listing
+        success = delete_listing(listing_id, str(current_user.id))
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to delete listing")
+        
+        logging.info(f"Successfully deleted listing {listing_id} by user {current_user.id}")
+        return {"message": "Listing deleted successfully", "listing_id": listing_id}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error deleting listing {listing_id}: {str(e)}")
+        logging.error(f"Traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail="Failed to delete listing")
 
 @listing_management_router.put("/{listing_id}/test")
 def test_update_listing(

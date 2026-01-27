@@ -236,3 +236,23 @@ export const sendSMS = async (contactId: string, message: string, phoneNumber?: 
   
   return handleResponse(response);
 };
+
+// ==============================================
+// BROWSER VOICE (WebRTC) FUNCTIONS
+// ==============================================
+
+export interface VoiceTokenResponse {
+  success: boolean;
+  token?: string;
+  identity?: string;
+  error?: string;
+}
+
+export const getVoiceToken = async (): Promise<VoiceTokenResponse> => {
+  const response = await fetch(`${API_BASE}/crm/communications/voice/token`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+  
+  return handleResponse(response);
+};

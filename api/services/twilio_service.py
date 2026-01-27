@@ -8,6 +8,8 @@ logger = logging.getLogger(__name__)
 try:
     from twilio.rest import Client
     from twilio.base.exceptions import TwilioRestException
+    from twilio.jwt.access_token import AccessToken
+    from twilio.jwt.access_token.grants import VoiceGrant
     TWILIO_AVAILABLE = True
 except ImportError:
     TWILIO_AVAILABLE = False
@@ -263,6 +265,133 @@ class TwilioService:
                 "success": False,
                 "error": f"Failed to stop call: {str(e)}"
             }
+    
+    def generate_voice_token(self, identity: str) -> Dict[str, Any]:
+        """
+        Generate an Access Token for browser-based voice calling.
+        This token allows the browser to connect to Twilio for voice transmission.
+        
+        Args:
+            identity: Unique identifier for the user (e.g., user ID or email)
+        
+        Returns:
+            Dict with token or error
+        """
+        if not TWILIO_AVAILABLE:
+            return {
+                "success": False,
+                "error": "Twilio SDK not installed"
+            }
+        
+        if not settings.TWILIO_ENABLED:
+            return {
+                "success": False,
+                "error": "Twilio is not enabled"
+            }
+        
+        # Check for API key credentials (preferred for Access Tokens)
+        api_key = settings.TWILIO_API_KEY
+        api_secret = settings.TWILIO_API_SECRET
+        account_sid = settings.TWILIO_ACCOUNT_SID
+        twiml_app_sid = settings.TWILIO_TWIML_APP_SID
+        
+        if not account_sid:
+            return {
+                "success": False,
+                "error": "TWILIO_ACCOUNT_SID not configured"
+            }
+        
+        # If no API key, we can still use the auth token for testing
+        if not api_key or not api_secret:
+            # Fallback: use account SID and auth token (not recommended for production)
+            api_key = account_sid
+            api_secret = settings.TWILIO_AUTH_TOKEN
+            if not api_secret:
+                return {
+                    "success": False,
+                    "error": "TWILIO_API_KEY and TWILIO_API_SECRET or TWILIO_AUTH_TOKEN not configured"
+                }
+            logger.warning("Using TWILIO_AUTH_TOKEN for Access Token generation. "
+                          "For production, use TWILIO_API_KEY and TWILIO_API_SECRET.")
+        
+        try:
+            # Create Access Token
+            token = AccessToken(
+                account_sid,
+                api_key,
+                api_secret,
+                identity=identity,
+                ttl=3600  # Token valid for 1 hour
+            )
+            
+            # Create Voice Grant
+            voice_grant = VoiceGrant(
+                outgoing_application_sid=twiml_app_sid if twiml_app_sid else None,
+                incoming_allow=True  # Allow incoming calls to this identity
+            )
+            
+            # Add grant to token
+            token.add_grant(voice_grant)
+            
+            return {
+                "success": True,
+                "token": token.to_jwt(),
+                "identity": identity
+            }
+        except Exception as e:
+            logger.error(f"Error generating voice token: {str(e)}")
+            return {
+                "success": False,
+                "error": f"Failed to generate voice token: {str(e)}"
+            }
+    
+    def make_browser_call(
+        self,
+        to_phone: str,
+        from_phone: Optional[str] = None,
+        caller_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Make a call from browser to phone.
+        Returns TwiML that connects the browser client to the phone number.
+        
+        Args:
+            to_phone: Phone number to call (E.164 format)
+            from_phone: Caller ID to display (defaults to TWILIO_PHONE_NUMBER)
+            caller_id: Browser client identity (for logging)
+        
+        Returns:
+            Dict with TwiML or error
+        """
+        if not self.enabled:
+            return {
+                "success": False,
+                "error": self.error_message or "Twilio service not enabled"
+            }
+        
+        from_phone = from_phone or settings.TWILIO_PHONE_NUMBER
+        
+        if not from_phone:
+            return {
+                "success": False,
+                "error": "No caller ID (from phone number) configured"
+            }
+        
+        # Generate TwiML for browser-to-phone call
+        # The <Dial> verb connects the browser to the phone number
+        twiml = f'''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Dial callerId="{from_phone}">
+        <Number>{to_phone}</Number>
+    </Dial>
+</Response>'''
+        
+        return {
+            "success": True,
+            "twiml": twiml,
+            "to": to_phone,
+            "from": from_phone
+        }
 
 
 # Singleton instance

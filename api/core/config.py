@@ -56,6 +56,10 @@ class Settings(BaseSettings):
     TWILIO_AUTH_TOKEN: str = os.getenv("TWILIO_AUTH_TOKEN", "")
     TWILIO_PHONE_NUMBER: str = os.getenv("TWILIO_PHONE_NUMBER", "")
     TWILIO_ENABLED: bool = bool(os.getenv("TWILIO_ENABLED", "false").lower() == "true")
+    # Twilio API Key for browser-based voice (Access Tokens)
+    TWILIO_API_KEY: str = os.getenv("TWILIO_API_KEY", "")
+    TWILIO_API_SECRET: str = os.getenv("TWILIO_API_SECRET", "")
+    TWILIO_TWIML_APP_SID: str = os.getenv("TWILIO_TWIML_APP_SID", "")
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

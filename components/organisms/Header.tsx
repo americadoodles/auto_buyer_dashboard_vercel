@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../app/auth/useAuth';
 import { useRouter } from 'next/navigation';
 import { Input } from '../atoms/Input';
@@ -20,6 +20,21 @@ export const Header: React.FC = () => {
     await logout();
     router.push('/auth');
   };
+
+  // Handle Escape key to close dropdowns
+  const handleEscapeKey = useCallback((event: KeyboardEvent) => {
+    if (event.key === 'Escape') {
+      setShowNotifications(false);
+      setShowUserMenu(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleEscapeKey);
+    return () => {
+      document.removeEventListener('keydown', handleEscapeKey);
+    };
+  }, [handleEscapeKey]);
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
@@ -55,14 +70,23 @@ export const Header: React.FC = () => {
           </Button>
           
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50 dark:bg-gray-800 dark:border-gray-700">
-              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                <h3 className="font-semibold text-gray-900 dark:text-white">Notifications</h3>
+            <>
+              {/* Backdrop */}
+              <div 
+                className="fixed inset-0 z-40" 
+                onClick={() => setShowNotifications(false)}
+              />
+              
+              {/* Dropdown Panel */}
+              <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50 dark:bg-gray-800 dark:border-gray-700">
+                <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                  <h3 className="font-semibold text-gray-900 dark:text-white">Notifications</h3>
+                </div>
+                <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                  <p>No new notifications</p>
+                </div>
               </div>
-              <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-                <p>No new notifications</p>
-              </div>
-            </div>
+            </>
           )}
         </div>
 

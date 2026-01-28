@@ -13,6 +13,8 @@ import { Listing, ListingActivity } from '../../../../lib/types/listing';
 import { useLeadStatuses, useLeadSources } from '../../../../lib/hooks/useLeads';
 import { LeadCreateModal } from '../../../../components/organisms/LeadCreateModal';
 import { ConfirmationModal } from '../../../../components/organisms/ConfirmationModal';
+import { CallModal } from '../../../../components/organisms/CallModal';
+import { SMSModal } from '../../../../components/organisms/SMSModal';
 import { VehiclePhotoGallery } from '../../../../components/organisms/VehiclePhotoGallery';
 import { VehicleHeader } from '../../../../components/organisms/VehicleHeader';
 import { MMRCard } from '../../../../components/organisms/MMRCard';
@@ -47,6 +49,8 @@ export default function LeadDetailPage() {
   const [activities, setActivities] = useState<LeadActivity[]>([]);
   const [isUpdateListingModalOpen, setIsUpdateListingModalOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isCallModalOpen, setIsCallModalOpen] = useState(false);
+  const [isSMSModalOpen, setIsSMSModalOpen] = useState(false);
   const [mmrData, setMmrData] = useState<any>(null);
   const [accuTradeData, setAccuTradeData] = useState<any>(null);
   
@@ -344,6 +348,28 @@ export default function LeadDetailPage() {
               )}
             </div>
             <div className="flex items-center gap-2">
+              {/* Phone Call Button */}
+              <Button
+                onClick={() => setIsCallModalOpen(true)}
+                variant="outline"
+                size="sm"
+                disabled={!lead?.contact?.phone && !lead?.contact?.mobile}
+                className="flex items-center gap-2 bg-green-600 dark:bg-green-500 hover:bg-green-700 dark:hover:bg-green-600 text-white dark:text-white border-0 shadow-md font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Icon name="phone" className="w-4 h-4" />
+                Call
+              </Button>
+              {/* SMS Button */}
+              <Button
+                onClick={() => setIsSMSModalOpen(true)}
+                variant="outline"
+                size="sm"
+                disabled={!lead?.contact?.phone && !lead?.contact?.mobile}
+                className="flex items-center gap-2 bg-purple-600 dark:bg-purple-500 hover:bg-purple-700 dark:hover:bg-purple-600 text-white dark:text-white border-0 shadow-md font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Icon name="message-square" className="w-4 h-4" />
+                SMS
+              </Button>
             <Button
               onClick={() => setIsUpdateListingModalOpen(true)}
                 variant="outline"
@@ -523,6 +549,33 @@ export default function LeadDetailPage() {
         variant="danger"
         loading={deleting}
         loadingText="Deleting..."
+      />
+
+      {/* Call Modal */}
+      <CallModal
+        isOpen={isCallModalOpen}
+        onClose={() => setIsCallModalOpen(false)}
+        contactId={lead?.contact_id || ''}
+        contactName={lead?.contact ? `${lead.contact.first_name} ${lead.contact.last_name}`.trim() : 'Unknown Contact'}
+        phone={lead?.contact?.phone}
+        mobile={lead?.contact?.mobile}
+        onCallInitiated={() => {
+          // Optionally refresh activities after a call is made
+          leadsApi.getLeadActivities(leadId).then(setActivities).catch(() => {});
+        }}
+      />
+
+      {/* SMS Modal */}
+      <SMSModal
+        isOpen={isSMSModalOpen}
+        onClose={() => setIsSMSModalOpen(false)}
+        contactId={lead?.contact_id || ''}
+        contactName={lead?.contact ? `${lead.contact.first_name} ${lead.contact.last_name}`.trim() : 'Unknown Contact'}
+        phoneNumber={lead?.contact?.mobile || lead?.contact?.phone}
+        onSent={() => {
+          // Optionally refresh activities after SMS is sent
+          leadsApi.getLeadActivities(leadId).then(setActivities).catch(() => {});
+        }}
       />
 
       {/* Chat Icon - Docked at bottom right */}

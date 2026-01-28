@@ -246,6 +246,68 @@ export const sendSMS = async (contactId: string, message: string, phoneNumber?: 
   return handleResponse(response);
 };
 
+export interface SMSMessage {
+  id: string;
+  type: string;
+  subject: string;
+  content: string;
+  direction: 'inbound' | 'outbound';
+  status: string;
+  created_at: string;
+  from_phone?: string;
+  to_phone?: string;
+}
+
+export interface SMSHistoryResponse {
+  messages: SMSMessage[];
+  total: number;
+}
+
+export const getSMSHistory = async (contactId: string, limit: number = 50): Promise<SMSHistoryResponse> => {
+  const response = await fetch(`${API_BASE}/crm/communications/sms/history/${contactId}?limit=${limit}`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+  
+  return handleResponse(response);
+};
+
+// Communication (SMS + Calls) combined
+export interface Communication {
+  id: string;
+  type: 'sms' | 'call' | 'email' | 'meeting';
+  subject: string;
+  content: string;
+  direction: 'inbound' | 'outbound';
+  status: string;
+  created_at: string;
+  from_phone?: string;
+  to_phone?: string;
+}
+
+export interface CommunicationHistoryResponse {
+  communications: Communication[];
+  total: number;
+}
+
+export const getCommunicationHistory = async (
+  contactId: string, 
+  limit: number = 50,
+  communicationType?: 'sms' | 'call'
+): Promise<CommunicationHistoryResponse> => {
+  let url = `${API_BASE}/crm/communications/history/${contactId}?limit=${limit}`;
+  if (communicationType) {
+    url += `&communication_type=${communicationType}`;
+  }
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+  
+  return handleResponse(response);
+};
+
 // ==============================================
 // BROWSER VOICE (WebRTC) FUNCTIONS
 // ==============================================

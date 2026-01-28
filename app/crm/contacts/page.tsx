@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { ContactManagement } from '../../../components/organisms/ContactManagement';
+import { ContactChatInterface } from '../../../components/organisms/ContactChatInterface';
+import { ContactEditModal } from '../../../components/organisms/ContactEditModal';
 import { useLeads } from '../../../lib/hooks/useLeads';
 import { useContacts } from '../../../lib/hooks/useContacts';
 
 export default function ContactsPage() {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(10);
+  const [isNewContactModalOpen, setIsNewContactModalOpen] = useState(false);
 
   // Fetch contacts from contacts table
   const { contacts: fetchedContacts, loading: contactsLoading, error: contactsError, refreshContacts } = useContacts({
@@ -120,34 +120,11 @@ export default function ContactsPage() {
     refreshLeads();
   };
 
-  // Paginate contacts
-  const paginatedContacts = useMemo(() => {
-    const startIndex = (currentPage - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    return contacts.slice(startIndex, endIndex);
-  }, [contacts, currentPage, pageSize]);
-
-  const totalPages = Math.ceil(contacts.length / pageSize);
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  const handleContactClick = (contactId: string) => {
-    console.log('Contact clicked:', contactId);
-  };
-
-  const handleExportContacts = () => {
-    console.log('Export contacts clicked');
-  };
-
   // Show loading state
   if (loading && fetchedContacts.length === 0) {
     return (
-      <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400"></div>
-        </div>
+      <div className="p-4 bg-gray-50 dark:bg-gray-900 h-full flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400"></div>
       </div>
     );
   }
@@ -155,8 +132,8 @@ export default function ContactsPage() {
   // Show error state
   if (error) {
     return (
-      <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
+      <div className="p-4 bg-gray-50 dark:bg-gray-900 h-full flex items-center justify-center">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4 max-w-md">
           <div className="flex">
             <div className="flex-shrink-0">
               <svg className="h-5 w-5 text-red-400 dark:text-red-500" viewBox="0 0 20 20" fill="currentColor">
@@ -186,18 +163,27 @@ export default function ContactsPage() {
   }
 
   return (
-      <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
-        <ContactManagement 
-          contacts={paginatedContacts}
-          totalContacts={contacts.length}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-          onContactClick={handleContactClick}
-          onExportContacts={handleExportContacts}
+    <div className="bg-gray-50 dark:bg-gray-900 h-full flex flex-col p-4">
+      {/* Chat Interface */}
+      <div className="flex-1 min-h-0">
+        <ContactChatInterface
+          contacts={contacts}
           onContactUpdated={refreshData}
+          onNewContact={() => setIsNewContactModalOpen(true)}
         />
       </div>
+
+      {/* New Contact Modal */}
+      <ContactEditModal
+        contact={null}
+        isOpen={isNewContactModalOpen}
+        onClose={() => setIsNewContactModalOpen(false)}
+        onSave={() => {
+          setIsNewContactModalOpen(false);
+          refreshData();
+        }}
+      />
+    </div>
   );
 }
 

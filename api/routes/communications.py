@@ -576,6 +576,126 @@ async def sms_webhook_handler(request: Request):
         return PlainTextResponse(content=twiml, media_type="application/xml")
 
 
+@communication_router.get("/history/{contact_id}", response_model=dict)
+def get_communication_history(
+    contact_id: UUID,
+    limit: int = Query(default=50, le=100),
+    communication_type: Optional[str] = Query(default=None, description="Filter by type: 'sms', 'call', or None for all"),
+    current_user: UserOut = Depends(get_current_user)
+):
+    """Get all communication history (SMS + calls) with a contact"""
+    if not DB_ENABLED:
+        raise HTTPException(status_code=500, detail="Database not enabled")
+    
+    with get_db_connection() as conn:
+        if not conn:
+            raise HTTPException(status_code=500, detail="Database connection failed")
+        
+        try:
+            with conn.cursor() as cur:
+                # Get contact's phone numbers
+                cur.execute("""
+                    SELECT phone, mobile FROM contacts WHERE id = %s
+                """, (str(contact_id),))
+                contact_result = cur.fetchone()
+                
+                if not contact_result:
+                    raise HTTPException(status_code=404, detail="Contact not found")
+                
+                phone, mobile = contact_result
+                phone_numbers = [p for p in [phone, mobile] if p]
+                
+                # Build the query based on communication_type filter
+                type_filter = ""
+                if communication_type:
+                    type_filter = f"AND communication_type = '{communication_type}'"
+                
+                # Try query with extended columns first
+                try:
+                    if phone_numbers:
+                        placeholders = ','.join(['%s'] * len(phone_numbers))
+                        cur.execute(f"""
+                            SELECT 
+                                id, communication_type, subject, content, direction, 
+                                status, created_at, from_phone, to_phone
+                            FROM communications 
+                            WHERE (
+                                to_contact_id = %s 
+                                OR from_phone IN ({placeholders})
+                                OR to_phone IN ({placeholders})
+                            )
+                            {type_filter}
+                            ORDER BY created_at DESC
+                            LIMIT %s
+                        """, (str(contact_id), *phone_numbers, *phone_numbers, limit))
+                    else:
+                        cur.execute(f"""
+                            SELECT 
+                                id, communication_type, subject, content, direction, 
+                                status, created_at, from_phone, to_phone
+                            FROM communications 
+                            WHERE to_contact_id = %s
+                            {type_filter}
+                            ORDER BY created_at DESC
+                            LIMIT %s
+                        """, (str(contact_id), limit))
+                    
+                    communications = []
+                    for row in cur.fetchall():
+                        communications.append({
+                            "id": str(row[0]),
+                            "type": row[1],
+                            "subject": row[2],
+                            "content": row[3],
+                            "direction": row[4],
+                            "status": row[5],
+                            "created_at": row[6].isoformat() if row[6] else None,
+                            "from_phone": row[7] if len(row) > 7 else None,
+                            "to_phone": row[8] if len(row) > 8 else None
+                        })
+                except Exception:
+                    # Fallback: query without extended columns
+                    type_filter_basic = ""
+                    if communication_type:
+                        type_filter_basic = f"AND communication_type = '{communication_type}'"
+                    
+                    cur.execute(f"""
+                        SELECT 
+                            id, communication_type, subject, content, direction, 
+                            status, created_at
+                        FROM communications 
+                        WHERE to_contact_id = %s
+                        {type_filter_basic}
+                        ORDER BY created_at DESC
+                        LIMIT %s
+                    """, (str(contact_id), limit))
+                    
+                    communications = []
+                    for row in cur.fetchall():
+                        communications.append({
+                            "id": str(row[0]),
+                            "type": row[1],
+                            "subject": row[2],
+                            "content": row[3],
+                            "direction": row[4],
+                            "status": row[5],
+                            "created_at": row[6].isoformat() if row[6] else None,
+                            "from_phone": None,
+                            "to_phone": None
+                        })
+                
+                return {
+                    "communications": communications,
+                    "total": len(communications)
+                }
+                
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error fetching communication history: {str(e)}")
+            raise HTTPException(status_code=500, detail="Failed to fetch communication history")
+
+
 @communication_router.get("/sms/history/{contact_id}", response_model=dict)
 def get_sms_history(
     contact_id: UUID,

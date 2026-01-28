@@ -18,6 +18,7 @@ import {
   Clock,
   TrendingUp,
   AlertCircle,
+  AlertTriangle,
   Check,
   Settings,
   X,
@@ -33,7 +34,13 @@ import {
   Sparkles,
   Loader2,
   MessageSquare,
+  MessageCircle,
   Send,
+  Search,
+  Info,
+  Smartphone,
+  Building2,
+  Table,
 } from 'lucide-react';
 
 // Import image icons
@@ -67,6 +74,7 @@ const iconMap: Record<string, LucideIcon> = {
   'clock': Clock,
   'trending-up': TrendingUp,
   'alert-circle': AlertCircle,
+  'alert-triangle': AlertTriangle,
   'check': Check,
   'settings': Settings,
   'x': X,
@@ -83,7 +91,13 @@ const iconMap: Record<string, LucideIcon> = {
   'loader': Loader2,
   'loader-2': Loader2,
   'message-square': MessageSquare,
+  'message-circle': MessageCircle,
   'send': Send,
+  'search': Search,
+  'info': Info,
+  'smartphone': Smartphone,
+  'building-2': Building2,
+  'table': Table,
 };
 
 // Helper function to get image source from StaticImageData or string

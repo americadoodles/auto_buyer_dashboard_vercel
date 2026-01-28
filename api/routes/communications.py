@@ -285,6 +285,111 @@ def get_voice_token(
         raise HTTPException(status_code=500, detail=f"Failed to generate voice token: {str(e)}")
 
 
+@communication_router.post("/voice/inbound", response_class=PlainTextResponse)
+async def voice_inbound_handler(request: Request):
+    """
+    TwiML webhook for incoming voice calls to your Twilio number.
+    This endpoint routes incoming calls to browser clients.
+    
+    Note: This endpoint doesn't require authentication as it's called by Twilio.
+    """
+    try:
+        form_data = await request.form()
+        
+        from_number = form_data.get("From", "")
+        to_number = form_data.get("To", "")
+        call_sid = form_data.get("CallSid", "")
+        
+        logger.info(f"Incoming call - From: {from_number}, To: {to_number}, CallSid: {call_sid}")
+        
+        # Log the incoming call in the database
+        if DB_ENABLED:
+            try:
+                with get_db_connection() as conn:
+                    if conn:
+                        with conn.cursor() as cur:
+                            # Try to find a contact with this phone number
+                            contact_id = None
+                            cur.execute("""
+                                SELECT id FROM contacts 
+                                WHERE phone = %s OR mobile = %s
+                                LIMIT 1
+                            """, (from_number, from_number))
+                            contact_result = cur.fetchone()
+                            if contact_result:
+                                contact_id = contact_result[0]
+                            
+                            # Try to insert with extended columns first, fall back to basic if columns don't exist
+                            try:
+                                cur.execute("""
+                                    INSERT INTO communications (
+                                        from_user_id, to_contact_id, communication_type,
+                                        subject, content, direction, status, created_at,
+                                        external_id, from_phone, to_phone
+                                    ) VALUES (
+                                        NULL, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                                    ) RETURNING id
+                                """, (
+                                    contact_id,
+                                    'call',
+                                    f"Incoming call from {from_number}",
+                                    f"Incoming call. Call SID: {call_sid}",
+                                    'inbound',
+                                    'ringing',
+                                    datetime.now(),
+                                    call_sid,
+                                    from_number,
+                                    to_number
+                                ))
+                            except Exception:
+                                # Fallback: insert without extended columns
+                                cur.execute("""
+                                    INSERT INTO communications (
+                                        from_user_id, to_contact_id, communication_type,
+                                        subject, content, direction, status, created_at
+                                    ) VALUES (
+                                        NULL, %s, %s, %s, %s, %s, %s, %s
+                                    ) RETURNING id
+                                """, (
+                                    contact_id,
+                                    'call',
+                                    f"Incoming call from {from_number}",
+                                    f"Incoming call. Call SID: {call_sid}",
+                                    'inbound',
+                                    'ringing',
+                                    datetime.now()
+                                ))
+                            conn.commit()
+            except Exception as db_error:
+                logger.error(f"Failed to log incoming call: {str(db_error)}")
+        
+        # Generate TwiML to connect incoming call to browser client
+        # The <Client> verb routes the call to a registered browser client
+        # We use a general identity pattern - in production you might route to specific users
+        twiml = f'''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Say>Please wait while we connect you.</Say>
+    <Dial timeout="30" callerId="{from_number}">
+        <Client>
+            <Identity>user_default</Identity>
+            <Parameter name="FromNumber" value="{from_number}"/>
+        </Client>
+    </Dial>
+    <Say>Sorry, no one is available to take your call. Please try again later.</Say>
+</Response>'''
+        
+        logger.info(f"Returning TwiML for incoming call from {from_number}")
+        return PlainTextResponse(content=twiml, media_type="application/xml")
+        
+    except Exception as e:
+        logger.error(f"Error in voice inbound handler: {str(e)}")
+        twiml = '''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Say>We're sorry, but we cannot process your call at this time. Please try again later.</Say>
+</Response>'''
+        return PlainTextResponse(content=twiml, media_type="application/xml")
+
+
 @communication_router.post("/voice/outbound", response_class=PlainTextResponse)
 async def voice_outbound_handler(request: Request):
     """
@@ -356,6 +461,349 @@ class SMSRequest(BaseModel):
     contact_id: UUID
     message: str = Field(..., min_length=1, max_length=1600, description="SMS message content")
     phone_number: Optional[str] = None  # If not provided, will use contact's mobile or phone
+
+
+@communication_router.post("/sms/webhook", response_class=PlainTextResponse)
+async def sms_webhook_handler(request: Request):
+    """
+    Webhook endpoint for receiving incoming SMS messages from Twilio.
+    This endpoint is called by Twilio when someone sends an SMS to your Twilio number.
+    
+    Note: This endpoint doesn't require authentication as it's called by Twilio.
+    In production, you should validate the Twilio signature.
+    """
+    try:
+        # Get form data from Twilio's POST request
+        form_data = await request.form()
+        
+        # Extract SMS details from Twilio webhook
+        from_number = form_data.get("From", "")
+        to_number = form_data.get("To", "")
+        message_body = form_data.get("Body", "")
+        message_sid = form_data.get("MessageSid", "")
+        
+        logger.info(f"Incoming SMS - From: {from_number}, To: {to_number}, MessageSid: {message_sid}")
+        logger.info(f"Message body: {message_body}")
+        
+        # Store the incoming SMS in the database
+        if DB_ENABLED:
+            try:
+                with get_db_connection() as conn:
+                    if conn:
+                        with conn.cursor() as cur:
+                            # Try to find a contact with this phone number
+                            contact_id = None
+                            cur.execute("""
+                                SELECT id FROM contacts 
+                                WHERE phone = %s OR mobile = %s
+                                LIMIT 1
+                            """, (from_number, from_number))
+                            contact_result = cur.fetchone()
+                            if contact_result:
+                                contact_id = contact_result[0]
+                            
+                            # Try to insert with extended columns first, fall back to basic if columns don't exist
+                            try:
+                                cur.execute("""
+                                    INSERT INTO communications (
+                                        from_user_id, to_contact_id, communication_type,
+                                        subject, content, direction, status, created_at,
+                                        external_id, from_phone, to_phone
+                                    ) VALUES (
+                                        NULL, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                                    ) RETURNING id
+                                """, (
+                                    contact_id,
+                                    'sms',
+                                    f"SMS from {from_number}",
+                                    message_body,
+                                    'inbound',
+                                    'received',
+                                    datetime.now(),
+                                    message_sid,
+                                    from_number,
+                                    to_number
+                                ))
+                            except Exception as column_error:
+                                # Fallback: insert without extended columns
+                                logger.warning(f"Extended columns not available, using basic insert: {str(column_error)}")
+                                cur.execute("""
+                                    INSERT INTO communications (
+                                        from_user_id, to_contact_id, communication_type,
+                                        subject, content, direction, status, created_at
+                                    ) VALUES (
+                                        NULL, %s, %s, %s, %s, %s, %s, %s
+                                    ) RETURNING id
+                                """, (
+                                    contact_id,
+                                    'sms',
+                                    f"SMS from {from_number}",
+                                    message_body,
+                                    'inbound',
+                                    'received',
+                                    datetime.now()
+                                ))
+                            
+                            communication_id = cur.fetchone()[0]
+                            conn.commit()
+                            
+                            logger.info(f"Stored incoming SMS with ID: {communication_id}")
+                            
+                            # Emit event for automation
+                            try:
+                                publish_communication_logged(
+                                    communication_id=communication_id,
+                                    from_user_id=None,
+                                    to_contact_id=contact_id,
+                                    communication_type='sms',
+                                    direction='inbound'
+                                )
+                            except Exception as event_error:
+                                logger.warning(f"Failed to emit CommunicationLogged event: {str(event_error)}")
+            except Exception as db_error:
+                logger.error(f"Failed to store incoming SMS: {str(db_error)}")
+        
+        # Return empty TwiML response (no auto-reply)
+        twiml = '''<?xml version="1.0" encoding="UTF-8"?>
+<Response></Response>'''
+        return PlainTextResponse(content=twiml, media_type="application/xml")
+        
+    except Exception as e:
+        logger.error(f"Error in SMS webhook handler: {str(e)}")
+        # Return empty TwiML even on error
+        twiml = '''<?xml version="1.0" encoding="UTF-8"?>
+<Response></Response>'''
+        return PlainTextResponse(content=twiml, media_type="application/xml")
+
+
+@communication_router.get("/history/{contact_id}", response_model=dict)
+def get_communication_history(
+    contact_id: UUID,
+    limit: int = Query(default=50, le=100),
+    communication_type: Optional[str] = Query(default=None, description="Filter by type: 'sms', 'call', or None for all"),
+    current_user: UserOut = Depends(get_current_user)
+):
+    """Get all communication history (SMS + calls) with a contact"""
+    if not DB_ENABLED:
+        raise HTTPException(status_code=500, detail="Database not enabled")
+    
+    with get_db_connection() as conn:
+        if not conn:
+            raise HTTPException(status_code=500, detail="Database connection failed")
+        
+        try:
+            with conn.cursor() as cur:
+                # Get contact's phone numbers
+                cur.execute("""
+                    SELECT phone, mobile FROM contacts WHERE id = %s
+                """, (str(contact_id),))
+                contact_result = cur.fetchone()
+                
+                if not contact_result:
+                    raise HTTPException(status_code=404, detail="Contact not found")
+                
+                phone, mobile = contact_result
+                phone_numbers = [p for p in [phone, mobile] if p]
+                
+                # Build the query based on communication_type filter
+                type_filter = ""
+                if communication_type:
+                    type_filter = f"AND communication_type = '{communication_type}'"
+                
+                # Try query with extended columns first
+                try:
+                    if phone_numbers:
+                        placeholders = ','.join(['%s'] * len(phone_numbers))
+                        cur.execute(f"""
+                            SELECT 
+                                id, communication_type, subject, content, direction, 
+                                status, created_at, from_phone, to_phone
+                            FROM communications 
+                            WHERE (
+                                to_contact_id = %s 
+                                OR from_phone IN ({placeholders})
+                                OR to_phone IN ({placeholders})
+                            )
+                            {type_filter}
+                            ORDER BY created_at DESC
+                            LIMIT %s
+                        """, (str(contact_id), *phone_numbers, *phone_numbers, limit))
+                    else:
+                        cur.execute(f"""
+                            SELECT 
+                                id, communication_type, subject, content, direction, 
+                                status, created_at, from_phone, to_phone
+                            FROM communications 
+                            WHERE to_contact_id = %s
+                            {type_filter}
+                            ORDER BY created_at DESC
+                            LIMIT %s
+                        """, (str(contact_id), limit))
+                    
+                    communications = []
+                    for row in cur.fetchall():
+                        communications.append({
+                            "id": str(row[0]),
+                            "type": row[1],
+                            "subject": row[2],
+                            "content": row[3],
+                            "direction": row[4],
+                            "status": row[5],
+                            "created_at": row[6].isoformat() if row[6] else None,
+                            "from_phone": row[7] if len(row) > 7 else None,
+                            "to_phone": row[8] if len(row) > 8 else None
+                        })
+                except Exception:
+                    # Fallback: query without extended columns
+                    type_filter_basic = ""
+                    if communication_type:
+                        type_filter_basic = f"AND communication_type = '{communication_type}'"
+                    
+                    cur.execute(f"""
+                        SELECT 
+                            id, communication_type, subject, content, direction, 
+                            status, created_at
+                        FROM communications 
+                        WHERE to_contact_id = %s
+                        {type_filter_basic}
+                        ORDER BY created_at DESC
+                        LIMIT %s
+                    """, (str(contact_id), limit))
+                    
+                    communications = []
+                    for row in cur.fetchall():
+                        communications.append({
+                            "id": str(row[0]),
+                            "type": row[1],
+                            "subject": row[2],
+                            "content": row[3],
+                            "direction": row[4],
+                            "status": row[5],
+                            "created_at": row[6].isoformat() if row[6] else None,
+                            "from_phone": None,
+                            "to_phone": None
+                        })
+                
+                return {
+                    "communications": communications,
+                    "total": len(communications)
+                }
+                
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error fetching communication history: {str(e)}")
+            raise HTTPException(status_code=500, detail="Failed to fetch communication history")
+
+
+@communication_router.get("/sms/history/{contact_id}", response_model=dict)
+def get_sms_history(
+    contact_id: UUID,
+    limit: int = Query(default=50, le=100),
+    current_user: UserOut = Depends(get_current_user)
+):
+    """Get SMS conversation history with a contact"""
+    if not DB_ENABLED:
+        raise HTTPException(status_code=500, detail="Database not enabled")
+    
+    with get_db_connection() as conn:
+        if not conn:
+            raise HTTPException(status_code=500, detail="Database connection failed")
+        
+        try:
+            with conn.cursor() as cur:
+                # Get contact's phone numbers
+                cur.execute("""
+                    SELECT phone, mobile FROM contacts WHERE id = %s
+                """, (str(contact_id),))
+                contact_result = cur.fetchone()
+                
+                if not contact_result:
+                    raise HTTPException(status_code=404, detail="Contact not found")
+                
+                phone, mobile = contact_result
+                phone_numbers = [p for p in [phone, mobile] if p]
+                
+                # Try query with extended columns first
+                try:
+                    if phone_numbers:
+                        placeholders = ','.join(['%s'] * len(phone_numbers))
+                        cur.execute(f"""
+                            SELECT 
+                                id, communication_type, subject, content, direction, 
+                                status, created_at, from_phone, to_phone
+                            FROM communications 
+                            WHERE communication_type = 'sms' 
+                            AND (
+                                to_contact_id = %s 
+                                OR from_phone IN ({placeholders})
+                                OR to_phone IN ({placeholders})
+                            )
+                            ORDER BY created_at DESC
+                            LIMIT %s
+                        """, (str(contact_id), *phone_numbers, *phone_numbers, limit))
+                    else:
+                        cur.execute("""
+                            SELECT 
+                                id, communication_type, subject, content, direction, 
+                                status, created_at, from_phone, to_phone
+                            FROM communications 
+                            WHERE communication_type = 'sms' 
+                            AND to_contact_id = %s
+                            ORDER BY created_at DESC
+                            LIMIT %s
+                        """, (str(contact_id), limit))
+                    
+                    messages = []
+                    for row in cur.fetchall():
+                        messages.append({
+                            "id": str(row[0]),
+                            "type": row[1],
+                            "subject": row[2],
+                            "content": row[3],
+                            "direction": row[4],
+                            "status": row[5],
+                            "created_at": row[6].isoformat() if row[6] else None,
+                            "from_phone": row[7] if len(row) > 7 else None,
+                            "to_phone": row[8] if len(row) > 8 else None
+                        })
+                except Exception:
+                    # Fallback: query without extended columns
+                    cur.execute("""
+                        SELECT 
+                            id, communication_type, subject, content, direction, 
+                            status, created_at
+                        FROM communications 
+                        WHERE communication_type = 'sms' 
+                        AND to_contact_id = %s
+                        ORDER BY created_at DESC
+                        LIMIT %s
+                    """, (str(contact_id), limit))
+                    
+                    messages = []
+                    for row in cur.fetchall():
+                        messages.append({
+                            "id": str(row[0]),
+                            "type": row[1],
+                            "subject": row[2],
+                            "content": row[3],
+                            "direction": row[4],
+                            "status": row[5],
+                            "created_at": row[6].isoformat() if row[6] else None,
+                            "from_phone": None,
+                            "to_phone": None
+                        })
+                
+                return {
+                    "messages": messages,
+                    "total": len(messages)
+                }
+                
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error fetching SMS history: {str(e)}")
+            raise HTTPException(status_code=500, detail="Failed to fetch SMS history")
 
 
 @communication_router.post("/sms", response_model=dict)

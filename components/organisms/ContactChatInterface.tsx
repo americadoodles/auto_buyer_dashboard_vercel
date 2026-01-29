@@ -6,10 +6,13 @@ import { Input } from '../atoms/Input';
 import { Button } from '../atoms/Button';
 import { Badge } from '../atoms/Badge';
 import { CallModal } from './CallModal';
+import { IncomingCallModal } from './IncomingCallModal';
 import { ConfirmationModal } from './ConfirmationModal';
 import { useCommunicationHistory } from '../../lib/hooks/useSMSHistory';
 import { sendSMS, deleteContact } from '../../lib/services/listingManagementApi';
 import { useToast } from '../../hooks/useToast';
+import { useVoiceDevice } from '../../hooks/useVoiceDevice';
+import type { Call } from '@twilio/voice-sdk';
 
 interface Contact {
   id: string;
@@ -62,7 +65,32 @@ export const ContactChatInterface: React.FC<ContactChatInterfaceProps> = ({
   const [showInfoPanel, setShowInfoPanel] = useState(true);
   const [isRemoving, setIsRemoving] = useState(false);
   const [showRemoveModal, setShowRemoveModal] = useState(false);
+  const [acceptedCall, setAcceptedCall] = useState<Call | null>(null);
+  const [acceptedCallFromLabel, setAcceptedCallFromLabel] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Voice device for both outbound and incoming calls (registers on mount)
+  const {
+    deviceRef: voiceDeviceRef,
+    deviceReady: voiceDeviceReady,
+    incomingCall,
+    clearIncomingCall,
+  } = useVoiceDevice({ registerOnMount: true });
+
+  const handleAcceptIncoming = useCallback((call: Call) => {
+    const fromLabel = (call.parameters?.From as string) || 'Unknown';
+    setAcceptedCallFromLabel(fromLabel);
+    setAcceptedCall(call);
+    clearIncomingCall();
+    setShowCallModal(true);
+  }, [clearIncomingCall]);
+
+  const handleAcceptedCallEnded = useCallback(() => {
+    setAcceptedCall(null);
+    setAcceptedCallFromLabel('');
+    setShowCallModal(false);
+    onContactUpdated?.();
+  }, [onContactUpdated]);
 
   // Communication history (SMS + Calls) for selected contact
   const { 
@@ -572,19 +600,32 @@ export const ContactChatInterface: React.FC<ContactChatInterfaceProps> = ({
         </div>
       )}
 
-      {/* Call Modal */}
+      {/* Incoming call modal */}
+      <IncomingCallModal
+        isOpen={!!incomingCall}
+        call={incomingCall}
+        fromLabel={incomingCall ? ((incomingCall.parameters?.From as string) || 'Unknown') : ''}
+        onAccept={handleAcceptIncoming}
+        onReject={clearIncomingCall}
+      />
+
+      {/* Call Modal (outbound or accepted incoming) */}
       <CallModal
         isOpen={showCallModal}
-        onClose={() => setShowCallModal(false)}
+        onClose={() => {
+          setShowCallModal(false);
+          setAcceptedCall(null);
+          setAcceptedCallFromLabel('');
+        }}
         contactId={selectedContact?.id || ''}
-        contactName={selectedContact ? getContactDisplayName(selectedContact) : ''}
+        contactName={acceptedCall ? acceptedCallFromLabel : (selectedContact ? getContactDisplayName(selectedContact) : '')}
         phone={selectedContact?.phone}
         mobile={selectedContact?.mobile}
-        onCallInitiated={() => {
-          if (onContactUpdated) {
-            onContactUpdated();
-          }
-        }}
+        onCallInitiated={() => onContactUpdated?.()}
+        externalDeviceRef={voiceDeviceRef}
+        externalDeviceReady={voiceDeviceReady}
+        acceptedCall={acceptedCall}
+        onAcceptedCallEnded={handleAcceptedCallEnded}
       />
 
       {/* Remove Contact Confirmation Modal */}

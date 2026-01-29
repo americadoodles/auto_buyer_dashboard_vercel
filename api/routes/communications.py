@@ -261,10 +261,12 @@ def get_voice_token(
     """
     Generate an Access Token for browser-based voice calling.
     This token allows the browser to connect to Twilio via WebRTC.
+    Uses identity 'user_default' so incoming calls (TwiML dials user_default) can reach this client.
+    Note: Only one client can be registered as user_default at a time.
     """
     try:
-        # Use user ID as identity for the voice client
-        identity = f"user_{current_user.id}"
+        # Use shared identity so incoming calls (which dial user_default) reach this client
+        identity = "user_default"
         result = twilio_service.generate_voice_token(identity)
         
         if not result.get("success"):
@@ -433,9 +435,11 @@ async def voice_outbound_handler(request: Request):
         
         # Generate TwiML to connect browser to phone
         # The <Dial> verb bridges the browser's audio to the phone call
+        # answerOnBridge="true" ensures the browser only gets "accept" when remote party actually answers
+        # (not when Twilio starts dialing)
         twiml = f'''<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-    <Dial callerId="{caller_id}">
+    <Dial callerId="{caller_id}" answerOnBridge="true">
         <Number>{to_number}</Number>
     </Dial>
 </Response>'''

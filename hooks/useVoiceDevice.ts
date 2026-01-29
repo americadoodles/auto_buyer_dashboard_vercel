@@ -56,14 +56,37 @@ export function useVoiceDevice(options: UseVoiceDeviceOptions = {}) {
         setDeviceReady(false);
       });
 
-      device.on('error', (err: unknown) => {
+      device.on('error', async (err: unknown) => {
         const errorCode = (err as { code?: number })?.code;
         if (errorCode === 31000 || errorCode === 31005 || errorCode === 53001) return;
+        // 20104 = AccessTokenExpired — re-initialize with a new token
+        if (errorCode === 20104) {
+          if (deviceRef.current) {
+            deviceRef.current.destroy();
+            deviceRef.current = null;
+          }
+          setDeviceReady(false);
+          isInitializingRef.current = false;
+          initializeAndRegister();
+          return;
+        }
         setError((err as Error).message || 'Device error');
       });
 
       device.on('incoming', (call: Call) => {
         setIncomingCall(call);
+      });
+
+      // Refresh token before it expires (token TTL is 1 hour; Twilio fires ~60s before expiry)
+      device.on('tokenWillExpire', async () => {
+        try {
+          const tokenResult = await getVoiceToken();
+          if (tokenResult.success && tokenResult.token) {
+            device.updateToken(tokenResult.token);
+          }
+        } catch (e) {
+          console.error('Failed to refresh voice token:', e);
+        }
       });
 
       await device.register();

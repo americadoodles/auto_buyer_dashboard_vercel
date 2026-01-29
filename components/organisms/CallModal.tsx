@@ -145,6 +145,18 @@ export const CallModal: React.FC<CallModalProps> = ({
         call.reject();
       });
 
+      // Refresh token before it expires (TTL is 1 hour)
+      device.on('tokenWillExpire', async () => {
+        try {
+          const tokenResult = await getVoiceToken();
+          if (tokenResult.success && tokenResult.token) {
+            device.updateToken(tokenResult.token);
+          }
+        } catch (e) {
+          console.error('Failed to refresh voice token:', e);
+        }
+      });
+
       // Register the device
       await device.register();
       deviceRef.current = device;

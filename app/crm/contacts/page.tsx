@@ -130,7 +130,7 @@ export default function ContactsPage() {
   // Show loading state
   if (loading && fetchedContacts.length === 0) {
     return (
-    fe  <div className="p-4 bg-gray-50 dark:bg-gray-900 h-full flex items-center justify-center">
+      <div className="p-4 bg-gray-50 dark:bg-gray-900 h-full flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400"></div>
       </div>
     );

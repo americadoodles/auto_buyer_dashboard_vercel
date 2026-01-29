@@ -6,8 +6,9 @@ import { Input } from '../atoms/Input';
 import { Button } from '../atoms/Button';
 import { Badge } from '../atoms/Badge';
 import { CallModal } from './CallModal';
+import { ConfirmationModal } from './ConfirmationModal';
 import { useCommunicationHistory } from '../../lib/hooks/useSMSHistory';
-import { sendSMS } from '../../lib/services/listingManagementApi';
+import { sendSMS, deleteContact } from '../../lib/services/listingManagementApi';
 import { useToast } from '../../hooks/useToast';
 
 interface Contact {
@@ -59,6 +60,8 @@ export const ContactChatInterface: React.FC<ContactChatInterfaceProps> = ({
   const [messageText, setMessageText] = useState('');
   const [showCallModal, setShowCallModal] = useState(false);
   const [showInfoPanel, setShowInfoPanel] = useState(true);
+  const [isRemoving, setIsRemoving] = useState(false);
+  const [showRemoveModal, setShowRemoveModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Communication history (SMS + Calls) for selected contact
@@ -163,6 +166,29 @@ export const ContactChatInterface: React.FC<ContactChatInterfaceProps> = ({
     return `${contact.first_name} ${contact.last_name}`.trim() || 'Unknown';
   };
 
+  const handleRemoveContact = () => {
+    if (!selectedContact) return;
+    setShowRemoveModal(true);
+  };
+
+  const confirmRemoveContact = async () => {
+    if (!selectedContact) return;
+    
+    setIsRemoving(true);
+    try {
+      await deleteContact(selectedContact.id);
+      setShowRemoveModal(false);
+      setSelectedContact(null);
+      onContactUpdated?.();
+    } catch (error) {
+      console.error('Error removing contact:', error);
+      setShowRemoveModal(false);
+      alert('Failed to remove contact. Please try again.');
+    } finally {
+      setIsRemoving(false);
+    }
+  };
+
   return (
     <div className="flex h-full bg-white dark:bg-gray-900 rounded-lg shadow-lg overflow-hidden">
       {/* Left Sidebar - Contact List */}
@@ -244,7 +270,7 @@ export const ContactChatInterface: React.FC<ContactChatInterfaceProps> = ({
         {selectedContact ? (
           <>
             {/* Chat Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+            <div className="flex items-center justify-between px-4 py-1 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
               <div className="flex items-center">
                 <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-medium">
                   {getContactInitials(selectedContact)}
@@ -401,7 +427,7 @@ export const ContactChatInterface: React.FC<ContactChatInterfaceProps> = ({
       {showInfoPanel && selectedContact && (
         <div className="w-80 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-y-auto">
           {/* Contact Header */}
-          <div className="p-6 text-center border-b border-gray-200 dark:border-gray-700">
+          <div className="p-4 text-center border-b border-gray-200 dark:border-gray-700">
             <div className="h-20 w-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center mx-auto mb-4 text-white text-2xl font-bold">
               {getContactInitials(selectedContact)}
             </div>
@@ -462,6 +488,16 @@ export const ContactChatInterface: React.FC<ContactChatInterfaceProps> = ({
               >
                 <Icon name="pencil" className="w-4 h-4 mr-2" />
                 Update
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRemoveContact}
+                disabled={isRemoving}
+                className="flex items-center justify-center text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-700 dark:hover:bg-red-900/30"
+              >
+                <Icon name="trash-2" className="w-4 h-4 mr-2" />
+                {isRemoving ? 'Removing...' : 'Remove'}
               </Button>
             </div>
           </div>
@@ -549,6 +585,20 @@ export const ContactChatInterface: React.FC<ContactChatInterfaceProps> = ({
             onContactUpdated();
           }
         }}
+      />
+
+      {/* Remove Contact Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showRemoveModal}
+        onClose={() => setShowRemoveModal(false)}
+        onConfirm={confirmRemoveContact}
+        title="Remove Contact"
+        message={`Are you sure you want to remove ${selectedContact ? getContactDisplayName(selectedContact) : ''}? This action cannot be undone.`}
+        confirmText="Remove"
+        cancelText="Cancel"
+        variant="danger"
+        loading={isRemoving}
+        loadingText="Removing..."
       />
     </div>
   );

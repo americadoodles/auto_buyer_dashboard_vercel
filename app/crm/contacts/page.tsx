@@ -8,6 +8,8 @@ import { useContacts } from '../../../lib/hooks/useContacts';
 
 export default function ContactsPage() {
   const [isNewContactModalOpen, setIsNewContactModalOpen] = useState(false);
+  const [editingContact, setEditingContact] = useState<any>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Fetch contacts from contacts table
   const { contacts: fetchedContacts, loading: contactsLoading, error: contactsError, refreshContacts } = useContacts({
@@ -120,6 +122,11 @@ export default function ContactsPage() {
     refreshLeads();
   };
 
+  const handleUpdateContact = (contact: any) => {
+    setEditingContact(contact);
+    setIsEditModalOpen(true);
+  };
+
   // Show loading state
   if (loading && fetchedContacts.length === 0) {
     return (
@@ -170,6 +177,7 @@ export default function ContactsPage() {
           contacts={contacts}
           onContactUpdated={refreshData}
           onNewContact={() => setIsNewContactModalOpen(true)}
+          onUpdateContact={handleUpdateContact}
         />
       </div>
 
@@ -180,6 +188,21 @@ export default function ContactsPage() {
         onClose={() => setIsNewContactModalOpen(false)}
         onSave={() => {
           setIsNewContactModalOpen(false);
+          refreshData();
+        }}
+      />
+
+      {/* Edit Contact Modal */}
+      <ContactEditModal
+        contact={editingContact}
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditingContact(null);
+        }}
+        onSave={() => {
+          setIsEditModalOpen(false);
+          setEditingContact(null);
           refreshData();
         }}
       />

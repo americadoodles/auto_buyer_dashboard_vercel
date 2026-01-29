@@ -56,6 +56,9 @@ class Settings(BaseSettings):
     TWILIO_AUTH_TOKEN: str = os.getenv("TWILIO_AUTH_TOKEN", "")
     TWILIO_PHONE_NUMBER: str = os.getenv("TWILIO_PHONE_NUMBER", "")
     TWILIO_ENABLED: bool = bool(os.getenv("TWILIO_ENABLED", "false").lower() == "true")
+    # Twilio Messaging Service SID for A2P 10DLC compliance (recommended for SMS)
+    # Create a Messaging Service in Twilio Console and register your 10DLC campaign
+    TWILIO_MESSAGING_SERVICE_SID: str = os.getenv("TWILIO_MESSAGING_SERVICE_SID", "")
     # Twilio API Key for browser-based voice (Access Tokens)
     TWILIO_API_KEY: str = os.getenv("TWILIO_API_KEY", "")
     TWILIO_API_SECRET: str = os.getenv("TWILIO_API_SECRET", "")

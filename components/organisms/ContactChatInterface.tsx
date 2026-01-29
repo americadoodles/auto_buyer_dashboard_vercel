@@ -44,12 +44,14 @@ interface ContactChatInterfaceProps {
   contacts: Contact[];
   onContactUpdated?: () => void;
   onNewContact?: () => void;
+  onUpdateContact?: (contact: Contact) => void;
 }
 
 export const ContactChatInterface: React.FC<ContactChatInterfaceProps> = ({
   contacts,
   onContactUpdated,
   onNewContact,
+  onUpdateContact,
 }) => {
   const { showSuccess, showError } = useToast();
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
@@ -451,6 +453,15 @@ export const ContactChatInterface: React.FC<ContactChatInterfaceProps> = ({
               >
                 <Icon name="mail" className="w-4 h-4 mr-2" />
                 Email
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onUpdateContact?.(selectedContact)}
+                className="flex items-center justify-center"
+              >
+                <Icon name="pencil" className="w-4 h-4 mr-2" />
+                Update
               </Button>
             </div>
           </div>

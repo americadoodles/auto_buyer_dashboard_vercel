@@ -5,6 +5,7 @@ import { Button } from '../atoms/Button';
 import { Icon } from '../atoms/Icon';
 import { getVoiceToken, getCallStatus, stopCall } from '../../lib/services/listingManagementApi';
 import { useToast } from '../../hooks/useToast';
+import { useCallSounds } from '../../hooks/useCallSounds';
 import { Device, Call } from '@twilio/voice-sdk';
 
 interface CallModalProps {
@@ -15,6 +16,14 @@ interface CallModalProps {
   phone?: string;
   mobile?: string;
   onCallInitiated?: () => void;
+  /** When provided, use this device instead of creating one (for incoming call support). */
+  externalDeviceRef?: React.MutableRefObject<Device | null>;
+  /** Device ready state when using external device. */
+  externalDeviceReady?: boolean;
+  /** When set, show in-progress UI for this accepted incoming call. */
+  acceptedCall?: Call | null;
+  /** Called when the accepted incoming call ends. */
+  onAcceptedCallEnded?: () => void;
 }
 
 type CallState = 'idle' | 'initializing' | 'ready' | 'connecting' | 'ringing' | 'in-progress' | 'completed' | 'failed' | 'busy' | 'no-answer';
@@ -26,19 +35,30 @@ export const CallModal: React.FC<CallModalProps> = ({
   contactName,
   phone,
   mobile,
-  onCallInitiated
+  onCallInitiated,
+  externalDeviceRef,
+  externalDeviceReady = false,
+  acceptedCall,
+  onAcceptedCallEnded,
 }) => {
   const [callState, setCallState] = useState<CallState>('idle');
   const [callDuration, setCallDuration] = useState<number>(0);
   const [isMuted, setIsMuted] = useState(false);
   const [deviceReady, setDeviceReady] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const { showSuccess, showError } = useToast();
   
-  // Refs for Twilio Device and Call
+  // Call sounds hook - only ringback sound when calling
+  const callSounds = useCallSounds({ volume: 0.3, enabled: soundEnabled });
+  
+  // Refs for Twilio Device and Call (use external when provided)
   const deviceRef = useRef<Device | null>(null);
   const activeCallRef = useRef<Call | null>(null);
   const durationIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const effectiveDevice = externalDeviceRef?.current ?? deviceRef.current;
+  const effectiveDeviceReady = externalDeviceRef ? externalDeviceReady : deviceReady;
   
   // Audio level for visual effect
   const [audioLevel, setAudioLevel] = useState<number>(0);
@@ -125,6 +145,18 @@ export const CallModal: React.FC<CallModalProps> = ({
         call.reject();
       });
 
+      // Refresh token before it expires (TTL is 1 hour)
+      device.on('tokenWillExpire', async () => {
+        try {
+          const tokenResult = await getVoiceToken();
+          if (tokenResult.success && tokenResult.token) {
+            device.updateToken(tokenResult.token);
+          }
+        } catch (e) {
+          console.error('Failed to refresh voice token:', e);
+        }
+      });
+
       // Register the device
       await device.register();
       deviceRef.current = device;
@@ -142,10 +174,38 @@ export const CallModal: React.FC<CallModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       setSelectedPhoneNumber(mobile || phone || '');
-      // Initialize device when modal opens
-      initializeDevice();
+      // Initialize device when modal opens (only if not using external device)
+      if (!externalDeviceRef) {
+        initializeDevice();
+      } else if (externalDeviceReady) {
+        setDeviceReady(true);
+        setCallState('ready');
+      }
     }
-  }, [isOpen, mobile, phone, initializeDevice]);
+  }, [isOpen, mobile, phone, initializeDevice, externalDeviceRef, externalDeviceReady]);
+
+  // When acceptedCall is set, show in-progress UI and attach handlers
+  useEffect(() => {
+    if (!acceptedCall) return;
+    activeCallRef.current = acceptedCall;
+    setCallState('in-progress');
+    setCallDuration(0);
+
+    const onDisconnect = () => {
+      setCallState('completed');
+      activeCallRef.current = null;
+      setIsMuted(false);
+      onAcceptedCallEnded?.();
+    };
+
+    acceptedCall.on('disconnect', onDisconnect);
+    acceptedCall.on('cancel', onDisconnect);
+    acceptedCall.on('error', () => {
+      activeCallRef.current = null;
+      setCallState('failed');
+      onAcceptedCallEnded?.();
+    });
+  }, [acceptedCall, onAcceptedCallEnded]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -188,6 +248,15 @@ export const CallModal: React.FC<CallModalProps> = ({
       }
     };
   }, [callState]);
+
+  // Play ringback sound when connecting or ringing
+  useEffect(() => {
+    if (callState === 'connecting' || callState === 'ringing') {
+      callSounds.playRingback();
+    } else {
+      callSounds.stop();
+    }
+  }, [callState, callSounds]);
 
   // Audio level animation when call is in progress
   useEffect(() => {
@@ -233,7 +302,8 @@ export const CallModal: React.FC<CallModalProps> = ({
     };
   }, [callState, isMuted]);
 
-  if (!isOpen) return null;
+  // Show modal when open for outbound or when showing accepted incoming call
+  if (!isOpen && !acceptedCall) return null;
 
   const handleCall = async () => {
     if (!selectedPhoneNumber) {
@@ -241,7 +311,8 @@ export const CallModal: React.FC<CallModalProps> = ({
       return;
     }
 
-    if (!deviceRef.current || !deviceReady) {
+    const device = externalDeviceRef?.current ?? deviceRef.current;
+    if (!device || !effectiveDeviceReady) {
       showError('Device Not Ready', 'Voice device is not ready. Please wait or refresh the page.');
       return;
     }
@@ -258,7 +329,7 @@ export const CallModal: React.FC<CallModalProps> = ({
     try {
       // Make the call using Twilio Device
       // The phone number is passed to the TwiML App webhook
-      const call = await deviceRef.current.connect({
+      const call = await device.connect({
         params: {
           To: selectedPhoneNumber,
           ContactId: contactId,
@@ -275,9 +346,10 @@ export const CallModal: React.FC<CallModalProps> = ({
       });
 
       call.on('accept', () => {
-        console.log('Call accepted/connected');
+        console.log('Call accepted/connected (could be person or voicemail)');
         setCallState('in-progress');
-        showSuccess('Call Connected', `Connected to ${contactName}`);
+        // Note: Don't show "Call Connected" toast here because this also triggers
+        // when voicemail picks up, which can be misleading
         if (onCallInitiated) {
           onCallInitiated();
         }
@@ -346,8 +418,10 @@ export const CallModal: React.FC<CallModalProps> = ({
     if (callState === 'idle' || callState === 'ready' || callState === 'completed' || 
         callState === 'failed' || callState === 'busy' || callState === 'no-answer' ||
         callState === 'initializing') {
-      // Destroy device on close to prevent WebSocket timeout errors
-      if (deviceRef.current) {
+      // Stop any playing sounds
+      callSounds.stop();
+      // Only destroy our own device (not external device used for incoming calls)
+      if (!externalDeviceRef && deviceRef.current) {
         deviceRef.current.destroy();
         deviceRef.current = null;
       }
@@ -393,8 +467,9 @@ export const CallModal: React.FC<CallModalProps> = ({
     }
   };
 
-  const canStartCall = deviceReady && (callState === 'ready' || callState === 'completed' || callState === 'failed' || callState === 'busy' || callState === 'no-answer');
+  const canStartCall = effectiveDeviceReady && (callState === 'ready' || callState === 'completed' || callState === 'failed' || callState === 'busy' || callState === 'no-answer');
   const isCallActive = callState === 'connecting' || callState === 'ringing' || callState === 'in-progress';
+  const isAcceptedIncoming = !!acceptedCall;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -410,15 +485,28 @@ export const CallModal: React.FC<CallModalProps> = ({
           <div className="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-white">
-                {isCallActive ? 'Call in Progress' : 'Make a Call'}
+                {isAcceptedIncoming ? 'Incoming Call' : isCallActive ? 'Call in Progress' : 'Make a Call'}
               </h3>
-              <button
-                onClick={handleClose}
-                disabled={isCallActive}
-                className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 focus:outline-none disabled:opacity-50"
-              >
-                <Icon name="x" className="w-5 h-5" />
-              </button>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setSoundEnabled(!soundEnabled)}
+                  className={`p-1.5 rounded-md transition-colors ${
+                    soundEnabled 
+                      ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30' 
+                      : 'text-gray-400 hover:text-gray-500 dark:hover:text-gray-300'
+                  }`}
+                  title={soundEnabled ? 'Mute ring sound' : 'Unmute ring sound'}
+                >
+                  <Icon name={soundEnabled ? "volume-2" : "volume-x"} className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={handleClose}
+                  disabled={isCallActive}
+                  className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 focus:outline-none disabled:opacity-50"
+                >
+                  <Icon name="x" className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             <div className="mt-4">

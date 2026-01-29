@@ -140,15 +140,21 @@ class TwilioService:
         self,
         to_phone: str,
         message: str,
-        from_phone: Optional[str] = None
+        from_phone: Optional[str] = None,
+        use_messaging_service: bool = True
     ) -> Dict[str, Any]:
         """
-        Send an SMS message using Twilio
+        Send an SMS message using Twilio with A2P 10DLC compliance support.
+        
+        Uses Messaging Service SID when available for better deliverability
+        and to avoid spam filters. Messaging Service should be linked to your
+        registered 10DLC campaign in Twilio Console.
         
         Args:
             to_phone: Phone number to send to (E.164 format)
             message: Message content
             from_phone: Phone number to send from (defaults to TWILIO_PHONE_NUMBER)
+            use_messaging_service: If True, will use Messaging Service SID when available
         
         Returns:
             Dict with message information or error
@@ -166,16 +172,38 @@ class TwilioService:
             }
         
         try:
+            messaging_service_sid = settings.TWILIO_MESSAGING_SERVICE_SID
             from_phone = from_phone or settings.TWILIO_PHONE_NUMBER
             
-            message_obj = self.client.messages.create(
-                body=message,
-                to=to_phone,
-                from_=from_phone
-            )
-            
-            # Safely get the 'from' attribute (it's 'from_' in the SDK)
-            message_from = getattr(message_obj, 'from_', from_phone)
+            # Use Messaging Service SID for A2P 10DLC compliance when available
+            # This provides better deliverability and avoids spam filters
+            if use_messaging_service and messaging_service_sid:
+                logger.info(f"Sending SMS via Messaging Service: {messaging_service_sid[:8]}...")
+                message_obj = self.client.messages.create(
+                    body=message,
+                    to=to_phone,
+                    messaging_service_sid=messaging_service_sid
+                )
+                message_from = messaging_service_sid
+            else:
+                # Fallback to direct phone number (may be filtered for A2P)
+                if not from_phone:
+                    return {
+                        "success": False,
+                        "error": "No phone number or Messaging Service configured. "
+                                 "For A2P SMS, configure TWILIO_MESSAGING_SERVICE_SID."
+                    }
+                logger.info(f"Sending SMS from phone number: {from_phone}")
+                logger.warning(
+                    "Sending SMS without Messaging Service. For better deliverability "
+                    "and A2P 10DLC compliance, configure TWILIO_MESSAGING_SERVICE_SID."
+                )
+                message_obj = self.client.messages.create(
+                    body=message,
+                    to=to_phone,
+                    from_=from_phone
+                )
+                message_from = getattr(message_obj, 'from_', from_phone)
             
             return {
                 "success": True,
@@ -183,13 +211,34 @@ class TwilioService:
                 "status": message_obj.status,
                 "to": getattr(message_obj, 'to', to_phone),
                 "from": message_from,
-                "date_sent": message_obj.date_sent.isoformat() if hasattr(message_obj, 'date_sent') and message_obj.date_sent else None
+                "date_sent": message_obj.date_sent.isoformat() if hasattr(message_obj, 'date_sent') and message_obj.date_sent else None,
+                "used_messaging_service": bool(use_messaging_service and messaging_service_sid)
             }
         except TwilioRestException as e:
             logger.error(f"Twilio API error: {str(e)}")
+            error_msg = f"Twilio API error: {e.msg}"
+            # Add helpful hints for common A2P errors
+            if e.code == 21610:
+                error_msg += " (Recipient has opted out of messages)"
+            elif e.code == 21408:
+                error_msg += " (Permission denied - check A2P 10DLC registration)"
+            elif e.code == 21211:
+                error_msg += " (Invalid 'To' phone number)"
+            elif e.code == 21614:
+                error_msg += " (Phone number not SMS-capable)"
+            elif e.code == 30003:
+                error_msg += " (Unreachable - carrier issue or invalid number)"
+            elif e.code == 30004:
+                error_msg += " (Message blocked - likely spam filter. Use Messaging Service with 10DLC)"
+            elif e.code == 30005:
+                error_msg += " (Unknown destination - number may not exist)"
+            elif e.code == 30006:
+                error_msg += " (Landline or unreachable carrier)"
+            elif e.code == 30007:
+                error_msg += " (Carrier filtering - register 10DLC campaign)"
             return {
                 "success": False,
-                "error": f"Twilio API error: {e.msg}",
+                "error": error_msg,
                 "code": e.code
             }
         except Exception as e:

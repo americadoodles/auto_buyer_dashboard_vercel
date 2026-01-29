@@ -148,36 +148,111 @@ def update_contact(contact_id: UUID, contact_update: ContactUpdate) -> Optional[
             return None
 
 def delete_contact(contact_id: UUID) -> bool:
-    """Delete a contact. First removes contact_id from related leads and deals."""
+    """Delete a contact and all related records (leads, deals, tasks, communications, activities)."""
     if not DB_ENABLED:
+        logging.error("delete_contact: DB not enabled")
         return False
     
     with get_db_connection() as conn:
         if not conn:
+            logging.error("delete_contact: No database connection")
             return False
         
         try:
             with conn.cursor() as cur:
-                # First, remove contact_id from all related leads
-                cur.execute("""
-                    UPDATE leads 
-                    SET contact_id = NULL, updated_at = NOW()
-                    WHERE contact_id = %s
-                """, (contact_id,))
+                # Check if contact exists first
+                cur.execute("SELECT id FROM contacts WHERE id = %s", (str(contact_id),))
+                if not cur.fetchone():
+                    logging.warning(f"delete_contact: Contact {contact_id} not found")
+                    return False
                 
-                # Then, remove contact_id from all related deals
+                # Get all lead IDs associated with this contact
+                cur.execute("SELECT id FROM leads WHERE contact_id = %s", (str(contact_id),))
+                lead_ids = [str(row[0]) for row in cur.fetchall()]
+                logging.info(f"delete_contact: Found {len(lead_ids)} leads for contact {contact_id}")
+                
+                # Get all deal IDs associated with this contact
+                cur.execute("SELECT id FROM deals WHERE contact_id = %s", (str(contact_id),))
+                deal_ids = [str(row[0]) for row in cur.fetchall()]
+                logging.info(f"delete_contact: Found {len(deal_ids)} deals for contact {contact_id}")
+                
+                # Delete lead activities for the leads
+                if lead_ids:
+                    cur.execute("""
+                        DELETE FROM lead_activities 
+                        WHERE lead_id = ANY(%s::uuid[])
+                    """, (lead_ids,))
+                    logging.info(f"delete_contact: Deleted lead activities")
+                
+                # Delete deal activities for the deals
+                if deal_ids:
+                    cur.execute("""
+                        DELETE FROM deal_activities 
+                        WHERE deal_id = ANY(%s::uuid[])
+                    """, (deal_ids,))
+                    logging.info(f"delete_contact: Deleted deal activities")
+                
+                # Delete tasks related to this contact
                 cur.execute("""
-                    UPDATE deals 
-                    SET contact_id = NULL, updated_at = NOW()
+                    DELETE FROM tasks 
+                    WHERE related_contact_id = %s
+                """, (str(contact_id),))
+                logging.info(f"delete_contact: Deleted tasks for contact")
+                
+                # Delete tasks related to leads being deleted
+                if lead_ids:
+                    cur.execute("""
+                        DELETE FROM tasks 
+                        WHERE related_lead_id = ANY(%s::uuid[])
+                    """, (lead_ids,))
+                    logging.info(f"delete_contact: Deleted tasks for leads")
+                
+                # Delete tasks related to deals being deleted
+                if deal_ids:
+                    cur.execute("""
+                        DELETE FROM tasks 
+                        WHERE related_deal_id = ANY(%s::uuid[])
+                    """, (deal_ids,))
+                    logging.info(f"delete_contact: Deleted tasks for deals")
+                
+                # Delete all communications associated with this contact
+                cur.execute("""
+                    DELETE FROM communications 
+                    WHERE to_contact_id = %s
+                """, (str(contact_id),))
+                logging.info(f"delete_contact: Deleted communications")
+                
+                # Delete all leads associated with this contact
+                if lead_ids:
+                    cur.execute("""
+                        DELETE FROM leads 
+                        WHERE id = ANY(%s::uuid[])
+                    """, (lead_ids,))
+                    logging.info(f"delete_contact: Deleted leads")
+                
+                # Delete all deals associated with this contact
+                if deal_ids:
+                    cur.execute("""
+                        DELETE FROM deals 
+                        WHERE id = ANY(%s::uuid[])
+                    """, (deal_ids,))
+                    logging.info(f"delete_contact: Deleted deals")
+                
+                # Delete contact activities (should cascade, but explicit is better)
+                cur.execute("""
+                    DELETE FROM contact_activities 
                     WHERE contact_id = %s
-                """, (contact_id,))
+                """, (str(contact_id),))
+                logging.info(f"delete_contact: Deleted contact activities")
                 
                 # Finally, delete the contact
-                cur.execute("DELETE FROM contacts WHERE id = %s", (contact_id,))
-                return cur.rowcount > 0
+                cur.execute("DELETE FROM contacts WHERE id = %s", (str(contact_id),))
+                deleted = cur.rowcount > 0
+                logging.info(f"delete_contact: Contact deleted: {deleted}")
+                return deleted
                 
         except Exception as e:
-            logging.error(f"Error deleting contact: {str(e)}")
+            logging.error(f"delete_contact: Error deleting contact {contact_id}: {str(e)}")
             return False
 
 def list_contacts(skip: int = 0, limit: int = 100, contact_type_id: Optional[int] = None,

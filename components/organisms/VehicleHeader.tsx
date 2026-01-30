@@ -169,7 +169,7 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
             </div>
           )}
         </div>
-        <div className="flex items-center gap-3 pt-2 flex-wrap">
+        <div className="flex items-center gap-3 flex-wrap">
           <button
             type="button"
             onClick={handleAutoCheckClick}

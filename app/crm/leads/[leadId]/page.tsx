@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from '../../../../components/atoms/Button';
 import { Input } from '../../../../components/atoms/Input';
@@ -52,6 +52,13 @@ export default function LeadDetailPage() {
   const [isSMSModalOpen, setIsSMSModalOpen] = useState(false);
   const [mmrData, setMmrData] = useState<any>(null);
   const [accuTradeData, setAccuTradeData] = useState<any>(null);
+
+  // Refs and state for equalizing first and second column heights (no scrollbar)
+  const col1ContentRef = useRef<HTMLDivElement>(null);
+  const col2ContentRef = useRef<HTMLDivElement>(null);
+  const [row1MinHeight, setRow1MinHeight] = useState<number | undefined>(undefined);
+  const [col1Padding, setCol1Padding] = useState<{ top: number; bottom: number }>({ top: 0, bottom: 0 });
+  const [col2Padding, setCol2Padding] = useState<{ top: number; bottom: number }>({ top: 0, bottom: 0 });
   
   // Related data
   const { statuses, loading: statusesLoading } = useLeadStatuses();
@@ -59,7 +66,41 @@ export default function LeadDetailPage() {
 
   // Use the full listing details if available, otherwise fall back to nested listing
   const displayListing = listing || lead?.listing;
-  
+
+  // Equalize first and second column heights: add top/bottom padding to the shorter column so both match, no scrollbar
+  useLayoutEffect(() => {
+    if (!displayListing) return;
+    const el1 = col1ContentRef.current;
+    const el2 = col2ContentRef.current;
+    if (!el1 || !el2) return;
+
+    const measure = () => {
+      const h1 = el1.scrollHeight;
+      const h2 = el2.scrollHeight;
+      const target = Math.max(h1, h2);
+      setRow1MinHeight(target);
+
+      if (h2 > h1) {
+        const pad = (h2 - h1) / 2;
+        setCol1Padding({ top: Math.round(pad), bottom: Math.round(pad) });
+        setCol2Padding({ top: 0, bottom: 0 });
+      } else if (h1 > h2) {
+        setCol1Padding({ top: 0, bottom: 0 });
+        const pad = (h1 - h2) / 2;
+        setCol2Padding({ top: Math.round(pad), bottom: Math.round(pad) });
+      } else {
+        setCol1Padding({ top: 0, bottom: 0 });
+        setCol2Padding({ top: 0, bottom: 0 });
+      }
+    };
+
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el1);
+    ro.observe(el2);
+    return () => ro.disconnect();
+  }, [displayListing, lead, mmrData, accuTradeData, listing]);
+
   // Hooks for data availability - MUST be called before any early returns
   const { hasData: hasAccuTradeData } = useAccuTradeData(displayListing?.vin);
   const { hasData: hasMMRData } = useMMRData(displayListing?.vin);
@@ -394,16 +435,41 @@ export default function LeadDetailPage() {
           {/* 3-Column Grid Layout: row1 = Col1 gallery, Col2 vehicle/lead, Col3 AccuTrade (row-span-2); row2 = Chat spanning Col1+Col2 */}
           {displayListing ? (
             <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch mb-2 lg:grid-rows-[1fr_minmax(280px,36vh)]">
-              {/* First Column - Vehicle Images */}
-              <div className="lg:col-span-4 lg:row-span-1 flex flex-col gap-4 min-h-0 overflow-y-auto scrollbar-hide">
-                {/* Vehicle Photo Gallery */}
-                {displayListing.images && displayListing.images.length > 0 && (
-                  <VehiclePhotoGallery images={displayListing.images} />
-                )}
+              {/* First Column - Vehicle Images; equal height with col2, no scrollbar */}
+              <div
+                className="lg:col-span-4 lg:row-span-1 flex flex-col min-h-0"
+                style={
+                  row1MinHeight !== undefined
+                    ? { minHeight: row1MinHeight }
+                    : undefined
+                }
+              >
+                <div
+                  className="flex flex-col flex-1"
+                  style={{
+                    paddingTop: col1Padding.top,
+                    paddingBottom: col1Padding.bottom,
+                  }}
+                >
+                  <div ref={col1ContentRef} className="flex flex-col gap-4 flex-1">
+                    {displayListing.images && displayListing.images.length > 0 && (
+                      <VehiclePhotoGallery images={displayListing.images} />
+                    )}
+                  </div>
+                </div>
               </div>
 
-              {/* Second Column - Vehicle Header, Vehicle Details, Lead Info, MMR, AutoCheck, CARFAX */}
-              <div className="lg:col-span-4 lg:row-span-1 flex flex-col space-y-2 min-h-0 overflow-y-auto scrollbar-hide">
+              {/* Second Column - Vehicle Header, Vehicle Details, Lead Info, MMR, AutoCheck, CARFAX; equal height with col1, no scrollbar */}
+              <div
+                className="lg:col-span-4 lg:row-span-1 flex flex-col min-h-0"
+                style={
+                  row1MinHeight !== undefined
+                    ? { minHeight: row1MinHeight }
+                    : undefined
+                }
+              >
+                <div className="flex flex-col flex-1">
+                <div ref={col2ContentRef} className="flex flex-col flex-1 space-y-2">
                 {/* Vehicle Header */}
                 <VehicleHeader
                   year={displayListing.year}
@@ -481,6 +547,8 @@ export default function LeadDetailPage() {
                   previousOwners={1}
                   images={displayListing.images?.slice(0, 3) || []}
                 />
+                </div>
+                </div>
               </div>
 
               {/* Chat box - bottom of first and second columns, contacts-chat style */}

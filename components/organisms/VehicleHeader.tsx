@@ -143,8 +143,8 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
   };
 
   return (
-    <div className="bg-white dark:bg-[#1a1d29] border border-gray-200 dark:border-gray-700/50 rounded-lg p-5">
-      <div className="space-y-3">
+    <div className="bg-white dark:bg-[#1a1d29] border border-gray-200 dark:border-gray-700/50 rounded-lg p-4">
+      <div className="space-y-1.5">
         <div className="flex items-center justify-between">
           <h2 className={`text-xl ${(year && make && model) ? 'text-green-600 dark:text-green-400' : 'text-black dark:text-gray-400'}`}>
             {year} {make} {model} {trim ? trim : ''}

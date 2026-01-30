@@ -395,30 +395,16 @@ export default function LeadDetailPage() {
           {/* 3-Column Grid Layout */}
           {displayListing ? (
             <div className="mb-2 grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
-              {/* First Column - Vehicle Images and Details */}
+              {/* First Column - Vehicle Images */}
               <div className="lg:col-span-4 flex flex-col gap-4">
                 {/* Vehicle Photo Gallery */}
                 {displayListing.images && displayListing.images.length > 0 && (
                   <VehiclePhotoGallery images={displayListing.images} />
                 )}
-
-                {/* Listing Detail */}
-                {displayListing && <VehicleDetails listing={displayListing} />}
-
-                {/* Lead Information */}
-                <LeadInformation
-                  lead={lead}
-                  statuses={statuses}
-                  sources={sources}
-                  onFieldSave={handleFieldSave}
-                  onSaveAll={handleSave}
-                  saving={saving}
-                />
-                
               </div>
 
-              {/* Second Column - Vehicle Header, MMR, AutoCheck, CARFAX */}
-              <div className="lg:col-span-4 flex flex-col space-y-4">
+              {/* Second Column - Vehicle Header, Vehicle Details, Lead Info, MMR, AutoCheck, CARFAX */}
+              <div className="lg:col-span-4 flex flex-col space-y-2">
                 {/* Vehicle Header */}
                 <VehicleHeader
                   year={displayListing.year}
@@ -434,6 +420,19 @@ export default function LeadDetailPage() {
                   hasCarfax={false}
                   hasMMR={hasMMRData || false}
                   hasAccuTrade={hasAccuTradeData || false}
+                />
+
+                {/* Vehicle Details */}
+                {displayListing && <VehicleDetails listing={displayListing} />}
+
+                {/* Lead Information */}
+                <LeadInformation
+                  lead={lead}
+                  statuses={statuses}
+                  sources={sources}
+                  onFieldSave={handleFieldSave}
+                  onSaveAll={handleSave}
+                  saving={saving}
                 />
 
                 {/* MMR Card */}

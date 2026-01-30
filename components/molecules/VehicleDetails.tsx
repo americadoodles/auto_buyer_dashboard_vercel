@@ -51,17 +51,27 @@ const getMarketplaceName = (source?: string): string | null => {
   return domain.split('.')[0];
 };
 
+const PANEL_ANIMATION_MS = 300;
+
 export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ listing }) => {
   const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+
+  const handleClose = () => {
+    if (isClosing) return;
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsPanelOpen(false);
+      setIsClosing(false);
+    }, PANEL_ANIMATION_MS);
+  };
 
   // Handle Escape key to close panel
   useEffect(() => {
     if (!isPanelOpen) return;
 
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setIsPanelOpen(false);
-      }
+      if (event.key === 'Escape') handleClose();
     };
 
     window.addEventListener('keydown', handleEscape);
@@ -95,12 +105,12 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ listing }) => {
         <>
           {/* Backdrop */}
           <div 
-            className="fixed inset-0 bg-black/50 z-40"
-            onClick={() => setIsPanelOpen(false)}
+            className={`fixed inset-0 bg-black/50 z-40 ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}
+            onClick={handleClose}
           />
           
           {/* Panel */}
-          <div className="fixed top-0 right-0 h-full w-1/3 min-w-[320px] max-w-[500px] bg-white dark:bg-[#1a1d29] shadow-xl z-50 overflow-y-auto animate-slide-in-right">
+          <div className={`fixed top-0 right-0 h-full w-1/3 min-w-[320px] max-w-[500px] bg-white dark:bg-[#1a1d29] shadow-xl z-50 overflow-y-auto ${isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'}`}>
             {/* Panel Header */}
             <div className="sticky top-0 bg-white dark:bg-[#1a1d29] border-b border-gray-200 dark:border-gray-700/50 px-6 py-4 flex items-center justify-between">
               <h4 className="text-lg font-bold text-black dark:text-white">
@@ -108,7 +118,7 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ listing }) => {
                 {marketplaceName && <span className="text-black dark:text-gray-400 font-normal"> ({marketplaceName})</span>}
               </h4>
               <button
-                onClick={() => setIsPanelOpen(false)}
+                onClick={handleClose}
                 className="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors"
               >
                 <X className="w-6 h-6" />
@@ -348,16 +358,25 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ listing }) => {
       {/* Animation styles */}
       <style jsx global>{`
         @keyframes slide-in-right {
-          from {
-            transform: translateX(100%);
-          }
-          to {
-            transform: translateX(0);
-          }
+          from { transform: translateX(100%); }
+          to { transform: translateX(0); }
         }
-        .animate-slide-in-right {
-          animation: slide-in-right 0.3s ease-out;
+        @keyframes slide-out-right {
+          from { transform: translateX(0); }
+          to { transform: translateX(100%); }
         }
+        @keyframes fade-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes fade-out {
+          from { opacity: 1; }
+          to { opacity: 0; }
+        }
+        .animate-slide-in-right { animation: slide-in-right 0.3s ease-out forwards; }
+        .animate-slide-out-right { animation: slide-out-right 0.3s ease-in forwards; }
+        .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
+        .animate-fade-out { animation: fade-out 0.3s ease-in forwards; }
       `}</style>
     </>
   );

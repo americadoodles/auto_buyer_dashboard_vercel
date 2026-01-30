@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { CheckCircle, X, ExternalLink } from 'lucide-react';
+import { CheckCircle, X, ExternalLink, ChevronRight } from 'lucide-react';
 import { Icon } from '../atoms/Icon';
 
 interface MMRCardProps {
@@ -29,12 +29,38 @@ export const MMRCard: React.FC<MMRCardProps> = ({
   vin,
 }) => {
   const router = useRouter();
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
 
-  const handleMMRClick = () => {
+  const PANEL_ANIMATION_MS = 300;
+  const handleClose = () => {
+    if (isClosing) return;
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsPanelOpen(false);
+      setIsClosing(false);
+    }, PANEL_ANIMATION_MS);
+  };
+
+  // Handle Escape key to close panel
+  useEffect(() => {
+    if (!isPanelOpen) return;
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') handleClose();
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [isPanelOpen]);
+
+  const handleMMRClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (vin) {
       router.push(`/crm/leads/mmr/${encodeURIComponent(vin)}`);
     }
   };
+
   const formatCurrency = (value: number | undefined | string): string => {
     if (value === undefined || value === null || value === '') return '';
     const numValue = typeof value === 'string' ? parseFloat(value.replace(/[^0-9.-]/g, '')) : value;
@@ -75,160 +101,232 @@ export const MMRCard: React.FC<MMRCardProps> = ({
 
   // Extract Adjusted MMR from features
   const adjustedMMR = mmrData?.features?.['Adjust MMR'] || mmrData?.features?.['Adjusted MMR'] || undefined;
+  const displayValue = adjustedMMR !== undefined ? adjustedMMR : mmrValue;
 
   return (
-    <div className="flex flex-col gap-2 rounded-xl border bg-white dark:bg-[#1a1d29] border-gray-200 dark:border-gray-700/50 p-5">
-      <div className="flex items-center justify-between ">
-        <div className="flex items-center gap-2">
-          <Icon
-            name="mmr"
-            size={24}
-            className="opacity-80 hover:opacity-100 transition-opacity rounded"
-          />
-          <span 
-            onClick={handleMMRClick}
-            className={`text-black dark:text-white font-semibold flex items-center gap-1.5 ${vin ? 'cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors' : ''}`}
-          >
-            Manheim Market Report
-            {vin && <ExternalLink className="h-4 w-4" />}
-          </span>
-        </div>
-        <div className="text-right">
-          {adjustedMMR !== undefined ? (
-            <div>
-              <div className="text-green-600 dark:text-green-400 text-xl font-bold">
-                {formatCurrency(adjustedMMR)}
-              </div>
-            </div>
-          ) : (
-            <div className="text-green-600 dark:text-green-400 text-xl font-bold">
-              {mmrValue ? formatCurrency(mmrValue) : ''}
-            </div>
-          )}
+    <>
+      {/* Clickable Title Card */}
+      <div 
+        className="bg-white dark:bg-[#1a1d29] rounded-lg shadow-sm border border-gray-200 dark:border-gray-700/50 px-6 py-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+        onClick={() => setIsPanelOpen(true)}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Icon
+              name="mmr"
+              size={24}
+              className="opacity-80"
+            />
+            <span className="text-lg font-bold text-black dark:text-white">
+              Manheim Market Report
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            {displayValue && (
+              <span className="text-green-600 dark:text-green-400 font-bold">
+                {formatCurrency(displayValue)}
+              </span>
+            )}
+            <ChevronRight className="w-5 h-5 text-gray-400" />
+          </div>
         </div>
       </div>
-      <div className="space-y-2">
-        {/* Features */}
-        {mmrData?.features && typeof mmrData.features === 'object' && Object.keys(mmrData.features).length > 0 && (
-          <div>
-            <div className="flex gap-2 overflow-x-auto">
-              {Object.entries(mmrData.features)
-                .filter(([key]) => key !== 'Adjust MMR' && key !== 'Adjusted MMR')
-                .map(([key, value]) => (
-                  <div key={key} className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-gray-50 dark:bg-gray-800/50 flex-shrink-0">
-                    <div className="flex flex-col">
-                      <div className="text-xs font-medium text-black dark:text-gray-400 mb-0.5">{key}</div>
-                      <div className="text-lg font-bold text-black dark:text-white">
-                        {value ? (typeof value === 'number' ? formatCurrency(value) : String(value)) : 'N/A'}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-            </div>
-          </div>
-        )}
 
-        {/* Historical Average */}
-        {(historical30Days !== undefined || historical6Months !== undefined || historicalLastYear !== undefined) && (
-          <div>
-            <div className="text-sm text-black dark:text-gray-400 mb-1">Historical Average</div>
-            <div className="space-y-1">
-              {historical30Days !== undefined && (
-                <div className="flex items-center justify-between py-1 border-b border-gray-200 dark:border-gray-700/50">
-                  <span className="text-black dark:text-gray-300 text-sm">Past 30 Days</span>
-                  <div className="text-green-600 dark:text-green-400 font-semibold">{formatCurrency(historical30Days)}</div>
-                </div>
-              )}
-              {historical6Months !== undefined && (
-                <div className="flex items-center justify-between py-1 border-b border-gray-200 dark:border-gray-700/50">
-                  <span className="text-black dark:text-gray-300 text-sm">6 Months Ago</span>
-                  <div className="text-green-600 dark:text-green-400 font-semibold">{formatCurrency(historical6Months)}</div>
-                </div>
-              )}
-              {historicalLastYear !== undefined && (
-                <div className="flex items-center justify-between py-1">
-                  <span className="text-black dark:text-gray-300 text-sm">Last Year</span>
-                  <div className="text-green-600 dark:text-green-400 font-semibold">{formatCurrency(historicalLastYear)}</div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Projected Average */}
-        {mmrData?.projected_average && typeof mmrData.projected_average === 'object' && Object.keys(mmrData.projected_average).length > 0 && (
-          <div>
-            {Object.entries(mmrData.projected_average).map(([key, value]) => (
-              <div key={key} className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-black dark:text-white">Projected Average {key}</span>
-                <div className="text-base font-bold text-green-600 dark:text-green-400">
-                  {value ? String(value) : '--'}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Estimated Retail */}
-        {estimatedRetail !== undefined && (
-          <div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-white">Estimated Retail Value</span>
-              <span className="text-xl font-bold text-green-400">{formatCurrency(estimatedRetail)}</span>
-            </div>
-            {typicalRange && (
-              <div className="flex items-center justify-between mt-1">
-                <span className="text-xs font-medium text-gray-400">Typical Range</span>
-                <span className="text-sm text-green-400">
-                  {typicalRange.min && formatCurrency(typicalRange.min)}
-                  {typicalRange.min && typicalRange.max && <span className="mx-1 text-gray-400">-</span>}
-                  {typicalRange.max && formatCurrency(typicalRange.max)}
+      {/* Slide-in Panel from Right */}
+      {isPanelOpen && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className={`fixed inset-0 bg-black/50 z-40 ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}
+            onClick={handleClose}
+          />
+          
+          {/* Panel */}
+          <div className={`fixed top-0 right-0 h-full w-1/3 min-w-[320px] max-w-[500px] bg-white dark:bg-[#1a1d29] shadow-xl z-50 overflow-y-auto ${isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'}`}>
+            {/* Panel Header */}
+            <div className="sticky top-0 bg-white dark:bg-[#1a1d29] border-b border-gray-200 dark:border-gray-700/50 px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Icon
+                  name="mmr"
+                  size={24}
+                  className="opacity-80"
+                />
+                <span 
+                  onClick={handleMMRClick}
+                  className={`text-black dark:text-white font-semibold flex items-center gap-1.5 ${vin ? 'cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors' : ''}`}
+                >
+                  Manheim Market Report
+                  {vin && <ExternalLink className="h-4 w-4" />}
                 </span>
               </div>
-            )}
-          </div>
-        )}
+              <button
+                onClick={handleClose}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
 
-        {/* Auction Values (fallback if no other data) */}
-        {!mmrData?.features && !historical30Days && !estimatedRetail && (
-          <div>
-            <div className="text-sm text-black dark:text-gray-400 mb-1">Auction Values</div>
-            {above !== undefined && (
-              <div className="flex items-center justify-between py-1 border-b border-gray-200 dark:border-gray-700/50">
-                <div className="flex items-center gap-2">
-                  <span className="text-black dark:text-gray-300">Above</span>
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                </div>
-                <div className="text-right">
-                  <div className="text-black dark:text-white">{formatCurrency(above)}</div>
-                </div>
+            {/* Panel Content */}
+            <div className="px-6 py-4 space-y-4">
+              {/* MMR Value */}
+              <div className="text-center py-2">
+                {adjustedMMR !== undefined ? (
+                  <div>
+                    <div className="text-green-600 dark:text-green-400 text-3xl font-bold">
+                      {formatCurrency(adjustedMMR)}
+                    </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">Adjusted MMR</div>
+                  </div>
+                ) : mmrValue ? (
+                  <div>
+                    <div className="text-green-600 dark:text-green-400 text-3xl font-bold">
+                      {formatCurrency(mmrValue)}
+                    </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">MMR Value</div>
+                  </div>
+                ) : null}
               </div>
-            )}
-            {average !== undefined && (
-              <div className="flex items-center justify-between py-1 border-b border-gray-200 dark:border-gray-700/50">
-                <div className="flex items-center gap-2">
-                  <span className="text-black dark:text-gray-300">Average</span>
-                  <CheckCircle className="h-4 w-4 text-green-500" />
+
+              {/* Features */}
+              {mmrData?.features && typeof mmrData.features === 'object' && Object.keys(mmrData.features).length > 0 && (
+                <div>
+                  <div className="text-sm font-semibold text-black dark:text-gray-400 mb-2">Features</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {Object.entries(mmrData.features)
+                      .filter(([key]) => key !== 'Adjust MMR' && key !== 'Adjusted MMR')
+                      .map(([key, value]) => (
+                        <div key={key} className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-gray-50 dark:bg-gray-800/50">
+                          <div className="flex flex-col">
+                            <div className="text-xs font-medium text-black dark:text-gray-400 mb-0.5">{key}</div>
+                            <div className="text-base font-bold text-black dark:text-white">
+                              {value ? (typeof value === 'number' ? formatCurrency(value) : String(value)) : 'N/A'}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-black dark:text-white">{formatCurrency(average)}</div>
+              )}
+
+              {/* Historical Average */}
+              {(historical30Days !== undefined || historical6Months !== undefined || historicalLastYear !== undefined) && (
+                <div>
+                  <div className="text-sm font-semibold text-black dark:text-gray-400 mb-2">Historical Average</div>
+                  <div className="space-y-1">
+                    {historical30Days !== undefined && (
+                      <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700/50">
+                        <span className="text-black dark:text-gray-300 text-sm">Past 30 Days</span>
+                        <div className="text-green-600 dark:text-green-400 font-semibold">{formatCurrency(historical30Days)}</div>
+                      </div>
+                    )}
+                    {historical6Months !== undefined && (
+                      <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700/50">
+                        <span className="text-black dark:text-gray-300 text-sm">6 Months Ago</span>
+                        <div className="text-green-600 dark:text-green-400 font-semibold">{formatCurrency(historical6Months)}</div>
+                      </div>
+                    )}
+                    {historicalLastYear !== undefined && (
+                      <div className="flex items-center justify-between py-2">
+                        <span className="text-black dark:text-gray-300 text-sm">Last Year</span>
+                        <div className="text-green-600 dark:text-green-400 font-semibold">{formatCurrency(historicalLastYear)}</div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
-            {below !== undefined && (
-              <div className="flex items-center justify-between py-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-black dark:text-gray-300">Below</span>
-                  <X className="h-4 w-4 text-gray-500" />
+              )}
+
+              {/* Projected Average */}
+              {mmrData?.projected_average && typeof mmrData.projected_average === 'object' && Object.keys(mmrData.projected_average).length > 0 && (
+                <div>
+                  <div className="text-sm font-semibold text-black dark:text-gray-400 mb-2">Projected Average</div>
+                  {Object.entries(mmrData.projected_average).map(([key, value]) => (
+                    <div key={key} className="flex items-center justify-between py-2">
+                      <span className="text-sm text-black dark:text-gray-300">{key}</span>
+                      <div className="text-base font-bold text-green-600 dark:text-green-400">
+                        {value ? String(value) : '--'}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div className="text-right">
-                  <div className="text-black dark:text-white">{formatCurrency(below)}</div>
+              )}
+
+              {/* Estimated Retail */}
+              {estimatedRetail !== undefined && (
+                <div>
+                  <div className="text-sm font-semibold text-black dark:text-gray-400 mb-2">Estimated Retail</div>
+                  <div className="flex items-center justify-between py-2">
+                    <span className="text-sm text-black dark:text-gray-300">Retail Value</span>
+                    <span className="text-xl font-bold text-green-600 dark:text-green-400">{formatCurrency(estimatedRetail)}</span>
+                  </div>
+                  {typicalRange && (
+                    <div className="flex items-center justify-between py-2">
+                      <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Typical Range</span>
+                      <span className="text-sm text-green-600 dark:text-green-400">
+                        {typicalRange.min && formatCurrency(typicalRange.min)}
+                        {typicalRange.min && typicalRange.max && <span className="mx-1 text-gray-400">-</span>}
+                        {typicalRange.max && formatCurrency(typicalRange.max)}
+                      </span>
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
+              )}
+
+              {/* Auction Values (fallback if no other data) */}
+              {!mmrData?.features && !historical30Days && !estimatedRetail && (
+                <div>
+                  <div className="text-sm font-semibold text-black dark:text-gray-400 mb-2">Auction Values</div>
+                  {above !== undefined && (
+                    <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700/50">
+                      <div className="flex items-center gap-2">
+                        <span className="text-black dark:text-gray-300">Above</span>
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                      </div>
+                      <div className="text-right">
+                        <div className="text-black dark:text-white font-semibold">{formatCurrency(above)}</div>
+                      </div>
+                    </div>
+                  )}
+                  {average !== undefined && (
+                    <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700/50">
+                      <div className="flex items-center gap-2">
+                        <span className="text-black dark:text-gray-300">Average</span>
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                      </div>
+                      <div className="text-right">
+                        <div className="text-black dark:text-white font-semibold">{formatCurrency(average)}</div>
+                      </div>
+                    </div>
+                  )}
+                  {below !== undefined && (
+                    <div className="flex items-center justify-between py-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-black dark:text-gray-300">Below</span>
+                        <X className="h-4 w-4 text-gray-500" />
+                      </div>
+                      <div className="text-right">
+                        <div className="text-black dark:text-white font-semibold">{formatCurrency(below)}</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-        )}
-      </div>
-    </div>
+        </>
+      )}
+
+      {/* Animation styles */}
+      <style jsx global>{`
+        @keyframes slide-in-right { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        @keyframes slide-out-right { from { transform: translateX(0); } to { transform: translateX(100%); } }
+        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
+        .animate-slide-in-right { animation: slide-in-right 0.3s ease-out forwards; }
+        .animate-slide-out-right { animation: slide-out-right 0.3s ease-in forwards; }
+        .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
+        .animate-fade-out { animation: fade-out 0.3s ease-in forwards; }
+      `}</style>
+    </>
   );
 };

@@ -81,8 +81,8 @@ export default function LeadDetailPage() {
       setRow1MinHeight(target);
 
       if (h2 > h1) {
-        const pad = (h2 - h1) / 2;
-        setCol1Padding({ top: Math.round(pad), bottom: Math.round(pad) });
+        // Keep image at top: put all extra space at bottom
+        setCol1Padding({ top: 0, bottom: Math.round(h2 - h1) });
         setCol2Padding({ top: 0, bottom: 0 });
       } else if (h1 > h2) {
         setCol1Padding({ top: 0, bottom: 0 });
@@ -432,44 +432,26 @@ export default function LeadDetailPage() {
           </div>
         </div>
 
-          {/* 3-Column Grid Layout: row1 = Col1 gallery, Col2 vehicle/lead, Col3 AccuTrade (row-span-2); row2 = Chat spanning Col1+Col2 */}
+          {/* One wrapper with two divs: left (gallery + vehicle/lead + chat), right (AccuTrade) */}
           {displayListing ? (
-            <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch mb-2 lg:grid-rows-[1fr_minmax(280px,36vh)]">
-              {/* First Column - Vehicle Images; equal height with col2, no scrollbar */}
-              <div
-                className="lg:col-span-4 lg:row-span-1 flex flex-col min-h-0"
-                style={
-                  row1MinHeight !== undefined
-                    ? { minHeight: row1MinHeight }
-                    : undefined
-                }
-              >
+            <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-4 mb-2 min-w-0">
+              {/* Left div: gallery + vehicle/lead (top) and chat (bottom) */}
+              <div className="flex flex-col flex-1 lg:flex-[2] min-h-0 min-w-0 gap-4">
+                {/* Top: gallery and vehicle/lead side by side (sized to content, no extra space below) */}
                 <div
-                  className="flex flex-col flex-1"
-                  style={{
-                    paddingTop: col1Padding.top,
-                    paddingBottom: col1Padding.bottom,
-                  }}
+                  className="flex flex-none min-h-0 gap-4"
+                  style={
+                    row1MinHeight !== undefined
+                      ? { minHeight: row1MinHeight }
+                      : undefined
+                  }
                 >
-                  <div ref={col1ContentRef} className="flex flex-col gap-4 flex-1">
-                    {displayListing.images && displayListing.images.length > 0 && (
-                      <VehiclePhotoGallery images={displayListing.images} />
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Second Column - Vehicle Header, Vehicle Details, Lead Info, MMR, AutoCheck, CARFAX; equal height with col1, no scrollbar */}
-              <div
-                className="lg:col-span-4 lg:row-span-1 flex flex-col min-h-0"
-                style={
-                  row1MinHeight !== undefined
-                    ? { minHeight: row1MinHeight }
-                    : undefined
-                }
-              >
-                <div className="flex flex-col flex-1">
-                <div ref={col2ContentRef} className="flex flex-col flex-1 space-y-2">
+                    <div ref={col1ContentRef} className="flex flex-col gap-4 flex-1 min-h-0 min-w-0 justify-center">
+                      {displayListing.images && displayListing.images.length > 0 && (
+                        <VehiclePhotoGallery images={displayListing.images} />
+                      )}
+                    </div>
+                  <div ref={col2ContentRef} className="flex flex-col flex-1 space-y-2 min-h-0 min-w-0">
                 {/* Vehicle Header */}
                 <VehicleHeader
                   year={displayListing.year}
@@ -547,24 +529,23 @@ export default function LeadDetailPage() {
                   previousOwners={1}
                   images={displayListing.images?.slice(0, 3) || []}
                 />
+                  </div>
                 </div>
+                {/* Bottom: chat box */}
+                <div className="flex flex-col flex-1 min-h-[280px] overflow-hidden">
+                  <LeadChatBox
+                    contactId={lead?.contact_id || null}
+                    contactName={lead?.contact ? `${lead.contact.first_name} ${lead.contact.last_name}`.trim() : 'Contact'}
+                    phone={lead?.contact?.mobile || lead?.contact?.phone}
+                    onSent={() => leadsApi.getLeadActivities(leadId).then(setActivities).catch(() => {})}
+                    onCallClick={() => setIsCallModalOpen(true)}
+                    className="h-full min-h-[280px]"
+                  />
                 </div>
               </div>
 
-              {/* Chat box - bottom of first and second columns, contacts-chat style */}
-              <div className="lg:col-span-8 lg:row-start-2 flex flex-col min-h-0 mt-0">
-                <LeadChatBox
-                  contactId={lead?.contact_id || null}
-                  contactName={lead?.contact ? `${lead.contact.first_name} ${lead.contact.last_name}`.trim() : 'Contact'}
-                  phone={lead?.contact?.mobile || lead?.contact?.phone}
-                  onSent={() => leadsApi.getLeadActivities(leadId).then(setActivities).catch(() => {})}
-                  onCallClick={() => setIsCallModalOpen(true)}
-                  className="h-full min-h-[280px]"
-                />
-              </div>
-
-              {/* Third Column - AccuTrade (spans 2 rows) */}
-              <div className="lg:col-span-4 lg:row-span-2 flex flex-col min-h-0">
+              {/* Right div: AccuTrade */}
+              <div className="flex flex-col flex-1 min-h-0 min-w-0">
                 <div className="flex-1 flex flex-col min-h-0 min-w-0">
                   <div className="space-y-4 flex-1 flex flex-col min-h-0">
                     {displayListing.vin && (

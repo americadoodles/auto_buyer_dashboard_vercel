@@ -241,7 +241,7 @@ export const AccuTradeDataSection: React.FC<AccuTradeDataSectionProps> = ({
   const hasCardContent = accuTradeData?.options || accuTradeData?.pricebar || accuTradeData?.local_market_listing || accuTradeData?.local_market_stats || sellerName || askingPrice || suggestedPrice;
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 gap-4">
+    <div className="flex flex-col flex-1 min-h-0 gap-2">
       {/* AccuTrade actions: one component (View Full Details + View Condition Report) */}
       {vin && hasAccuTradeData && (
         <div className="flex flex-col gap-2 flex-shrink-0">

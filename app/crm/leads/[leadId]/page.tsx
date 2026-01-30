@@ -23,7 +23,7 @@ import { LeadInformation } from '../../../../components/molecules/LeadInformatio
 import { CompactAutocheckSection } from '../../../../components/organisms/CompactAutocheckSection';
 import { CompactCarfaxSection } from '../../../../components/organisms/CompactCarfaxSection';
 import { AccuTradeDataSection } from '../../../../components/organisms/AccuTradeDataSection';
-import { LeadChatBox } from '../../../../components/organisms/LeadChatBox';
+import { ChatBox } from '../../../../components/organisms/ChatBox';
 import { ArrowLeft, ExternalLink, Check, X, Edit2, Save } from 'lucide-react';
 import { useToast } from '../../../../hooks/useToast';
 import { formatDateTime } from '../../../../lib/utils/formatters';
@@ -367,9 +367,9 @@ export default function LeadDetailPage() {
     <div className="h-full flex flex-col bg-white dark:bg-[#0f1117]">
       {/* Main Content Layout - no page scroll; columns scroll internally */}
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-white dark:bg-[#0f1117]">
-        <div className="max-w-[1800px] mx-auto px-6 py-6 flex-1 flex flex-col min-h-0 w-full">
+        <div className="max-w-[1800px] mx-auto px-4 py-4 flex-1 flex flex-col min-h-0 w-full">
           {/* Status Badges */}
-          <div className="flex items-center justify-between mb-4 flex-shrink-0">
+          <div className="flex items-center justify-between mb-2 flex-shrink-0">
             <div className="flex items-center space-x-4">
               {lead.status && (
                 <Badge color="blue" className="bg-blue-500 dark:bg-blue-600 text-white font-semibold shadow-sm">
@@ -434,9 +434,9 @@ export default function LeadDetailPage() {
 
           {/* One wrapper with two divs: left (gallery + vehicle/lead + chat), right (AccuTrade) */}
           {displayListing ? (
-            <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-4 mb-2 min-w-0">
+            <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-4 min-w-0">
               {/* Left div: gallery + vehicle/lead (top) and chat (bottom) */}
-              <div className="flex flex-col flex-1 lg:flex-[2] min-h-0 min-w-0 gap-4">
+              <div className="flex flex-col flex-1 lg:flex-[2] min-h-0 min-w-0 gap-2">
                 {/* Top: gallery and vehicle/lead side by side (sized to content, no extra space below) */}
                 <div
                   className="flex flex-none min-h-0 gap-4"
@@ -533,7 +533,7 @@ export default function LeadDetailPage() {
                 </div>
                 {/* Bottom: chat box */}
                 <div className="flex flex-col flex-1 min-h-[280px] overflow-hidden">
-                  <LeadChatBox
+                  <ChatBox
                     contactId={lead?.contact_id || null}
                     contactName={lead?.contact ? `${lead.contact.first_name} ${lead.contact.last_name}`.trim() : 'Contact'}
                     phone={lead?.contact?.mobile || lead?.contact?.phone}

@@ -56,6 +56,21 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
   const { showSuccess, showError } = useToast();
   const [messageText, setMessageText] = React.useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const MIN_TEXTAREA_HEIGHT = 44;
+  const MAX_TEXTAREA_HEIGHT = 120;
+
+  const adjustTextareaHeight = React.useCallback(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(Math.max(el.scrollHeight, MIN_TEXTAREA_HEIGHT), MAX_TEXTAREA_HEIGHT)}px`;
+  }, []);
+
+  useEffect(() => {
+    adjustTextareaHeight();
+  }, [messageText, adjustTextareaHeight]);
 
   const {
     communications,
@@ -98,37 +113,32 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
   };
 
-  if (!contactId) {
-    return (
-      <div className={`flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-200 dark:border-gray-700 overflow-hidden ${className}`}>
-        <div className="flex-1 flex items-center justify-center p-8 text-gray-500 dark:text-gray-400">
-          <p className="text-sm">No contact linked to this lead.</p>
-        </div>
-      </div>
-    );
-  }
+  const hasContact = Boolean(contactId);
+  const hasPhone = Boolean(phone);
+  const displayName = contactName || 'No contact';
+  const phoneLabel = phone || 'No phone number';
 
   return (
-    <div className={`flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden min-h-0 ${className}`}>
+    <div className={`flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden h-full min-h-[280px] ${className}`}>
       {/* Chat Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0">
+      <div className="flex items-center justify-between px-4 py-1 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0">
         <div className="flex items-center min-w-0">
           <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-medium flex-shrink-0">
-            {getInitials(contactName)}
+            {getInitials(displayName)}
           </div>
           <div className="ml-3 min-w-0">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
-              {contactName}
+              {displayName}
             </h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-              {phone || 'No phone number'}
+              {phoneLabel}
             </p>
           </div>
         </div>
@@ -137,7 +147,7 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
             variant="outline"
             size="sm"
             onClick={onCallClick}
-            disabled={!phone}
+            disabled={!hasContact || !hasPhone}
             className="text-green-600 border-green-300 hover:bg-green-50 dark:text-green-400 dark:border-green-700 dark:hover:bg-green-900/30 flex-shrink-0"
           >
             <Icon name="phone" className="w-4 h-4 mr-2" />
@@ -146,14 +156,14 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
         )}
       </div>
 
-      {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-gray-900 min-h-[200px] max-h-[320px]">
+      {/* Messages Area - flex-1 min-h-0 so it fills remaining height and can shrink/scroll */}
+      <div className="flex-1 min-h-0 overflow-y-scroll overflow-x-hidden px-4 py-2 bg-gray-50 dark:bg-gray-900">
         {messagesLoading && communications.length === 0 ? (
           <div className="flex justify-center items-center h-full">
             <Icon name="loader-2" className="w-8 h-8 animate-spin text-blue-500" />
           </div>
         ) : communications.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full min-h-[160px] text-gray-500 dark:text-gray-400">
+          <div className="flex flex-col items-center justify-center h-full min-h-0 text-gray-500 dark:text-gray-400">
             <Icon name="message-square" className="w-12 h-12 mb-3 opacity-50" />
             <p className="text-sm font-medium">No messages yet</p>
             <p className="text-xs">Send an SMS or make a call to start the conversation</p>
@@ -213,35 +223,30 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
       </div>
 
       {/* Message Input */}
-      <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0">
-        {!phone ? (
-          <div className="text-center py-2 text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg text-sm">
-            <Icon name="alert-triangle" className="w-4 h-4 inline mr-2" />
-            No phone number. Add one to send SMS.
-          </div>
-        ) : (
-          <div className="flex items-center space-x-2">
-            <input
-              type="text"
-              value={messageText}
-              onChange={(e) => setMessageText(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Type a message..."
-              className="flex-1 h-11 px-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 text-sm"
-            />
-            <Button
-              onClick={handleSendMessage}
-              disabled={!messageText.trim() || sendingMessage}
-              className="h-11 w-11 rounded-lg p-0 flex items-center justify-center flex-shrink-0"
-            >
-              {sendingMessage ? (
-                <Icon name="loader-2" className="w-5 h-5 animate-spin" />
-              ) : (
-                <Icon name="send" className="w-5 h-5" />
-              )}
-            </Button>
-          </div>
-        )}
+      <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0">
+        <div className="flex items-end space-x-2">
+          <textarea
+            ref={textareaRef}
+            rows={1}
+            value={messageText}
+            onChange={(e) => setMessageText(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={hasContact && hasPhone ? 'Type a message...' : 'Add a contact and phone number to send SMS'}
+            disabled={!hasContact || !hasPhone}
+            className="flex-1 min-h-[44px] max-h-[120px] py-3 px-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 text-sm disabled:opacity-60 disabled:cursor-not-allowed resize-none overflow-y-auto"
+          />
+          <Button
+            onClick={handleSendMessage}
+            disabled={!hasContact || !hasPhone || !messageText.trim() || sendingMessage}
+            className="h-11 w-11 rounded-lg p-0 flex items-center justify-center flex-shrink-0 disabled:opacity-60 disabled:cursor-not-allowed self-end"
+          >
+            {sendingMessage ? (
+              <Icon name="loader-2" className="w-5 h-5 animate-spin" />
+            ) : (
+              <Icon name="send" className="w-5 h-5" />
+            )}
+          </Button>
+        </div>
       </div>
     </div>
   );

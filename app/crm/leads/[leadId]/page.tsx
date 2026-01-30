@@ -325,11 +325,11 @@ export default function LeadDetailPage() {
 
   return (
     <div className="h-full flex flex-col bg-white dark:bg-[#0f1117]">
-      {/* Main Content Layout */}
-      <div className="flex-1 overflow-y-auto bg-white dark:bg-[#0f1117]">
-        <div className="max-w-[1800px] mx-auto px-6 py-6">
+      {/* Main Content Layout - no page scroll; columns scroll internally */}
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-white dark:bg-[#0f1117]">
+        <div className="max-w-[1800px] mx-auto px-6 py-6 flex-1 flex flex-col min-h-0 w-full">
           {/* Status Badges */}
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-4 flex-shrink-0">
             <div className="flex items-center space-x-4">
               {lead.status && (
                 <Badge color="blue" className="bg-blue-500 dark:bg-blue-600 text-white font-semibold shadow-sm">
@@ -394,9 +394,9 @@ export default function LeadDetailPage() {
 
           {/* 3-Column Grid Layout */}
           {displayListing ? (
-            <div className="mb-2 grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+            <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch mb-2">
               {/* First Column - Vehicle Images */}
-              <div className="lg:col-span-4 flex flex-col gap-4">
+              <div className="lg:col-span-4 flex flex-col gap-4 min-h-0 overflow-y-auto scrollbar-hide">
                 {/* Vehicle Photo Gallery */}
                 {displayListing.images && displayListing.images.length > 0 && (
                   <VehiclePhotoGallery images={displayListing.images} />
@@ -404,7 +404,7 @@ export default function LeadDetailPage() {
               </div>
 
               {/* Second Column - Vehicle Header, Vehicle Details, Lead Info, MMR, AutoCheck, CARFAX */}
-              <div className="lg:col-span-4 flex flex-col space-y-2">
+              <div className="lg:col-span-4 flex flex-col space-y-2 min-h-0 overflow-y-auto scrollbar-hide">
                 {/* Vehicle Header */}
                 <VehicleHeader
                   year={displayListing.year}
@@ -484,11 +484,10 @@ export default function LeadDetailPage() {
                 />
               </div>
 
-              {/* Third Column - Pricing and Factory Options */}
-              <div className="lg:col-span-4 flex flex-col space-y-4">
-                {/* AccuTrade Data - Always show if VIN exists */}
-                <div className="flex-1 flex flex-col min-h-0 overflow-y-auto">
-                  <div className="space-y-4">
+              {/* Third Column - AccuTrade (buttons + card; card scrolls with visible scrollbar) */}
+              <div className="lg:col-span-4 flex flex-col min-h-0">
+                <div className="flex-1 flex flex-col min-h-0 min-w-0">
+                  <div className="space-y-4 flex-1 flex flex-col min-h-0">
                     {displayListing.vin && (
                       <>
                         {hasAccuTradeData && accuTradeData ? (

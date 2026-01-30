@@ -22,10 +22,9 @@ import { VehicleDetails } from '../../../../components/molecules/VehicleDetails'
 import { LeadInformation } from '../../../../components/molecules/LeadInformation';
 import { CompactAutocheckSection } from '../../../../components/organisms/CompactAutocheckSection';
 import { CompactCarfaxSection } from '../../../../components/organisms/CompactCarfaxSection';
-import { SMSThreadCompact } from '../../../../components/organisms/SMSThreadCompact';
 import { AccuTradeDataSection } from '../../../../components/organisms/AccuTradeDataSection';
+import { LeadChatBox } from '../../../../components/organisms/LeadChatBox';
 import { ArrowLeft, ExternalLink, Check, X, Edit2, Save } from 'lucide-react';
-import { ChatBoxComponent } from '../../../../components/atoms/ChatBoxComponent';
 import { useToast } from '../../../../hooks/useToast';
 import { formatDateTime } from '../../../../lib/utils/formatters';
 import { ApiService } from '../../../../lib/services/api';
@@ -392,11 +391,11 @@ export default function LeadDetailPage() {
           </div>
         </div>
 
-          {/* 3-Column Grid Layout */}
+          {/* 3-Column Grid Layout: row1 = Col1 gallery, Col2 vehicle/lead, Col3 AccuTrade (row-span-2); row2 = Chat spanning Col1+Col2 */}
           {displayListing ? (
-            <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch mb-2">
+            <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch mb-2 lg:grid-rows-[1fr_minmax(280px,36vh)]">
               {/* First Column - Vehicle Images */}
-              <div className="lg:col-span-4 flex flex-col gap-4 min-h-0 overflow-y-auto scrollbar-hide">
+              <div className="lg:col-span-4 lg:row-span-1 flex flex-col gap-4 min-h-0 overflow-y-auto scrollbar-hide">
                 {/* Vehicle Photo Gallery */}
                 {displayListing.images && displayListing.images.length > 0 && (
                   <VehiclePhotoGallery images={displayListing.images} />
@@ -404,7 +403,7 @@ export default function LeadDetailPage() {
               </div>
 
               {/* Second Column - Vehicle Header, Vehicle Details, Lead Info, MMR, AutoCheck, CARFAX */}
-              <div className="lg:col-span-4 flex flex-col space-y-2 min-h-0 overflow-y-auto scrollbar-hide">
+              <div className="lg:col-span-4 lg:row-span-1 flex flex-col space-y-2 min-h-0 overflow-y-auto scrollbar-hide">
                 {/* Vehicle Header */}
                 <VehicleHeader
                   year={displayListing.year}
@@ -484,8 +483,20 @@ export default function LeadDetailPage() {
                 />
               </div>
 
-              {/* Third Column - AccuTrade (buttons + card; card scrolls with visible scrollbar) */}
-              <div className="lg:col-span-4 flex flex-col min-h-0">
+              {/* Chat box - bottom of first and second columns, contacts-chat style */}
+              <div className="lg:col-span-8 lg:row-start-2 flex flex-col min-h-0 mt-0">
+                <LeadChatBox
+                  contactId={lead?.contact_id || null}
+                  contactName={lead?.contact ? `${lead.contact.first_name} ${lead.contact.last_name}`.trim() : 'Contact'}
+                  phone={lead?.contact?.mobile || lead?.contact?.phone}
+                  onSent={() => leadsApi.getLeadActivities(leadId).then(setActivities).catch(() => {})}
+                  onCallClick={() => setIsCallModalOpen(true)}
+                  className="h-full min-h-[280px]"
+                />
+              </div>
+
+              {/* Third Column - AccuTrade (spans 2 rows) */}
+              <div className="lg:col-span-4 lg:row-span-2 flex flex-col min-h-0">
                 <div className="flex-1 flex flex-col min-h-0 min-w-0">
                   <div className="space-y-4 flex-1 flex flex-col min-h-0">
                     {displayListing.vin && (
@@ -571,16 +582,7 @@ export default function LeadDetailPage() {
         contactName={lead?.contact ? `${lead.contact.first_name} ${lead.contact.last_name}`.trim() : 'Unknown Contact'}
         phoneNumber={lead?.contact?.mobile || lead?.contact?.phone}
         onSent={() => {
-          // Optionally refresh activities after SMS is sent
           leadsApi.getLeadActivities(leadId).then(setActivities).catch(() => {});
-        }}
-      />
-
-      {/* Chat Icon - Docked at bottom right */}
-      <ChatBoxComponent
-        onClick={() => {
-          // Handle chat click - can be extended to open chat interface
-          console.log('Chat clicked');
         }}
       />
     </div>

@@ -371,9 +371,11 @@ export const CallModal: React.FC<CallModalProps> = ({
 
       call.on('reject', () => {
         console.log('Call rejected');
+        callSounds.stop();
         setCallState('busy');
         activeCallRef.current = null;
         showError('Call Rejected', 'The call was rejected or the line is busy.');
+        onClose();
       });
 
       call.on('error', (error) => {

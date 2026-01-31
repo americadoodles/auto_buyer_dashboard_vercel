@@ -232,19 +232,22 @@ export default function LeadDetailPage() {
           last_name: lead.contact?.last_name || undefined,
           email: lead.contact?.email || undefined,
           phone: lead.contact?.phone || undefined,
+          mobile: lead.contact?.mobile || undefined,
           job_title: lead.contact?.job_title || undefined
         });
       }
       
       // Update lead information
-      const updatedLead = await leadsApi.updateLead(leadId, {
+      await leadsApi.updateLead(leadId, {
         status_id: lead?.status_id,
         source_id: lead?.source_id,
         notes: lead?.notes,
         lead_score: lead?.lead_score
       });
       
-      setLead(updatedLead);
+      // Refetch full lead so we keep nested contact, listing, status, source (API may return only lead row)
+      const fullLead = await leadsApi.getLead(leadId);
+      setLead(fullLead);
       
       // Reload activities after update
       const updatedActivities = await leadsApi.getLeadActivities(leadId).catch(() => []);

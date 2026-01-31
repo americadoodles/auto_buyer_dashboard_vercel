@@ -90,7 +90,7 @@ export const VehiclePhotoGallery: React.FC<VehiclePhotoGalleryProps> = ({ images
 
   return (
     <>
-      <div className="flex flex-col gap-4 rounded-xl border overflow-hidden bg-white dark:bg-[#1a1d29] border-gray-200 dark:border-gray-700/50">
+      <div className="flex flex-col rounded-xl border overflow-hidden bg-white dark:bg-[#1a1d29] border-gray-200 dark:border-gray-700/50">
         <div className="relative aspect-[4/3] bg-gray-100 dark:bg-gray-900">
           <img
             src={images[currentIndex]}
@@ -118,7 +118,7 @@ export const VehiclePhotoGallery: React.FC<VehiclePhotoGalleryProps> = ({ images
           )}
         </div>
         {images.length > 1 && (
-          <div className="flex gap-2 p-3 bg-white dark:bg-[#1a1d29] overflow-x-auto overflow-y-hidden flex-nowrap w-full gallery-scrollbar">
+          <div className="flex gap-2 bg-white dark:bg-[#1a1d29] overflow-x-auto overflow-y-hidden flex-nowrap w-full gallery-scrollbar">
             {images.map((image, index) => (
               <button
                 key={index}

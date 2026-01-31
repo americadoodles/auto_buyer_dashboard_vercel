@@ -85,8 +85,31 @@ export const TwilioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         if (errorCode === 31000 || errorCode === 31005 || errorCode === 53001) {
           return;
         }
+        // 20104 = AccessTokenExpired — destroy and re-initialize with a new token
+        if (errorCode === 20104) {
+          console.warn('Twilio access token expired, re-initializing device...');
+          if (deviceRef.current) {
+            deviceRef.current.destroy();
+            deviceRef.current = null;
+          }
+          setDeviceReady(false);
+          initializeDevice();
+          return;
+        }
         console.error('Twilio Device error:', error);
         showError('Voice Error', error.message || 'An error occurred with the voice device');
+      });
+
+      // Refresh token before it expires (TTL is 1 hour; Twilio fires ~60s before expiry)
+      device.on('tokenWillExpire', async () => {
+        try {
+          const tokenResult = await getVoiceToken();
+          if (tokenResult.success && tokenResult.token) {
+            device.updateToken(tokenResult.token);
+          }
+        } catch (e) {
+          console.error('Failed to refresh voice token:', e);
+        }
       });
 
       // Handle incoming calls

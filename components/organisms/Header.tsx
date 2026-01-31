@@ -37,23 +37,23 @@ export const Header: React.FC = () => {
   }, [handleEscapeKey]);
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between border-b border-gray-200 bg-white px-2 py-2 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+    <header className="sticky top-0 z-30 flex items-center justify-between border-b border-gray-200 bg-white px-2 py-1.5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
       {/* Left side - Search */}
       <div className="flex-1 max-w-md">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
             type="search"
             placeholder="Search..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 w-full"
+            className="pl-8 py-1.5 text-sm w-full"
           />
         </div>
       </div>
 
       {/* Right side - Actions */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         {/* Theme Toggle */}
         <ThemeToggle />
 
@@ -63,9 +63,9 @@ export const Header: React.FC = () => {
             variant="outline"
             size="sm"
             onClick={() => setShowNotifications(!showNotifications)}
-            className="relative p-2"
+            className="relative p-1.5"
           >
-            <Bell className="h-5 w-5" />
+            <Bell className="h-4 w-4" />
             <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
           </Button>
           
@@ -96,13 +96,13 @@ export const Header: React.FC = () => {
             variant="outline"
             size="sm"
             onClick={() => setShowUserMenu(!showUserMenu)}
-            className="flex items-center gap-2 px-3"
+            className="flex items-center gap-1.5 px-2 py-1"
           >
-            <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-medium">
+            <div className="h-6 w-6 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-medium">
               {user?.username?.charAt(0).toUpperCase() || 'U'}
             </div>
             <span className="hidden md:block text-sm font-medium">{user?.username || 'User'}</span>
-            <ChevronDown className="h-4 w-4" />
+            <ChevronDown className="h-3 w-3" />
           </Button>
 
           {showUserMenu && (

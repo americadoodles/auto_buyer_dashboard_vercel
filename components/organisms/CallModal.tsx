@@ -128,10 +128,20 @@ export const CallModal: React.FC<CallModalProps> = ({
 
       device.on('error', (error) => {
         // Ignore connection errors when device is being destroyed or modal is closed
-        // These are expected when the WebSocket disconnects after closing
         const errorCode = (error as any).code;
         if (errorCode === 31000 || errorCode === 31005 || errorCode === 53001) {
           console.log('Twilio Device connection closed (expected after modal close)');
+          return;
+        }
+        // 20104 = AccessTokenExpired — re-initialize with a new token
+        if (errorCode === 20104) {
+          if (deviceRef.current) {
+            deviceRef.current.destroy();
+            deviceRef.current = null;
+          }
+          setDeviceReady(false);
+          setCallState('initializing');
+          initializeDevice();
           return;
         }
         console.error('Twilio Device error:', error);

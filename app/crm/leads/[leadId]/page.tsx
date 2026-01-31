@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from '../../../../components/atoms/Button';
 import { Input } from '../../../../components/atoms/Input';
@@ -22,10 +22,9 @@ import { VehicleDetails } from '../../../../components/molecules/VehicleDetails'
 import { LeadInformation } from '../../../../components/molecules/LeadInformation';
 import { CompactAutocheckSection } from '../../../../components/organisms/CompactAutocheckSection';
 import { CompactCarfaxSection } from '../../../../components/organisms/CompactCarfaxSection';
-import { SMSThreadCompact } from '../../../../components/organisms/SMSThreadCompact';
 import { AccuTradeDataSection } from '../../../../components/organisms/AccuTradeDataSection';
+import { ChatBox } from '../../../../components/organisms/ChatBox';
 import { ArrowLeft, ExternalLink, Check, X, Edit2, Save } from 'lucide-react';
-import { ChatBoxComponent } from '../../../../components/atoms/ChatBoxComponent';
 import { useToast } from '../../../../hooks/useToast';
 import { formatDateTime } from '../../../../lib/utils/formatters';
 import { ApiService } from '../../../../lib/services/api';
@@ -53,6 +52,13 @@ export default function LeadDetailPage() {
   const [isSMSModalOpen, setIsSMSModalOpen] = useState(false);
   const [mmrData, setMmrData] = useState<any>(null);
   const [accuTradeData, setAccuTradeData] = useState<any>(null);
+
+  // Refs and state for equalizing first and second column heights (no scrollbar)
+  const col1ContentRef = useRef<HTMLDivElement>(null);
+  const col2ContentRef = useRef<HTMLDivElement>(null);
+  const [row1MinHeight, setRow1MinHeight] = useState<number | undefined>(undefined);
+  const [col1Padding, setCol1Padding] = useState<{ top: number; bottom: number }>({ top: 0, bottom: 0 });
+  const [col2Padding, setCol2Padding] = useState<{ top: number; bottom: number }>({ top: 0, bottom: 0 });
   
   // Related data
   const { statuses, loading: statusesLoading } = useLeadStatuses();
@@ -60,7 +66,41 @@ export default function LeadDetailPage() {
 
   // Use the full listing details if available, otherwise fall back to nested listing
   const displayListing = listing || lead?.listing;
-  
+
+  // Equalize first and second column heights: add top/bottom padding to the shorter column so both match, no scrollbar
+  useLayoutEffect(() => {
+    if (!displayListing) return;
+    const el1 = col1ContentRef.current;
+    const el2 = col2ContentRef.current;
+    if (!el1 || !el2) return;
+
+    const measure = () => {
+      const h1 = el1.scrollHeight;
+      const h2 = el2.scrollHeight;
+      const target = Math.max(h1, h2);
+      setRow1MinHeight(target);
+
+      if (h2 > h1) {
+        // Keep image at top: put all extra space at bottom
+        setCol1Padding({ top: 0, bottom: Math.round(h2 - h1) });
+        setCol2Padding({ top: 0, bottom: 0 });
+      } else if (h1 > h2) {
+        setCol1Padding({ top: 0, bottom: 0 });
+        const pad = (h1 - h2) / 2;
+        setCol2Padding({ top: Math.round(pad), bottom: Math.round(pad) });
+      } else {
+        setCol1Padding({ top: 0, bottom: 0 });
+        setCol2Padding({ top: 0, bottom: 0 });
+      }
+    };
+
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el1);
+    ro.observe(el2);
+    return () => ro.disconnect();
+  }, [displayListing, lead, mmrData, accuTradeData, listing]);
+
   // Hooks for data availability - MUST be called before any early returns
   const { hasData: hasAccuTradeData } = useAccuTradeData(displayListing?.vin);
   const { hasData: hasMMRData } = useMMRData(displayListing?.vin);
@@ -192,19 +232,22 @@ export default function LeadDetailPage() {
           last_name: lead.contact?.last_name || undefined,
           email: lead.contact?.email || undefined,
           phone: lead.contact?.phone || undefined,
+          mobile: lead.contact?.mobile || undefined,
           job_title: lead.contact?.job_title || undefined
         });
       }
       
       // Update lead information
-      const updatedLead = await leadsApi.updateLead(leadId, {
+      await leadsApi.updateLead(leadId, {
         status_id: lead?.status_id,
         source_id: lead?.source_id,
         notes: lead?.notes,
         lead_score: lead?.lead_score
       });
       
-      setLead(updatedLead);
+      // Refetch full lead so we keep nested contact, listing, status, source (API may return only lead row)
+      const fullLead = await leadsApi.getLead(leadId);
+      setLead(fullLead);
       
       // Reload activities after update
       const updatedActivities = await leadsApi.getLeadActivities(leadId).catch(() => []);
@@ -325,11 +368,11 @@ export default function LeadDetailPage() {
 
   return (
     <div className="h-full flex flex-col bg-white dark:bg-[#0f1117]">
-      {/* Main Content Layout */}
-      <div className="flex-1 overflow-y-auto bg-white dark:bg-[#0f1117]">
-        <div className="max-w-[1800px] mx-auto px-6 py-6">
+      {/* Main Content Layout - no page scroll; columns scroll internally */}
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-white dark:bg-[#0f1117]">
+        <div className="max-w-[1800px] mx-auto px-4 py-4 flex-1 flex flex-col min-h-0 w-full">
           {/* Status Badges */}
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-2 flex-shrink-0">
             <div className="flex items-center space-x-4">
               {lead.status && (
                 <Badge color="blue" className="bg-blue-500 dark:bg-blue-600 text-white font-semibold shadow-sm">
@@ -392,16 +435,26 @@ export default function LeadDetailPage() {
           </div>
         </div>
 
-          {/* 3-Column Grid Layout */}
+          {/* One wrapper with two divs: left (gallery + vehicle/lead + chat), right (AccuTrade) */}
           {displayListing ? (
-            <div className="mb-2 grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
-              {/* First Column - Vehicle Images, Vehicle Header, and SMS */}
-              <div className="lg:col-span-4 flex flex-col gap-4">
-                {/* Vehicle Photo Gallery */}
-                {displayListing.images && displayListing.images.length > 0 && (
-                  <VehiclePhotoGallery images={displayListing.images} />
-                )}
-                
+            <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-4 min-w-0">
+              {/* Left div: gallery + vehicle/lead (top) and chat (bottom) */}
+              <div className="flex flex-col flex-1 lg:flex-[2] min-h-0 min-w-0 gap-2">
+                {/* Top: gallery and vehicle/lead side by side (sized to content, no extra space below) */}
+                <div
+                  className="flex flex-none min-h-0 gap-4"
+                  style={
+                    row1MinHeight !== undefined
+                      ? { minHeight: row1MinHeight }
+                      : undefined
+                  }
+                >
+                    <div ref={col1ContentRef} className="flex flex-col gap-4 flex-1 min-h-0 min-w-0 justify-center">
+                      {displayListing.images && displayListing.images.length > 0 && (
+                        <VehiclePhotoGallery images={displayListing.images} />
+                      )}
+                    </div>
+                  <div ref={col2ContentRef} className="flex flex-col flex-1 space-y-2 min-h-0 min-w-0">
                 {/* Vehicle Header */}
                 <VehicleHeader
                   year={displayListing.year}
@@ -419,7 +472,7 @@ export default function LeadDetailPage() {
                   hasAccuTrade={hasAccuTradeData || false}
                 />
 
-                {/* Listing Detail */}
+                {/* Vehicle Details */}
                 {displayListing && <VehicleDetails listing={displayListing} />}
 
                 {/* Lead Information */}
@@ -431,11 +484,7 @@ export default function LeadDetailPage() {
                   onSaveAll={handleSave}
                   saving={saving}
                 />
-                
-              </div>
 
-              {/* Second Column - MMR, AutoCheck, CARFAX */}
-              <div className="lg:col-span-4 flex flex-col space-y-4">
                 {/* MMR Card */}
                 <MMRCard
                   mmrValue={
@@ -483,13 +532,25 @@ export default function LeadDetailPage() {
                   previousOwners={1}
                   images={displayListing.images?.slice(0, 3) || []}
                 />
+                  </div>
+                </div>
+                {/* Bottom: chat box */}
+                <div className="flex flex-col flex-1 min-h-[280px] overflow-hidden">
+                  <ChatBox
+                    contactId={lead?.contact_id || null}
+                    contactName={lead?.contact ? `${lead.contact.first_name} ${lead.contact.last_name}`.trim() : 'Contact'}
+                    phone={lead?.contact?.mobile || lead?.contact?.phone}
+                    onSent={() => leadsApi.getLeadActivities(leadId).then(setActivities).catch(() => {})}
+                    onCallClick={() => setIsCallModalOpen(true)}
+                    className="h-full min-h-[280px]"
+                  />
+                </div>
               </div>
 
-              {/* Third Column - Pricing and Factory Options */}
-              <div className="lg:col-span-4 flex flex-col space-y-4">
-                {/* AccuTrade Data - Always show if VIN exists */}
-                <div className="flex-1 flex flex-col min-h-0 overflow-y-auto">
-                  <div className="space-y-4">
+              {/* Right div: AccuTrade */}
+              <div className="flex flex-col flex-1 min-h-0 min-w-0">
+                <div className="flex-1 flex flex-col min-h-0 min-w-0">
+                  <div className="space-y-4 flex-1 flex flex-col min-h-0">
                     {displayListing.vin && (
                       <>
                         {hasAccuTradeData && accuTradeData ? (
@@ -573,16 +634,7 @@ export default function LeadDetailPage() {
         contactName={lead?.contact ? `${lead.contact.first_name} ${lead.contact.last_name}`.trim() : 'Unknown Contact'}
         phoneNumber={lead?.contact?.mobile || lead?.contact?.phone}
         onSent={() => {
-          // Optionally refresh activities after SMS is sent
           leadsApi.getLeadActivities(leadId).then(setActivities).catch(() => {});
-        }}
-      />
-
-      {/* Chat Icon - Docked at bottom right */}
-      <ChatBoxComponent
-        onClick={() => {
-          // Handle chat click - can be extended to open chat interface
-          console.log('Chat clicked');
         }}
       />
     </div>

@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Listing } from '../../lib/types/listing';
 import { formatDateTime } from '../../lib/utils/formatters';
 import { getMarketplaceInfo } from '../../lib/utils/marketplace';
+import { X, ChevronRight } from 'lucide-react';
 
 interface VehicleDetailsProps {
   listing: Listing;
@@ -50,7 +51,33 @@ const getMarketplaceName = (source?: string): string | null => {
   return domain.split('.')[0];
 };
 
+const PANEL_ANIMATION_MS = 300;
+
 export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ listing }) => {
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+
+  const handleClose = () => {
+    if (isClosing) return;
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsPanelOpen(false);
+      setIsClosing(false);
+    }, PANEL_ANIMATION_MS);
+  };
+
+  // Handle Escape key to close panel
+  useEffect(() => {
+    if (!isPanelOpen) return;
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') handleClose();
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [isPanelOpen]);
+
   if (!listing) {
     return null;
   }
@@ -58,15 +85,49 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ listing }) => {
   const marketplaceName = getMarketplaceName(listing.source);
 
   return (
-    <div className="bg-white dark:bg-[#1a1d29] rounded-lg shadow-sm border border-gray-200 dark:border-gray-700/50 px-6 py-3 space-y-3">
-      <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700/50 pb-2">
-        <h4 className="text-lg font-bold text-black dark:text-white">
-          Vehicle Detail
-          {marketplaceName && <span className="text-black dark:text-gray-400 font-normal"> ({marketplaceName})</span>}
-        </h4>
+    <>
+      {/* Clickable Title Card */}
+      <div 
+        className="bg-white dark:bg-[#1a1d29] rounded-lg shadow-sm border border-gray-200 dark:border-gray-700/50 px-6 py-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+        onClick={() => setIsPanelOpen(true)}
+      >
+        <div className="flex items-center justify-between">
+          <h4 className="text-lg font-bold text-black dark:text-white">
+            Vehicle Detail
+            {marketplaceName && <span className="text-black dark:text-gray-400 font-normal"> ({marketplaceName})</span>}
+          </h4>
+          <ChevronRight className="w-5 h-5 text-gray-400" />
+        </div>
       </div>
-    
-      <div className="grid grid-cols-1 gap-x-8 gap-y-1">
+
+      {/* Slide-in Panel from Right */}
+      {isPanelOpen && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className={`fixed inset-0 bg-black/50 z-40 ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}
+            onClick={handleClose}
+          />
+          
+          {/* Panel */}
+          <div className={`fixed top-0 right-0 h-full w-[30%] min-w-[320px] bg-white dark:bg-[#1a1d29] shadow-xl z-50 overflow-y-auto ${isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'}`}>
+            {/* Panel Header */}
+            <div className="sticky top-0 bg-white dark:bg-[#1a1d29] border-b border-gray-200 dark:border-gray-700/50 px-6 py-4 flex items-center justify-between">
+              <h4 className="text-lg font-bold text-black dark:text-white">
+                Vehicle Detail
+                {marketplaceName && <span className="text-black dark:text-gray-400 font-normal"> ({marketplaceName})</span>}
+              </h4>
+              <button
+                onClick={handleClose}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Panel Content */}
+            <div className="px-6 py-4">
+              <div className="grid grid-cols-1 gap-x-8 gap-y-2">
         {/* LPN */}
         {listing.lpn && (
           <div className="flex items-center w-full group">
@@ -279,16 +340,44 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ listing }) => {
           </div>
         )}
 
-        {/* Reason Codes */}
-        {listing.reasonCodes && listing.reasonCodes.length > 0 && (
-          <div className="flex items-start w-full group">
-            <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0 pt-1">Reason Codes:</span>
-            <div className="flex items-start gap-2 flex-1">
-              <span className="text-sm text-black dark:text-gray-300">{listing.reasonCodes.join(', ')}</span>
+                {/* Reason Codes */}
+                {listing.reasonCodes && listing.reasonCodes.length > 0 && (
+                  <div className="flex items-start w-full group">
+                    <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0 pt-1">Reason Codes:</span>
+                    <div className="flex items-start gap-2 flex-1">
+                      <span className="text-sm text-black dark:text-gray-300">{listing.reasonCodes.join(', ')}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        )}
-      </div>
-    </div>
+        </>
+      )}
+
+      {/* Animation styles */}
+      <style jsx global>{`
+        @keyframes slide-in-right {
+          from { transform: translateX(100%); }
+          to { transform: translateX(0); }
+        }
+        @keyframes slide-out-right {
+          from { transform: translateX(0); }
+          to { transform: translateX(100%); }
+        }
+        @keyframes fade-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes fade-out {
+          from { opacity: 1; }
+          to { opacity: 0; }
+        }
+        .animate-slide-in-right { animation: slide-in-right 0.3s ease-out forwards; }
+        .animate-slide-out-right { animation: slide-out-right 0.3s ease-in forwards; }
+        .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
+        .animate-fade-out { animation: fade-out 0.3s ease-in forwards; }
+      `}</style>
+    </>
   );
 };

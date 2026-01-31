@@ -14,11 +14,14 @@ interface FactoryOption {
 interface FactoryOptionsDetailedProps {
   options?: FactoryOption[] | Record<string, any>;
   total?: number;
+  /** When true, render without outer card (for use inside another card). */
+  embedded?: boolean;
 }
 
 export const FactoryOptionsDetailed: React.FC<FactoryOptionsDetailedProps> = ({
   options = [],
   total,
+  embedded = false,
 }) => {
   const formatCurrency = (value: number | undefined): string => {
     if (value === undefined || value === null) return '';
@@ -106,10 +109,10 @@ export const FactoryOptionsDetailed: React.FC<FactoryOptionsDetailedProps> = ({
         ? processedOptions.reduce((sum, opt) => sum + (opt.price ?? 0), 0)
         : defaultOptions.reduce((sum, opt) => sum + (opt.price ?? 0), 0)));
 
-  return (
-    <div className="flex flex-col gap-1 rounded-xl border bg-white dark:bg-[#1a1d29] border-gray-200 dark:border-gray-700/50 px-5 py-2">
+  const content = (
+    <>
       <div className="flex items-center justify-between ">
-        <h3 className="text-black dark:text-white font-semibold">Factory Equipped Options</h3>
+        <h3 className="text-lg font-semibold text-black dark:text-white">Factory Equipped Options</h3>
         <div className="text-green-600 dark:text-green-400 text-lg font-bold">{formatCurrency(calculatedTotal)}</div>
       </div>
       <div className="space-y-1">
@@ -132,6 +135,16 @@ export const FactoryOptionsDetailed: React.FC<FactoryOptionsDetailedProps> = ({
           <span className="text-green-600 dark:text-green-400 text-lg font-bold">{formatCurrency(calculatedTotal)}</span>
         </div>
       </div>
+    </>
+  );
+
+  if (embedded) {
+    return <div className="flex flex-col gap-1">{content}</div>;
+  }
+
+  return (
+    <div className="flex flex-col gap-1 rounded-xl border bg-white dark:bg-[#1a1d29] border-gray-200 dark:border-gray-700/50 px-5 py-2">
+      {content}
     </div>
   );
 };

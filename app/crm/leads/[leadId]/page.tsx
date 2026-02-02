@@ -449,9 +449,9 @@ export default function LeadDetailPage() {
                       : undefined
                   }
                 >
-                    <div ref={col1ContentRef} className="flex flex-col gap-4 flex-1 min-h-0 min-w-0 justify-center">
+                    <div ref={col1ContentRef} className="flex flex-col flex-1 min-h-0 min-w-0 h-full">
                       {displayListing.images && displayListing.images.length > 0 && (
-                        <VehiclePhotoGallery images={displayListing.images} />
+                        <VehiclePhotoGallery images={displayListing.images} className="flex-1 min-h-0 h-full" />
                       )}
                     </div>
                   <div ref={col2ContentRef} className="flex flex-col flex-1 space-y-2 min-h-0 min-w-0">

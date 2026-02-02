@@ -91,11 +91,12 @@ export const VehiclePhotoGallery: React.FC<VehiclePhotoGalleryProps> = ({ images
   return (
     <>
       <div className="flex flex-col rounded-xl border overflow-hidden bg-white dark:bg-[#1a1d29] border-gray-200 dark:border-gray-700/50">
-        <div className="relative aspect-[4/3] bg-gray-100 dark:bg-gray-900">
+        {/* 1:1 ratio: width full, height always equals width (never taller) */}
+        <div className="relative w-full bg-gray-100 dark:bg-gray-900" style={{ paddingBottom: '100%' }}>
           <img
             src={images[currentIndex]}
             alt={`Vehicle photo ${currentIndex + 1}`}
-            className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+            className="absolute inset-0 w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
             onClick={openViewer}
           />
           {images.length > 1 && (

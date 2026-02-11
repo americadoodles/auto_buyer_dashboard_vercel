@@ -391,28 +391,6 @@ export default function LeadDetailPage() {
               )}
             </div>
             <div className="flex items-center gap-2">
-              {/* Phone Call Button */}
-              <Button
-                onClick={() => setIsCallModalOpen(true)}
-                variant="outline"
-                size="sm"
-                disabled={!lead?.contact?.phone && !lead?.contact?.mobile}
-                className="flex items-center gap-2 bg-green-600 dark:bg-green-500 hover:bg-green-700 dark:hover:bg-green-600 text-white dark:text-white border-0 shadow-md font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Icon name="phone" className="w-4 h-4" />
-                Call
-              </Button>
-              {/* SMS Button */}
-              <Button
-                onClick={() => setIsSMSModalOpen(true)}
-                variant="outline"
-                size="sm"
-                disabled={!lead?.contact?.phone && !lead?.contact?.mobile}
-                className="flex items-center gap-2 bg-purple-600 dark:bg-purple-500 hover:bg-purple-700 dark:hover:bg-purple-600 text-white dark:text-white border-0 shadow-md font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Icon name="message-square" className="w-4 h-4" />
-                SMS
-              </Button>
             <Button
               onClick={() => setIsUpdateListingModalOpen(true)}
                 variant="outline"
@@ -449,9 +427,9 @@ export default function LeadDetailPage() {
                       : undefined
                   }
                 >
-                    <div ref={col1ContentRef} className="flex flex-col gap-4 flex-1 min-h-0 min-w-0 justify-center">
+                    <div ref={col1ContentRef} className="flex flex-col flex-1 min-h-0 min-w-0 h-full">
                       {displayListing.images && displayListing.images.length > 0 && (
-                        <VehiclePhotoGallery images={displayListing.images} />
+                        <VehiclePhotoGallery images={displayListing.images} className="flex-1 min-h-0 h-full" />
                       )}
                     </div>
                   <div ref={col2ContentRef} className="flex flex-col flex-1 space-y-2 min-h-0 min-w-0">
@@ -610,32 +588,6 @@ export default function LeadDetailPage() {
         variant="danger"
         loading={deleting}
         loadingText="Deleting..."
-      />
-
-      {/* Call Modal */}
-      <CallModal
-        isOpen={isCallModalOpen}
-        onClose={() => setIsCallModalOpen(false)}
-        contactId={lead?.contact_id || ''}
-        contactName={lead?.contact ? `${lead.contact.first_name} ${lead.contact.last_name}`.trim() : 'Unknown Contact'}
-        phone={lead?.contact?.phone}
-        mobile={lead?.contact?.mobile}
-        onCallInitiated={() => {
-          // Optionally refresh activities after a call is made
-          leadsApi.getLeadActivities(leadId).then(setActivities).catch(() => {});
-        }}
-      />
-
-      {/* SMS Modal */}
-      <SMSModal
-        isOpen={isSMSModalOpen}
-        onClose={() => setIsSMSModalOpen(false)}
-        contactId={lead?.contact_id || ''}
-        contactName={lead?.contact ? `${lead.contact.first_name} ${lead.contact.last_name}`.trim() : 'Unknown Contact'}
-        phoneNumber={lead?.contact?.mobile || lead?.contact?.phone}
-        onSent={() => {
-          leadsApi.getLeadActivities(leadId).then(setActivities).catch(() => {});
-        }}
       />
     </div>
   );

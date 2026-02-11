@@ -6,9 +6,10 @@ import { ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut, RotateCcw } from 'lucide
 
 interface VehiclePhotoGalleryProps {
   images: string[];
+  className?: string;
 }
 
-export const VehiclePhotoGallery: React.FC<VehiclePhotoGalleryProps> = ({ images }) => {
+export const VehiclePhotoGallery: React.FC<VehiclePhotoGalleryProps> = ({ images, className = '' }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [zoom, setZoom] = useState(1);
@@ -90,12 +91,13 @@ export const VehiclePhotoGallery: React.FC<VehiclePhotoGalleryProps> = ({ images
 
   return (
     <>
-      <div className="flex flex-col rounded-xl border overflow-hidden bg-white dark:bg-[#1a1d29] border-gray-200 dark:border-gray-700/50">
-        <div className="relative aspect-[4/3] bg-gray-100 dark:bg-gray-900">
+      <div className={`flex flex-col h-full min-h-0 rounded-xl border overflow-hidden bg-white dark:bg-[#1a1d29] border-gray-200 dark:border-gray-700/50 ${className}`.trim()}>
+        {/* Fill available height to match sibling column */}
+        <div className="relative flex-1 min-h-0 w-full bg-gray-100 dark:bg-gray-900">
           <img
             src={images[currentIndex]}
             alt={`Vehicle photo ${currentIndex + 1}`}
-            className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+            className="absolute inset-0 w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
             onClick={openViewer}
           />
           {images.length > 1 && (
@@ -114,30 +116,32 @@ export const VehiclePhotoGallery: React.FC<VehiclePhotoGalleryProps> = ({ images
               >
                 <ChevronRight className="h-6 w-6" />
               </Button>
+              {/* Thumbnails overlay at bottom of image */}
+              <div className="absolute bottom-0 left-0 right-0 z-10 flex gap-2 p-2 overflow-x-auto overflow-y-hidden flex-nowrap w-full gallery-scrollbar bg-black/50 dark:bg-black/60 backdrop-blur-sm">
+                {images.map((image, index) => (
+                  <button
+                    key={index}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      goToImage(index);
+                    }}
+                    className={`flex-shrink-0 aspect-video w-16 rounded overflow-hidden border-2 transition-all ${
+                      index === currentIndex
+                        ? 'border-blue-400 ring-1 ring-blue-300'
+                        : 'border-white/40 hover:border-white/70'
+                    }`}
+                  >
+                    <img
+                      src={image}
+                      alt={`Thumbnail ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
             </>
           )}
         </div>
-        {images.length > 1 && (
-          <div className="flex gap-2 bg-white dark:bg-[#1a1d29] overflow-x-auto overflow-y-hidden flex-nowrap w-full gallery-scrollbar">
-            {images.map((image, index) => (
-              <button
-                key={index}
-                onClick={() => goToImage(index)}
-                className={`flex-shrink-0 aspect-video w-20 rounded overflow-hidden border transition-all ${
-                  index === currentIndex
-                    ? 'border-blue-500 ring-1 ring-blue-400'
-                    : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
-                }`}
-              >
-                <img
-                  src={image}
-                  alt={`Thumbnail ${index + 1}`}
-                  className="w-full h-full object-cover"
-                />
-              </button>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Fullscreen zoomable viewer */}

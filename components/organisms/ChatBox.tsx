@@ -58,7 +58,7 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const MIN_TEXTAREA_HEIGHT = 44;
+  const MIN_TEXTAREA_HEIGHT = 40;
   const MAX_TEXTAREA_HEIGHT = 120;
 
   const adjustTextareaHeight = React.useCallback(() => {
@@ -130,16 +130,16 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
       {/* Chat Header */}
       <div className="flex items-center justify-between px-4 py-1 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0">
         <div className="flex items-center min-w-0">
-          <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-medium flex-shrink-0">
+          <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-medium flex-shrink-0">
             {getInitials(displayName)}
           </div>
-          <div className="ml-3 min-w-0">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
+          <div className="ml-3 min-w-0 truncate">
+            <span className="text-lg font-semibold text-gray-900 dark:text-white">
               {displayName}
-            </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-              {phoneLabel}
-            </p>
+            </span>
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              {' · '}{phoneLabel}
+            </span>
           </div>
         </div>
         {onCallClick && (
@@ -148,9 +148,9 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
             size="sm"
             onClick={onCallClick}
             disabled={!hasContact || !hasPhone}
-            className="text-green-600 border-green-300 hover:bg-green-50 dark:text-green-400 dark:border-green-700 dark:hover:bg-green-900/30 flex-shrink-0"
+            className="text-green-600 border-green-300 hover:bg-green-50 dark:text-green-400 dark:border-green-700 dark:hover:bg-green-900/30 flex-shrink-0 py-1.5 px-2.5 text-xs"
           >
-            <Icon name="phone" className="w-4 h-4 mr-2" />
+            <Icon name="phone" className="w-3 h-3 mr-1.5" />
             Call
           </Button>
         )}
@@ -223,7 +223,7 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
       </div>
 
       {/* Message Input */}
-      <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0">
+      <div className="px-2 py-2 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0">
         <div className="flex items-end space-x-2">
           <textarea
             ref={textareaRef}
@@ -233,17 +233,17 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
             onKeyDown={handleKeyDown}
             placeholder={hasContact && hasPhone ? 'Type a message...' : 'Add a contact and phone number to send SMS'}
             disabled={!hasContact || !hasPhone}
-            className="flex-1 min-h-[44px] max-h-[120px] py-3 px-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 text-sm disabled:opacity-60 disabled:cursor-not-allowed resize-none overflow-y-auto"
+            className="flex-1 min-h-[40px] max-h-[120px] py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 text-sm disabled:opacity-60 disabled:cursor-not-allowed resize-none overflow-y-auto"
           />
           <Button
             onClick={handleSendMessage}
             disabled={!hasContact || !hasPhone || !messageText.trim() || sendingMessage}
-            className="h-11 w-11 rounded-lg p-0 flex items-center justify-center flex-shrink-0 disabled:opacity-60 disabled:cursor-not-allowed self-end"
+            className="h-[40px] w-[40px] min-h-[40px] rounded-lg p-0 flex items-center justify-center flex-shrink-0 disabled:opacity-60 disabled:cursor-not-allowed self-end overflow-visible"
           >
             {sendingMessage ? (
-              <Icon name="loader-2" className="w-5 h-5 animate-spin" />
+              <Icon name="loader-2" className="w-12 h-12 animate-spin -m-1" />
             ) : (
-              <Icon name="send" className="w-5 h-5" />
+              <Icon name="send" className="w-12 h-12 -m-1" />
             )}
           </Button>
         </div>

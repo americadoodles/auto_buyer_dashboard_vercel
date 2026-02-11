@@ -105,7 +105,7 @@ export const LeadInformation: React.FC<LeadInformationProps> = ({
     <>
       {/* Clickable Title Card */}
       <div 
-        className="bg-white dark:bg-[#1a1d29] rounded-lg shadow-sm border border-gray-200 dark:border-gray-700/50 px-6 py-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+        className="bg-white dark:bg-[#1a1d29] rounded-lg shadow-sm border border-gray-200 dark:border-gray-700/50 px-6 py-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
         onClick={() => setIsPanelOpen(true)}
       >
         <div className="flex items-center justify-between">

@@ -69,15 +69,41 @@ export const ListingCard: React.FC<ListingCardProps> = ({
     }
   };
 
-  const getRecommendationBadge = (rec: string) => {
-    const lower = rec.toLowerCase();
-    if (lower.includes('buy') || lower.includes('strong')) {
-      return { icon: <ThumbsUp className="h-5 w-5" />, color: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700', label: rec };
-    }
-    if (lower.includes('pass') || lower.includes('skip') || lower.includes('avoid')) {
-      return { icon: <ThumbsDown className="h-5 w-5" />, color: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200 dark:border-red-700', label: rec };
-    }
-    return { icon: <Minus className="h-5 w-5" />, color: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-700', label: rec };
+  /** Lightweight markdown → HTML for AI recommendation text */
+  const renderMarkdown = (text: string): string => {
+    let html = text
+      // Escape HTML entities
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      // Bold: **text**
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      // Italic: *text*
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      // Headings: lines starting with ### / ## / #
+      .replace(/^### (.+)$/gm, '<h4>$1</h4>')
+      .replace(/^## (.+)$/gm, '<h3>$1</h3>')
+      .replace(/^# (.+)$/gm, '<h2>$1</h2>');
+
+    // Convert bullet lists (lines starting with * or - or numbered 1.)
+    html = html.replace(/^(\d+)\.\s+(.+)$/gm, '<li>$2</li>');
+    html = html.replace(/^[\*\-]\s+(.+)$/gm, '<li>$1</li>');
+    // Wrap consecutive <li> in <ul>
+    html = html.replace(/((?:<li>.*<\/li>\n?)+)/g, '<ul>$1</ul>');
+
+    // Paragraphs: double newlines
+    html = html
+      .split(/\n{2,}/)
+      .map((block) => {
+        const trimmed = block.trim();
+        if (!trimmed) return '';
+        // Don't wrap if already a block element
+        if (/^<(h[1-6]|ul|ol|li|div|blockquote)/.test(trimmed)) return trimmed;
+        return `<p>${trimmed.replace(/\n/g, '<br />')}</p>`;
+      })
+      .join('\n');
+
+    return html;
   };
   
   const marketplaceInfo = getMarketplaceInfo(listing.source);
@@ -369,16 +395,17 @@ export const ListingCard: React.FC<ListingCardProps> = ({
           onClick={(e) => { e.stopPropagation(); setShowRecommendModal(false); }}
         >
           <div
-            className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-md mx-4 overflow-hidden"
+            className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col"
+            style={{ width: '50vw', height: '50vh', minWidth: '400px', minHeight: '350px' }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-purple-600 to-purple-700 text-white">
+            <div className="flex items-center justify-between px-5 py-4 bg-gray-700 text-white shrink-0">
               <div className="flex items-center gap-2.5">
                 <Sparkles className="h-5 w-5" />
                 <div>
                   <h3 className="font-semibold text-sm">AI Recommendation</h3>
-                  <p className="text-xs text-purple-200 truncate max-w-[250px]">{vehicleTitle}</p>
+                  <p className="text-xs text-purple-200 truncate max-w-[350px]">{vehicleTitle} &middot; {listing.vin}</p>
                 </div>
               </div>
               <button
@@ -392,9 +419,9 @@ export const ListingCard: React.FC<ListingCardProps> = ({
             </div>
 
             {/* Modal Body */}
-            <div className="px-5 py-5">
+            <div className="flex-1 overflow-y-auto px-6 py-5">
               {recommendLoading && (
-                <div className="flex flex-col items-center justify-center py-8 gap-3">
+                <div className="flex flex-col items-center justify-center h-full gap-3">
                   <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
                   <p className="text-sm text-gray-500 dark:text-gray-400">Analyzing {listing.vin}...</p>
                 </div>
@@ -411,57 +438,13 @@ export const ListingCard: React.FC<ListingCardProps> = ({
               )}
 
               {recommendResult && !recommendLoading && (
-                <div className="space-y-4">
-                  {/* Recommendation Badge */}
-                  {(() => {
-                    const badge = getRecommendationBadge(recommendResult.recommendation);
-                    return (
-                      <div className={`flex items-center gap-3 p-4 rounded-xl border ${badge.color}`}>
-                        {badge.icon}
-                        <div>
-                          <p className="font-bold text-lg capitalize">{badge.label}</p>
-                          {recommendResult.confidence != null && (
-                            <p className="text-xs mt-0.5 opacity-80">
-                              Confidence: {(recommendResult.confidence * 100).toFixed(0)}%
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })()}
-
-                  {/* Reasoning */}
-                  {recommendResult.reasoning && (
-                    <div>
-                      <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">Reasoning</h4>
-                      <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
-                        {recommendResult.reasoning}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Extra data */}
-                  {recommendResult.data && typeof recommendResult.data === 'object' && (
-                    <div>
-                      <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">Details</h4>
-                      <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 border border-gray-100 dark:border-gray-700 text-xs space-y-1">
-                        {Object.entries(recommendResult.data).map(([key, val]) => (
-                          <div key={key} className="flex justify-between gap-2">
-                            <span className="text-gray-500 dark:text-gray-400 capitalize">{key.replace(/_/g, ' ')}</span>
-                            <span className="text-gray-800 dark:text-gray-200 font-medium text-right truncate max-w-[200px]">
-                              {val == null ? '—' : typeof val === 'object' ? JSON.stringify(val) : String(val)}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* VIN */}
-                  <div className="text-xs text-gray-400 dark:text-gray-500 font-mono pt-2 border-t border-gray-100 dark:border-gray-700">
-                    VIN: {recommendResult.vin}
-                  </div>
-                </div>
+                <div
+                  className="prose prose-sm dark:prose-invert max-w-none text-gray-700 dark:text-gray-300 font-normal
+                    prose-headings:font-semibold prose-headings:text-gray-900 dark:prose-headings:text-white
+                    prose-strong:font-semibold prose-strong:text-gray-900 dark:prose-strong:text-white
+                    prose-ul:my-2 prose-li:my-0.5 prose-p:my-2"
+                  dangerouslySetInnerHTML={{ __html: renderMarkdown(recommendResult.recommendation) }}
+                />
               )}
             </div>
           </div>

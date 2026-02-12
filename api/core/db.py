@@ -119,6 +119,21 @@ def _read_crm_schema_file() -> Optional[str]:
         return None
 
 
+def _read_migration_file(filename: str) -> Optional[str]:
+    """Read a migration SQL file from the db/ directory."""
+    p = pathlib.Path(__file__).parents[2] / "db" / filename
+
+    if not p.exists():
+        logger.warning("Migration file not found at %s", p)
+        return None
+
+    try:
+        return p.read_text(encoding="utf-8")
+    except Exception as e:
+        logger.error("Failed reading migration file %s: %s", p, e, exc_info=True)
+        return None
+
+
 def _exec_sql_script(cur: "psycopg.Cursor", script: str) -> None:
     """
     Execute a multi-statement SQL script safely enough for simple schemas.
@@ -221,6 +236,53 @@ def apply_schema_if_needed() -> None:
                     cur.execute("ALTER TABLE public.user_signup_requests ADD COLUMN IF NOT EXISTS username text")
                 else:
                     logger.warning("Skipping ALTER user_signup_requests: table does not exist yet")
+
+                # =============================================
+                # Ensure created_at on ALL tables (for existing DBs)
+                # =============================================
+                _ensure_created_at_columns = [
+                    "vehicles",
+                    "roles",
+                    "user_signup_requests",
+                    "task_activity",
+                ]
+                for tbl in _ensure_created_at_columns:
+                    if _table_exists(cur, f"public.{tbl}"):
+                        cur.execute(
+                            f"ALTER TABLE public.{tbl} "
+                            f"ADD COLUMN IF NOT EXISTS created_at timestamptz DEFAULT now()"
+                        )
+                        logger.info("Ensured created_at on %s", tbl)
+                    else:
+                        logger.warning("Skipping created_at for %s: table does not exist yet", tbl)
+
+                # =============================================
+                # Apply all migration files (idempotent, safe)
+                # =============================================
+                _migration_files = [
+                    "007_event_outbox_schema.sql",
+                    "008_add_lead_id_to_deals.sql",
+                    "009_add_mmr_to_listings.sql",
+                    "010_add_listing_fields.sql",
+                    "011_add_lpn_to_listings.sql",
+                    "013_create_accu_trade_data.sql",
+                    "014_create_mmr_data.sql",
+                    "015_create_condition_reports.sql",
+                    "migrations/add_phone_columns_to_communications.sql",
+                ]
+                for mig_file in _migration_files:
+                    mig_sql = _read_migration_file(mig_file)
+                    if mig_sql:
+                        try:
+                            logger.info("Applying migration: %s", mig_file)
+                            _exec_sql_script(cur, mig_sql)
+                            logger.info("Migration applied: %s", mig_file)
+                        except Exception as mig_err:
+                            logger.warning(
+                                "Migration %s failed (may already be applied): %s",
+                                mig_file,
+                                mig_err,
+                            )
 
                 # Seed default roles
                 seed_default_roles(conn)

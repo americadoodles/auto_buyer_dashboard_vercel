@@ -512,7 +512,8 @@ CREATE TABLE IF NOT EXISTS task_activity (
     type TEXT NOT NULL, -- 'created', 'updated', 'moved', 'assigned', 'commented', etc.
     payload_json JSONB, -- Flexible JSON payload for activity details
     at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    user_id UUID REFERENCES users(id) ON DELETE SET NULL
+    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- ==============================================

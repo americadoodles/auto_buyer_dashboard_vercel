@@ -24,6 +24,9 @@ from .routes.crm_tasks import task_router
 from .routes.crm_dashboard import dashboard_router
 from .routes.communications import communication_router
 
+# AI Recommender Routes
+from .routes.ai_recommender import ai_recommender_router
+
 # ---- run-on-cold-start: ensure schema once ----
 import logging
 from .core.db import DB_ENABLED, apply_schema_if_needed
@@ -73,6 +76,9 @@ app.include_router(deal_router, prefix="/api")
 app.include_router(task_router, prefix="/api")
 app.include_router(dashboard_router, prefix="/api")
 app.include_router(communication_router, prefix="/api")
+
+# AI Recommender Routes
+app.include_router(ai_recommender_router, prefix="/api")
 
 @app.get("/api/healthz")
 def healthz():

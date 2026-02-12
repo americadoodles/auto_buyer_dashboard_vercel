@@ -1,13 +1,15 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Bot, User } from 'lucide-react';
+import { MessageCircle, X, Send, Bot, User, Loader2 } from 'lucide-react';
+import { AiRecommenderApi } from '../../lib/services/aiRecommenderApi';
 
 interface Message {
   id: string;
   text: string;
   sender: 'user' | 'bot';
   timestamp: Date;
+  isLoading?: boolean;
 }
 
 interface ChatBoxComponentProps {
@@ -21,14 +23,15 @@ export const ChatBoxComponent: React.FC<ChatBoxComponentProps> = ({
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: 'Hi! I\'m your Auto Buyer assistant. How can I help you today?',
+      text: 'Hi! I\'m your Auto Buyer AI assistant. Ask me anything about your inventory — e.g. "Which vehicles have been sitting longest on market?"',
       sender: 'bot',
       timestamp: new Date(),
     },
   ]);
   const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -44,9 +47,9 @@ export const ChatBoxComponent: React.FC<ChatBoxComponentProps> = ({
     }
   }, [isOpen]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const trimmed = input.trim();
-    if (!trimmed) return;
+    if (!trimmed || isLoading) return;
 
     const userMsg: Message = {
       id: Date.now().toString(),
@@ -56,24 +59,62 @@ export const ChatBoxComponent: React.FC<ChatBoxComponentProps> = ({
     };
     setMessages((prev) => [...prev, userMsg]);
     setInput('');
+    setIsLoading(true);
 
-    // Simulated bot reply
-    setTimeout(() => {
-      const botMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        text: 'Thanks for your message! Our team will get back to you shortly.',
+    // Reset textarea height
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto';
+    }
+
+    // Add a loading indicator message
+    const loadingId = (Date.now() + 1).toString();
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: loadingId,
+        text: 'Thinking...',
         sender: 'bot',
         timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, botMsg]);
-    }, 1000);
+        isLoading: true,
+      },
+    ]);
+
+    try {
+      const response = await AiRecommenderApi.ask(trimmed, 5);
+      // Replace loading message with real answer
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === loadingId
+            ? { ...m, text: response.answer, isLoading: false, timestamp: new Date() }
+            : m
+        )
+      );
+    } catch (error) {
+      const errMsg =
+        error instanceof Error ? error.message : 'Something went wrong. Please try again.';
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === loadingId
+            ? { ...m, text: `Sorry, I couldn't get an answer. ${errMsg}`, isLoading: false, timestamp: new Date() }
+            : m
+        )
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
+  };
+
+  // Auto-resize textarea to fit content
+  const autoResize = (el: HTMLTextAreaElement) => {
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 120)}px`; // max ~5 lines
   };
 
   const formatTime = (date: Date) =>
@@ -141,16 +182,25 @@ export const ChatBoxComponent: React.FC<ChatBoxComponentProps> = ({
                     : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-700 rounded-bl-md'
                 }`}
               >
-                <p>{msg.text}</p>
-                <span
-                  className={`block text-[10px] mt-1 ${
-                    msg.sender === 'user'
-                      ? 'text-blue-200'
-                      : 'text-gray-400 dark:text-gray-500'
-                  }`}
-                >
-                  {formatTime(msg.timestamp)}
-                </span>
+                {msg.isLoading ? (
+                  <span className="flex items-center gap-2 text-gray-400 dark:text-gray-500">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Thinking...
+                  </span>
+                ) : (
+                  <p className="whitespace-pre-wrap">{msg.text}</p>
+                )}
+                {!msg.isLoading && (
+                  <span
+                    className={`block text-[10px] mt-1 ${
+                      msg.sender === 'user'
+                        ? 'text-blue-200'
+                        : 'text-gray-400 dark:text-gray-500'
+                    }`}
+                  >
+                    {formatTime(msg.timestamp)}
+                  </span>
+                )}
               </div>
             </div>
           ))}
@@ -159,23 +209,32 @@ export const ChatBoxComponent: React.FC<ChatBoxComponentProps> = ({
 
         {/* Input */}
         <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shrink-0">
-          <div className="flex items-center gap-2">
-            <input
+          <div className="flex items-end gap-2">
+            <textarea
               ref={inputRef}
-              type="text"
+              rows={1}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => {
+                setInput(e.target.value);
+                autoResize(e.target);
+              }}
               onKeyDown={handleKeyDown}
-              placeholder="Type a message..."
-              className="flex-1 px-4 py-2.5 text-sm bg-gray-100 dark:bg-gray-700 border-none rounded-full text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder={isLoading ? 'Waiting for response...' : 'Ask about your inventory...'}
+              disabled={isLoading}
+              className="flex-1 px-4 py-2.5 text-sm bg-gray-100 dark:bg-gray-700 border-none rounded-2xl text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 resize-none overflow-y-auto leading-snug"
+              style={{ maxHeight: '120px' }}
             />
             <button
               onClick={handleSend}
-              disabled={!input.trim()}
+              disabled={!input.trim() || isLoading}
               className="w-10 h-10 flex items-center justify-center rounded-full bg-blue-600 hover:bg-blue-700 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
               aria-label="Send message"
             >
-              <Send className="h-4 w-4" />
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
             </button>
           </div>
         </div>

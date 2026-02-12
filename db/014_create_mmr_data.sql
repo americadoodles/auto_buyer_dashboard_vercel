@@ -3,15 +3,7 @@
 -- Safe to run multiple times (idempotent)
 
 -- ==============================================
--- Drop old mmr_data table if it exists
--- ==============================================
-DROP TABLE IF EXISTS mmr_data CASCADE;
-
--- Drop old function and trigger if they exist
-DROP FUNCTION IF EXISTS update_mmr_data_updated_at() CASCADE;
-
--- ==============================================
--- Create mmr_data table
+-- Create mmr_data table (if not exists)
 -- ==============================================
 CREATE TABLE IF NOT EXISTS mmr_data (
     id SERIAL PRIMARY KEY,

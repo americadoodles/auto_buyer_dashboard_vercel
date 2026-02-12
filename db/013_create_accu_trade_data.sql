@@ -3,15 +3,7 @@
 -- Safe to run multiple times (idempotent)
 
 -- ==============================================
--- Drop old vehicle_market_data table if it exists
--- ==============================================
-DROP TABLE IF EXISTS accu_trade_data CASCADE;
-
--- Drop old function and trigger if they exist
-DROP FUNCTION IF EXISTS update_accu_trade_data_updated_at() CASCADE;
-
--- ==============================================
--- Create accu_trade_data table
+-- Create accu_trade_data table (if not exists)
 -- ==============================================
 CREATE TABLE IF NOT EXISTS accu_trade_data (
     id SERIAL PRIMARY KEY,

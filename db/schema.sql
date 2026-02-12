@@ -8,7 +8,8 @@ create table if not exists vehicles (
   year int,
   make text,
   model text,
-  trim text
+  trim text,
+  created_at timestamptz default now()
 );
 
 create table if not exists listings (
@@ -54,7 +55,8 @@ create index if not exists idx_vehicles_vin on vehicles(vin);
 create table if not exists roles (
   id serial primary key,
   name text unique not null,
-  description text
+  description text,
+  created_at timestamptz default now()
 );
 
 -- Users table with role_id foreign key
@@ -77,7 +79,8 @@ create table if not exists user_signup_requests (
   username text not null,
   password text not null,
   role_id int, -- Will be set to NOT NULL and FK in migration 002
-  requested_at timestamptz default now()
+  requested_at timestamptz default now(),
+  created_at timestamptz default now()
 );
 
 -- Add indexes for user management

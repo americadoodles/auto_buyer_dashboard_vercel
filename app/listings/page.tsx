@@ -15,6 +15,7 @@ import { Car, TrendingUp, AlertTriangle, Filter, Search, RefreshCw } from "lucid
 import { Input } from "../../components/atoms/Input";
 import { Button } from "../../components/atoms/Button";
 import { Pagination } from "../../components/molecules/Pagination";
+import { ChatBoxComponent } from "../../components/atoms/ChatBoxComponent";
 
 export default function ListingsPage() {
   const router = useRouter();
@@ -550,6 +551,9 @@ export default function ListingsPage() {
             )}
           </div>
         </div>
+
+        {/* Floating Chat Widget */}
+        <ChatBoxComponent />
       </div>
   );
 }

@@ -6,12 +6,20 @@ import { Listing } from '../../lib/types/listing';
 import { formatCurrency, formatNumber } from '../../lib/utils/formatters';
 import { getMarketplaceInfo, getTrustIndicators } from '../../lib/utils/marketplace';
 import { Badge } from '../atoms/Badge';
+import { AiRecommenderApi, RecommendResponse } from '../../lib/services/aiRecommenderApi';
 import { 
   Gauge, 
   Clock, 
   ExternalLink, 
   Heart, 
-  MoreVertical
+  MoreVertical,
+  Sparkles,
+  Loader2,
+  X,
+  ThumbsUp,
+  ThumbsDown,
+  Minus,
+  AlertCircle,
 } from 'lucide-react';
 
 interface ListingCardProps {
@@ -39,6 +47,64 @@ export const ListingCard: React.FC<ListingCardProps> = ({
   const searchParams = useSearchParams();
   const [imageError, setImageError] = useState(false);
   const [showActions, setShowActions] = useState(false);
+  const [showRecommendModal, setShowRecommendModal] = useState(false);
+  const [recommendLoading, setRecommendLoading] = useState(false);
+  const [recommendResult, setRecommendResult] = useState<RecommendResponse | null>(null);
+  const [recommendError, setRecommendError] = useState<string | null>(null);
+
+  const handleRecommend = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!listing.vin) return;
+    setShowRecommendModal(true);
+    setRecommendLoading(true);
+    setRecommendResult(null);
+    setRecommendError(null);
+    try {
+      const result = await AiRecommenderApi.recommend(listing.vin);
+      setRecommendResult(result);
+    } catch (err) {
+      setRecommendError(err instanceof Error ? err.message : 'Failed to get recommendation');
+    } finally {
+      setRecommendLoading(false);
+    }
+  };
+
+  /** Lightweight markdown → HTML for AI recommendation text */
+  const renderMarkdown = (text: string): string => {
+    let html = text
+      // Escape HTML entities
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      // Bold: **text**
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      // Italic: *text*
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      // Headings: lines starting with ### / ## / #
+      .replace(/^### (.+)$/gm, '<h4>$1</h4>')
+      .replace(/^## (.+)$/gm, '<h3>$1</h3>')
+      .replace(/^# (.+)$/gm, '<h2>$1</h2>');
+
+    // Convert bullet lists (lines starting with * or - or numbered 1.)
+    html = html.replace(/^(\d+)\.\s+(.+)$/gm, '<li>$2</li>');
+    html = html.replace(/^[\*\-]\s+(.+)$/gm, '<li>$1</li>');
+    // Wrap consecutive <li> in <ul>
+    html = html.replace(/((?:<li>.*<\/li>\n?)+)/g, '<ul>$1</ul>');
+
+    // Paragraphs: double newlines
+    html = html
+      .split(/\n{2,}/)
+      .map((block) => {
+        const trimmed = block.trim();
+        if (!trimmed) return '';
+        // Don't wrap if already a block element
+        if (/^<(h[1-6]|ul|ol|li|div|blockquote)/.test(trimmed)) return trimmed;
+        return `<p>${trimmed.replace(/\n/g, '<br />')}</p>`;
+      })
+      .join('\n');
+
+    return html;
+  };
   
   const marketplaceInfo = getMarketplaceInfo(listing.source);
   const trustIndicators = getTrustIndicators(listing);
@@ -121,8 +187,20 @@ export const ListingCard: React.FC<ListingCardProps> = ({
             <h3 className="text-lg font-bold text-gray-900 dark:text-white truncate" title={vehicleTitle}>
               {vehicleTitle}
             </h3>
-            <div className="text-xl font-bold text-green-600 dark:text-green-400 mt-1 truncate">
-              {formatCurrency(listing.price)}
+            <div className="flex items-center gap-2 mt-1">
+              <div className="text-xl font-bold text-green-600 dark:text-green-400 truncate">
+                {formatCurrency(listing.price)}
+              </div>
+              {listing.vin && (
+                <button
+                  onClick={handleRecommend}
+                  title="AI Recommendation"
+                  className="shrink-0 flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-lg bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-700 hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  <span>AI</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -309,6 +387,69 @@ export const ListingCard: React.FC<ListingCardProps> = ({
           </div>
         </div>
       </div>
+
+      {/* AI Recommendation Modal */}
+      {showRecommendModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          onClick={(e) => { e.stopPropagation(); setShowRecommendModal(false); }}
+        >
+          <div
+            className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col"
+            style={{ width: '50vw', height: '50vh', minWidth: '400px', minHeight: '350px' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-5 py-4 bg-gray-700 text-white shrink-0">
+              <div className="flex items-center gap-2.5">
+                <Sparkles className="h-5 w-5" />
+                <div>
+                  <h3 className="font-semibold text-sm">AI Recommendation</h3>
+                  <p className="text-xs text-purple-200 truncate max-w-[350px]">{vehicleTitle} &middot; {listing.vin}</p>
+                </div>
+              </div>
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowRecommendModal(false); }}
+                className="p-1.5 rounded-lg hover:bg-white/20 transition-colors"
+                title="Close"
+                aria-label="Close recommendation"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto px-6 py-5">
+              {recommendLoading && (
+                <div className="flex flex-col items-center justify-center h-full gap-3">
+                  <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Analyzing {listing.vin}...</p>
+                </div>
+              )}
+
+              {recommendError && (
+                <div className="flex items-start gap-3 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800">
+                  <AlertCircle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-red-700 dark:text-red-300">Failed to get recommendation</p>
+                    <p className="text-xs text-red-600 dark:text-red-400 mt-1">{recommendError}</p>
+                  </div>
+                </div>
+              )}
+
+              {recommendResult && !recommendLoading && (
+                <div
+                  className="prose prose-sm dark:prose-invert max-w-none text-gray-700 dark:text-gray-300 font-normal
+                    prose-headings:font-semibold prose-headings:text-gray-900 dark:prose-headings:text-white
+                    prose-strong:font-semibold prose-strong:text-gray-900 dark:prose-strong:text-white
+                    prose-ul:my-2 prose-li:my-0.5 prose-p:my-2"
+                  dangerouslySetInnerHTML={{ __html: renderMarkdown(recommendResult.recommendation) }}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

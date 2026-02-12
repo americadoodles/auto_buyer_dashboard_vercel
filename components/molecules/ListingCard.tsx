@@ -6,12 +6,20 @@ import { Listing } from '../../lib/types/listing';
 import { formatCurrency, formatNumber } from '../../lib/utils/formatters';
 import { getMarketplaceInfo, getTrustIndicators } from '../../lib/utils/marketplace';
 import { Badge } from '../atoms/Badge';
+import { AiRecommenderApi, RecommendResponse } from '../../lib/services/aiRecommenderApi';
 import { 
   Gauge, 
   Clock, 
   ExternalLink, 
   Heart, 
-  MoreVertical
+  MoreVertical,
+  Sparkles,
+  Loader2,
+  X,
+  ThumbsUp,
+  ThumbsDown,
+  Minus,
+  AlertCircle,
 } from 'lucide-react';
 
 interface ListingCardProps {
@@ -39,6 +47,38 @@ export const ListingCard: React.FC<ListingCardProps> = ({
   const searchParams = useSearchParams();
   const [imageError, setImageError] = useState(false);
   const [showActions, setShowActions] = useState(false);
+  const [showRecommendModal, setShowRecommendModal] = useState(false);
+  const [recommendLoading, setRecommendLoading] = useState(false);
+  const [recommendResult, setRecommendResult] = useState<RecommendResponse | null>(null);
+  const [recommendError, setRecommendError] = useState<string | null>(null);
+
+  const handleRecommend = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!listing.vin) return;
+    setShowRecommendModal(true);
+    setRecommendLoading(true);
+    setRecommendResult(null);
+    setRecommendError(null);
+    try {
+      const result = await AiRecommenderApi.recommend(listing.vin);
+      setRecommendResult(result);
+    } catch (err) {
+      setRecommendError(err instanceof Error ? err.message : 'Failed to get recommendation');
+    } finally {
+      setRecommendLoading(false);
+    }
+  };
+
+  const getRecommendationBadge = (rec: string) => {
+    const lower = rec.toLowerCase();
+    if (lower.includes('buy') || lower.includes('strong')) {
+      return { icon: <ThumbsUp className="h-5 w-5" />, color: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700', label: rec };
+    }
+    if (lower.includes('pass') || lower.includes('skip') || lower.includes('avoid')) {
+      return { icon: <ThumbsDown className="h-5 w-5" />, color: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200 dark:border-red-700', label: rec };
+    }
+    return { icon: <Minus className="h-5 w-5" />, color: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-700', label: rec };
+  };
   
   const marketplaceInfo = getMarketplaceInfo(listing.source);
   const trustIndicators = getTrustIndicators(listing);
@@ -121,8 +161,20 @@ export const ListingCard: React.FC<ListingCardProps> = ({
             <h3 className="text-lg font-bold text-gray-900 dark:text-white truncate" title={vehicleTitle}>
               {vehicleTitle}
             </h3>
-            <div className="text-xl font-bold text-green-600 dark:text-green-400 mt-1 truncate">
-              {formatCurrency(listing.price)}
+            <div className="flex items-center gap-2 mt-1">
+              <div className="text-xl font-bold text-green-600 dark:text-green-400 truncate">
+                {formatCurrency(listing.price)}
+              </div>
+              {listing.vin && (
+                <button
+                  onClick={handleRecommend}
+                  title="AI Recommendation"
+                  className="shrink-0 flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-lg bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-700 hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  <span>AI</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -309,6 +361,112 @@ export const ListingCard: React.FC<ListingCardProps> = ({
           </div>
         </div>
       </div>
+
+      {/* AI Recommendation Modal */}
+      {showRecommendModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          onClick={(e) => { e.stopPropagation(); setShowRecommendModal(false); }}
+        >
+          <div
+            className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-md mx-4 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-purple-600 to-purple-700 text-white">
+              <div className="flex items-center gap-2.5">
+                <Sparkles className="h-5 w-5" />
+                <div>
+                  <h3 className="font-semibold text-sm">AI Recommendation</h3>
+                  <p className="text-xs text-purple-200 truncate max-w-[250px]">{vehicleTitle}</p>
+                </div>
+              </div>
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowRecommendModal(false); }}
+                className="p-1.5 rounded-lg hover:bg-white/20 transition-colors"
+                title="Close"
+                aria-label="Close recommendation"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="px-5 py-5">
+              {recommendLoading && (
+                <div className="flex flex-col items-center justify-center py-8 gap-3">
+                  <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Analyzing {listing.vin}...</p>
+                </div>
+              )}
+
+              {recommendError && (
+                <div className="flex items-start gap-3 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800">
+                  <AlertCircle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-red-700 dark:text-red-300">Failed to get recommendation</p>
+                    <p className="text-xs text-red-600 dark:text-red-400 mt-1">{recommendError}</p>
+                  </div>
+                </div>
+              )}
+
+              {recommendResult && !recommendLoading && (
+                <div className="space-y-4">
+                  {/* Recommendation Badge */}
+                  {(() => {
+                    const badge = getRecommendationBadge(recommendResult.recommendation);
+                    return (
+                      <div className={`flex items-center gap-3 p-4 rounded-xl border ${badge.color}`}>
+                        {badge.icon}
+                        <div>
+                          <p className="font-bold text-lg capitalize">{badge.label}</p>
+                          {recommendResult.confidence != null && (
+                            <p className="text-xs mt-0.5 opacity-80">
+                              Confidence: {(recommendResult.confidence * 100).toFixed(0)}%
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Reasoning */}
+                  {recommendResult.reasoning && (
+                    <div>
+                      <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">Reasoning</h4>
+                      <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+                        {recommendResult.reasoning}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Extra data */}
+                  {recommendResult.data && typeof recommendResult.data === 'object' && (
+                    <div>
+                      <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">Details</h4>
+                      <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 border border-gray-100 dark:border-gray-700 text-xs space-y-1">
+                        {Object.entries(recommendResult.data).map(([key, val]) => (
+                          <div key={key} className="flex justify-between gap-2">
+                            <span className="text-gray-500 dark:text-gray-400 capitalize">{key.replace(/_/g, ' ')}</span>
+                            <span className="text-gray-800 dark:text-gray-200 font-medium text-right truncate max-w-[200px]">
+                              {val == null ? '—' : typeof val === 'object' ? JSON.stringify(val) : String(val)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* VIN */}
+                  <div className="text-xs text-gray-400 dark:text-gray-500 font-mono pt-2 border-t border-gray-100 dark:border-gray-700">
+                    VIN: {recommendResult.vin}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

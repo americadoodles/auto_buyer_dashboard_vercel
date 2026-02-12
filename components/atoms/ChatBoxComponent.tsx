@@ -1,8 +1,26 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Bot, User, Loader2 } from 'lucide-react';
+import { MessageCircle, X, Send, Bot, User, Loader2, Car, Gauge, MapPin, ExternalLink, DollarSign, Calendar } from 'lucide-react';
 import { AiRecommenderApi } from '../../lib/services/aiRecommenderApi';
+
+interface VehicleSource {
+  vin?: string;
+  year?: number;
+  make?: string;
+  model?: string;
+  trim?: string;
+  price?: number;
+  miles?: number;
+  mileage?: number;
+  dom?: number;
+  days_on_market?: number;
+  location?: string;
+  source?: string;
+  source_url?: string;
+  score?: number;
+  [key: string]: any;
+}
 
 interface Message {
   id: string;
@@ -10,6 +28,7 @@ interface Message {
   sender: 'user' | 'bot';
   timestamp: Date;
   isLoading?: boolean;
+  sources?: VehicleSource[];
 }
 
 interface ChatBoxComponentProps {
@@ -81,11 +100,17 @@ export const ChatBoxComponent: React.FC<ChatBoxComponentProps> = ({
 
     try {
       const response = await AiRecommenderApi.ask(trimmed, 5);
-      // Replace loading message with real answer
+      // Replace loading message with real answer + sources
       setMessages((prev) =>
         prev.map((m) =>
           m.id === loadingId
-            ? { ...m, text: response.answer, isLoading: false, timestamp: new Date() }
+            ? {
+                ...m,
+                text: response.answer,
+                sources: response.sources && response.sources.length > 0 ? response.sources : undefined,
+                isLoading: false,
+                timestamp: new Date(),
+              }
             : m
         )
       );
@@ -120,11 +145,131 @@ export const ChatBoxComponent: React.FC<ChatBoxComponentProps> = ({
   const formatTime = (date: Date) =>
     date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+  const formatPrice = (price: number) =>
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(price);
+
+  const formatMiles = (miles: number) =>
+    new Intl.NumberFormat('en-US').format(miles);
+
+  // Keys that are rendered in the structured header/grid — everything else goes into "extra fields"
+  const KNOWN_KEYS = new Set([
+    'year', 'make', 'model', 'trim', 'price', 'miles', 'mileage',
+    'dom', 'days_on_market', 'location', 'source', 'source_url',
+    'score', 'vin',
+  ]);
+
+  const formatFieldName = (key: string) =>
+    key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+
+  const formatFieldValue = (value: any): string => {
+    if (value == null) return '—';
+    if (typeof value === 'number') {
+      // Currency-like fields
+      if (value > 100 && Number.isFinite(value)) {
+        return new Intl.NumberFormat('en-US').format(value);
+      }
+      return String(value);
+    }
+    if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+    if (typeof value === 'object') return JSON.stringify(value);
+    return String(value);
+  };
+
+  const renderVehicleCard = (vehicle: VehicleSource, idx: number) => {
+    const title = [vehicle.year, vehicle.make, vehicle.model, vehicle.trim].filter(Boolean).join(' ');
+    const miles = vehicle.miles ?? vehicle.mileage;
+    const dom = vehicle.dom ?? vehicle.days_on_market;
+
+    // Collect all extra fields not in KNOWN_KEYS
+    const extraFields = Object.entries(vehicle).filter(
+      ([key, val]) => !KNOWN_KEYS.has(key) && val != null && val !== ''
+    );
+
+    return (
+      <div
+        key={vehicle.vin || idx}
+        className="bg-gray-50 dark:bg-gray-900 rounded-lg p-2.5 border border-gray-100 dark:border-gray-700 text-xs"
+      >
+        {/* Title row */}
+        <div className="flex items-start justify-between gap-2 mb-1.5">
+          <span className="font-semibold text-gray-900 dark:text-white text-[13px] leading-tight">
+            {title || 'Unknown Vehicle'}
+          </span>
+          {vehicle.score != null && (
+            <span className="shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
+              {vehicle.score}
+            </span>
+          )}
+        </div>
+
+        {/* Primary fields */}
+        <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-gray-600 dark:text-gray-400">
+          {vehicle.price != null && (
+            <span className="flex items-center gap-1">
+              <DollarSign className="h-3 w-3 shrink-0 text-green-500" />
+              <span className="font-medium text-gray-900 dark:text-white">{formatPrice(vehicle.price)}</span>
+            </span>
+          )}
+          {miles != null && (
+            <span className="flex items-center gap-1">
+              <Gauge className="h-3 w-3 shrink-0" />
+              {formatMiles(miles)} mi
+            </span>
+          )}
+          {dom != null && (
+            <span className="flex items-center gap-1">
+              <Calendar className="h-3 w-3 shrink-0" />
+              {dom} days on market
+            </span>
+          )}
+          {vehicle.location && (
+            <span className="flex items-center gap-1 truncate">
+              <MapPin className="h-3 w-3 shrink-0" />
+              <span className="truncate">{vehicle.location}</span>
+            </span>
+          )}
+        </div>
+
+        {/* Extra fields — show everything the API returned */}
+        {extraFields.length > 0 && (
+          <div className="mt-1.5 pt-1.5 border-t border-gray-100 dark:border-gray-700 grid grid-cols-2 gap-x-3 gap-y-0.5 text-gray-500 dark:text-gray-400">
+            {extraFields.map(([key, val]) => (
+              <div key={key} className="truncate">
+                <span className="text-gray-400 dark:text-gray-500">{formatFieldName(key)}:</span>{' '}
+                <span className="text-gray-700 dark:text-gray-300">{formatFieldValue(val)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* VIN + source link */}
+        {vehicle.vin && (
+          <div className="mt-1.5 flex items-center justify-between">
+            <span className="font-mono text-[10px] text-gray-400 dark:text-gray-500 truncate">{vehicle.vin}</span>
+            {vehicle.source_url && (
+              <a
+                href={vehicle.source_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="View listing"
+                aria-label="View listing"
+                className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 shrink-0 ml-2"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className={`fixed bottom-5 right-5 z-50 ${className}`}>
       {/* Chat Box Panel */}
       <div
-        className={`absolute bottom-20 right-0 w-[370px] max-h-[520px] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right ${
+        className={`absolute bottom-20 right-0 w-[400px] max-h-[600px] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right ${
           isOpen
             ? 'scale-100 opacity-100 pointer-events-auto'
             : 'scale-0 opacity-0 pointer-events-none'
@@ -155,55 +300,77 @@ export const ChatBoxComponent: React.FC<ChatBoxComponentProps> = ({
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-[300px] bg-gray-50 dark:bg-gray-900">
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`flex items-end gap-2 ${
-                msg.sender === 'user' ? 'flex-row-reverse' : 'flex-row'
-              }`}
-            >
+          {messages.map((msg) => {
+            const hasSources = msg.sender === 'bot' && msg.sources && msg.sources.length > 0;
+
+            return (
               <div
-                className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
-                  msg.sender === 'user'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                key={msg.id}
+                className={`flex items-end gap-2 ${
+                  msg.sender === 'user' ? 'flex-row-reverse' : 'flex-row'
                 }`}
               >
-                {msg.sender === 'user' ? (
-                  <User className="h-3.5 w-3.5" />
-                ) : (
-                  <Bot className="h-3.5 w-3.5" />
-                )}
+                <div
+                  className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 self-start mt-1 ${
+                    msg.sender === 'user'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                  }`}
+                >
+                  {msg.sender === 'user' ? (
+                    <User className="h-3.5 w-3.5" />
+                  ) : (
+                    <Bot className="h-3.5 w-3.5" />
+                  )}
+                </div>
+                <div
+                  className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
+                    hasSources ? 'max-w-[92%]' : 'max-w-[75%]'
+                  } ${
+                    msg.sender === 'user'
+                      ? 'bg-blue-600 text-white rounded-br-md'
+                      : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-700 rounded-bl-md'
+                  }`}
+                >
+                  {msg.isLoading ? (
+                    <span className="flex items-center gap-2 text-gray-400 dark:text-gray-500">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Thinking...
+                    </span>
+                  ) : (
+                    <>
+                      {/* Answer summary */}
+                      <p className="whitespace-pre-wrap">{msg.text}</p>
+
+                      {/* Vehicle source cards */}
+                      {hasSources && (
+                        <div className="mt-3 space-y-2">
+                          <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                            <Car className="h-3.5 w-3.5" />
+                            {msg.sources!.length} Vehicle{msg.sources!.length !== 1 ? 's' : ''} Found
+                          </div>
+                          <div className="space-y-1.5 max-h-[240px] overflow-y-auto pr-1">
+                            {msg.sources!.map((v, i) => renderVehicleCard(v, i))}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                  {!msg.isLoading && (
+                    <span
+                      className={`block text-[10px] mt-1 ${
+                        msg.sender === 'user'
+                          ? 'text-blue-200'
+                          : 'text-gray-400 dark:text-gray-500'
+                      }`}
+                    >
+                      {formatTime(msg.timestamp)}
+                    </span>
+                  )}
+                </div>
               </div>
-              <div
-                className={`max-w-[75%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
-                  msg.sender === 'user'
-                    ? 'bg-blue-600 text-white rounded-br-md'
-                    : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-700 rounded-bl-md'
-                }`}
-              >
-                {msg.isLoading ? (
-                  <span className="flex items-center gap-2 text-gray-400 dark:text-gray-500">
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    Thinking...
-                  </span>
-                ) : (
-                  <p className="whitespace-pre-wrap">{msg.text}</p>
-                )}
-                {!msg.isLoading && (
-                  <span
-                    className={`block text-[10px] mt-1 ${
-                      msg.sender === 'user'
-                        ? 'text-blue-200'
-                        : 'text-gray-400 dark:text-gray-500'
-                    }`}
-                  >
-                    {formatTime(msg.timestamp)}
-                  </span>
-                )}
-              </div>
-            </div>
-          ))}
+            );
+          })}
           <div ref={messagesEndRef} />
         </div>
 

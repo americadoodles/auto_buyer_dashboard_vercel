@@ -1,53 +1,209 @@
 'use client';
 
-import React, { useState } from 'react';
-import { MessageCircle, X } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { MessageCircle, X, Send, Bot, User } from 'lucide-react';
+
+interface Message {
+  id: string;
+  text: string;
+  sender: 'user' | 'bot';
+  timestamp: Date;
+}
 
 interface ChatBoxComponentProps {
-  onClick?: () => void;
   className?: string;
-  size?: 'sm' | 'md' | 'lg';
 }
 
 export const ChatBoxComponent: React.FC<ChatBoxComponentProps> = ({
-  onClick,
   className = '',
-  size = 'md',
 }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: '1',
+      text: 'Hi! I\'m your Auto Buyer assistant. How can I help you today?',
+      sender: 'bot',
+      timestamp: new Date(),
+    },
+  ]);
+  const [input, setInput] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const sizeClasses = {
-    sm: 'w-12 h-12',
-    md: 'w-14 h-14',
-    lg: 'w-16 h-16',
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const iconSizes = {
-    sm: 'h-5 w-5',
-    md: 'h-6 w-6',
-    lg: 'h-7 w-7',
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => inputRef.current?.focus(), 300);
+    }
+  }, [isOpen]);
+
+  const handleSend = () => {
+    const trimmed = input.trim();
+    if (!trimmed) return;
+
+    const userMsg: Message = {
+      id: Date.now().toString(),
+      text: trimmed,
+      sender: 'user',
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, userMsg]);
+    setInput('');
+
+    // Simulated bot reply
+    setTimeout(() => {
+      const botMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        text: 'Thanks for your message! Our team will get back to you shortly.',
+        sender: 'bot',
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, botMsg]);
+    }, 1000);
   };
 
-  const handleClick = () => {
-    setIsExpanded(!isExpanded);
-    if (onClick) {
-      onClick();
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
     }
   };
 
+  const formatTime = (date: Date) =>
+    date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
   return (
-    <div className="fixed bottom-[15px] right-[15px] z-50">
+    <div className={`fixed bottom-5 right-5 z-50 ${className}`}>
+      {/* Chat Box Panel */}
+      <div
+        className={`absolute bottom-20 right-0 w-[370px] max-h-[520px] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right ${
+          isOpen
+            ? 'scale-100 opacity-100 pointer-events-auto'
+            : 'scale-0 opacity-0 pointer-events-none'
+        }`}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center">
+              <Bot className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-sm leading-tight">Auto Buyer Assistant</h3>
+              <span className="text-xs text-blue-100 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />
+                Online
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={() => setIsOpen(false)}
+            className="p-1.5 rounded-lg hover:bg-white/20 transition-colors"
+            aria-label="Close chat"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-[300px] bg-gray-50 dark:bg-gray-900">
+          {messages.map((msg) => (
+            <div
+              key={msg.id}
+              className={`flex items-end gap-2 ${
+                msg.sender === 'user' ? 'flex-row-reverse' : 'flex-row'
+              }`}
+            >
+              <div
+                className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
+                  msg.sender === 'user'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                }`}
+              >
+                {msg.sender === 'user' ? (
+                  <User className="h-3.5 w-3.5" />
+                ) : (
+                  <Bot className="h-3.5 w-3.5" />
+                )}
+              </div>
+              <div
+                className={`max-w-[75%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
+                  msg.sender === 'user'
+                    ? 'bg-blue-600 text-white rounded-br-md'
+                    : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-700 rounded-bl-md'
+                }`}
+              >
+                <p>{msg.text}</p>
+                <span
+                  className={`block text-[10px] mt-1 ${
+                    msg.sender === 'user'
+                      ? 'text-blue-200'
+                      : 'text-gray-400 dark:text-gray-500'
+                  }`}
+                >
+                  {formatTime(msg.timestamp)}
+                </span>
+              </div>
+            </div>
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input */}
+        <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shrink-0">
+          <div className="flex items-center gap-2">
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Type a message..."
+              className="flex-1 px-4 py-2.5 text-sm bg-gray-100 dark:bg-gray-700 border-none rounded-full text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button
+              onClick={handleSend}
+              disabled={!input.trim()}
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-blue-600 hover:bg-blue-700 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+              aria-label="Send message"
+            >
+              <Send className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Floating Toggle Button */}
       <button
         type="button"
-        onClick={handleClick}
-        className={`chat-docked-icon ${isExpanded ? 'expanded' : 'minimized'} flex items-center justify-center ${sizeClasses[size]} rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 cursor-pointer ${className}`}
-        aria-label={isExpanded ? 'Close chat' : 'Open chat'}
+        onClick={() => setIsOpen(!isOpen)}
+        className={`flex items-center justify-center w-16 h-16 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer ${
+          isOpen
+            ? 'bg-gray-700 hover:bg-gray-800 rotate-0'
+            : 'bg-blue-600 hover:bg-blue-700 rotate-0'
+        }`}
+        aria-label={isOpen ? 'Close chat' : 'Open chat'}
       >
-        {isExpanded ? (
-          <X className={iconSizes[size]} />
-        ) : (
-          <MessageCircle className={iconSizes[size]} />
-        )}
+        <div className="relative w-7 h-7">
+          <MessageCircle
+            className={`absolute inset-0 h-7 w-7 text-white transition-all duration-300 ${
+              isOpen ? 'opacity-0 rotate-90 scale-0' : 'opacity-100 rotate-0 scale-100'
+            }`}
+          />
+          <X
+            className={`absolute inset-0 h-7 w-7 text-white transition-all duration-300 ${
+              isOpen ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-90 scale-0'
+            }`}
+          />
+        </div>
       </button>
     </div>
   );

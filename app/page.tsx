@@ -322,27 +322,6 @@ export default function Page() {
             ) : null}
           </Card>
 
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Buyer Activity Per Day</h3>
-            {chartLoading ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              </div>
-            ) : chartData?.buyerActivityPerDay ? (
-              <SplineAreaChart
-                series={[{
-                  name: 'Activity',
-                  data: chartData.buyerActivityPerDay.map(d => d.value)
-                }]}
-                categories={chartData.buyerActivityPerDay.map(d => {
-                  const date = new Date(d.date);
-                  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                })}
-                height={300}
-                colors={['#8b5cf6']}
-              />
-            ) : null}
-            </Card>
           </div>
         </div>
 

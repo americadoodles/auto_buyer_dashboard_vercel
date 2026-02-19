@@ -292,7 +292,9 @@ export default function Page() {
 
             <Card className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Weekly Listings Volume</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  {listingsVolumeGranularity === 'daily' ? 'Daily Listings Volume' : 'Weekly Listings Volume'}
+                </h3>
                 <label className="text-sm text-gray-500 dark:text-gray-400">
                   <span className="sr-only">Listings volume granularity</span>
                   <select

@@ -44,7 +44,58 @@ export default function Page() {
   const { totalUsers, pendingRequests, activeRoles, totalListings, loading: statsLoading, error: statsError } = useAdminStats();
   const { data: heatmapData, loading: heatmapLoading, error: heatmapError } = useActivityHeatmap();
   const [timeRange, setTimeRange] = React.useState<TimeRange>('1w');
+  const [listingsVolumeGranularity, setListingsVolumeGranularity] = React.useState<'daily' | 'weekly'>('weekly');
   const { data: chartData, loading: chartLoading } = useChartData(timeRange);
+  const weeklyVolumeSeries = React.useMemo(() => {
+    if (!chartData?.weeklyListingsVolume) {
+      return { series: [], categories: [] as string[] };
+    }
+
+    if (listingsVolumeGranularity === 'daily') {
+      return {
+        series: chartData.weeklyListingsVolume.map(d => d.value),
+        categories: chartData.weeklyListingsVolume.map(d => {
+          const date = new Date(d.date);
+          return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }),
+      };
+    }
+
+    const buckets = new Map<string, { label: string; value: number; date: Date }>();
+    chartData.weeklyListingsVolume.forEach((point) => {
+      const date = new Date(point.date);
+      const day = date.getDay();
+      const diff = (day + 6) % 7; // Monday as week start
+      const weekStart = new Date(date);
+      weekStart.setDate(date.getDate() - diff);
+      weekStart.setHours(0, 0, 0, 0);
+      const key = weekStart.toISOString().split('T')[0];
+      const bucket = buckets.get(key);
+      if (bucket) {
+        bucket.value += point.value;
+        return;
+      }
+      buckets.set(key, {
+        value: point.value,
+        date: weekStart,
+        label: weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      });
+    });
+
+    const ordered = Array.from(buckets.values()).sort((a, b) => a.date.getTime() - b.date.getTime());
+    let runningTotal = 0;
+    const cumulative = ordered.map((item) => {
+      runningTotal += item.value;
+      return {
+        ...item,
+        value: runningTotal,
+      };
+    });
+    return {
+      series: cumulative.map(item => item.value),
+      categories: cumulative.map(item => item.label),
+    };
+  }, [chartData?.weeklyListingsVolume, listingsVolumeGranularity]);
   // Dynamic stats based on real data
   const statCards: StatCard[] = [
     {
@@ -240,7 +291,22 @@ export default function Page() {
           </Card>
 
             <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Weekly Listings Volume</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  {listingsVolumeGranularity === 'daily' ? 'Daily Listings Volume' : 'Weekly Listings Volume'}
+                </h3>
+                <label className="text-sm text-gray-500 dark:text-gray-400">
+                  <span className="sr-only">Listings volume granularity</span>
+                  <select
+                    value={listingsVolumeGranularity}
+                    onChange={(event) => setListingsVolumeGranularity(event.target.value as 'daily' | 'weekly')}
+                    className="rounded-md border border-gray-200 bg-white px-2 py-1 text-sm text-gray-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:focus:border-blue-400 dark:focus:ring-blue-500/30"
+                  >
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                  </select>
+                </label>
+              </div>
             {chartLoading ? (
               <div className="flex items-center justify-center h-64">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -249,39 +315,15 @@ export default function Page() {
               <SplineAreaChart
                 series={[{
                   name: 'Listings',
-                  data: chartData.weeklyListingsVolume.map(d => d.value)
+                  data: weeklyVolumeSeries.series
                 }]}
-                categories={chartData.weeklyListingsVolume.map(d => {
-                  const date = new Date(d.date);
-                  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                })}
+                categories={weeklyVolumeSeries.categories}
                 height={300}
                 colors={['#10b981']}
               />
             ) : null}
           </Card>
 
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Buyer Activity Per Day</h3>
-            {chartLoading ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              </div>
-            ) : chartData?.buyerActivityPerDay ? (
-              <SplineAreaChart
-                series={[{
-                  name: 'Activity',
-                  data: chartData.buyerActivityPerDay.map(d => d.value)
-                }]}
-                categories={chartData.buyerActivityPerDay.map(d => {
-                  const date = new Date(d.date);
-                  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                })}
-                height={300}
-                colors={['#8b5cf6']}
-              />
-            ) : null}
-            </Card>
           </div>
         </div>
 

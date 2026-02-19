@@ -22,6 +22,22 @@ const MARKETPLACE_MAP: Record<string, MarketplaceInfo> = {
   'ebaymotors.com': { name: 'eBay Motors', icon: '🏷️', color: 'text-blue-400', domain: 'ebay.com' },
 };
 
+const normalizeHostname = (value: string): string => value.replace(/^www\./, '').toLowerCase();
+
+export function isMarketplaceSource(source?: string): boolean {
+  if (!source) return false;
+
+  try {
+    const url = new URL(source);
+    const hostname = normalizeHostname(url.hostname);
+    if (MARKETPLACE_MAP[hostname]) return true;
+    return Object.keys(MARKETPLACE_MAP).some(domain => hostname.includes(domain) || domain.includes(hostname));
+  } catch {
+    const lowerSource = source.toLowerCase();
+    return Object.keys(MARKETPLACE_MAP).some(domain => lowerSource.includes(domain));
+  }
+}
+
 /**
  * Parse a source URL and return marketplace information
  */
@@ -30,7 +46,7 @@ export function getMarketplaceInfo(source?: string): MarketplaceInfo | null {
   
   try {
     const url = new URL(source);
-    const hostname = url.hostname.replace(/^www\./, '').toLowerCase();
+    const hostname = normalizeHostname(url.hostname);
     
     // Check for exact match first
     if (MARKETPLACE_MAP[hostname]) {

@@ -83,9 +83,17 @@ export default function Page() {
     });
 
     const ordered = Array.from(buckets.values()).sort((a, b) => a.date.getTime() - b.date.getTime());
+    let runningTotal = 0;
+    const cumulative = ordered.map((item) => {
+      runningTotal += item.value;
+      return {
+        ...item,
+        value: runningTotal,
+      };
+    });
     return {
-      series: ordered.map(item => item.value),
-      categories: ordered.map(item => item.label),
+      series: cumulative.map(item => item.value),
+      categories: cumulative.map(item => item.label),
     };
   }, [chartData?.weeklyListingsVolume, listingsVolumeGranularity]);
   // Dynamic stats based on real data

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { TimeRange, getDateRangeFromTimeRange } from '../../components/charts/ChartTimeRangePicker';
 import { ApiService } from '../services/api';
+import { Listing } from '../types/listing';
+import { isMarketplaceSource } from '../utils/marketplace';
 
 interface ChartDataPoint {
   date: string;
@@ -26,32 +28,37 @@ interface ChartData {
   statesRegions: { name: string; value: number }[];
 }
 
-// Generate mock data for charts (returns integers only)
-const generateMockTimeSeries = (days: number, baseValue: number, variance: number = 0.2): number[] => {
-  return Array.from({ length: days }, (_, i) => {
-    const trend = Math.sin((i / days) * Math.PI * 2) * variance;
-    const random = (Math.random() - 0.5) * variance;
-    return Math.round(Math.max(0, baseValue * (1 + trend + random)));
-  });
+const PURCHASE_STATUSES = new Set([
+  'purchased',
+  'bought',
+  'closed',
+  'won',
+  'completed',
+  'approved'
+]);
+
+const toDateKey = (value: Date): string => value.toISOString().split('T')[0];
+
+const tryParseDate = (value?: string): Date | null => {
+  if (!value) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
 };
 
-const generateMockDataPoints = (startDate: Date, endDate: Date, baseValue: number, variance: number = 0.2): ChartDataPoint[] => {
-  const dates: string[] = [];
-  const currentDate = new Date(startDate);
-  
-  while (currentDate <= endDate) {
-    dates.push(currentDate.toISOString().split('T')[0]);
-    currentDate.setDate(currentDate.getDate() + 1);
+const buildDateKeys = (startDate: Date, endDate: Date): string[] => {
+  const keys: string[] = [];
+  const current = new Date(startDate);
+  while (current <= endDate) {
+    keys.push(toDateKey(current));
+    current.setDate(current.getDate() + 1);
   }
+  return keys;
+};
 
-  return dates.map((date, i) => {
-    const trend = Math.sin((i / dates.length) * Math.PI * 2) * variance;
-    const random = (Math.random() - 0.5) * variance;
-    return {
-      date,
-      value: Math.round(Math.max(0, baseValue * (1 + trend + random))),
-    };
-  });
+const getListingPurchaseStatus = (listing: Listing): boolean => {
+  const status = listing.status || listing.decision?.status;
+  if (!status) return false;
+  return PURCHASE_STATUSES.has(status.toLowerCase());
 };
 
 export const useChartData = (timeRange: TimeRange = '1w') => {
@@ -69,8 +76,6 @@ export const useChartData = (timeRange: TimeRange = '1w') => {
         setError(null);
 
         const { startDate, endDate } = getDateRangeFromTimeRange(normalizedTimeRange);
-        const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-        const days = Math.max(7, daysDiff); // Minimum 7 days
 
         // Format dates for API calls
         const startDateStr = startDate.toISOString().split('T')[0];
@@ -78,12 +83,14 @@ export const useChartData = (timeRange: TimeRange = '1w') => {
 
         // Fetch real distribution data from API
         const [
+          listings,
           sourcingActivities,
           carCategories,
           statesRegions,
           leadSourcePerformance,
           leadToPurchaseFunnel
         ] = await Promise.all([
+          ApiService.getListings({ start_date: startDateStr, end_date: endDateStr }).catch(() => [] as Listing[]),
           ApiService.getChartDistribution('sourcing-activities').catch(() => ({ data: [], success: false })),
           ApiService.getChartDistribution('car-categories').catch(() => ({ data: [], success: false })),
           ApiService.getChartDistribution('states-regions').catch(() => ({ data: [], success: false })),
@@ -91,25 +98,125 @@ export const useChartData = (timeRange: TimeRange = '1w') => {
           ApiService.getChartTimeSeries('lead-to-purchase-funnel', startDateStr, endDateStr).catch(() => ({ data: [], success: false })),
         ]);
 
-        // Generate mock data for time-series (TODO: Replace with actual API calls)
-        const profitOverTimeData = generateMockDataPoints(startDate, endDate, 50000, 0.25);
-        const weeklyListingsData = generateMockDataPoints(startDate, endDate, 120, 0.3);
-        
+        const dateKeys = buildDateKeys(startDate, endDate);
+        const buckets = new Map<string, {
+          total: number;
+          sumPrice: number;
+          scored: number;
+          buyers: Set<string>;
+          purchased: number;
+          domSum: number;
+          domCount: number;
+          aged: number;
+          marketplaceCount: number;
+        }>();
+
+        dateKeys.forEach((key) => {
+          buckets.set(key, {
+            total: 0,
+            sumPrice: 0,
+            scored: 0,
+            buyers: new Set<string>(),
+            purchased: 0,
+            domSum: 0,
+            domCount: 0,
+            aged: 0,
+            marketplaceCount: 0,
+          });
+        });
+
+        listings.forEach((listing) => {
+          const createdAt = tryParseDate(listing.created_at);
+          if (!createdAt) return;
+          const key = toDateKey(createdAt);
+          const bucket = buckets.get(key);
+          if (!bucket) return;
+
+          bucket.total += 1;
+          bucket.sumPrice += Number(listing.price || 0);
+          if (listing.score !== undefined && listing.score !== null) {
+            bucket.scored += 1;
+          }
+          if (listing.buyer_id) {
+            bucket.buyers.add(listing.buyer_id);
+          }
+          if (getListingPurchaseStatus(listing)) {
+            bucket.purchased += 1;
+          }
+          if (isMarketplaceSource(listing.source)) {
+            bucket.marketplaceCount += 1;
+          }
+          if (listing.dom !== undefined && listing.dom !== null) {
+            bucket.domSum += Number(listing.dom);
+            bucket.domCount += 1;
+            if (Number(listing.dom) > 30) {
+              bucket.aged += 1;
+            }
+          }
+        });
+
+        const leadToPurchaseMap = new Map<string, number>();
+        (leadToPurchaseFunnel.data || []).forEach((point) => {
+          if (point?.date) {
+            leadToPurchaseMap.set(point.date, point.value);
+          }
+        });
+
+        const profitOverTimeData: ChartDataPoint[] = dateKeys.map((date) => {
+          const bucket = buckets.get(date)!;
+          return {
+            date,
+            value: Math.round(bucket.sumPrice * 0.15),
+          };
+        });
+
+        const weeklyListingsData: ChartDataPoint[] = dateKeys.map((date) => {
+          const bucket = buckets.get(date)!;
+          return {
+            date,
+            value: bucket.total,
+          };
+        });
+
+        const buyerActivityData: ChartDataPoint[] = dateKeys.map((date) => {
+          const bucket = buckets.get(date)!;
+          return {
+            date,
+            value: bucket.marketplaceCount,
+          };
+        });
+
         const chartData: ChartData = {
-          // Sparkline data (based on time range)
-          dailyActivities: generateMockTimeSeries(days, 45, 0.3),
-          conversionRate: generateMockTimeSeries(days, 12, 0.15).map(v => Math.min(100, Math.round(v))),
-          activeBuyersGrowth: generateMockTimeSeries(days, 25, 0.25),
-          leadsToPurchases: generateMockTimeSeries(days, 8, 0.3),
-          averageProfitPerUnit: profitOverTimeData.map(d => Math.round(d.value)),
-          leadToPurchaseTime: generateMockTimeSeries(days, 12, 0.2).map(v => Math.round(v * 10) / 10), // Days with decimal
-          agedInventory: generateMockTimeSeries(days, 15, 0.3),
-          totalListings: weeklyListingsData.map(d => Math.round(d.value)),
+          // Sparkline data (derived from listings)
+          dailyActivities: dateKeys.map((date) => buckets.get(date)!.total),
+          conversionRate: dateKeys.map((date) => {
+            const bucket = buckets.get(date)!;
+            if (bucket.total === 0) return 0;
+            return Math.round((bucket.scored / bucket.total) * 1000) / 10;
+          }),
+          activeBuyersGrowth: dateKeys.map((date) => buckets.get(date)!.buyers.size),
+          leadsToPurchases: dateKeys.map((date) => {
+            const fromFunnel = leadToPurchaseMap.get(date);
+            if (fromFunnel !== undefined) return fromFunnel;
+            return buckets.get(date)!.purchased;
+          }),
+          averageProfitPerUnit: dateKeys.map((date) => {
+            const bucket = buckets.get(date)!;
+            if (bucket.total === 0) return 0;
+            return Math.round(((bucket.sumPrice / bucket.total) * 0.15) * 100) / 100;
+          }),
+          leadToPurchaseTime: dateKeys.map((date) => {
+            const bucket = buckets.get(date)!;
+            if (bucket.domCount === 0) return 0;
+            return Math.round((bucket.domSum / bucket.domCount) * 10) / 10;
+          }),
+          agedInventory: dateKeys.map((date) => buckets.get(date)!.aged),
+          totalListings: dateKeys.map((date) => buckets.get(date)!.total),
 
           // Time-series data (based on time range)
           profitOverTime: profitOverTimeData,
           weeklyListingsVolume: weeklyListingsData,
-          buyerActivityPerDay: generateMockDataPoints(startDate, endDate, 35, 0.2),
+          buyerActivityPerDay: buyerActivityData,
           leadToPurchaseFunnel: leadToPurchaseFunnel.data || [],
 
           // Distribution data - from real API

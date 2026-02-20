@@ -35,6 +35,7 @@ export default function ListingsPage() {
     setRowsPerPage,
     totalPages,
     rescoreVisible,
+    scoreAll,
     seedBackend,
     loadFromBackend,
     loadWithDateRange,
@@ -220,9 +221,9 @@ export default function ListingsPage() {
       listing.location?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === "" || 
-      (statusFilter === "scored" && listing.score !== undefined) ||
-      (statusFilter === "pending" && listing.score === undefined) ||
-      (statusFilter === "decided" && listing.decision?.status) ||
+      (statusFilter === "scored" && listing.score != null) ||
+      (statusFilter === "pending" && listing.score == null) ||
+      (statusFilter === "decided" && !!listing.decision?.status) ||
       (statusFilter === "undecided" && !listing.decision?.status);
     
     const matchesMake = makeFilter === "" || 
@@ -388,6 +389,17 @@ export default function ListingsPage() {
                 <span>Re-score Visible</span>
               </Button>
 
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={scoreAll}
+                disabled={listingsLoading}
+                className="flex items-center space-x-2"
+              >
+                <RefreshCw className={`w-4 h-4 ${listingsLoading ? 'animate-spin' : ''}`} />
+                <span>Score All</span>
+              </Button>
+
               {selectedListings.size > 0 && (
                 <Button
                   onClick={() => setSelectedListings(new Set())}
@@ -433,6 +445,7 @@ export default function ListingsPage() {
                     Status
                   </label>
                   <select
+                    aria-label="Filter by status"
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
@@ -450,6 +463,7 @@ export default function ListingsPage() {
                     Make
                   </label>
                   <select
+                    aria-label="Filter by make"
                     value={makeFilter}
                     onChange={(e) => setMakeFilter(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"

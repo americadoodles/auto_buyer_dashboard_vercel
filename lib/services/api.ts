@@ -333,6 +333,20 @@ export class ApiService {
     }
   }
 
+  static async scoreAllListings(): Promise<{
+    total: number;
+    scored: number;
+    skipped: number;
+    failed: number;
+    results: Array<{ listing_id: string; status: string; score?: number; buyMax?: number; reasonCodes?: string[]; error?: string }>;
+  }> {
+    const response = await fetch(`${BACKEND_URL}/listings/score-all`, {
+      method: 'POST',
+      headers: this.authHeaders(),
+    });
+    return this.handleResponse(response);
+  }
+
   static async scoreListings(listings: Listing[]): Promise<Array<{
     vehicle_key: string;
     vin: string;

@@ -317,6 +317,64 @@ def delete_mmr_data(record_id: int) -> bool:
             return False
 
 
+def get_adjusted_mmr_for_vin(vin: str, miles: Optional[int] = None) -> Optional[float]:
+    """
+    Get mileage-adjusted MMR for a VIN from the mmr_data table.
+
+    Adjustment logic (Manheim standard):
+      adjusted_mmr = Base MMR + (avg_odometer - vehicle_miles) * MMR_PER_MILE
+    Positive delta  → vehicle has fewer miles than avg → value goes up.
+    Negative delta  → vehicle has more miles than avg  → value goes down.
+
+    Returns adjusted MMR as float, or None if no mmr_data record found.
+    """
+    mmr_record = get_mmr_data_by_vin(vin)
+    if not mmr_record:
+        return None
+
+    features = mmr_record.features or {}
+
+    # Extract Base MMR — try several possible key formats
+    base_mmr: Optional[float] = None
+    for key in ("Base MMR", "base_mmr", "baseMmr", "mmr", "MMR"):
+        val = features.get(key)
+        if val is not None:
+            try:
+                base_mmr = float(val)
+                break
+            except (ValueError, TypeError):
+                continue
+
+    if not base_mmr:
+        return None
+
+    # Mileage adjustment (~$12 per 1,000 miles difference from avg)
+    MMR_PER_MILE = 0.012
+    adjustment = 0.0
+
+    if miles is not None:
+        avg_odometer: Optional[float] = None
+        for key in ("Avg Odometer", "avg_odometer", "avgOdometer"):
+            val = features.get(key)
+            if val is not None:
+                try:
+                    avg_odometer = float(val)
+                    break
+                except (ValueError, TypeError):
+                    continue
+
+        if avg_odometer and avg_odometer > 0:
+            mile_delta = miles - avg_odometer
+            adjustment = -(mile_delta * MMR_PER_MILE)  # fewer miles → positive adj
+
+    adjusted = round(base_mmr + adjustment, 2)
+    logger.info(
+        f"Adjusted MMR for VIN {vin}: base={base_mmr}, "
+        f"miles={miles}, adj={adjustment:.2f}, result={adjusted}"
+    )
+    return adjusted
+
+
 def delete_mmr_data_by_vin(vin: str) -> bool:
     """Delete MMR data by VIN"""
     if not DB_ENABLED:

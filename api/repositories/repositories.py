@@ -489,7 +489,7 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                             # Calculate score using AI (no contact info available during ingestion)
                             # Note: calculate_listing_score automatically resolves adjusted MMR
                             # from the mmr_data table using the VIN, overriding listing_data['mmr']
-                            score_result = calculate_listing_score(listing_data, None)
+                            score_result = calculate_listing_score(listing_data)
                             score_val = score_result["score"]
                             calculated_buy_max = score_result["buyMax"]
                             calculated_reason_codes = score_result["reasonCodes"]

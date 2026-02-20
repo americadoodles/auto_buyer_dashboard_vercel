@@ -9,7 +9,7 @@ from ..schemas.user import UserOut
 from ..core.auth import get_current_user
 from ..core.config import settings
 from ..repositories.listing_management import (
-    update_listing, get_listing_by_id, get_listing_activities, get_contact_for_listing, delete_listing
+    update_listing, get_listing_by_id, get_listing_activities, delete_listing
 )
 from ..services.ai_service import calculate_listing_score
 from ..repositories.repositories import update_cached_score, update_score, list_listings
@@ -534,9 +534,6 @@ def calculate_listing_score_ai(
         if not listing:
             raise HTTPException(status_code=404, detail="Listing not found")
         
-        # Get contact information if available
-        contact_data = get_contact_for_listing(listing_id)
-        
         # Convert listing to dictionary format for scoring
         # Resolve adjusted MMR from mmr_data table (falls back to listing.mmr if no DB record)
         resolved_mmr = listing.mmr
@@ -585,7 +582,7 @@ def calculate_listing_score_ai(
         }
         
         # Calculate score using AI
-        score_result = calculate_listing_score(listing_data, contact_data)
+        score_result = calculate_listing_score(listing_data)
         
         # Update score in database
         if listing.vin and listing.vehicle_key:
@@ -674,7 +671,7 @@ def score_all_listings(
                 "notes": listing.notes,
             }
 
-            score_result = calculate_listing_score(listing_data, None)
+            score_result = calculate_listing_score(listing_data)
 
             if listing.vin and listing.vehicle_key:
                 vin_key = listing.vin.strip().upper()

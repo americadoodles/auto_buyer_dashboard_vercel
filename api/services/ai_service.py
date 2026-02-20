@@ -330,13 +330,6 @@ def generate_deal_draft(request: DealAIDraftRequest) -> DealAIDraftResponse:
             vehicle_desc += f" (VIN: {vehicle.get('vin')})"
         context_parts.append(vehicle_desc)
     
-    if request.contact_info:
-        contact = request.contact_info
-        contact_desc = f"Contact: {contact.get('first_name', '')} {contact.get('last_name', '')}"
-        if contact.get('company'):
-            contact_desc += f" from {contact.get('company')}"
-        context_parts.append(contact_desc)
-    
     if request.additional_context:
         context_parts.append(f"Additional context: {request.additional_context}")
     
@@ -561,16 +554,15 @@ Respond in JSON format with these exact keys:
     )
 
 
-def calculate_listing_score(listing_data: Dict[str, Any], contact_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+def calculate_listing_score(listing_data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Calculate listing score using AI based on all listing fields and contact information.
+    Calculate listing score using AI based on all listing fields.
     MMR is resolved from the mmr_data table (adjusted for mileage) when a VIN is present,
     overriding any mmr value supplied in listing_data.
-    
+
     Args:
         listing_data: Dictionary containing all listing fields (price, miles, dom, condition, etc.)
-        contact_data: Optional dictionary containing contact information (name, email, phone, company, etc.)
-    
+
     Returns:
         Dictionary with keys: score (int 0-100), buyMax (float), reasonCodes (list of strings)
     """
@@ -593,8 +585,7 @@ def calculate_listing_score(listing_data: Dict[str, Any], contact_data: Optional
 
     # Check API key configuration
     if not settings.OPENAI_API_KEY:
-        logging.warning("OpenAI API key not configured, falling back to default scoring")
-        # Fallback to basic scoring if AI is not available
+        logging.warning("OpenAI API key not configured — using fallback heuristic scoring")
         return _fallback_score_calculation(listing_data)
     
     try:
@@ -679,29 +670,13 @@ def calculate_listing_score(listing_data: Dict[str, Any], contact_data: Optional
         listing_info_parts.append(f"Notes: {listing_data.get('notes')}")
     
     listing_info = "\n".join(listing_info_parts)
-    
-    # Build contact information string
-    contact_info = ""
-    if contact_data:
-        contact_parts = []
-        if contact_data.get('first_name') or contact_data.get('last_name'):
-            contact_parts.append(f"Name: {contact_data.get('first_name', '')} {contact_data.get('last_name', '')}".strip())
-        if contact_data.get('email'):
-            contact_parts.append(f"Email: {contact_data.get('email')}")
-        if contact_data.get('phone'):
-            contact_parts.append(f"Phone: {contact_data.get('phone')}")
-        if contact_data.get('company'):
-            contact_parts.append(f"Company: {contact_data.get('company')}")
-        if contact_parts:
-            contact_info = "\nContact Information:\n" + "\n".join(contact_parts)
-    
+
     # Create comprehensive prompt for OpenAI using Buyer Scout criteria
     prompt = f"""You are an expert automotive buyer scoring system using the "Buyer Scout" criteria.
 Analyze the following vehicle listing and calculate a score starting from a base of 50, then apply each applicable criterion below.
 
 Vehicle Listing Information:
 {listing_info}
-{contact_info}
 
 === DEAL KILLER CRITERIA (any one of these sets score to 0, override everything) ===
 - SALVAGE_HISTORY (-999): Salvage, rebuilt, or flood title history detected
@@ -756,7 +731,7 @@ Respond in JSON format with these exact keys:
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "You are an expert automotive buyer scoring system using the Buyer Scout criteria. Always respond with valid JSON only. Apply only criteria for which you have evidence. Be strict about deal killers."},
+                {"role": "system", "content": "You are an expert automotive buyer scoring system using the Buyer Scout criteria. Always respond with valid JSON only. Apply ONLY criteria for which you have clear, direct, unambiguous evidence in the listing data. For DEAL KILLERS especially, do NOT assume or infer — only flag them if the listing data EXPLICITLY states it (e.g., 'salvage title', 'rebuilt title', 'flood damage', 'title not in my name'). When in doubt, do NOT apply a deal killer."},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.2,  # Low temperature for consistent, deterministic scoring
@@ -799,6 +774,7 @@ Respond in JSON format with these exact keys:
         if has_deal_killer:
             score = 0
             buy_max = 0.0
+            logging.info(f"AI scoring: deal killer triggered, score=0, buyMax=0, codes={reason_codes}")
         else:
             # Clamp normal scores to [0, 100]
             score = max(0, min(100, int(score)))
@@ -806,8 +782,17 @@ Respond in JSON format with these exact keys:
             try:
                 buy_max = float(buy_max)
             except (ValueError, TypeError):
-                price = listing_data.get('price', 0)
-                buy_max = price * 1.03 if price > 0 else 0.0
+                buy_max = 0.0
+            # Guard: if AI returned buyMax=0 but it's not a deal-killer, derive from price/MMR
+            if buy_max <= 0:
+                mmr_val = float(listing_data.get('mmr') or 0)
+                price_val = float(listing_data.get('price') or 0)
+                if mmr_val > 0:
+                    buy_max = round(mmr_val * 0.90, 2)
+                elif price_val > 0:
+                    buy_max = round(price_val * 0.95, 2)
+                logging.warning(f"AI returned buyMax=0 without deal killer — derived buyMax={buy_max} from price/MMR")
+            logging.info(f"AI scoring result: score={score}, buyMax={buy_max}, codes={reason_codes}")
         
         return {
             "score": score,
@@ -833,7 +818,7 @@ def _fallback_score_calculation(listing_data: Dict[str, Any]) -> Dict[str, Any]:
     miles = listing_data.get('miles', 50000)
     price = float(listing_data.get('price') or 0)
     mmr   = float(listing_data.get('mmr') or 0)
-    year  = int(listing_data.get('year') or 2015)
+    year  = int(listing_data.get('year') or 2019)
     condition = (listing_data.get('condition') or "").lower()
     clean_title = listing_data.get('cleanTitle')
     source = (listing_data.get('source') or "").lower()
@@ -847,11 +832,25 @@ def _fallback_score_calculation(listing_data: Dict[str, Any]) -> Dict[str, Any]:
     current_year = datetime.datetime.now().year
 
     # ── DEAL KILLERS ────────────────────────────────────────────────────────────
-    salvage_keywords = ['salvage', 'rebuilt', 'flood', 'lemon', 'junk']
-    if any(kw in seller_desc for kw in salvage_keywords):
+    # SALVAGE_HISTORY: match explicit title-related salvage phrases, not every mention of the word
+    salvage_phrases = [
+        'salvage title', 'salvage history', 'rebuilt title', 'rebuilt salvage',
+        'flood title', 'flood damage', 'flood car', 'lemon law', 'junk title',
+    ]
+    if any(ph in seller_desc for ph in salvage_phrases):
+        logging.info(f"Fallback scoring: SALVAGE_HISTORY triggered")
         return {"score": 0, "buyMax": 0.0, "reasonCodes": ["SALVAGE_HISTORY"]}
 
-    if 'not in' in seller_desc and 'title' in seller_desc:
+    # TITLE_NOT_IN_NAME: require explicit phrases; avoid false positives on benign descriptions
+    title_not_in_name_phrases = [
+        'title not in my name',
+        'title is not in my name',
+        'title not in seller',
+        "title isn't in my name",
+        'not in name on title',
+    ]
+    if any(ph in seller_desc for ph in title_not_in_name_phrases):
+        logging.info(f"Fallback scoring: TITLE_NOT_IN_NAME triggered")
         return {"score": 0, "buyMax": 0.0, "reasonCodes": ["TITLE_NOT_IN_NAME"]}
 
     # ── NEGATIVE CRITERIA ───────────────────────────────────────────────────────
@@ -951,6 +950,7 @@ def _fallback_score_calculation(listing_data: Dict[str, Any]) -> Dict[str, Any]:
     if score_val < 40:
         buy_max = round(buy_max * 0.95, 2)  # Discount offer for weak deals
 
+    logging.info(f"Fallback scoring result: score={score_val}, buyMax={buy_max}, codes={reasons or ['Heuristic']}")
     return {
         "score": score_val,
         "buyMax": buy_max,

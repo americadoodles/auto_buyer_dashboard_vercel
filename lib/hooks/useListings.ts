@@ -194,6 +194,25 @@ export const useListings = () => {
     }
   };
 
+  const scoreAll = async () => {
+    try {
+      setLoading(true);
+      const result = await ApiService.scoreAllListings();
+      // Reload listings from backend to pick up all new scores
+      const listings = user?.role === 'admin'
+        ? await ApiService.getListings({})
+        : user?.id
+          ? await ApiService.getBuyerListings(user.id, {})
+          : [];
+      if (Array.isArray(listings) && listings.length) setData(listings);
+      showSuccess('Score All Complete', `Scored ${result.scored} / ${result.total} listings.  Skipped: ${result.skipped}  Failed: ${result.failed}`);
+    } catch (e: any) {
+      showError('Score All Failed', 'Failed to score all: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const seedBackend = async () => {
     try {
       setLoading(true);
@@ -375,6 +394,7 @@ export const useListings = () => {
     setRowsPerPage,
     totalPages,
     rescoreVisible,
+    scoreAll,
     seedBackend,
     loadFromBackend,
     loadWithDateRange,

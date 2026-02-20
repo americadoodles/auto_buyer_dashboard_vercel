@@ -35,6 +35,7 @@ export default function ListingsPage() {
     setRowsPerPage,
     totalPages,
     rescoreVisible,
+    scoreAll,
     seedBackend,
     loadFromBackend,
     loadWithDateRange,
@@ -386,6 +387,17 @@ export default function ListingsPage() {
               >
                 <RefreshCw className={`w-4 h-4 ${listingsLoading ? 'animate-spin' : ''}`} />
                 <span>Re-score Visible</span>
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={scoreAll}
+                disabled={listingsLoading}
+                className="flex items-center space-x-2"
+              >
+                <RefreshCw className={`w-4 h-4 ${listingsLoading ? 'animate-spin' : ''}`} />
+                <span>Score All</span>
               </Button>
 
               {selectedListings.size > 0 && (

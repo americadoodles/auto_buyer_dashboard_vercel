@@ -21,6 +21,7 @@ import os
 import uuid
 import urllib.parse
 import traceback
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path as PathLib
 from datetime import datetime
 import requests
@@ -618,15 +619,10 @@ def score_all_listings(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch listings: {str(e)}")
 
-    results = []
-    scored = 0
-    skipped = 0
-    failed = 0
-
-    for listing in listings:
+    def _score_one(listing):
+        """Score a single listing. Runs inside a thread pool worker."""
         entry = {"listing_id": listing.id, "status": None}
         try:
-            # Resolve adjusted MMR from mmr_data table
             resolved_mmr = listing.mmr
             if listing.vin:
                 try:
@@ -681,19 +677,28 @@ def score_all_listings(
                 entry["score"] = score_result["score"]
                 entry["buyMax"] = score_result["buyMax"]
                 entry["reasonCodes"] = score_result["reasonCodes"]
-                scored += 1
             else:
                 entry["status"] = "skipped"
                 entry["reason"] = "missing vin or vehicle_key"
-                skipped += 1
 
         except Exception as e:
             logging.error(f"score-all: failed listing {listing.id}: {str(e)}")
             entry["status"] = "failed"
             entry["error"] = str(e)
-            failed += 1
 
-        results.append(entry)
+        return entry
+
+    # Process all listings concurrently in a thread pool (batch)
+    max_workers = min(10, len(listings)) if listings else 1
+    results = []
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = {executor.submit(_score_one, listing): listing for listing in listings}
+        for future in as_completed(futures):
+            results.append(future.result())
+
+    scored = sum(1 for r in results if r["status"] == "scored")
+    skipped = sum(1 for r in results if r["status"] == "skipped")
+    failed = sum(1 for r in results if r["status"] == "failed")
 
     return {
         "total": len(listings),

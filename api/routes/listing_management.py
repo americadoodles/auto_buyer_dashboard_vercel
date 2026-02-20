@@ -9,10 +9,11 @@ from ..schemas.user import UserOut
 from ..core.auth import get_current_user
 from ..core.config import settings
 from ..repositories.listing_management import (
-    update_listing, get_listing_by_id, get_listing_activities, get_contact_for_listing, delete_listing
+    update_listing, get_listing_by_id, get_listing_activities, delete_listing
 )
 from ..services.ai_service import calculate_listing_score
-from ..repositories.repositories import update_cached_score, update_score
+from ..repositories.repositories import update_cached_score, update_score, list_listings
+from ..repositories.mmr_repository import get_adjusted_mmr_for_vin
 from ..core.db import DB_ENABLED
 from ..core.db_helpers import get_db_connection
 import logging
@@ -20,6 +21,7 @@ import os
 import uuid
 import urllib.parse
 import traceback
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path as PathLib
 from datetime import datetime
 import requests
@@ -533,10 +535,21 @@ def calculate_listing_score_ai(
         if not listing:
             raise HTTPException(status_code=404, detail="Listing not found")
         
-        # Get contact information if available
-        contact_data = get_contact_for_listing(listing_id)
-        
         # Convert listing to dictionary format for scoring
+        # Resolve adjusted MMR from mmr_data table (falls back to listing.mmr if no DB record)
+        resolved_mmr = listing.mmr
+        if listing.vin:
+            try:
+                db_mmr = get_adjusted_mmr_for_vin(
+                    listing.vin.strip().upper(),
+                    int(listing.miles) if listing.miles is not None else None
+                )
+                if db_mmr:
+                    resolved_mmr = db_mmr
+                    logging.info(f"Rescore: using adjusted MMR {db_mmr} for VIN {listing.vin}")
+            except Exception as _mmr_err:
+                logging.warning(f"Rescore: could not fetch adjusted MMR for VIN {listing.vin}: {_mmr_err}")
+
         listing_data = {
             "year": listing.year,
             "make": listing.make,
@@ -544,7 +557,7 @@ def calculate_listing_score_ai(
             "trim": listing.trim,
             "vin": listing.vin,
             "price": listing.price,
-            "mmr": listing.mmr,
+            "mmr": resolved_mmr,
             "miles": listing.miles,
             "dom": listing.dom,
             "condition": listing.condition,
@@ -570,7 +583,7 @@ def calculate_listing_score_ai(
         }
         
         # Calculate score using AI
-        score_result = calculate_listing_score(listing_data, contact_data)
+        score_result = calculate_listing_score(listing_data)
         
         # Update score in database
         if listing.vin and listing.vehicle_key:
@@ -591,3 +604,106 @@ def calculate_listing_score_ai(
         logging.error(f"Error calculating AI score for listing {listing_id}: {str(e)}")
         logging.error(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Failed to calculate score: {str(e)}")
+
+
+@listing_management_router.post("/score-all")
+def score_all_listings(
+    current_user: UserOut = Depends(get_current_user)
+):
+    """
+    Batch re-score every listing in the database.
+    Returns a summary: total, scored, skipped, failed counts plus per-listing results.
+    """
+    try:
+        listings = list_listings()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch listings: {str(e)}")
+
+    def _score_one(listing):
+        """Score a single listing. Runs inside a thread pool worker."""
+        entry = {"listing_id": listing.id, "status": None}
+        try:
+            resolved_mmr = listing.mmr
+            if listing.vin:
+                try:
+                    db_mmr = get_adjusted_mmr_for_vin(
+                        listing.vin.strip().upper(),
+                        int(listing.miles) if listing.miles is not None else None
+                    )
+                    if db_mmr:
+                        resolved_mmr = db_mmr
+                except Exception as _mmr_err:
+                    logging.warning(f"score-all: could not fetch adjusted MMR for VIN {listing.vin}: {_mmr_err}")
+
+            listing_data = {
+                "year": listing.year,
+                "make": listing.make,
+                "model": listing.model,
+                "trim": listing.trim,
+                "vin": listing.vin,
+                "price": listing.price,
+                "mmr": resolved_mmr,
+                "miles": listing.miles,
+                "dom": listing.dom,
+                "condition": listing.condition,
+                "overallRating": listing.overallRating,
+                "detailedRatings": listing.detailedRatings,
+                "cleanTitle": listing.cleanTitle,
+                "bodyStyle": listing.bodyStyle,
+                "transmission": listing.transmission,
+                "fuelType": listing.fuelType,
+                "driveType": listing.driveType,
+                "engine": listing.engine,
+                "mpg": listing.mpg,
+                "exteriorColor": listing.exteriorColor,
+                "interiorColor": listing.interiorColor,
+                "location": listing.location,
+                "source": listing.source,
+                "sellerName": listing.sellerName,
+                "phoneNumber": listing.phoneNumber,
+                "sellerDescription": listing.sellerDescription,
+                "sellerJoinedDate": listing.sellerJoinedDate,
+                "paidStatus": listing.paidStatus,
+                "notes": listing.notes,
+            }
+
+            score_result = calculate_listing_score(listing_data)
+
+            if listing.vin and listing.vehicle_key:
+                vin_key = listing.vin.strip().upper()
+                update_score(listing.vehicle_key, vin_key, score_result["score"], score_result["buyMax"], score_result["reasonCodes"])
+                update_cached_score(vin_key, score_result["score"], score_result["buyMax"], score_result["reasonCodes"])
+                entry["status"] = "scored"
+                entry["score"] = score_result["score"]
+                entry["buyMax"] = score_result["buyMax"]
+                entry["reasonCodes"] = score_result["reasonCodes"]
+            else:
+                entry["status"] = "skipped"
+                entry["reason"] = "missing vin or vehicle_key"
+
+        except Exception as e:
+            logging.error(f"score-all: failed listing {listing.id}: {str(e)}")
+            entry["status"] = "failed"
+            entry["error"] = str(e)
+
+        return entry
+
+    # Process all listings concurrently in a thread pool (batch)
+    max_workers = min(10, len(listings)) if listings else 1
+    results = []
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = {executor.submit(_score_one, listing): listing for listing in listings}
+        for future in as_completed(futures):
+            results.append(future.result())
+
+    scored = sum(1 for r in results if r["status"] == "scored")
+    skipped = sum(1 for r in results if r["status"] == "skipped")
+    failed = sum(1 for r in results if r["status"] == "failed")
+
+    return {
+        "total": len(listings),
+        "scored": scored,
+        "skipped": skipped,
+        "failed": failed,
+        "results": results,
+    }

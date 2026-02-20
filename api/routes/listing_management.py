@@ -13,6 +13,7 @@ from ..repositories.listing_management import (
 )
 from ..services.ai_service import calculate_listing_score
 from ..repositories.repositories import update_cached_score, update_score
+from ..repositories.mmr_repository import get_adjusted_mmr_for_vin
 from ..core.db import DB_ENABLED
 from ..core.db_helpers import get_db_connection
 import logging
@@ -537,6 +538,20 @@ def calculate_listing_score_ai(
         contact_data = get_contact_for_listing(listing_id)
         
         # Convert listing to dictionary format for scoring
+        # Resolve adjusted MMR from mmr_data table (falls back to listing.mmr if no DB record)
+        resolved_mmr = listing.mmr
+        if listing.vin:
+            try:
+                db_mmr = get_adjusted_mmr_for_vin(
+                    listing.vin.strip().upper(),
+                    int(listing.miles) if listing.miles is not None else None
+                )
+                if db_mmr:
+                    resolved_mmr = db_mmr
+                    logging.info(f"Rescore: using adjusted MMR {db_mmr} for VIN {listing.vin}")
+            except Exception as _mmr_err:
+                logging.warning(f"Rescore: could not fetch adjusted MMR for VIN {listing.vin}: {_mmr_err}")
+
         listing_data = {
             "year": listing.year,
             "make": listing.make,
@@ -544,7 +559,7 @@ def calculate_listing_score_ai(
             "trim": listing.trim,
             "vin": listing.vin,
             "price": listing.price,
-            "mmr": listing.mmr,
+            "mmr": resolved_mmr,
             "miles": listing.miles,
             "dom": listing.dom,
             "condition": listing.condition,

@@ -564,6 +564,8 @@ Respond in JSON format with these exact keys:
 def calculate_listing_score(listing_data: Dict[str, Any], contact_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
     Calculate listing score using AI based on all listing fields and contact information.
+    MMR is resolved from the mmr_data table (adjusted for mileage) when a VIN is present,
+    overriding any mmr value supplied in listing_data.
     
     Args:
         listing_data: Dictionary containing all listing fields (price, miles, dom, condition, etc.)
@@ -572,6 +574,23 @@ def calculate_listing_score(listing_data: Dict[str, Any], contact_data: Optional
     Returns:
         Dictionary with keys: score (int 0-100), buyMax (float), reasonCodes (list of strings)
     """
+    # Resolve adjusted MMR from mmr_data table when VIN is available
+    vin = listing_data.get('vin')
+    if vin:
+        try:
+            from ..repositories.mmr_repository import get_adjusted_mmr_for_vin
+            miles = listing_data.get('miles')
+            db_mmr = get_adjusted_mmr_for_vin(
+                vin.strip().upper(),
+                int(miles) if miles is not None else None
+            )
+            if db_mmr:
+                # Shallow-copy to avoid mutating the caller's dict
+                listing_data = {**listing_data, 'mmr': db_mmr}
+                logging.info(f"Using adjusted MMR from mmr_data table for VIN {vin}: {db_mmr}")
+        except Exception as _mmr_err:
+            logging.warning(f"Could not fetch adjusted MMR for VIN {vin}: {_mmr_err}")
+
     # Check API key configuration
     if not settings.OPENAI_API_KEY:
         logging.warning("OpenAI API key not configured, falling back to default scoring")
@@ -676,58 +695,71 @@ def calculate_listing_score(listing_data: Dict[str, Any], contact_data: Optional
         if contact_parts:
             contact_info = "\nContact Information:\n" + "\n".join(contact_parts)
     
-    # Create comprehensive prompt for OpenAI
-    prompt = f"""You are an expert automotive valuation and scoring system. Analyze the following vehicle listing and calculate a score from 0-100 based on:
-1. Price competitiveness (compare to MMR if available)
-2. Vehicle condition and ratings
-3. Days on market (lower is better)
-4. Mileage (lower is better for most vehicles)
-5. Vehicle specifications and features
-6. Seller information and credibility
-7. Market factors and location
-8. Contact information quality (if available)
+    # Create comprehensive prompt for OpenAI using Buyer Scout criteria
+    prompt = f"""You are an expert automotive buyer scoring system using the "Buyer Scout" criteria.
+Analyze the following vehicle listing and calculate a score starting from a base of 50, then apply each applicable criterion below.
 
 Vehicle Listing Information:
 {listing_info}
 {contact_info}
 
-Provide a comprehensive score analysis. Consider:
-- Price vs MMR (if available): Is the price competitive?
-- Condition: Excellent condition vehicles score higher
-- DOM: Lower days on market indicate higher demand
-- Mileage: Lower mileage generally increases value
-- Clean title: Vehicles with clean titles are more valuable
-- Seller credibility: Established sellers with good ratings score higher
-- Market factors: Location, demand, and market conditions
+=== DEAL KILLER CRITERIA (any one of these sets score to 0, override everything) ===
+- SALVAGE_HISTORY (-999): Salvage, rebuilt, or flood title history detected
+- TITLE_NOT_IN_NAME (-999): Title is not in the seller's name
+- BAD_CARFAX (-999): Severe accidents, theft, or major negative history
+- MILEAGE_DISCREPANCY (-999): Mileage rollback or inconsistency detected
+
+=== NEGATIVE CRITERIA (deduct from base score) ===
+- DELETED_DIESEL (-10): Diesel truck with deleted emissions
+- POOR_CONDITION (-20): Major mechanical or structural issues; overall poor condition
+- ASKING_TOO_MUCH (-12): Price is significantly over MMR (>5% above MMR)
+- OWES_TOO_MUCH (-10): Payoff/lien makes the deal upside-down
+- TOO_NEW_FOR_LANE (-8): Very new vehicle with high manufacturer rebates reducing resale
+- BASE_TRIM (-7): Base trim with insufficient options
+- NO_SUNROOF (-5): Missing sunroof on a high-trim vehicle where it's expected
+- TOO_MANY_MODS (-6): Unknown aftermarket parts/tune with no receipts
+- NOT_4X4 (-6): Truck without 4x4 where 4x4 is typically required
+- SLOW_SEGMENT (-5): Vehicle in a slow-demand market segment right now
+- TOO_FAR (-5): Distance makes transport cost prohibitive
+- LIKELY_COMPETITION (-4): High bidding war risk
+- SHADY_SELLER (-12): Won't share VIN, odd payment requests, brand-new account
+
+=== POSITIVE CRITERIA (add to base score) ===
+- UNDER_MMR (+12): Price is meaningfully below MMR (calculate % below if MMR available)
+- CLEAN_TITLE (+10): Clean title confirmed in seller's name, no liens
+- RARE_CAR (+15): Rare vehicle or rare trim (e.g., Blackwing, Z06, GT350R, TRD Pro, Hellcat, etc.)
+- LOW_TRANSPORT (+6): Nearby location, minimal transport cost
+- QUALITY_BUILD (+15): Quality aftermarket build with reputable parts and receipts
+- LOW_MILES (+5): Low mileage for the vehicle's year
+- ONE_OWNER (+4): Single owner with good service records (Carfax/AutoCheck)
+- FAST_SELLER (+3): Responsive seller, motivated and ready to sell
+- DESIRABLE_OPTIONS (+3): High-demand options (buckets, sunroof, tech pkg, performance pkg)
+- CLEAN_RECON (+10): Minimal reconditioning needed, little to no recon estimated
+
+Instructions:
+1. Evaluate ONLY the criteria for which you have evidence in the listing data above.
+2. If ANY deal killer applies, return score=0 and include the deal killer code(s) in reasonCodes.
+3. Otherwise, start at 50, apply applicable positive and negative adjustments, then clamp to [0, 100].
+4. BuyMax: if score=0 (deal killer), set buyMax=0. Otherwise suggest a realistic max purchase price.
+5. reasonCodes: list 1-7 of the criterion codes above that most influenced the score.
 
 Respond in JSON format with these exact keys:
 {{
     "score": 75,
     "buyMax": 25000.00,
-    "reasonCodes": ["LowMiles", "GoodCondition", "CompetitivePrice"],
-    "explanation": "Brief explanation of the score"
-}}
-
-Score Guidelines:
-- 90-100: Exceptional deal, highly recommended
-- 80-89: Very good deal, strong recommendation
-- 70-79: Good deal, worth considering
-- 60-69: Average deal, proceed with caution
-- 50-59: Below average, negotiate or pass
-- 0-49: Poor deal, not recommended
-
-BuyMax should be a realistic maximum purchase price recommendation based on the analysis.
-ReasonCodes should be 1-5 short descriptive codes explaining the score (e.g., "LowMiles", "HighPrice", "AgedInventory", "CleanTitle", "GoodCondition", "CompetitivePrice", "HighDOM", "LowMMR", etc.)."""
+    "reasonCodes": ["UNDER_MMR", "CLEAN_TITLE", "LOW_MILES"],
+    "explanation": "Brief explanation of criteria applied"
+}}"""
 
     try:
         # Call OpenAI API
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "You are an expert automotive valuation and scoring system. Always respond with valid JSON only. Provide accurate, data-driven scores based on comprehensive vehicle analysis."},
+                {"role": "system", "content": "You are an expert automotive buyer scoring system using the Buyer Scout criteria. Always respond with valid JSON only. Apply only criteria for which you have evidence. Be strict about deal killers."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.3,  # Lower temperature for more consistent scoring
+            temperature=0.2,  # Low temperature for consistent, deterministic scoring
             max_tokens=500
         )
         
@@ -756,20 +788,26 @@ ReasonCodes should be 1-5 short descriptive codes explaining the score (e.g., "L
         buy_max = ai_data.get("buyMax", 0.0)
         reason_codes = ai_data.get("reasonCodes", [])
         
-        # Ensure score is within valid range
-        score = max(0, min(100, int(score)))
-        
-        # Ensure buyMax is a valid float
-        try:
-            buy_max = float(buy_max)
-        except (ValueError, TypeError):
-            # Calculate buyMax based on price if AI didn't provide valid value
-            price = listing_data.get('price', 0)
-            buy_max = price * 1.03 if price > 0 else 0.0
-        
-        # Ensure reasonCodes is a list
+        # Ensure reasonCodes is a list first (needed for deal killer check)
         if not isinstance(reason_codes, list):
             reason_codes = ["Heuristic"]
+        
+        # Check for deal killer codes — these override score to 0
+        DEAL_KILLERS = {"SALVAGE_HISTORY", "TITLE_NOT_IN_NAME", "BAD_CARFAX", "MILEAGE_DISCREPANCY"}
+        has_deal_killer = any(code in DEAL_KILLERS for code in reason_codes)
+        
+        if has_deal_killer:
+            score = 0
+            buy_max = 0.0
+        else:
+            # Clamp normal scores to [0, 100]
+            score = max(0, min(100, int(score)))
+            # Ensure buyMax is a valid float
+            try:
+                buy_max = float(buy_max)
+            except (ValueError, TypeError):
+                price = listing_data.get('price', 0)
+                buy_max = price * 1.03 if price > 0 else 0.0
         
         return {
             "score": score,
@@ -785,36 +823,137 @@ ReasonCodes should be 1-5 short descriptive codes explaining the score (e.g., "L
 
 def _fallback_score_calculation(listing_data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Fallback scoring calculation when AI is not available.
-    Uses a simplified version of the original scoring logic.
+    Fallback scoring using Buyer Scout criteria when AI is unavailable.
+    Applies criteria deterministically based on available listing fields.
     """
     reasons = []
-    dom = listing_data.get('dom', 30)
+    score = 50  # Base score
+
+    dom   = listing_data.get('dom', 30)
     miles = listing_data.get('miles', 50000)
-    price = listing_data.get('price', 25000)
+    price = float(listing_data.get('price') or 0)
+    mmr   = float(listing_data.get('mmr') or 0)
+    year  = int(listing_data.get('year') or 2015)
+    condition = (listing_data.get('condition') or "").lower()
+    clean_title = listing_data.get('cleanTitle')
+    source = (listing_data.get('source') or "").lower()
+    trim  = (listing_data.get('trim') or "").lower()
+    body  = (listing_data.get('bodyStyle') or "").lower()
+    transmission = (listing_data.get('transmission') or "").lower()
+    fuel  = (listing_data.get('fuelType') or "").lower()
+    seller_desc = (listing_data.get('sellerDescription') or "").lower()
+    options = seller_desc  # Use seller description as proxy for options
+    import datetime
+    current_year = datetime.datetime.now().year
+
+    # ── DEAL KILLERS ────────────────────────────────────────────────────────────
+    salvage_keywords = ['salvage', 'rebuilt', 'flood', 'lemon', 'junk']
+    if any(kw in seller_desc for kw in salvage_keywords):
+        return {"score": 0, "buyMax": 0.0, "reasonCodes": ["SALVAGE_HISTORY"]}
+
+    if 'not in' in seller_desc and 'title' in seller_desc:
+        return {"score": 0, "buyMax": 0.0, "reasonCodes": ["TITLE_NOT_IN_NAME"]}
+
+    # ── NEGATIVE CRITERIA ───────────────────────────────────────────────────────
+    if 'delete' in seller_desc and ('diesel' in fuel or 'diesel' in seller_desc):
+        score -= 10
+        reasons.append("DELETED_DIESEL")
+
+    if condition in ('poor', 'bad', 'rough') or 'poor condition' in seller_desc:
+        score -= 20
+        reasons.append("POOR_CONDITION")
     
-    dom_penalty = max(0, 30 - dom) / 30
-    miles_penalty = max(0, 100_000 - miles) / 100_000
-    base = 40 * dom_penalty + 40 * miles_penalty
-    
-    price_boost = 0
-    if price < 25_000:
-        price_boost = min(20, (25_000 - price) / 1000)
-        reasons.append("PriceVsBaseline")
-    if dom < 20:
-        reasons.append("LowDOM")
-    if miles < 50_000:
-        reasons.append("LowMiles")
-    
-    score_val = int(max(0, min(100, base + price_boost)))
-    buy_max = max(0.0, price * 1.03)
+    if mmr > 0 and price > mmr * 1.05:
+        score -= 12
+        reasons.append("ASKING_TOO_MUCH")
+
+    # Too new for lane: vehicle from current or last model year
+    if year >= current_year - 1:
+        score -= 8
+        reasons.append("TOO_NEW_FOR_LANE")
+
+    rare_trims = ['blackwing', 'z06', 'gt350r', 'trd pro', 'hellcat', 'demon',
+                  'raptor', 'nismo', 'track hawk', 'shelby', 'zl1', 'type r']
+    has_rare_trim = any(rt in trim for rt in rare_trims)
+
+    if not has_rare_trim and trim in ('', 'base', 'l', 'ls', 'lx', 'se', 's', 'e'):
+        score -= 7
+        reasons.append("BASE_TRIM")
+
+    if 'roof' not in options and 'sunroof' not in options and trim not in ('', 'base', 'l', 'ls'):
+        score -= 5
+        reasons.append("NO_SUNROOF")
+
+    mod_keywords = ['tuned', 'tune', 'lowered', 'coilovers', 'built motor', 'built trans', 'supercharged']
+    if any(kw in seller_desc for kw in mod_keywords) and 'receipt' not in seller_desc:
+        score -= 6
+        reasons.append("TOO_MANY_MODS")
+
+    if 'truck' in body or 'pickup' in body:
+        if '4x4' not in seller_desc and '4wd' not in (listing_data.get('driveType') or '').lower():
+            score -= 6
+            reasons.append("NOT_4X4")
+
     if dom > 45:
-        buy_max = price * 0.98
-        reasons.append("AgedInventory")
-    
+        score -= 5
+        reasons.append("SLOW_SEGMENT")
+
+    shady_keywords = ['no vin', 'cash only', 'western union', 'zelle only', 'new account']
+    if any(kw in seller_desc for kw in shady_keywords):
+        score -= 12
+        reasons.append("SHADY_SELLER")
+
+    # ── POSITIVE CRITERIA ───────────────────────────────────────────────────────
+    if mmr > 0 and price < mmr * 0.88:
+        score += 12
+        reasons.append("UNDER_MMR")
+
+    if clean_title is True:
+        score += 10
+        reasons.append("CLEAN_TITLE")
+
+    if has_rare_trim:
+        score += 15
+        reasons.append("RARE_CAR")
+
+    # Expected miles: ~12,000/yr; low = <80% of expected
+    expected_miles = max(1, (current_year - year)) * 12000
+    if miles < expected_miles * 0.8:
+        score += 5
+        reasons.append("LOW_MILES")
+
+    one_owner_keywords = ['one owner', '1 owner', 'single owner', 'carfax', 'autocheck']
+    if any(kw in seller_desc for kw in one_owner_keywords):
+        score += 4
+        reasons.append("ONE_OWNER")
+
+    desirable_keywords = ['sunroof', 'moonroof', 'panoramic', 'heated seats',
+                          'performance package', 'tech package', 'bucket seats']
+    if any(kw in options for kw in desirable_keywords):
+        score += 3
+        reasons.append("DESIRABLE_OPTIONS")
+
+    condition_clean_keywords = ['excellent', 'mint', 'no recon', 'minimal recon', 'no mechanical']
+    if any(kw in seller_desc for kw in condition_clean_keywords):
+        score += 10
+        reasons.append("CLEAN_RECON")
+
+    score_val = int(max(0, min(100, score)))
+
+    # BuyMax: use MMR as anchor if available, otherwise price-based
+    if mmr > 0:
+        buy_max = round(mmr * 0.95, 2)  # Target 5% under MMR
+    elif price > 0:
+        buy_max = round(price * 1.01, 2)
+    else:
+        buy_max = 0.0
+
+    if score_val < 40:
+        buy_max = round(buy_max * 0.95, 2)  # Discount offer for weak deals
+
     return {
         "score": score_val,
-        "buyMax": round(buy_max, 2),
+        "buyMax": buy_max,
         "reasonCodes": reasons or ["Heuristic"]
     }
 

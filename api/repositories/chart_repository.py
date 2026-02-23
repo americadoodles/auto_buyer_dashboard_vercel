@@ -7,6 +7,21 @@ from datetime import datetime, timedelta
 from ..core.db import DB_ENABLED
 from ..core.db_helpers import get_db_connection
 
+STATE_ABBREVIATIONS = {
+    'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR',
+    'california': 'CA', 'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE',
+    'florida': 'FL', 'georgia': 'GA', 'hawaii': 'HI', 'idaho': 'ID',
+    'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA', 'kansas': 'KS',
+    'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
+    'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN', 'mississippi': 'MS',
+    'missouri': 'MO', 'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV',
+    'new hampshire': 'NH', 'new jersey': 'NJ', 'new mexico': 'NM', 'new york': 'NY',
+    'north carolina': 'NC', 'north dakota': 'ND', 'ohio': 'OH', 'oklahoma': 'OK',
+    'oregon': 'OR', 'pennsylvania': 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
+    'south dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT',
+    'vermont': 'VT', 'virginia': 'VA', 'washington': 'WA', 'west virginia': 'WV',
+    'wisconsin': 'WI', 'wyoming': 'WY'
+}
 
 def get_sourcing_activities_per_agent() -> List[dict]:
     """Get sourcing activities count per agent (buyer)"""
@@ -61,6 +76,27 @@ def get_car_categories_performance() -> List[dict]:
             return [{"name": row[0] or "Unknown", "value": int(row[1])} for row in results]
 
 
+def format_location_abbreviation(location: str) -> str:
+    """Convert location format from 'City, State' to 'City Abbr, ST'"""
+    if not location or ',' not in location:
+        return 'Unknown'
+    
+    parts = [p.strip() for p in location.split(',')]
+    if len(parts) < 2:
+        return 'Unknown'
+    
+    city = parts[0]
+    state = parts[1].lower()
+    
+    # Get abbreviation or return Unknown if not found
+    state_abbr = STATE_ABBREVIATIONS.get(state)
+    
+    if state_abbr is None:
+        return 'Unknown'
+    
+    return f"{city}, {state_abbr}"
+
+
 def get_states_regions_performance() -> List[dict]:
     """Get performance metrics grouped by state/region extracted from location"""
     if not DB_ENABLED:
@@ -71,36 +107,29 @@ def get_states_regions_performance() -> List[dict]:
             return []
         
         with conn.cursor() as cur:
-            # Extract state from location (format: "City, State" or "City, ST")
-            # Try to extract the last part after comma, or use full location if no comma
             cur.execute("""
                 SELECT 
-                    CASE 
-                        WHEN l.location LIKE '%,%' THEN 
-                            TRIM(SPLIT_PART(l.location, ',', -1))
-                        WHEN l.location IS NOT NULL AND l.location != '' THEN 
-                            l.location
-                        ELSE 
-                            'Unknown'
-                    END as name,
+                    l.location,
                     COUNT(*) as value
                 FROM listings l
                 WHERE l.location IS NOT NULL AND l.location != ''
-                GROUP BY 
-                    CASE 
-                        WHEN l.location LIKE '%,%' THEN 
-                            TRIM(SPLIT_PART(l.location, ',', -1))
-                        WHEN l.location IS NOT NULL AND l.location != '' THEN 
-                            l.location
-                        ELSE 
-                            'Unknown'
-                    END
+                GROUP BY l.location
                 ORDER BY value DESC
                 LIMIT 20
             """)
             
             results = cur.fetchall()
-            return [{"name": row[0] or "Unknown", "value": int(row[1])} for row in results]
+            
+            # Format locations on the Python side
+            formatted_results = []
+            for row in results:
+                formatted_location = format_location_abbreviation(row[0])
+                formatted_results.append({
+                    "name": formatted_location,
+                    "value": int(row[1])
+                })
+            
+            return formatted_results
 
 
 def get_lead_to_purchase_funnel(start_date: datetime = None, end_date: datetime = None) -> List[Dict[str, Any]]:

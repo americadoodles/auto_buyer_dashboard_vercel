@@ -90,8 +90,8 @@ def _read_schema_file() -> Optional[str]:
     if schema_path:
         p = pathlib.Path(schema_path)
     else:
-        # repo_root/db/schema.sql (adjust if your layout differs)
-        p = pathlib.Path(__file__).parents[2] / "db" / "schema.sql"
+        # api/db/schema.sql (db folder lives inside the api package)
+        p = pathlib.Path(__file__).parents[1] / "db" / "schema.sql"
 
     if not p.exists():
         logger.error("Schema file not found at %s", p)
@@ -106,7 +106,7 @@ def _read_schema_file() -> Optional[str]:
 
 def _read_crm_schema_file() -> Optional[str]:
     """Read the CRM schema file."""
-    p = pathlib.Path(__file__).parents[2] / "db" / "crm_schema.sql"
+    p = pathlib.Path(__file__).parents[1] / "db" / "crm_schema.sql"
 
     if not p.exists():
         logger.error("CRM schema file not found at %s", p)
@@ -120,8 +120,8 @@ def _read_crm_schema_file() -> Optional[str]:
 
 
 def _read_migration_file(filename: str) -> Optional[str]:
-    """Read a migration SQL file from the db/ directory."""
-    p = pathlib.Path(__file__).parents[2] / "db" / filename
+    """Read a migration SQL file from the api/db/ directory."""
+    p = pathlib.Path(__file__).parents[1] / "db" / filename
 
     if not p.exists():
         logger.warning("Migration file not found at %s", p)

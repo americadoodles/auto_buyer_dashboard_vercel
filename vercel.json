@@ -1,8 +1,7 @@
 {
   "functions": {
     "api/index.py": {
-      "excludeFiles": "{.next,.git,node_modules}/**",
-      "includeFiles": "db/schema.sql"
+      "excludeFiles": "{.next,.git,node_modules}/**"
     }
   },
   "routes": [

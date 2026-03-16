@@ -6,9 +6,8 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy backend code and schema
+# Copy backend code (includes api/db/ with all SQL schemas)
 COPY api/ ./api/
-COPY db/schema.sql ./db/schema.sql
 
 # Cloud Run injects PORT env var (default 8080)
 ENV PORT=8080

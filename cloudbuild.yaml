@@ -1,0 +1,141 @@
+# Cloud Build – deploy backend (FastAPI) and frontend (Next.js) to Cloud Run
+#
+# Required substitutions (set in trigger or via --substitutions):
+#   _REGION          – e.g. us-central1
+#   _BACKEND_SERVICE – Cloud Run service name for the API (default: auto-buyer-api)
+#   _FRONTEND_SERVICE– Cloud Run service name for the UI  (default: auto-buyer-web)
+#
+# Required secrets stored in GCP Secret Manager (mounted as env vars on Cloud Run):
+#   DATABASE_URL, JWT_SECRET, OPENAI_API_KEY, etc.
+#
+# Usage:
+#   gcloud builds submit --config=cloudbuild.yaml \
+#     --substitutions=_REGION=us-central1
+
+substitutions:
+  _REGION: us-central1
+  _BACKEND_SERVICE: auto-buyer-api
+  _FRONTEND_SERVICE: auto-buyer-web
+  _BACKEND_IMAGE: "gcr.io/${PROJECT_ID}/auto-buyer-api"
+  _FRONTEND_IMAGE: "gcr.io/${PROJECT_ID}/auto-buyer-web"
+
+steps:
+  # ─── 1. Build backend Docker image ───────────────────────────────────
+  - id: build-backend
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - "${_BACKEND_IMAGE}:${SHORT_SHA}"
+      - -t
+      - "${_BACKEND_IMAGE}:latest"
+      - -f
+      - api/Dockerfile
+      - .
+
+  # ─── 2. Push backend image ──────────────────────────────────────────
+  - id: push-backend
+    name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - --all-tags
+      - "${_BACKEND_IMAGE}"
+    waitFor:
+      - build-backend
+
+  # ─── 3. Deploy backend to Cloud Run ─────────────────────────────────
+  - id: deploy-backend
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_BACKEND_SERVICE}
+      - --image=${_BACKEND_IMAGE}:${SHORT_SHA}
+      - --region=${_REGION}
+      - --platform=managed
+      - --allow-unauthenticated
+      - --port=8080
+      - --memory=512Mi
+      - --cpu=1
+      - --min-instances=0
+      - --max-instances=10
+      - --set-env-vars=ENVIRONMENT=production
+    waitFor:
+      - push-backend
+
+  # ─── 4. Fetch backend URL for the frontend build ───────────────────
+  - id: get-backend-url
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        gcloud run services describe ${_BACKEND_SERVICE} \
+          --region=${_REGION} \
+          --format='value(status.url)' > /workspace/backend_url.txt
+        echo "Backend URL: $(cat /workspace/backend_url.txt)"
+    waitFor:
+      - deploy-backend
+
+  # ─── 5. Build frontend Docker image ────────────────────────────────
+  - id: build-frontend
+    name: gcr.io/cloud-builders/docker
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        BACKEND_URL=$(cat /workspace/backend_url.txt)
+        docker build \
+          --build-arg NEXT_PUBLIC_API_URL=$${BACKEND_URL} \
+          --build-arg STANDALONE=true \
+          -t ${_FRONTEND_IMAGE}:${SHORT_SHA} \
+          -t ${_FRONTEND_IMAGE}:latest \
+          -f Dockerfile \
+          .
+    waitFor:
+      - get-backend-url
+
+  # ─── 6. Push frontend image ────────────────────────────────────────
+  - id: push-frontend
+    name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - --all-tags
+      - "${_FRONTEND_IMAGE}"
+    waitFor:
+      - build-frontend
+
+  # ─── 7. Deploy frontend to Cloud Run ───────────────────────────────
+  - id: deploy-frontend
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        BACKEND_URL=$(cat /workspace/backend_url.txt)
+        gcloud run deploy ${_FRONTEND_SERVICE} \
+          --image=${_FRONTEND_IMAGE}:${SHORT_SHA} \
+          --region=${_REGION} \
+          --platform=managed \
+          --allow-unauthenticated \
+          --port=3000 \
+          --memory=512Mi \
+          --cpu=1 \
+          --min-instances=0 \
+          --max-instances=10 \
+          --set-env-vars="NODE_ENV=production,NEXT_PUBLIC_API_URL=$${BACKEND_URL}"
+    waitFor:
+      - push-frontend
+
+images:
+  - "${_BACKEND_IMAGE}:${SHORT_SHA}"
+  - "${_BACKEND_IMAGE}:latest"
+  - "${_FRONTEND_IMAGE}:${SHORT_SHA}"
+  - "${_FRONTEND_IMAGE}:latest"
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: E2_HIGHCPU_8
+
+timeout: 1800s

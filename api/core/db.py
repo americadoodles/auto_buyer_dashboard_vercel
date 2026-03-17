@@ -260,14 +260,20 @@ def apply_schema_if_needed() -> None:
                 # Apply all migration files (idempotent, safe)
                 # =============================================
                 _migration_files = [
+                    "001_update_leads_schema.sql",
                     "007_event_outbox_schema.sql",
                     "008_add_lead_id_to_deals.sql",
                     "009_add_mmr_to_listings.sql",
                     "010_add_listing_fields.sql",
                     "011_add_lpn_to_listings.sql",
+                    "012_remove_unreferenced_vehicles.sql",
                     "013_create_accu_trade_data.sql",
                     "014_create_mmr_data.sql",
                     "015_create_condition_reports.sql",
+                    "add_user_activity.sql",
+                    "migrate_users_role.sql",
+                    "seed_roles.sql",
+                    "seed_crm_data.sql",
                     "migrations/add_phone_columns_to_communications.sql",
                 ]
                 for mig_file in _migration_files:

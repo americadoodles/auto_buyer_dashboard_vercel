@@ -1,0 +1,13 @@
+node_modules
+.next
+.git
+__pycache__
+*.pyc
+.env
+.env.*
+api/.venv
+api/__pycache__
+Doc
+docs
+*.md
+.vercel

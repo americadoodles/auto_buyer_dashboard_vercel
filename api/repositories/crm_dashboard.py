@@ -143,42 +143,51 @@ def get_lead_conversion_metrics() -> LeadConversionMetrics:
             total_leads=0, converted_leads=0,
             conversion_rate=0.0, avg_score=0.0
         )
-    
+
     with get_db_connection() as conn:
         if not conn:
             raise Exception("Database connection failed")
-        
+
         try:
             with conn.cursor() as cur:
                 # Get lead counts
-                cur.execute("SELECT COUNT(*) FROM leads")
-                total_leads = cur.fetchone()[0]
-                
-                cur.execute("""
-                    SELECT COUNT(*) FROM leads 
-                    WHERE converted_at IS NOT NULL
-                """)
-                converted_leads = cur.fetchone()[0]
-                
+                total_leads = 0
+                converted_leads = 0
+                try:
+                    cur.execute("SELECT COUNT(*) FROM leads")
+                    total_leads = cur.fetchone()[0] or 0
+
+                    cur.execute("""
+                        SELECT COUNT(*) FROM leads
+                        WHERE converted_at IS NOT NULL
+                    """)
+                    converted_leads = cur.fetchone()[0] or 0
+                except Exception as e:
+                    logging.warning(f"Error counting leads: {str(e)}")
+
                 # Calculate conversion rate
                 conversion_rate = (converted_leads / total_leads * 100) if total_leads > 0 else 0.0
-                
+
                 # Calculate average lead score
-                cur.execute("""
-                    SELECT AVG(lead_score) as avg_score
-                    FROM leads 
-                    WHERE lead_score IS NOT NULL
-                """)
-                result = cur.fetchone()
-                avg_score = float(result[0]) if result and result[0] is not None else 0.0
-                
+                avg_score = 0.0
+                try:
+                    cur.execute("""
+                        SELECT AVG(lead_score) as avg_score
+                        FROM leads
+                        WHERE lead_score IS NOT NULL
+                    """)
+                    result = cur.fetchone()
+                    avg_score = float(result[0]) if result and result[0] is not None else 0.0
+                except Exception as e:
+                    logging.warning(f"Error calculating avg lead score: {str(e)}")
+
                 return LeadConversionMetrics(
                     total_leads=total_leads,
                     converted_leads=converted_leads,
                     conversion_rate=conversion_rate,
                     avg_score=avg_score
                 )
-                
+
         except Exception as e:
             logging.error(f"Error fetching lead conversion metrics: {str(e)}")
             raise
@@ -191,58 +200,80 @@ def get_sales_performance_metrics() -> SalesPerformanceMetrics:
             win_rate=0.0, total_revenue=Decimal('0'), avg_deal_size=Decimal('0'),
             revenue_by_stage={}
         )
-    
+
     with get_db_connection() as conn:
         if not conn:
             raise Exception("Database connection failed")
-        
+
         try:
             with conn.cursor() as cur:
                 # Get deal counts
-                cur.execute("SELECT COUNT(*) FROM deals")
-                deals_created = cur.fetchone()[0]
-                
-                cur.execute("SELECT COUNT(*) FROM deals WHERE is_won = true")
-                deals_won = cur.fetchone()[0]
-                
-                cur.execute("SELECT COUNT(*) FROM deals WHERE is_lost = true")
-                deals_lost = cur.fetchone()[0]
-                
+                deals_created = 0
+                deals_won = 0
+                deals_lost = 0
+                try:
+                    cur.execute("SELECT COUNT(*) FROM deals")
+                    deals_created = cur.fetchone()[0] or 0
+
+                    cur.execute("SELECT COUNT(*) FROM deals WHERE is_won = true")
+                    deals_won = cur.fetchone()[0] or 0
+
+                    cur.execute("SELECT COUNT(*) FROM deals WHERE is_lost = true")
+                    deals_lost = cur.fetchone()[0] or 0
+                except Exception as e:
+                    logging.warning(f"Error counting deals: {str(e)}")
+
                 # Calculate win rate
                 total_closed = deals_won + deals_lost
                 win_rate = (deals_won / total_closed * 100) if total_closed > 0 else 0.0
-                
+
                 # Get revenue metrics
-                cur.execute("""
-                    SELECT COALESCE(SUM(deal_value), 0) FROM deals 
-                    WHERE is_won = true AND deal_value IS NOT NULL
-                """)
-                total_revenue = cur.fetchone()[0] or Decimal('0')
-                
-                cur.execute("""
-                    SELECT COALESCE(AVG(deal_value), 0) FROM deals 
-                    WHERE is_won = true AND deal_value IS NOT NULL
-                """)
-                avg_deal_size = cur.fetchone()[0] or Decimal('0')
-                
+                total_revenue = Decimal('0')
+                avg_deal_size = Decimal('0')
+                try:
+                    cur.execute("""
+                        SELECT COALESCE(SUM(deal_value), 0) FROM deals
+                        WHERE is_won = true AND deal_value IS NOT NULL
+                    """)
+                    result = cur.fetchone()[0]
+                    total_revenue = Decimal(str(result)) if result else Decimal('0')
+
+                    cur.execute("""
+                        SELECT COALESCE(AVG(deal_value), 0) FROM deals
+                        WHERE is_won = true AND deal_value IS NOT NULL
+                    """)
+                    result = cur.fetchone()[0]
+                    avg_deal_size = Decimal(str(result)) if result else Decimal('0')
+                except Exception as e:
+                    logging.warning(f"Error calculating revenue metrics: {str(e)}")
+
                 # Calculate average sales cycle
-                cur.execute("""
-                    SELECT AVG(EXTRACT(EPOCH FROM (actual_close_date - created_at))/86400) as avg_days
-                    FROM deals 
-                    WHERE is_won = true AND actual_close_date IS NOT NULL
-                """)
-                avg_sales_cycle = cur.fetchone()[0]
-                
+                avg_sales_cycle = None
+                try:
+                    cur.execute("""
+                        SELECT AVG(EXTRACT(EPOCH FROM (actual_close_date - created_at))/86400) as avg_days
+                        FROM deals
+                        WHERE is_won = true AND actual_close_date IS NOT NULL
+                    """)
+                    result = cur.fetchone()
+                    avg_sales_cycle = float(result[0]) if result and result[0] is not None else None
+                except Exception as e:
+                    logging.warning(f"Error calculating avg sales cycle: {str(e)}")
+
                 # Get revenue by stage
-                cur.execute("""
-                    SELECT ds.name, COALESCE(SUM(d.deal_value), 0) as revenue
-                    FROM deal_stages ds
-                    LEFT JOIN deals d ON ds.id = d.deal_stage_id AND d.is_won = true
-                    GROUP BY ds.id, ds.name
-                    ORDER BY ds.sort_order
-                """)
-                revenue_by_stage = {row[0]: Decimal(str(row[1])) for row in cur.fetchall()}
-                
+                revenue_by_stage = {}
+                try:
+                    cur.execute("""
+                        SELECT ds.name, COALESCE(SUM(d.deal_value), 0) as revenue
+                        FROM deal_stages ds
+                        LEFT JOIN deals d ON ds.id = d.deal_stage_id AND d.is_won = true
+                        GROUP BY ds.id, ds.name
+                        ORDER BY ds.sort_order
+                    """)
+                    revenue_by_stage = {row[0]: Decimal(str(row[1])) for row in cur.fetchall()}
+                except Exception as e:
+                    logging.warning(f"Error fetching revenue by stage: {str(e)}")
+
                 return SalesPerformanceMetrics(
                     deals_created=deals_created,
                     deals_won=deals_won,
@@ -253,7 +284,7 @@ def get_sales_performance_metrics() -> SalesPerformanceMetrics:
                     avg_sales_cycle=avg_sales_cycle,
                     revenue_by_stage=revenue_by_stage
                 )
-                
+
         except Exception as e:
             logging.error(f"Error fetching sales performance metrics: {str(e)}")
             raise

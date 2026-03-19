@@ -62,7 +62,7 @@ export const TwilioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
 
       const device = new Device(tokenResult.token, {
-        logLevel: 0,
+        logLevel: 5,
         codecPreferences: [Call.Codec.Opus, Call.Codec.PCMU],
         edge: 'roaming',
         enableImprovedSignalingErrorPrecision: true,

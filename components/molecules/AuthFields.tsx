@@ -30,7 +30,7 @@ export const AuthFields: React.FC<AuthFieldsProps> = ({ onSubmit, loading, submi
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Email Field */}
       <div className="space-y-2">
-        <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="email" className="block text-sm font-medium text-brand-primary">
           Email Address
         </label>
         <div className="relative">
@@ -43,7 +43,7 @@ export const AuthFields: React.FC<AuthFieldsProps> = ({ onSubmit, loading, submi
             type="email"
             value={email}
             onChange={e => setEmail(e.target.value)}
-            className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-colors"
             placeholder="Enter your email"
             autoComplete="email"
             required
@@ -54,7 +54,7 @@ export const AuthFields: React.FC<AuthFieldsProps> = ({ onSubmit, loading, submi
       {/* Username Field (optional) */}
       {showUsername && (
         <div className="space-y-2">
-          <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="username" className="block text-sm font-medium text-brand-primary">
             Username
           </label>
           <div className="relative">
@@ -67,7 +67,7 @@ export const AuthFields: React.FC<AuthFieldsProps> = ({ onSubmit, loading, submi
               type="text"
               value={username}
               onChange={e => setUsername(e.target.value)}
-              className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-colors"
               placeholder="Choose a username"
               autoComplete="username"
               required
@@ -78,7 +78,7 @@ export const AuthFields: React.FC<AuthFieldsProps> = ({ onSubmit, loading, submi
 
       {/* Password Field */}
       <div className="space-y-2">
-        <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="password" className="block text-sm font-medium text-brand-primary">
           Password
         </label>
         <div className="relative">
@@ -91,7 +91,7 @@ export const AuthFields: React.FC<AuthFieldsProps> = ({ onSubmit, loading, submi
             type={showPassword ? "text" : "password"}
             value={password}
             onChange={e => setPassword(e.target.value)}
-            className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-colors"
             placeholder="Enter your password"
             autoComplete="current-password"
             required
@@ -113,7 +113,7 @@ export const AuthFields: React.FC<AuthFieldsProps> = ({ onSubmit, loading, submi
       {/* Confirm Password Field */}
       {showConfirmPassword && (
         <div className="space-y-2">
-          <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="confirmPassword" className="block text-sm font-medium text-brand-primary">
             Confirm Password
           </label>
           <div className="relative">
@@ -126,7 +126,7 @@ export const AuthFields: React.FC<AuthFieldsProps> = ({ onSubmit, loading, submi
               type={showConfirmPasswordVisible ? "text" : "password"}
               value={confirmPassword}
               onChange={e => setConfirmPassword(e.target.value)}
-              className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-colors"
               placeholder="Confirm your password"
               autoComplete="new-password"
               required
@@ -148,7 +148,7 @@ export const AuthFields: React.FC<AuthFieldsProps> = ({ onSubmit, loading, submi
 
       {/* Submit Button */}
       <div className="pt-2">
-        <FormButton type="submit" loading={loading} className="w-full">
+        <FormButton type="submit" loading={loading} className="w-full bg-brand-primary text-white hover:bg-brand-primary/80">
           {submitLabel}
         </FormButton>
       </div>

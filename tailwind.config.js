@@ -13,6 +13,11 @@ module.exports = {
         '16': 'repeat(16, minmax(0, 1fr))',
         '17': 'repeat(17, minmax(0, 1fr))',
         '20': 'repeat(20, minmax(0, 1fr))',
+      },
+      colors: {
+        brand: {
+          primary: '#325833',
+        },
       }
     } 
   }, 

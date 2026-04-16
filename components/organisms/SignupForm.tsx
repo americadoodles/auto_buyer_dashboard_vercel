@@ -48,7 +48,7 @@ export const SignupForm: React.FC = () => {
         </div>
 
         {/* Signup Form */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
+        <div className="bg-primary-light rounded-2xl shadow-xl border border-gray-100 p-8">
           <div className="flex items-center space-x-2 mb-6">
             <UserPlus className="w-5 h-5 text-brand-primary" />
             <h2 className="text-xl font-heading font-semibold text-brand-primary">Buyer Signup</h2>
@@ -94,9 +94,9 @@ export const SignupForm: React.FC = () => {
           </div>
 
           {/* Info Box */}
-          <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div className="mt-6 p-4 bg-primary-bright border border-primary-medium/30 rounded-lg">
             <div className="flex items-start space-x-3">
-              <div className="w-2 h-2 bg-green-600 rounded-full mt-2 flex-shrink-0"></div>
+              <div className="w-2 h-2 bg-primary-medium rounded-full mt-2 flex-shrink-0"></div>
               <div className="text-sm text-brand-primary">
                 <p className="font-medium mb-1">Account Approval Required</p>
                 <p className="text-brand-primary dark:text-green-400">Your account will be reviewed by an administrator. You'll receive an email confirmation once approved.</p>

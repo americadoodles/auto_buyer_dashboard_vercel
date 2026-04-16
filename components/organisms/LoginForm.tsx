@@ -59,7 +59,7 @@ export const LoginForm: React.FC = () => {
         </div>
 
         {/* Login Form */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 p-8">
+        <div className="bg-primary-light dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 p-8">
           <div className="flex items-center space-x-2 mb-6">
             <LogIn className="w-5 h-5 text-brand-primary dark:text-green-400" />
             <h2 className="text-xl font-heading font-semibold text-brand-primary dark:text-white">Sign In</h2>

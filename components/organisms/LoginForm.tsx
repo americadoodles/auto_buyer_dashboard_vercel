@@ -54,8 +54,8 @@ export const LoginForm: React.FC = () => {
         {/* Header */}
         <div className="flex flex-col items-center justify-center text-center mb-8">
           <Image src="/assets/images/logo.svg" alt="Logo" width={60} height={80} />
-          <h1 className="text-3xl font-bold text-brand-primary dark:text-white mb-2">Welcome Back</h1>
-          <p className="text-brand-primary dark:text-gray-400">Sign in to your Auto Buyer account</p>
+          <h1 className="text-3xl font-heading font-bold text-brand-primary dark:text-white mb-2">Welcome Back</h1>
+          <p className="text-brand-primary font-heading dark:text-gray-400">Sign in to your Auto Buyer account</p>
         </div>
 
         {/* Login Form */}
@@ -87,7 +87,7 @@ export const LoginForm: React.FC = () => {
           )}
 
           {/* Features */}
-          <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-700">
+          <div className="mt-6 pt-6 border-t font-heading border-gray-100 dark:border-gray-700">
             <div className="grid grid-cols-1 gap-3">
               <div className="flex items-center space-x-3 text-sm text-brand-primary dark:text-gray-400">
                 <DefenceIcon />

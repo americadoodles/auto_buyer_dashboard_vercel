@@ -22,6 +22,13 @@ module.exports = {
         brand: {
           primary: '#325833',
         },
+        primary: {
+          dark: "#325833",
+          DEFAULT: "#364E2F",
+          medium: "#516D48",
+          light: "#E4DED4",
+          bright: "#efebe5",
+        },
       }
     } 
   }, 

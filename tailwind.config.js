@@ -14,9 +14,20 @@ module.exports = {
         '17': 'repeat(17, minmax(0, 1fr))',
         '20': 'repeat(20, minmax(0, 1fr))',
       },
+      fontFamily: {
+        sans: ["var(--font-lato)", "system-ui", "sans-serif"],
+        heading: ["var(--font-cinzel)", "system-ui", "serif"],
+      },
       colors: {
         brand: {
           primary: '#325833',
+        },
+        primary: {
+          dark: "#325833",
+          DEFAULT: "#364E2F",
+          medium: "#516D48",
+          light: "#E4DED4",
+          bright: "#efebe5",
         },
       }
     } 

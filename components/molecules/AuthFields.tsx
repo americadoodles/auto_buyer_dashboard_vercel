@@ -30,7 +30,7 @@ export const AuthFields: React.FC<AuthFieldsProps> = ({ onSubmit, loading, submi
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Email Field */}
       <div className="space-y-2">
-        <label htmlFor="email" className="block text-sm font-medium text-brand-primary">
+        <label htmlFor="email" className="block text-sm font-medium font-heading text-brand-primary">
           Email Address
         </label>
         <div className="relative">
@@ -54,7 +54,7 @@ export const AuthFields: React.FC<AuthFieldsProps> = ({ onSubmit, loading, submi
       {/* Username Field (optional) */}
       {showUsername && (
         <div className="space-y-2">
-          <label htmlFor="username" className="block text-sm font-medium text-brand-primary">
+          <label htmlFor="username" className="block text-sm font-medium font-heading text-brand-primary">
             Username
           </label>
           <div className="relative">
@@ -78,7 +78,7 @@ export const AuthFields: React.FC<AuthFieldsProps> = ({ onSubmit, loading, submi
 
       {/* Password Field */}
       <div className="space-y-2">
-        <label htmlFor="password" className="block text-sm font-medium text-brand-primary">
+        <label htmlFor="password" className="block text-sm font-medium font-heading text-brand-primary">
           Password
         </label>
         <div className="relative">
@@ -113,7 +113,7 @@ export const AuthFields: React.FC<AuthFieldsProps> = ({ onSubmit, loading, submi
       {/* Confirm Password Field */}
       {showConfirmPassword && (
         <div className="space-y-2">
-          <label htmlFor="confirmPassword" className="block text-sm font-medium text-brand-primary">
+          <label htmlFor="confirmPassword" className="block text-sm font-medium font-heading  text-brand-primary">
             Confirm Password
           </label>
           <div className="relative">
@@ -148,7 +148,7 @@ export const AuthFields: React.FC<AuthFieldsProps> = ({ onSubmit, loading, submi
 
       {/* Submit Button */}
       <div className="pt-2">
-        <FormButton type="submit" loading={loading} className="w-full bg-brand-primary text-white hover:bg-brand-primary/80">
+        <FormButton type="submit" loading={loading} className="w-full font-heading bg-brand-primary text-white hover:bg-brand-primary/80">
           {submitLabel}
         </FormButton>
       </div>

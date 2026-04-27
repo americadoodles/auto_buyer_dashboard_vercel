@@ -4,7 +4,11 @@ import os
 
 class Settings(BaseSettings):
     APP_TITLE: str = "Auto Buyer Demo - Scoring Stub"
-    CORS_ORIGINS: list[str] = ["http://localhost:3000"]
+    CORS_ORIGINS: list[str] = [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3000",
+    ]
     DATABASE_URL: str = (
         os.getenv("DATABASE_URL")
         or os.getenv("POSTGRES_URL")         # Vercel Neon integration

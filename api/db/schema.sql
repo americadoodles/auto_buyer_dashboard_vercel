@@ -24,6 +24,15 @@ create table if not exists listings (
   buyer_id text,
   payload jsonb,
   images text[],
+  notes text,
+  interior_color text,
+  exterior_color text,
+  transmission text,
+  fuel_type text,
+  drivetrain text,
+  body_style text,
+  updated_at timestamptz,
+  updated_by text,
   created_at timestamptz default now()
 );
 

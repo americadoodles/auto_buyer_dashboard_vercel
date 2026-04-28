@@ -93,6 +93,11 @@ const getNavItems = (userRole?: string): NavItem[] => {
       href: '/user-management/roles',
       label: 'Role Management',
       icon: Shield,
+    },
+    {
+      href: '/settings',
+      label: 'Settings',
+      icon: Settings,
     }
   ];
 

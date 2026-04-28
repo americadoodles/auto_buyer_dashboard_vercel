@@ -604,6 +604,38 @@ export class ApiService {
     });
     return this.handleResponse<{ exists: boolean }>(response);
   }
+
+  static async downloadDatabaseBackup(): Promise<Blob> {
+    const response = await fetch(`${BACKEND_URL}/settings/database/backup`, {
+      headers: this.authHeaders(),
+    });
+
+    if (!response.ok) {
+      let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.detail || errorData.message || errorMessage;
+      } catch {
+        // Fallback to status text when JSON parsing fails.
+      }
+      throw new ApiError(errorMessage, response.status);
+    }
+
+    return response.blob();
+  }
+
+  static async restoreDatabaseBackup(file: File): Promise<{ message: string; restored?: Record<string, number>; errors?: string[] }> {
+    const formData = new FormData();
+    formData.append('backup_file', file);
+
+    const response = await fetch(`${BACKEND_URL}/settings/database/restore`, {
+      method: 'POST',
+      headers: this.authHeaders(),
+      body: formData,
+    });
+
+    return this.handleResponse<{ message: string; restored?: Record<string, number>; errors?: string[] }>(response);
+  }
 }
 
 // Helper function to make API calls using unified ApiService

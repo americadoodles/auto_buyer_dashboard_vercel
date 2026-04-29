@@ -510,64 +510,81 @@ async def restore_database(
                 yield _sse_event("error", {"detail": "Database connection unavailable"})
                 return
 
-            with conn.cursor() as cur:
-                # ── Phase 1: delete in reverse FK order ──────────────────────
-                for i, table in enumerate(reversed(tables_to_restore), 1):
-                    yield _sse_event("progress", {
-                        "stage": "delete",
-                        "table": table,
-                        "current": i,
-                        "total": total,
-                    })
-                    if not _table_exists(cur, table):
-                        continue
-                    try:
-                        cur.execute(f'DELETE FROM "{table}"')
-                    except Exception as exc:
-                        all_errors.append(f"{table}: pre-delete failed: {exc}")
+            original_autocommit = getattr(conn, "autocommit", True)
 
-                # ── Phase 2: insert with exact IDs from backup ────────────────
-                for i, table in enumerate(tables_to_restore, 1):
-                    rows = backup_data[table]
-                    yield _sse_event("progress", {
-                        "stage": "insert",
-                        "table": table,
-                        "current": i,
-                        "total": total,
-                    })
-                    if not rows:
-                        restore_summary[table] = 0
-                        yield _sse_event("table_done", {"table": table, "rows": 0, "errors": []})
-                        continue
-                    if not _table_exists(cur, table):
-                        msg = f"{table}: table does not exist in target database, skipped"
-                        all_errors.append(msg)
-                        yield _sse_event("table_done", {"table": table, "rows": 0, "errors": [msg]})
-                        continue
-                    try:
+            try:
+                conn.autocommit = False
+
+                with conn.cursor() as cur:
+                    # ── Phase 1: delete in reverse FK order ──────────────────
+                    for i, table in enumerate(reversed(tables_to_restore), 1):
+                        yield _sse_event("progress", {
+                            "stage": "delete",
+                            "table": table,
+                            "current": i,
+                            "total": total,
+                        })
+                        if not _table_exists(cur, table):
+                            raise RuntimeError(
+                                f'{table}: table does not exist in target database'
+                            )
+                        cur.execute(f'DELETE FROM "{table}"')
+
+                    # ── Phase 2: insert with exact IDs from backup ───────────
+                    for i, table in enumerate(tables_to_restore, 1):
+                        rows = backup_data[table]
+                        yield _sse_event("progress", {
+                            "stage": "insert",
+                            "table": table,
+                            "current": i,
+                            "total": total,
+                        })
+                        if not _table_exists(cur, table):
+                            raise RuntimeError(
+                                f'{table}: table does not exist in target database'
+                            )
+                        if not rows:
+                            restore_summary[table] = 0
+                            yield _sse_event("table_done", {"table": table, "rows": 0, "errors": []})
+                            continue
+
                         col_types = _get_column_types(cur, table)
                         count, row_errors = _insert_rows(cur, table, rows, col_types)
+                        if row_errors:
+                            first_error = row_errors[0]
+                            raise RuntimeError(
+                                f"{table}: restore failed with {len(row_errors)} row error(s); {first_error}"
+                            )
+
                         restore_summary[table] = count
-                        all_errors.extend(f"{table}: {e}" for e in row_errors)
                         pk_cols = _get_primary_keys(cur, table)
                         _reset_sequences(cur, table, pk_cols)
                         yield _sse_event("table_done", {
                             "table": table,
                             "rows": count,
-                            "errors": row_errors,
+                            "errors": [],
                         })
-                    except Exception as exc:
-                        all_errors.append(f"{table}: {exc}")
-                        yield _sse_event("table_done", {
-                            "table": table,
-                            "rows": 0,
-                            "errors": [str(exc)],
-                        })
-                        try:
-                            if not getattr(conn, "autocommit", True):
-                                conn.rollback()
-                        except Exception:
-                            pass
+
+                conn.commit()
+            except Exception as exc:
+                detail = str(exc)
+                all_errors.append(detail)
+                try:
+                    conn.rollback()
+                except Exception:
+                    pass
+                yield _sse_event("error", {"detail": detail})
+                yield _sse_event("done", {
+                    "message": "Database restore failed and was rolled back",
+                    "restored": {},
+                    "errors": all_errors,
+                })
+                return
+            finally:
+                try:
+                    conn.autocommit = original_autocommit
+                except Exception:
+                    pass
 
         yield _sse_event("done", {
             "message": "Database restore completed",

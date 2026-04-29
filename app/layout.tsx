@@ -3,7 +3,12 @@ import { Providers } from './providers';
 import { Cinzel, Lato } from "next/font/google";
 import { ConditionalAdminLayout } from '../components/templates/ConditionalAdminLayout';
 
-export const metadata = { title: "Auto Buyer Demo" };
+export const metadata = {
+  title: "Auto Buyer Demo",
+  icons: {
+    icon: '/assets/images/favicon.svg',
+  },
+};
 
 const cinzel = Cinzel({
   subsets: ["latin"],

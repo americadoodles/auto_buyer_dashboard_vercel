@@ -21,6 +21,7 @@ export interface Deal {
   is_active: boolean;
   is_won?: boolean;
   is_lost?: boolean;
+  is_hidden?: boolean;
   created_by: string;
   created_at: string;
   updated_at: string;

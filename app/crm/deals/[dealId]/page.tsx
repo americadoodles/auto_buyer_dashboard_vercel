@@ -44,6 +44,7 @@ export default function DealDetailPage() {
   const [dealCategoryId, setDealCategoryId] = useState<number | undefined>(undefined);
   const [dealValue, setDealValue] = useState('');
   const [contactId, setContactId] = useState<string | undefined>(undefined);
+  const [isHidden, setIsHidden] = useState(false);
   
   // Related data
   const { stages, loading: stagesLoading } = useDealStages();
@@ -160,6 +161,7 @@ export default function DealDetailPage() {
         setDealValue(transformedDeal.deal_value?.toString() || '');
         setContactId(transformedDeal.contact?.id);
         setLeadId(transformedDeal.lead_id);
+        setIsHidden(dealData.is_hidden || false);
         
         // Load related data
         const [dealActivities, leadData] = await Promise.all([
@@ -194,67 +196,12 @@ export default function DealDetailPage() {
         deal_stage_id: dealStageId,
         deal_category_id: dealCategoryId,
         deal_value: dealValue ? parseFloat(dealValue) : undefined,
-        contact_id: contactId || undefined
+        contact_id: contactId || undefined,
+        is_hidden: isHidden
       });
 
       showSuccess('Deal Updated', 'Deal has been successfully updated');
-      
-      // Reload deal data
-      const dealData = await dealsApi.getDeal(dealId);
-      if (dealData) {
-        const transformedDeal: Deal = {
-          id: dealData.id,
-          name: dealData.title || '',
-          description: dealData.description || '',
-          contact: dealData.contact ? (typeof dealData.contact === 'object' ? dealData.contact : undefined) : undefined,
-          lead_id: dealData.lead_id,
-          deal_value: dealData.deal_value || 0,
-          probability: dealData.probability || 0,
-          expected_close_date: dealData.expected_close_date || '',
-          deal_stage: dealData.deal_stage_id ? {
-            id: dealData.deal_stage_id,
-            name: 'Unknown',
-            color: 'gray'
-          } : undefined,
-          deal_category: dealData.deal_category_id ? {
-            id: dealData.deal_category_id,
-            name: 'Unknown'
-          } : undefined,
-          assigned_to: dealData.assigned_to ? (typeof dealData.assigned_to === 'object' ? dealData.assigned_to : undefined) : undefined,
-          is_won: dealData.is_won || false,
-          is_lost: dealData.is_lost || false,
-          created_at: dealData.created_at,
-          updated_at: dealData.updated_at
-        };
-        
-        // Find stage and category objects from loaded data
-        if (dealData.deal_stage_id) {
-          const foundStage = stages.find(s => s.id === dealData.deal_stage_id);
-          if (foundStage) {
-            transformedDeal.deal_stage = {
-              id: foundStage.id,
-              name: foundStage.name,
-              color: foundStage.color_code
-            };
-          }
-        }
-        
-        if (dealData.deal_category_id) {
-          const foundCategory = categories.find(c => c.id === dealData.deal_category_id);
-          if (foundCategory) {
-            transformedDeal.deal_category = {
-              id: foundCategory.id,
-              name: foundCategory.name
-            };
-          }
-        }
-        
-        setDeal(transformedDeal);
-      }
-      
-      // Reload activities after update
-      const updatedActivities = await dealsApi.getDealActivities(dealId);
-      setActivities(updatedActivities);
+      router.back();
     } catch (e: any) {
       setError(e?.message || 'Failed to update deal');
       showError('Failed to update deal', e?.message || 'An error occurred');
@@ -441,7 +388,21 @@ export default function DealDetailPage() {
 
           {/* Edit Fields Section */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-4">
-          <h4 className="text-md font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Edit Fields</h4>
+          <div className="flex items-center justify-between border-b dark:border-gray-700 pb-2">
+            <h4 className="text-md font-semibold text-gray-900 dark:text-white">Edit Fields</h4>
+            <div className="flex items-center">
+              <input
+                id="deal-hidden-checkbox"
+                type="checkbox"
+                checked={isHidden}
+                onChange={(e) => setIsHidden(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 dark:bg-gray-700"
+              />
+              <label htmlFor="deal-hidden-checkbox" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                Hide from deals list
+              </label>
+            </div>
+          </div>
           
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

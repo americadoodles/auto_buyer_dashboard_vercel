@@ -12,13 +12,15 @@ export default function DealsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [stageFilter, setStageFilter] = useState<number | undefined>(undefined);
   const [categoryFilter, setCategoryFilter] = useState<number | undefined>(undefined);
+  const [viewAllDeals, setViewAllDeals] = useState(false);
 
   const { deals, loading, error, refreshDeals } = useDeals({
     skip: (currentPage - 1) * pageSize,
     limit: pageSize,
     search: searchTerm || undefined,
     stage_id: stageFilter,
-    category_id: categoryFilter
+    category_id: categoryFilter,
+    include_hidden: viewAllDeals
   });
   const { stages } = useDealStages();
   const { pipeline } = useDealPipeline();
@@ -59,6 +61,11 @@ export default function DealsPage() {
   const handleCategoryFilter = (categoryId: number | undefined) => {
     setCategoryFilter(categoryId);
     setCurrentPage(1); // Reset to first page when filtering
+  };
+
+  const handleViewAllToggle = (value: boolean) => {
+    setViewAllDeals(value);
+    setCurrentPage(1);
   };
 
   // Transform deals data to match component expectations
@@ -177,6 +184,8 @@ export default function DealsPage() {
           onSearch={handleSearch}
           onStageFilter={handleStageFilter}
           onCategoryFilter={handleCategoryFilter}
+          viewAllDeals={viewAllDeals}
+          onViewAllToggle={handleViewAllToggle}
           stages={stages}
           loading={loading}
           onDealUpdated={refreshDeals}

@@ -35,6 +35,8 @@ interface DealPipelineProps {
   onSearch?: (search: string) => void;
   onStageFilter?: (stageId: number | undefined) => void;
   onCategoryFilter?: (categoryId: number | undefined) => void;
+  viewAllDeals?: boolean;
+  onViewAllToggle?: (value: boolean) => void;
   stages?: Array<{ id: number; name: string; color_code?: string }>;
   loading?: boolean;
   onDealUpdated?: () => void;
@@ -55,6 +57,8 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
   onSearch,
   onStageFilter,
   onCategoryFilter,
+  viewAllDeals = false,
+  onViewAllToggle,
   loading
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -442,6 +446,18 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
                 </select>
               </div>
             )}
+            <div className="flex items-center pt-2">
+              <input
+                id="view-all-deals-checkbox"
+                type="checkbox"
+                checked={viewAllDeals}
+                onChange={(e) => onViewAllToggle?.(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 dark:bg-gray-700"
+              />
+              <label htmlFor="view-all-deals-checkbox" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                View All Deals
+              </label>
+            </div>
           </div>
         </Card>
 

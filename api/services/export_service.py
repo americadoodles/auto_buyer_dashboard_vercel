@@ -349,7 +349,7 @@ class ExportService:
             if isinstance(value, str):
                 return value
             try:
-                return " | ".join(str(v) for v in value if v)
+                return ",".join(str(v) for v in value if v)
             except TypeError:
                 return str(value)
 

@@ -8,12 +8,16 @@ import { Icon } from '../../../../components/atoms/Icon';
 import { Badge } from '../../../../components/atoms/Badge';
 import { dealsApi } from '../../../../lib/services/dealsApi';
 import { leadsApi } from '../../../../lib/services/leadsApi';
+import { getListingDetails } from '../../../../lib/services/listingManagementApi';
 import { Lead } from '../../../../lib/types/lead';
+import { Listing } from '../../../../lib/types/listing';
 import { Deal, DealActivity } from '../../../../lib/types/deal';
 import { useAuth } from '../../../auth/useAuth';
 import { useDealStages, useDealCategories } from '../../../../lib/hooks/useDeals';
 import { useTasks, useTaskPriorities, useTaskStatuses } from '../../../../lib/hooks/useTasks';
-import { VehicleContactCard } from '../../../../components/molecules/VehicleContactCard';
+import { VehiclePhotoGallery } from '../../../../components/organisms/VehiclePhotoGallery';
+import { VehicleHeader } from '../../../../components/organisms/VehicleHeader';
+import { VehicleDetails } from '../../../../components/molecules/VehicleDetails';
 import { ArrowLeft } from 'lucide-react';
 import { useToast } from '../../../../hooks/useToast';
 
@@ -54,6 +58,7 @@ export default function DealDetailPage() {
   const [activities, setActivities] = useState<DealActivity[]>([]);
   const [leadId, setLeadId] = useState<string | undefined>(undefined);
   const [lead, setLead] = useState<Lead | null>(null);
+  const [listing, setListing] = useState<Listing | null>(null);
   
   // Use useTasks hook to get related tasks
   const { tasks: relatedTasksRaw, loading: loadingTasks } = useTasks({
@@ -170,6 +175,19 @@ export default function DealDetailPage() {
         ]);
         setActivities(dealActivities);
         setLead(leadData);
+
+        // Fetch full listing details if the lead has a linked listing
+        if (leadData?.listing_id) {
+          try {
+            const fullListing = await getListingDetails(Number(leadData.listing_id));
+            setListing(fullListing);
+          } catch (listingErr) {
+            console.error('Failed to load full listing details:', listingErr);
+            setListing(null);
+          }
+        } else {
+          setListing(null);
+        }
       } catch (e: any) {
         setError(e?.message || 'Failed to load deal details');
         showError('Failed to load deal', e?.message || 'An error occurred');
@@ -657,27 +675,114 @@ export default function DealDetailPage() {
         </div>
 
         {/* Right Sidebar - Vehicle and Contact Information - Fixed Width, Full Height */}
-        <div className="w-[400px] flex-shrink-0 flex flex-col">
-          <div className="bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 p-6 h-full overflow-y-auto">
-            <VehicleContactCard
-              title="Lead Information"
-              vehicle={lead?.listing ? {
-                year: lead.listing.year ?? undefined,
-                make: lead.listing.make ?? undefined,
-                model: lead.listing.model ?? undefined,
-                // Normalize potential null trim to undefined for VehicleInfo
-                trim: lead.listing.trim ?? undefined,
-                vin: lead.listing.vin ?? undefined,
-              } : null}
-              contact={lead?.contact ? {
-                first_name: lead.contact.first_name,
-                last_name: lead.contact.last_name,
-                company: lead.contact.company,
-                email: lead.contact.email,
-                phone: lead.contact.phone,
-                mobile: lead.contact.mobile
-              } : null}
-            />
+        <div className="w-[420px] flex-shrink-0 flex flex-col">
+          <div className="bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 p-4 h-full overflow-y-auto space-y-4">
+            {(() => {
+              const displayListing = listing || (lead?.listing as Listing | undefined) || null;
+              const displayContact = lead?.contact;
+              const hasListing = !!displayListing;
+              const hasContact = !!displayContact;
+              if (!hasListing && !hasContact) {
+                return (
+                  <div className="text-sm text-gray-500 dark:text-gray-400 italic text-center py-8">
+                    No linked lead, listing, or contact information.
+                  </div>
+                );
+              }
+              return (
+                <>
+                  {hasListing && (
+                    <>
+                      <h4 className="text-md font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">
+                        Vehicle Information
+                      </h4>
+                      {displayListing!.images && displayListing!.images.length > 0 && (
+                        <VehiclePhotoGallery images={displayListing!.images} className="w-full h-56" />
+                      )}
+                      <VehicleHeader
+                        year={displayListing!.year}
+                        make={displayListing!.make}
+                        model={displayListing!.model}
+                        trim={displayListing!.trim || undefined}
+                        miles={displayListing!.miles || undefined}
+                        vin={displayListing!.vin || undefined}
+                        price={displayListing!.price || undefined}
+                        source={displayListing!.source || undefined}
+                        listingId={lead?.listing_id || undefined}
+                        hasAutoCheck={false}
+                        hasCarfax={false}
+                        hasMMR={!!displayListing!.mmr}
+                        hasAccuTrade={false}
+                      />
+                      <VehicleDetails listing={displayListing!} />
+                    </>
+                  )}
+                  {hasContact && (
+                    <div className="space-y-2">
+                      <h4 className="text-md font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">
+                        Contact Information
+                      </h4>
+                      <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md p-3">
+                        <div className="text-sm text-green-700 dark:text-green-300 space-y-1">
+                          <div>
+                            <span className="font-medium">Name:</span>{' '}
+                            {displayContact!.first_name} {displayContact!.last_name}
+                          </div>
+                          {displayContact!.company && (
+                            <div>
+                              <span className="font-medium">Company:</span> {displayContact!.company}
+                            </div>
+                          )}
+                          {displayContact!.job_title && (
+                            <div>
+                              <span className="font-medium">Title:</span> {displayContact!.job_title}
+                            </div>
+                          )}
+                          {displayContact!.email && (
+                            <div>
+                              <span className="font-medium">Email:</span>{' '}
+                              <a
+                                href={`mailto:${displayContact!.email}`}
+                                className="text-green-600 dark:text-green-400 hover:underline"
+                              >
+                                {displayContact!.email}
+                              </a>
+                            </div>
+                          )}
+                          {displayContact!.phone && (
+                            <div>
+                              <span className="font-medium">Phone:</span>{' '}
+                              <a
+                                href={`tel:${displayContact!.phone}`}
+                                className="text-green-600 dark:text-green-400 hover:underline"
+                              >
+                                {displayContact!.phone}
+                              </a>
+                            </div>
+                          )}
+                          {displayContact!.mobile && (
+                            <div>
+                              <span className="font-medium">Mobile:</span>{' '}
+                              <a
+                                href={`tel:${displayContact!.mobile}`}
+                                className="text-green-600 dark:text-green-400 hover:underline"
+                              >
+                                {displayContact!.mobile}
+                              </a>
+                            </div>
+                          )}
+                          {displayContact!.notes && (
+                            <div>
+                              <span className="font-medium">Notes:</span> {displayContact!.notes}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </div>
       </div>

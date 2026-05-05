@@ -9,7 +9,7 @@ import { exportApi } from '../../../lib/services/exportApi';
 export default function DealsPage() {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(10);
+  const [pageSize] = useState(1000);
   const [searchTerm, setSearchTerm] = useState('');
   const [stageFilter, setStageFilter] = useState<number | undefined>(undefined);
   const [categoryFilter, setCategoryFilter] = useState<number | undefined>(undefined);

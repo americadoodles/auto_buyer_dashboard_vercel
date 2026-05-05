@@ -222,7 +222,158 @@ class ExportService:
         
         csv_content = output.getvalue()
         return csv_content, len(leads)
-    
+
+    @staticmethod
+    def export_deals_csv(
+        stage_id: Optional[int] = None,
+        category_id: Optional[int] = None,
+        assigned_to: Optional[UUID] = None,
+        contact_id: Optional[UUID] = None,
+        search: Optional[str] = None,
+        is_won: Optional[bool] = None,
+        is_lost: Optional[bool] = None,
+        include_hidden: bool = False
+    ) -> tuple[str, int]:
+        """
+        Export deals to CSV including related contact, owner, stage,
+        category, lead, and vehicle (listing) information.
+        Returns (csv_content, record_count).
+        """
+        if not DB_ENABLED:
+            return "", 0
+
+        where_conditions: List[str] = []
+        params: List[Any] = []
+
+        if stage_id is not None:
+            where_conditions.append("d.deal_stage_id = %s")
+            params.append(stage_id)
+        if category_id is not None:
+            where_conditions.append("d.deal_category_id = %s")
+            params.append(category_id)
+        if contact_id is not None:
+            where_conditions.append("d.contact_id = %s")
+            params.append(contact_id)
+        if assigned_to is not None:
+            where_conditions.append("d.assigned_to = %s")
+            params.append(assigned_to)
+        if is_won is not None:
+            where_conditions.append("d.is_won = %s")
+            params.append(is_won)
+        if is_lost is not None:
+            where_conditions.append("d.is_lost = %s")
+            params.append(is_lost)
+        if not include_hidden:
+            where_conditions.append("COALESCE(d.is_hidden, false) = false")
+        if search:
+            where_conditions.append("(d.name ILIKE %s OR d.description ILIKE %s)")
+            search_param = f"%{search}%"
+            params.extend([search_param, search_param])
+
+        where_clause = "WHERE " + " AND ".join(where_conditions) if where_conditions else ""
+
+        query = f"""
+            SELECT
+                d.id, d.name, d.description, d.deal_value, d.probability,
+                d.expected_close_date, d.actual_close_date, d.notes,
+                d.is_won, d.is_lost, d.is_hidden, d.lost_reason,
+                d.created_at, d.updated_at,
+                ds.name AS stage_name,
+                dc.name AS category_name,
+                u.username AS assigned_to_username,
+                c.first_name, c.last_name, c.company, c.email, c.phone, c.mobile,
+                d.lead_id,
+                li.id AS listing_id, li.vin, li.price AS listing_price, li.miles,
+                li.dom, li.location, li.source AS listing_source,
+                li.interior_color, li.exterior_color, li.transmission,
+                li.fuel_type, li.drivetrain, li.body_style,
+                v.year, v.make, v.model, v.trim
+            FROM deals d
+            LEFT JOIN deal_stages ds ON d.deal_stage_id = ds.id
+            LEFT JOIN deal_categories dc ON d.deal_category_id = dc.id
+            LEFT JOIN users u ON d.assigned_to = u.id
+            LEFT JOIN contacts c ON d.contact_id = c.id
+            LEFT JOIN leads l ON d.lead_id = l.id
+            LEFT JOIN listings li ON l.listing_id = li.id
+            LEFT JOIN vehicles v ON li.vehicle_key = v.vehicle_key
+            {where_clause}
+            ORDER BY d.created_at DESC
+        """
+
+        with get_db_connection() as conn:
+            if not conn:
+                return "", 0
+            with conn.cursor() as cur:
+                cur.execute(query, params)
+                rows = cur.fetchall()
+
+        if not rows:
+            return "", 0
+
+        output = io.StringIO()
+        writer = csv.writer(output)
+
+        headers = [
+            "Deal ID", "Title", "Description", "Deal Value", "Probability (%)",
+            "Expected Close Date", "Actual Close Date", "Notes",
+            "Is Won", "Is Lost", "Is Hidden", "Lost Reason",
+            "Created At", "Updated At",
+            "Stage", "Category", "Assigned To",
+            "Contact First Name", "Contact Last Name", "Contact Company",
+            "Contact Email", "Contact Phone", "Contact Mobile",
+            "Lead ID", "Listing ID",
+            "VIN", "Year", "Make", "Model", "Trim",
+            "Listing Price", "Miles", "Days On Market", "Location", "Listing Source",
+            "Interior Color", "Exterior Color", "Transmission",
+            "Fuel Type", "Drivetrain", "Body Style"
+        ]
+        writer.writerow(headers)
+
+        def fmt_dt(value: Any) -> str:
+            if value is None:
+                return ""
+            if isinstance(value, datetime):
+                return value.strftime("%Y-%m-%d %H:%M:%S")
+            if isinstance(value, date):
+                return value.strftime("%Y-%m-%d")
+            return str(value)
+
+        def s(value: Any) -> str:
+            return "" if value is None else str(value)
+
+        for row in rows:
+            (deal_id, title, description, deal_value, probability,
+             expected_close, actual_close, notes,
+             is_won, is_lost, is_hidden, lost_reason,
+             created_at, updated_at,
+             stage_name, category_name, assigned_username,
+             first_name, last_name, company, email, phone, mobile,
+             lead_id, listing_id, vin, listing_price, miles,
+             dom, location, listing_source,
+             interior_color, exterior_color, transmission,
+             fuel_type, drivetrain, body_style,
+             year, make, model, trim) = row
+
+            writer.writerow([
+                s(deal_id), s(title), s(description), s(deal_value), s(probability),
+                fmt_dt(expected_close), fmt_dt(actual_close), s(notes),
+                "Yes" if is_won else "No",
+                "Yes" if is_lost else "No",
+                "Yes" if is_hidden else "No",
+                s(lost_reason),
+                fmt_dt(created_at), fmt_dt(updated_at),
+                s(stage_name), s(category_name), s(assigned_username),
+                s(first_name), s(last_name), s(company),
+                s(email), s(phone), s(mobile),
+                s(lead_id), s(listing_id),
+                s(vin), s(year), s(make), s(model), s(trim),
+                s(listing_price), s(miles), s(dom), s(location), s(listing_source),
+                s(interior_color), s(exterior_color), s(transmission),
+                s(fuel_type), s(drivetrain), s(body_style),
+            ])
+
+        return output.getvalue(), len(rows)
+
     @staticmethod
     def _build_admin_query(start_date: Optional[date], end_date: Optional[date]) -> tuple[str, list]:
         """Build query for admin to export all listings"""

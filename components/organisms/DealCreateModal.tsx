@@ -124,7 +124,12 @@ export const DealCreateModal: React.FC<DealCreateModalProps> = ({
     }
   }, [isOpen, stageId]);
 
-  const canSubmit = name.trim().length > 0 && selectedStageId !== undefined && !loading;
+  const canSubmit =
+    name.trim().length > 0 &&
+    selectedStageId !== undefined &&
+    !!selectedLeadId &&
+    !!selectedLead?.listing_id &&
+    !loading;
 
   const handleAIDraft = async () => {
     setAiLoading(true);
@@ -222,22 +227,29 @@ export const DealCreateModal: React.FC<DealCreateModalProps> = ({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Select Lead (Optional)
+              Select Lead <span className="text-red-500">*</span>
             </label>
             <select
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-md h-10 px-3 mb-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-md h-10 px-3 mb-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               value={selectedLeadId || ''}
               onChange={(e) => setSelectedLeadId(e.target.value || undefined)}
+              required
             >
-              {leads.map((lead) => (
-                <option key={lead.id} value={lead.id}>
-                  {lead.contact 
-                    ? `${lead.contact.first_name} ${lead.contact.last_name} - ${lead.listing ? `${lead.listing.year} ${lead.listing.make} ${lead.listing.model}` : 'No vehicle'}`
-                    : `Lead ${lead.id} - ${lead.listing ? `${lead.listing.year} ${lead.listing.make} ${lead.listing.model}` : 'No vehicle'}`
-                  }
-                </option>
-              ))}
+              <option value="">-- Select a lead --</option>
+              {leads
+                .filter((lead) => !!lead.listing_id)
+                .map((lead) => (
+                  <option key={lead.id} value={lead.id}>
+                    {lead.contact
+                      ? `${lead.contact.first_name} ${lead.contact.last_name} - ${lead.listing ? `${lead.listing.year} ${lead.listing.make} ${lead.listing.model}` : 'No vehicle'}`
+                      : `Lead ${lead.id} - ${lead.listing ? `${lead.listing.year} ${lead.listing.make} ${lead.listing.model}` : 'No vehicle'}`
+                    }
+                  </option>
+                ))}
             </select>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+              A lead with a vehicle is required so the deal carries listing and contact information.
+            </p>
             {selectedLead && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
                 {/* Vehicle Information */}

@@ -291,6 +291,7 @@ CREATE TABLE IF NOT EXISTS deals (
     notes TEXT,
     is_won BOOLEAN DEFAULT false,
     is_lost BOOLEAN DEFAULT false,
+    is_hidden BOOLEAN NOT NULL DEFAULT false,
     lost_reason TEXT,
     created_by UUID REFERENCES users(id),
     created_at TIMESTAMPTZ DEFAULT NOW(),

@@ -50,6 +50,7 @@ def get_all_deals(
     search: Optional[str] = Query(None),
     is_won: Optional[bool] = Query(None),
     is_lost: Optional[bool] = Query(None),
+    include_hidden: bool = Query(False),
     current_user: UserOut = Depends(get_current_user)
 ):
     """Get all deals with optional filtering"""
@@ -57,7 +58,8 @@ def get_all_deals(
         return list_deals(skip=skip, limit=limit, stage_id=stage_id,
                          category_id=category_id, assigned_to=assigned_to,
                          contact_id=contact_id, search=search,
-                         is_won=is_won, is_lost=is_lost)
+                         is_won=is_won, is_lost=is_lost,
+                         include_hidden=include_hidden)
     except Exception as e:
         logging.error(f"Error fetching deals: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to fetch deals")

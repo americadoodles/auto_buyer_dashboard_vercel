@@ -213,6 +213,7 @@ class DealBase(BaseModel):
     is_active: bool = True
     is_won: bool = False
     is_lost: bool = False
+    is_hidden: bool = False
     lost_reason: Optional[str] = None
 
 class DealCreate(DealBase):
@@ -237,6 +238,7 @@ class DealUpdate(BaseModel):
     is_active: Optional[bool] = None
     is_won: Optional[bool] = None
     is_lost: Optional[bool] = None
+    is_hidden: Optional[bool] = None
     lost_reason: Optional[str] = None
 
 class ContactBasic(BaseModel):

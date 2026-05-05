@@ -12,6 +12,7 @@ interface UseDealsParams {
   search?: string;
   is_won?: boolean;
   is_lost?: boolean;
+  include_hidden?: boolean;
 }
 
 export const useDeals = (params?: UseDealsParams) => {
@@ -37,7 +38,7 @@ export const useDeals = (params?: UseDealsParams) => {
 
   useEffect(() => {
     fetchDeals();
-  }, [params?.skip, params?.limit, params?.stage_id, params?.category_id, params?.assigned_to, params?.contact_id, params?.search, params?.is_won, params?.is_lost]);
+  }, [params?.skip, params?.limit, params?.stage_id, params?.category_id, params?.assigned_to, params?.contact_id, params?.search, params?.is_won, params?.is_lost, params?.include_hidden]);
 
   const refreshDeals = () => {
     fetchDeals();

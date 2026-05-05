@@ -4,21 +4,24 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { DealPipeline } from '../../../components/organisms/DealPipeline';
 import { useDeals, useDealStages, useDealPipeline } from '../../../lib/hooks/useDeals';
+import { exportApi } from '../../../lib/services/exportApi';
 
 export default function DealsPage() {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(10);
+  const [pageSize] = useState(1000);
   const [searchTerm, setSearchTerm] = useState('');
   const [stageFilter, setStageFilter] = useState<number | undefined>(undefined);
   const [categoryFilter, setCategoryFilter] = useState<number | undefined>(undefined);
+  const [viewAllDeals, setViewAllDeals] = useState(false);
 
   const { deals, loading, error, refreshDeals } = useDeals({
     skip: (currentPage - 1) * pageSize,
     limit: pageSize,
     search: searchTerm || undefined,
     stage_id: stageFilter,
-    category_id: categoryFilter
+    category_id: categoryFilter,
+    include_hidden: viewAllDeals
   });
   const { stages } = useDealStages();
   const { pipeline } = useDealPipeline();
@@ -42,8 +45,25 @@ export default function DealsPage() {
     }
   };
 
-  const handleExportDeals = () => {
-    console.log('Export deals clicked');
+  const handleExportDeals = async () => {
+    try {
+      const closedWonStage = stages.find(
+        s => (s.name || '').toLowerCase().trim() === 'closed won'
+      );
+      if (!closedWonStage) {
+        alert('Could not find a "Closed Won" stage to export.');
+        return;
+      }
+      const blob = await exportApi.exportDeals({
+        stage_id: closedWonStage.id,
+        include_hidden: viewAllDeals,
+      });
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+      exportApi.downloadBlob(blob, `deals_closed_won_${timestamp}.csv`);
+    } catch (error) {
+      console.error('Error exporting deals:', error);
+      alert(error instanceof Error ? error.message : 'Failed to export deals');
+    }
   };
 
   const handleSearch = (search: string) => {
@@ -59,6 +79,11 @@ export default function DealsPage() {
   const handleCategoryFilter = (categoryId: number | undefined) => {
     setCategoryFilter(categoryId);
     setCurrentPage(1); // Reset to first page when filtering
+  };
+
+  const handleViewAllToggle = (value: boolean) => {
+    setViewAllDeals(value);
+    setCurrentPage(1);
   };
 
   // Transform deals data to match component expectations
@@ -177,6 +202,8 @@ export default function DealsPage() {
           onSearch={handleSearch}
           onStageFilter={handleStageFilter}
           onCategoryFilter={handleCategoryFilter}
+          viewAllDeals={viewAllDeals}
+          onViewAllToggle={handleViewAllToggle}
           stages={stages}
           loading={loading}
           onDealUpdated={refreshDeals}

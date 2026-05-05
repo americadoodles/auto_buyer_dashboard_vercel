@@ -21,6 +21,7 @@ export interface Deal {
   is_active: boolean;
   is_won?: boolean;
   is_lost?: boolean;
+  is_hidden?: boolean;
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -99,6 +100,7 @@ export const dealsApi = {
     search?: string;
     is_won?: boolean;
     is_lost?: boolean;
+    include_hidden?: boolean;
   }): Promise<Deal[]> {
     const queryString = params ? buildQueryParams(params) : '';
     const endpoint = `/crm/deals${queryString ? '?' + queryString : ''}`;

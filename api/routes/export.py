@@ -187,6 +187,67 @@ def export_leads_csv(
             detail=f"Export failed: {str(e)}"
         )
 
+@export_router.post("/deals", response_class=Response)
+def export_deals_csv(
+    stage_id: Optional[int] = Query(None),
+    category_id: Optional[int] = Query(None),
+    assigned_to: Optional[str] = Query(None),
+    contact_id: Optional[str] = Query(None),
+    search: Optional[str] = Query(None),
+    is_won: Optional[bool] = Query(None),
+    is_lost: Optional[bool] = Query(None),
+    include_hidden: bool = Query(False),
+    current_user: UserOut = Depends(get_current_user)
+):
+    """
+    Export deals to CSV format, including related vehicle and contact info.
+    """
+    try:
+        from uuid import UUID
+
+        parsed_assigned_to = None
+        if assigned_to:
+            try:
+                parsed_assigned_to = UUID(assigned_to)
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Invalid assigned_to UUID format")
+
+        parsed_contact_id = None
+        if contact_id:
+            try:
+                parsed_contact_id = UUID(contact_id)
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Invalid contact_id UUID format")
+
+        csv_content, record_count = ExportService.export_deals_csv(
+            stage_id=stage_id,
+            category_id=category_id,
+            assigned_to=parsed_assigned_to,
+            contact_id=parsed_contact_id,
+            search=search,
+            is_won=is_won,
+            is_lost=is_lost,
+            include_hidden=include_hidden
+        )
+
+        if not csv_content:
+            raise HTTPException(status_code=404, detail="No deals found for the specified criteria")
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"deals_export_{timestamp}.csv"
+
+        return StreamingResponse(
+            io.BytesIO(csv_content.encode('utf-8')),
+            media_type="text/csv",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Export failed: {str(e)}")
+
+
 @export_router.get("/listings/preview")
 def preview_listings_export(
     export_type: ExportType,

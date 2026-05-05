@@ -17,7 +17,6 @@ import { useDealStages, useDealCategories } from '../../../../lib/hooks/useDeals
 import { useTasks, useTaskPriorities, useTaskStatuses } from '../../../../lib/hooks/useTasks';
 import { VehiclePhotoGallery } from '../../../../components/organisms/VehiclePhotoGallery';
 import { VehicleHeader } from '../../../../components/organisms/VehicleHeader';
-import { VehicleDetails } from '../../../../components/molecules/VehicleDetails';
 import { ArrowLeft } from 'lucide-react';
 import { useToast } from '../../../../hooks/useToast';
 
@@ -714,7 +713,6 @@ export default function DealDetailPage() {
                         hasMMR={!!displayListing!.mmr}
                         hasAccuTrade={false}
                       />
-                      <VehicleDetails listing={displayListing!} />
                     </>
                   )}
                   {hasContact && (

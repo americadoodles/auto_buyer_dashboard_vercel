@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { DealPipeline } from '../../../components/organisms/DealPipeline';
 import { useDeals, useDealStages, useDealPipeline } from '../../../lib/hooks/useDeals';
+import { exportApi } from '../../../lib/services/exportApi';
 
 export default function DealsPage() {
   const router = useRouter();
@@ -44,8 +45,25 @@ export default function DealsPage() {
     }
   };
 
-  const handleExportDeals = () => {
-    console.log('Export deals clicked');
+  const handleExportDeals = async () => {
+    try {
+      const closedWonStage = stages.find(
+        s => (s.name || '').toLowerCase().trim() === 'closed won'
+      );
+      if (!closedWonStage) {
+        alert('Could not find a "Closed Won" stage to export.');
+        return;
+      }
+      const blob = await exportApi.exportDeals({
+        stage_id: closedWonStage.id,
+        include_hidden: viewAllDeals,
+      });
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+      exportApi.downloadBlob(blob, `deals_closed_won_${timestamp}.csv`);
+    } catch (error) {
+      console.error('Error exporting deals:', error);
+      alert(error instanceof Error ? error.message : 'Failed to export deals');
+    }
   };
 
   const handleSearch = (search: string) => {

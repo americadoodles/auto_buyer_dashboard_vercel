@@ -287,6 +287,7 @@ class ExportService:
                 li.dom, li.location, li.source AS listing_source,
                 li.interior_color, li.exterior_color, li.transmission,
                 li.fuel_type, li.drivetrain, li.body_style,
+                li.mpg, li.images,
                 v.year, v.make, v.model, v.trim
             FROM deals d
             LEFT JOIN deal_stages ds ON d.deal_stage_id = ds.id
@@ -325,7 +326,8 @@ class ExportService:
             "VIN", "Year", "Make", "Model", "Trim",
             "Listing Price", "Miles", "Days On Market", "Location", "Listing Source",
             "Interior Color", "Exterior Color", "Transmission",
-            "Fuel Type", "Drivetrain", "Body Style"
+            "Fuel Type", "Drivetrain", "Body Style",
+            "MPG", "image_urls",
         ]
         writer.writerow(headers)
 
@@ -341,6 +343,16 @@ class ExportService:
         def s(value: Any) -> str:
             return "" if value is None else str(value)
 
+        def fmt_images(value: Any) -> str:
+            if not value:
+                return ""
+            if isinstance(value, str):
+                return value
+            try:
+                return ",".join(str(v) for v in value if v)
+            except TypeError:
+                return str(value)
+
         for row in rows:
             (deal_id, title, description, deal_value, probability,
              expected_close, actual_close, notes,
@@ -352,6 +364,7 @@ class ExportService:
              dom, location, listing_source,
              interior_color, exterior_color, transmission,
              fuel_type, drivetrain, body_style,
+             mpg, images,
              year, make, model, trim) = row
 
             writer.writerow([
@@ -370,6 +383,7 @@ class ExportService:
                 s(listing_price), s(miles), s(dom), s(location), s(listing_source),
                 s(interior_color), s(exterior_color), s(transmission),
                 s(fuel_type), s(drivetrain), s(body_style),
+                s(mpg), fmt_images(images),
             ])
 
         return output.getvalue(), len(rows)

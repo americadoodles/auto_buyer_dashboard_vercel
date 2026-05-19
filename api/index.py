@@ -111,13 +111,12 @@ def schema_status():
         with conn.cursor() as cur:
             cur.execute("""
               select
-                to_regclass('public.vehicles') as vehicles,
                 to_regclass('public.listings') as listings,
                 to_regclass('public.scores') as scores,
                 to_regclass('public.v_latest_scores') as v_latest_scores
             """)
             v = cur.fetchone()
-        return dict(zip(["vehicles","listings","scores","v_latest_scores"], v))
+        return dict(zip(["listings","scores","v_latest_scores"], v))
 
 # Check roles status for debugging
 @app.get("/api/_roles_status")
@@ -170,11 +169,7 @@ def listings_status():
                 # Check if listings table exists and has data
                 cur.execute("SELECT COUNT(*) FROM listings")
                 listings_count = cur.fetchone()[0]
-                
-                # Check if vehicles table exists
-                cur.execute("SELECT COUNT(*) FROM vehicles")
-                vehicles_count = cur.fetchone()[0]
-                
+
                 # Check if scores table exists
                 cur.execute("SELECT COUNT(*) FROM scores")
                 scores_count = cur.fetchone()[0]
@@ -191,7 +186,6 @@ def listings_status():
                 return {
                     "ok": True,
                     "listings_count": listings_count,
-                    "vehicles_count": vehicles_count,
                     "scores_count": scores_count,
                     "listings_columns": listings_columns
                 }

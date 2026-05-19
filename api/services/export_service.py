@@ -288,7 +288,7 @@ class ExportService:
                 li.interior_color, li.exterior_color, li.transmission,
                 li.fuel_type, li.drivetrain, li.body_style,
                 li.mpg, li.images,
-                v.year, v.make, v.model, v.trim
+                li.year, li.make, li.model, li.trim
             FROM deals d
             LEFT JOIN deal_stages ds ON d.deal_stage_id = ds.id
             LEFT JOIN deal_categories dc ON d.deal_category_id = dc.id
@@ -296,7 +296,6 @@ class ExportService:
             LEFT JOIN contacts c ON d.contact_id = c.id
             LEFT JOIN leads l ON d.lead_id = l.id
             LEFT JOIN listings li ON l.listing_id = li.id
-            LEFT JOIN vehicles v ON li.vehicle_key = v.vehicle_key
             {where_clause}
             ORDER BY d.created_at DESC
         """
@@ -392,14 +391,14 @@ class ExportService:
     def _build_admin_query(start_date: Optional[date], end_date: Optional[date]) -> tuple[str, list]:
         """Build query for admin to export all listings"""
         base_query = """
-            SELECT 
+            SELECT
                 l.id,
                 l.vehicle_key,
                 l.vin,
-                v.year,
-                v.make,
-                v.model,
-                v.trim,
+                l.year,
+                l.make,
+                l.model,
+                l.trim,
                 l.miles,
                 l.price,
                 s.score,
@@ -417,14 +416,13 @@ class ExportService:
                 'pending' as decision_status,
                 s.reason_codes as decision_reasons
             FROM listings l
-            LEFT JOIN vehicles v ON l.vehicle_key = v.vehicle_key
-            LEFT JOIN v_latest_scores s ON l.vehicle_key = s.vehicle_key
+            LEFT JOIN v_latest_scores s ON l.vin = s.vin
             LEFT JOIN users u ON l.buyer_id::uuid = u.id
         """
-        
+
         where_conditions = []
         params = []
-        
+
         if start_date and end_date:
             where_conditions.append("DATE(l.created_at) BETWEEN %s AND %s")
             params.extend([start_date, end_date])
@@ -434,26 +432,26 @@ class ExportService:
         elif end_date:
             where_conditions.append("DATE(l.created_at) <= %s")
             params.append(end_date)
-        
+
         if where_conditions:
             query = f"{base_query} WHERE {' AND '.join(where_conditions)} ORDER BY l.created_at DESC"
         else:
             query = f"{base_query} ORDER BY l.created_at DESC"
-        
+
         return query, params
-    
+
     @staticmethod
     def _build_buyer_query(buyer_id: UUID, start_date: Optional[date], end_date: Optional[date]) -> tuple[str, list]:
         """Build query for buyer to export only their listings"""
         base_query = """
-            SELECT 
+            SELECT
                 l.id,
                 l.vehicle_key,
                 l.vin,
-                v.year,
-                v.make,
-                v.model,
-                v.trim,
+                l.year,
+                l.make,
+                l.model,
+                l.trim,
                 l.miles,
                 l.price,
                 s.score,
@@ -471,8 +469,7 @@ class ExportService:
                 'pending' as decision_status,
                 s.reason_codes as decision_reasons
             FROM listings l
-            LEFT JOIN vehicles v ON l.vehicle_key = v.vehicle_key
-            LEFT JOIN v_latest_scores s ON l.vehicle_key = s.vehicle_key
+            LEFT JOIN v_latest_scores s ON l.vin = s.vin
             LEFT JOIN users u ON l.buyer_id::uuid = u.id
             WHERE l.buyer_id::uuid = %s
         """
@@ -500,14 +497,14 @@ class ExportService:
     def _build_selected_query(selected_listing_ids: List[str], is_admin: bool, user_id: UUID) -> tuple[str, list]:
         """Build query for exporting selected listings"""
         base_query = """
-            SELECT 
+            SELECT
                 l.id,
                 l.vehicle_key,
                 l.vin,
-                v.year,
-                v.make,
-                v.model,
-                v.trim,
+                l.year,
+                l.make,
+                l.model,
+                l.trim,
                 l.miles,
                 l.price,
                 s.score,
@@ -525,8 +522,7 @@ class ExportService:
                 'pending' as decision_status,
                 s.reason_codes as decision_reasons
             FROM listings l
-            LEFT JOIN vehicles v ON l.vehicle_key = v.vehicle_key
-            LEFT JOIN v_latest_scores s ON l.vehicle_key = s.vehicle_key
+            LEFT JOIN v_latest_scores s ON l.vin = s.vin
             LEFT JOIN users u ON l.buyer_id::uuid = u.id
             WHERE l.id = ANY(%s)
         """

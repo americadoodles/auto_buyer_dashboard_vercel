@@ -228,7 +228,7 @@ def get_lead(lead_id: UUID) -> Optional[LeadOut]:
                         u_created.id, u_created.email, u_created.username, u_created.role_id, r_created.name, u_created.is_confirmed,
                         -- Listing fields (basic for now)
                         lst.id, lst.vehicle_key, lst.vin, lst.price, lst.miles, lst.dom, lst.source, lst.location,
-                        v.year, v.make, v.model, v.trim, lst.images
+                        lst.year, lst.make, lst.model, lst.trim, lst.images
                     FROM leads l
                     LEFT JOIN contacts c ON l.contact_id = c.id
                     LEFT JOIN lead_statuses ls ON l.status_id = ls.id
@@ -238,7 +238,6 @@ def get_lead(lead_id: UUID) -> Optional[LeadOut]:
                     LEFT JOIN users u_created ON l.created_by = u_created.id
                     LEFT JOIN roles r_created ON u_created.role_id = r_created.id
                     LEFT JOIN listings lst ON l.listing_id = lst.id
-                    LEFT JOIN vehicles v ON lst.vehicle_key = v.vehicle_key
                     WHERE l.id = %s
                 """, (lead_id,))
                 
@@ -376,7 +375,7 @@ def list_leads(skip: int = 0, limit: int = 100, status_id: Optional[int] = None,
                         u_created.id, u_created.email, u_created.username, u_created.role_id, r_created.name, u_created.is_confirmed,
                         -- Listing fields
                         lst.id, lst.vehicle_key, lst.vin, lst.price, lst.miles, lst.dom, lst.source, lst.location,
-                        v.year, v.make, v.model, v.trim, lst.images
+                        lst.year, lst.make, lst.model, lst.trim, lst.images
                     FROM leads l
                     LEFT JOIN contacts c ON l.contact_id = c.id
                     LEFT JOIN lead_statuses ls ON l.status_id = ls.id
@@ -386,7 +385,6 @@ def list_leads(skip: int = 0, limit: int = 100, status_id: Optional[int] = None,
                     LEFT JOIN users u_created ON l.created_by = u_created.id
                     LEFT JOIN roles r_created ON u_created.role_id = r_created.id
                     LEFT JOIN listings lst ON l.listing_id = lst.id
-                    LEFT JOIN vehicles v ON lst.vehicle_key = v.vehicle_key
                     {where_clause}
                     ORDER BY l.created_at DESC
                     LIMIT %s OFFSET %s

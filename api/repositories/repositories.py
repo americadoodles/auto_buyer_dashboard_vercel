@@ -196,15 +196,10 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                         # Handle external API data: map status, reasonCodes, buyMax to Decision object
                         decision = create_decision_from_data(norm)
 
-                        # vehicles - only insert/update if make or model is present
-                        if should_insert_vehicle:
-                            cur.execute("""
-                                 insert into vehicles (vehicle_key, vin, year, make, model, trim)
-                                 values (%s,%s,%s,%s,%s,%s)
-                                 on conflict (vehicle_key) do update set vin=excluded.vin, year=excluded.year, make=excluded.make, model=excluded.model, trim=excluded.trim
-                             """, (vehicle_key, vin, year, make, model, trim))
-                        else:
-                            logging.info(f"Skipping vehicle insert/update for vehicle_key={vehicle_key}: make and model are both empty/None")
+                        # year/make/model/trim now live on listings directly (migration 019);
+                        # no separate vehicles row is created.
+                        if not should_insert_vehicle:
+                            logging.info(f"vehicle_key={vehicle_key}: make and model are both empty/None")
                         
                         # Note: Decision data is used for ListingOut response only
                         # Score records are now always created by AI scoring (see below)
@@ -323,13 +318,15 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                                 vehicle_key, vin, lpn, source, price, miles, dom, location, buyer_id, payload, images,
                                 interior_color, exterior_color, transmission, fuel_type, drivetrain, engine_size, body_style,
                                 clean_title, condition, detailed_ratings, engine, mpg, overall_rating, paid_status, phone_number,
-                                seller_description, seller_joined_date, seller_name
+                                seller_description, seller_joined_date, seller_name,
+                                year, make, model, trim
                               )
                               values (
                                 %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
                                 %s,%s,%s,%s,%s,%s,%s,
                                 %s,%s,%s,%s,%s,%s,%s,%s,
-                                %s,%s,%s
+                                %s,%s,%s,
+                                %s,%s,%s,%s
                               ) returning id
                             """, (
                                 vehicle_key, vin, lpn, norm["source"], norm["price"], norm["miles"], norm["dom"],
@@ -337,7 +334,8 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                                 interior_color, exterior_color, transmission, fuel_type, drivetrain, engine_size, body_style,
                                 clean_title, condition_txt, json.dumps(detailed_ratings) if detailed_ratings is not None else None,
                                 engine_desc, mpg, overall_rating, paid_status, phone_number,
-                                seller_description, seller_joined_date, seller_name
+                                seller_description, seller_joined_date, seller_name,
+                                year, make, model, trim
                             ))
                             new_id = str(cur.fetchone()[0])
                             logging.debug(f"Successfully inserted listing with ID: {new_id}, VIN: {vin}, source: {norm.get('source')}")
@@ -554,10 +552,10 @@ def list_listings(
                         l.vehicle_key,
                         COALESCE(l.vin, '') AS vin,
                         l.lpn,
-                        COALESCE(v.year, 0) AS year,
-                        COALESCE(v.make, '') AS make,
-                        COALESCE(v.model, '') AS model,
-                        v.trim,
+                        COALESCE(l.year, 0) AS year,
+                        COALESCE(l.make, '') AS make,
+                        COALESCE(l.model, '') AS model,
+                        l.trim,
                         l.miles,
                         l.price,
                         l.dom,
@@ -595,7 +593,6 @@ def list_listings(
                         FROM (
                         SELECT * FROM listings """ + where_clause + """
                         ) l
-                        LEFT JOIN vehicles v ON v.vehicle_key = l.vehicle_key
                         LEFT JOIN (
                         SELECT DISTINCT ON (vin) vin, score, buy_max, reason_codes
                         FROM scores
@@ -707,14 +704,14 @@ def list_listings_by_buyer(
                 with conn.cursor() as cur:
                     # Build query with optional date filtering
                     base_query = """
-                        SELECT 
-                            l.id, l.vehicle_key, 
+                        SELECT
+                            l.id, l.vehicle_key,
                             COALESCE(l.vin, '') AS vin,
                             l.lpn,
-                            COALESCE(v.year, 0) AS year, 
-                            COALESCE(v.make, '') AS make, 
-                            COALESCE(v.model, '') AS model, 
-                            v.trim,
+                            COALESCE(l.year, 0) AS year,
+                            COALESCE(l.make, '') AS make,
+                            COALESCE(l.model, '') AS model,
+                            l.trim,
                             l.miles, l.price, l.dom, l.source, 
                             l.location, l.buyer_id,
                             COALESCE(l.images, ARRAY[]::text[]) AS images,
@@ -746,7 +743,6 @@ def list_listings_by_buyer(
                             l.seller_joined_date,
                             l.seller_name
                         FROM listings l
-                        LEFT JOIN vehicles v ON v.vehicle_key = l.vehicle_key
                         LEFT JOIN (
                             SELECT DISTINCT ON (vin) vin, score, buy_max, reason_codes
                             FROM scores
@@ -1050,25 +1046,11 @@ def update_score(vehicle_key: str, vin: str, score: int, buy_max: float, reasons
 # ============================================================================
 
 def upsert_vehicle(vehicle_key: str, vin: str, year: int, make: str, model: str, trim: str | None):
-    if not DB_ENABLED:
-        return
-    with get_db_connection() as conn:
-        if not conn:
-            return
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                insert into vehicles (vehicle_key, vin, year, make, model, trim)
-                values (%s,%s,%s,%s,%s,%s)
-                on conflict (vehicle_key) do update
-                set vin = excluded.vin,
-                    year = excluded.year,
-                    make = excluded.make,
-                    model = excluded.model,
-                    trim = excluded.trim
-                """,
-                (vehicle_key, vin, year, make, model, trim),
-            )
+    # Deprecated: the vehicles table was merged into listings in migration 019.
+    # year/make/model/trim now live on listings rows directly. This function is
+    # kept as a no-op so legacy callers (refactor_vehicles.py) don't crash.
+    logging.warning("upsert_vehicle() is a no-op since migration 019; vehicle_key=%s", vehicle_key)
+    return
 
 
 # ============================================================================

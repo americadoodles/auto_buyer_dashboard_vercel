@@ -316,16 +316,15 @@ def get_listing_by_id(listing_id: int) -> Optional[ListingOut]:
                         l.seller_joined_date,
                         l.seller_name,
                         l.created_at,
-                        COALESCE(v.year, 0) AS year,
-                        COALESCE(v.make, '') AS make,
-                        COALESCE(v.model, '') AS model,
-                        v.trim,
+                        COALESCE(l.year, 0) AS year,
+                        COALESCE(l.make, '') AS make,
+                        COALESCE(l.model, '') AS model,
+                        l.trim,
                         u.username AS buyer_username,
                         COALESCE(s.score, 0) AS score,
                         s.buy_max,
                         COALESCE(s.reason_codes, ARRAY[]::text[]) AS reason_codes
                     FROM listings l
-                    LEFT JOIN vehicles v ON v.vehicle_key = l.vehicle_key
                     LEFT JOIN users u ON u.id::text = l.buyer_id
                     LEFT JOIN (
                         SELECT DISTINCT ON (vin) vin, score, buy_max, reason_codes

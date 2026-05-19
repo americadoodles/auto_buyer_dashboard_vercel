@@ -266,7 +266,6 @@ def apply_schema_if_needed() -> None:
                     "009_add_mmr_to_listings.sql",
                     "010_add_listing_fields.sql",
                     "011_add_lpn_to_listings.sql",
-                    "012_remove_unreferenced_vehicles.sql",
                     "013_create_accu_trade_data.sql",
                     "014_create_mmr_data.sql",
                     "015_create_condition_reports.sql",
@@ -278,6 +277,7 @@ def apply_schema_if_needed() -> None:
                     "migrations/016_add_notes_to_listings.sql",
                     "migrations/017_add_vehicle_detail_columns_to_listings.sql",
                     "migrations/018_add_is_hidden_to_deals.sql",
+                    "migrations/019_merge_vehicles_into_listings.sql",
                 ]
                 for mig_file in _migration_files:
                     mig_sql = _read_migration_file(mig_file)

@@ -304,10 +304,10 @@ def get_listing_by_id(listing_id: int) -> Optional[ListingOut]:
                         l.mpg,
                         l.overall_rating,
                         l.paid_status,
-                        l.phone_number,
+                        c.phone AS phone_number,
                         l.seller_description,
-                        l.seller_joined_date,
-                        l.seller_name,
+                        c.fb_joined_date AS seller_joined_date,
+                        NULLIF(TRIM(COALESCE(c.first_name, '') || ' ' || COALESCE(c.last_name, '')), '') AS seller_name,
                         l.created_at,
                         COALESCE(l.year, 0) AS year,
                         COALESCE(l.make, '') AS make,
@@ -319,6 +319,7 @@ def get_listing_by_id(listing_id: int) -> Optional[ListingOut]:
                         COALESCE(s.reason_codes, ARRAY[]::text[]) AS reason_codes
                     FROM listings l
                     LEFT JOIN users u ON u.id::text = l.buyer_id
+                    LEFT JOIN contacts c ON c.id = l.contact_id
                     LEFT JOIN (
                         SELECT DISTINCT ON (vin) vin, score, buy_max, reason_codes
                         FROM scores

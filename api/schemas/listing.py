@@ -31,6 +31,7 @@ class ListingIn(BaseModel):
     sellerDescription: Optional[str] = None
     sellerName: Optional[str] = None
     sellerJoinedDate: Optional[str] = None
+    fbUserId: Optional[str] = None
     phoneNumber: Optional[str] = None
     engine: Optional[str] = None
     driveType: Optional[str] = None
@@ -71,6 +72,7 @@ class ListingOut(BaseModel):
     sellerDescription: Optional[str] = None
     sellerName: Optional[str] = None
     sellerJoinedDate: Optional[str] = None
+    fbUserId: Optional[str] = None
     phoneNumber: Optional[str] = None
     engine: Optional[str] = None
     driveType: Optional[str] = None

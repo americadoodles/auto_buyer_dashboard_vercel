@@ -279,6 +279,8 @@ def apply_schema_if_needed() -> None:
                     "migrations/018_add_is_hidden_to_deals.sql",
                     "migrations/019_merge_vehicles_into_listings.sql",
                     "migrations/020_drop_lead_and_deal_vehicles.sql",
+                    "migrations/021_link_listings_to_contacts.sql",
+                    "migrations/022_drop_listing_seller_columns.sql",
                 ]
                 for mig_file in _migration_files:
                     mig_sql = _read_migration_file(mig_file)

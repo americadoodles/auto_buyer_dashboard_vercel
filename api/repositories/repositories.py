@@ -251,6 +251,7 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                         #         logging.warning(f"Failed to extract phone number from seller description: {str(e)}")
                         seller_joined_date = _norm_str(norm.get("sellerJoinedDate"))
                         seller_name = _norm_str(norm.get("sellerName"))
+                        fb_user_id = _norm_str(norm.get("fbUserId"))
                         lpn = _norm_str(norm.get("lpn"))
 
                         # Use buyer_id from authenticated context when provided; fallback to incoming buyer_id
@@ -317,15 +318,15 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                               insert into listings (
                                 vehicle_key, vin, lpn, source, price, miles, dom, location, buyer_id, payload, images,
                                 interior_color, exterior_color, transmission, fuel_type, drivetrain, engine_size, body_style,
-                                clean_title, condition, detailed_ratings, engine, mpg, overall_rating, paid_status, phone_number,
-                                seller_description, seller_joined_date, seller_name,
+                                clean_title, condition, detailed_ratings, engine, mpg, overall_rating, paid_status,
+                                seller_description,
                                 year, make, model, trim
                               )
                               values (
                                 %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
                                 %s,%s,%s,%s,%s,%s,%s,
-                                %s,%s,%s,%s,%s,%s,%s,%s,
-                                %s,%s,%s,
+                                %s,%s,%s,%s,%s,%s,%s,
+                                %s,
                                 %s,%s,%s,%s
                               ) returning id
                             """, (
@@ -333,8 +334,8 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                                 norm.get("location"), buyer_from_id, json.dumps(payload_data), gcp_image_urls,
                                 interior_color, exterior_color, transmission, fuel_type, drivetrain, engine_size, body_style,
                                 clean_title, condition_txt, json.dumps(detailed_ratings) if detailed_ratings is not None else None,
-                                engine_desc, mpg, overall_rating, paid_status, phone_number,
-                                seller_description, seller_joined_date, seller_name,
+                                engine_desc, mpg, overall_rating, paid_status,
+                                seller_description,
                                 year, make, model, trim
                             ))
                             new_id = str(cur.fetchone()[0])
@@ -343,21 +344,32 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                             logging.error(f"Failed to insert listing into database: {log_exc}")
                             new_id = f"error-{len(out)+1}"
                         
-                        # Create contact and lead if phoneNumber exists
+                        # Create or link a seller contact when we have either a phone or a FB user id.
                         contact_id = None
-                        if phone_number and phone_number.strip():
+                        phone_for_lookup = phone_number.strip() if phone_number and phone_number.strip() else None
+                        if phone_for_lookup or fb_user_id:
                             try:
-                                # Check if contact with this phone already exists
+                                # Dedupe by phone OR fb_user_id (whichever we have)
                                 cur.execute("""
-                                    SELECT id FROM contacts 
-                                    WHERE phone = %s OR mobile = %s 
+                                    SELECT id FROM contacts
+                                    WHERE (%s IS NOT NULL AND (phone = %s OR mobile = %s))
+                                       OR (%s IS NOT NULL AND fb_user_id = %s)
                                     LIMIT 1
-                                """, (phone_number.strip(), phone_number.strip()))
+                                """, (phone_for_lookup, phone_for_lookup, phone_for_lookup,
+                                      fb_user_id, fb_user_id))
                                 existing_contact = cur.fetchone()
-                                
+
                                 if existing_contact:
                                     contact_id = existing_contact[0]
-                                    logging.info(f"Found existing contact {contact_id} with phone {phone_number}")
+                                    logging.info(f"Found existing contact {contact_id} (phone={phone_for_lookup}, fb_user_id={fb_user_id})")
+                                    # Patch missing fb fields without overwriting existing values
+                                    cur.execute("""
+                                        UPDATE contacts
+                                        SET fb_user_id     = COALESCE(fb_user_id, %s),
+                                            fb_joined_date = COALESCE(fb_joined_date, %s),
+                                            updated_at     = NOW()
+                                        WHERE id = %s
+                                    """, (fb_user_id, seller_joined_date, contact_id))
                                 else:
                                     # Parse seller_name for first_name and last_name
                                     first_name = "Seller"
@@ -391,16 +403,19 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                                             cur.execute("""
                                                 INSERT INTO contacts (
                                                     first_name, last_name, phone, company, notes,
+                                                    fb_user_id, fb_joined_date,
                                                     is_active, created_by, created_at, updated_at
                                                 ) VALUES (
-                                                    %s, %s, %s, %s, %s, %s, %s, NOW(), NOW()
+                                                    %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW()
                                                 ) RETURNING id
                                             """, (
                                                 first_name,
                                                 last_name,
-                                                phone_number.strip(),
+                                                phone_for_lookup,
                                                 seller_name if seller_name else None,
                                                 f"Auto-created from listing {new_id}. Source: {norm.get('source', 'Unknown')}",
+                                                fb_user_id,
+                                                seller_joined_date,
                                                 True,
                                                 created_by_user
                                             ))
@@ -439,7 +454,17 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                             except Exception as contact_lead_error:
                                 logging.error(f"Error creating contact/lead for listing {new_id}: {str(contact_lead_error)}")
                                 # Continue with listing ingestion even if contact/lead creation fails
-                        
+
+                        # Pin the seller contact onto the listing for direct FK access.
+                        if contact_id and str(new_id).isdigit():
+                            try:
+                                cur.execute(
+                                    "UPDATE listings SET contact_id = %s WHERE id = %s",
+                                    (contact_id, int(new_id)),
+                                )
+                            except Exception as link_err:
+                                logging.warning(f"Failed to set listings.contact_id for listing {new_id}: {link_err}")
+
                         # Extract reasonCodes, buyMax, and status for ListingOut
                         reason_codes = norm.get("reasonCodes", [])
                         buy_max = float(norm.get("buyMax", 0)) if norm.get("buyMax") is not None else None
@@ -586,10 +611,10 @@ def list_listings(
                         l.mpg,
                         l.overall_rating,
                         l.paid_status,
-                        l.phone_number,
+                        c.phone AS phone_number,
                         l.seller_description,
-                        l.seller_joined_date,
-                        l.seller_name
+                        c.fb_joined_date AS seller_joined_date,
+                        NULLIF(TRIM(COALESCE(c.first_name, '') || ' ' || COALESCE(c.last_name, '')), '') AS seller_name
                         FROM (
                         SELECT * FROM listings """ + where_clause + """
                         ) l
@@ -599,6 +624,7 @@ def list_listings(
                         ORDER BY vin, created_at DESC
                         ) s ON s.vin = l.vin
                         LEFT JOIN users u ON u.id::text = l.buyer_id
+                        LEFT JOIN contacts c ON c.id = l.contact_id
                         ORDER BY l.created_at DESC;
 
                     """
@@ -738,10 +764,10 @@ def list_listings_by_buyer(
                             l.mpg,
                             l.overall_rating,
                             l.paid_status,
-                            l.phone_number,
+                            c.phone AS phone_number,
                             l.seller_description,
-                            l.seller_joined_date,
-                            l.seller_name
+                            c.fb_joined_date AS seller_joined_date,
+                            NULLIF(TRIM(COALESCE(c.first_name, '') || ' ' || COALESCE(c.last_name, '')), '') AS seller_name
                         FROM listings l
                         LEFT JOIN (
                             SELECT DISTINCT ON (vin) vin, score, buy_max, reason_codes
@@ -749,6 +775,7 @@ def list_listings_by_buyer(
                             ORDER BY vin, created_at DESC
                         ) s ON s.vin = l.vin
                         LEFT JOIN users u ON u.id::text = l.buyer_id
+                        LEFT JOIN contacts c ON c.id = l.contact_id
                         WHERE l.buyer_id = %s
                     """
                     

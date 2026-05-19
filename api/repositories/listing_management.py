@@ -199,13 +199,6 @@ def delete_listing(listing_id: int, deleted_by: str) -> bool:
                     """, (lead_ids_to_delete,))
                     logging.info(f"Deleted lead activities for {len(lead_ids_to_delete)} leads")
                 
-                # Delete lead_vehicles for leads being deleted
-                if lead_ids_to_delete:
-                    cur.execute("""
-                        DELETE FROM lead_vehicles WHERE lead_id = ANY(%s)
-                    """, (lead_ids_to_delete,))
-                    logging.info(f"Deleted lead_vehicles for {len(lead_ids_to_delete)} leads")
-                
                 # Update tasks to unlink from leads being deleted
                 if lead_ids_to_delete:
                     cur.execute("""

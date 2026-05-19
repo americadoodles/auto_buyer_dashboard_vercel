@@ -322,30 +322,6 @@ CREATE TABLE IF NOT EXISTS deal_activities (
 );
 
 -- ==============================================
--- VEHICLE INTEGRATION
--- ==============================================
-
--- Link leads/contacts to specific vehicles
-CREATE TABLE IF NOT EXISTS lead_vehicles (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    lead_id UUID REFERENCES leads(id) ON DELETE CASCADE,
-    vehicle_key TEXT REFERENCES vehicles(vehicle_key),
-    interest_level TEXT DEFAULT 'medium', -- 'low', 'medium', 'high'
-    notes TEXT,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Link deals to specific vehicles
-CREATE TABLE IF NOT EXISTS deal_vehicles (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    deal_id UUID REFERENCES deals(id) ON DELETE CASCADE,
-    vehicle_key TEXT REFERENCES vehicles(vehicle_key),
-    is_primary BOOLEAN DEFAULT false,
-    notes TEXT,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- ==============================================
 -- TASK & ACTIVITY MANAGEMENT (Kanban Structure)
 -- ==============================================
 

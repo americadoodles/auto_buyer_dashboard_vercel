@@ -281,6 +281,8 @@ def apply_schema_if_needed() -> None:
                     "migrations/020_drop_lead_and_deal_vehicles.sql",
                     "migrations/021_link_listings_to_contacts.sql",
                     "migrations/022_drop_listing_seller_columns.sql",
+                    "migrations/023_add_fb_marketplace_fields.sql",
+                    "migrations/024_flatten_fb_marketplace_fields.sql",
                 ]
                 for mig_file in _migration_files:
                     mig_sql = _read_migration_file(mig_file)

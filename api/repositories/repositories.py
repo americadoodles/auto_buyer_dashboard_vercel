@@ -162,24 +162,25 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
 
                         vehicle_key = make_vehicle_key(norm)
                         
-                        # Extract vehicle info from title using AI if title is present
+                        # Source-provided values (e.g. FB's vehicle_make_display_name) win
+                        # over AI extraction. AI fills any gaps.
                         title = norm.get("title")
-                        year = None
-                        make = None
-                        model = None
-                        trim = None
+                        year = norm.get("year")
+                        make = norm.get("make")
+                        model = norm.get("model")
+                        trim = norm.get("trim")
                         extracted_bodystyle = None
                         extracted_info = {}
-                        
-                        if title and title.strip():
+
+                        if title and title.strip() and not (year and make and model and trim):
                             try:
                                 extracted_info = extract_vehicle_info_from_title(title.strip())
-                                year = extracted_info.get("year") or year
-                                make = extracted_info.get("make") or make
-                                model = extracted_info.get("model") or model
-                                trim = extracted_info.get("trim") or trim
+                                year = year or extracted_info.get("year")
+                                make = make or extracted_info.get("make")
+                                model = model or extracted_info.get("model")
+                                trim = trim or extracted_info.get("trim")
                                 extracted_bodystyle = extracted_info.get("bodystyle")
-                                logging.info(f"Extracted vehicle info from title: year={year}, make={make}, model={model}, trim={trim}, bodystyle={extracted_bodystyle}")
+                                logging.info(f"Vehicle info: year={year}, make={make}, model={model}, trim={trim}, bodystyle={extracted_bodystyle}")
                             except Exception as e:
                                 logging.error(f"Failed to extract vehicle info from title '{title}': {str(e)}")
                                 # Continue without extracted info - will need to handle missing fields
@@ -254,6 +255,58 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                         fb_user_id = _norm_str(norm.get("fbUserId"))
                         lpn = _norm_str(norm.get("lpn"))
 
+                        # FB Marketplace fields (migration 023)
+                        fb_listing_id          = _norm_str(norm.get("fbListingId"))
+                        title_value            = _norm_str(norm.get("title"))
+                        marketplace_category_id = _norm_str(norm.get("marketplaceCategoryId"))
+                        currency               = _norm_str(norm.get("currency"))
+                        fb_creation_epoch      = norm.get("fbCreationTime")
+                        fb_creation_time       = (
+                            datetime.datetime.fromtimestamp(fb_creation_epoch, tz=timezone.utc)
+                            if isinstance(fb_creation_epoch, (int, float)) and fb_creation_epoch > 0
+                            else None
+                        )
+                        city                   = _norm_str(norm.get("city"))
+                        state                  = _norm_str(norm.get("state"))
+                        postal_code            = _norm_str(norm.get("postalCode"))
+                        latitude               = norm.get("latitude")
+                        longitude              = norm.get("longitude")
+                        is_live                = norm.get("isLive")
+                        is_sold                = norm.get("isSold")
+                        is_pending             = norm.get("isPending")
+                        seller_type            = _norm_str(norm.get("sellerType"))
+                        fb_seller_rating       = norm.get("fbSellerRating")
+                        fb_seller_rating_count = norm.get("fbSellerRatingCount")
+                        fb_verified            = norm.get("fbVerified")
+
+                        # FB Marketplace fields (migration 024)
+                        custom_title           = _norm_str(norm.get("customTitle"))
+                        dealership_name        = _norm_str(norm.get("dealershipName"))
+                        delivery_types         = norm.get("deliveryTypes") or None
+                        listing_inventory_type = _norm_str(norm.get("listingInventoryType"))
+                        country                = _norm_str(norm.get("country"))
+                        city_display_name      = _norm_str(norm.get("cityDisplayName"))
+                        fb_city_id             = _norm_str(norm.get("fbCityId"))
+                        is_on_marketplace      = norm.get("isOnMarketplace")
+                        is_draft               = norm.get("isDraft")
+                        fb_is_hidden           = norm.get("fbIsHidden")
+                        vehicle_condition_val  = _norm_str(norm.get("vehicleCondition"))
+                        vehicle_title_status   = _norm_str(norm.get("vehicleTitleStatus"))
+                        vehicle_features       = norm.get("vehicleFeatures") or None
+                        vehicle_number_of_owners = norm.get("vehicleNumberOfOwners")
+                        vehicle_is_paid_off    = norm.get("vehicleIsPaidOff")
+                        odometer_unit          = _norm_str(norm.get("odometerUnit"))
+                        horse_power            = norm.get("horsePower")
+                        gas_mileage_city       = norm.get("gasMileageCity")
+                        gas_mileage_highway    = norm.get("gasMileageHighway")
+                        gas_mileage_combined   = norm.get("gasMileageCombined")
+                        co2_emissions          = norm.get("co2Emissions")
+                        safety_rating_overall  = norm.get("safetyRatingOverall")
+                        safety_rating_front    = norm.get("safetyRatingFront")
+                        safety_rating_side     = norm.get("safetyRatingSide")
+                        safety_rating_rollover = norm.get("safetyRatingRollover")
+                        safety_rating_side_barrier = norm.get("safetyRatingSideBarrier")
+
                         # Use buyer_id from authenticated context when provided; fallback to incoming buyer_id
                         buyer_from_id = buyer_id or norm.get("buyer_id") or None
 
@@ -288,6 +341,17 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                             gcp_image_urls = []
 
                         # Final duplicate check right before insertion (handles race conditions)
+                        # Prefer fb_listing_id when present (canonical FB ID).
+                        if fb_listing_id:
+                            cur.execute(
+                                "SELECT id FROM listings WHERE fb_listing_id = %s LIMIT 1",
+                                (fb_listing_id,),
+                            )
+                            existing = cur.fetchone()
+                            if existing:
+                                logging.info(f"Skipping duplicate fb_listing_id (final check): {fb_listing_id} - listing ID: {existing[0]}")
+                                continue
+
                         # Check if VIN already exists
                         if vin:
                             cur.execute(
@@ -320,14 +384,38 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                                 interior_color, exterior_color, transmission, fuel_type, drivetrain, engine_size, body_style,
                                 clean_title, condition, detailed_ratings, engine, mpg, overall_rating, paid_status,
                                 seller_description,
-                                year, make, model, trim
+                                year, make, model, trim,
+                                fb_listing_id, title, marketplace_category_id, currency, fb_creation_time,
+                                city, state, postal_code, latitude, longitude,
+                                is_live, is_sold, is_pending, seller_type,
+                                custom_title, dealership_name, delivery_types, listing_inventory_type,
+                                country, city_display_name, fb_city_id,
+                                is_on_marketplace, is_draft, fb_is_hidden,
+                                vehicle_condition, vehicle_title_status, vehicle_features,
+                                vehicle_number_of_owners, vehicle_is_paid_off, odometer_unit,
+                                horse_power, gas_mileage_city, gas_mileage_highway, gas_mileage_combined,
+                                co2_emissions,
+                                safety_rating_overall, safety_rating_front, safety_rating_side,
+                                safety_rating_rollover, safety_rating_side_barrier
                               )
                               values (
                                 %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
                                 %s,%s,%s,%s,%s,%s,%s,
                                 %s,%s,%s,%s,%s,%s,%s,
                                 %s,
-                                %s,%s,%s,%s
+                                %s,%s,%s,%s,
+                                %s,%s,%s,%s,%s,
+                                %s,%s,%s,%s,%s,
+                                %s,%s,%s,%s,
+                                %s,%s,%s,%s,
+                                %s,%s,%s,
+                                %s,%s,%s,
+                                %s,%s,%s,
+                                %s,%s,%s,
+                                %s,%s,%s,%s,
+                                %s,
+                                %s,%s,%s,
+                                %s,%s
                               ) returning id
                             """, (
                                 vehicle_key, vin, lpn, norm["source"], norm["price"], norm["miles"], norm["dom"],
@@ -336,7 +424,19 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                                 clean_title, condition_txt, json.dumps(detailed_ratings) if detailed_ratings is not None else None,
                                 engine_desc, mpg, overall_rating, paid_status,
                                 seller_description,
-                                year, make, model, trim
+                                year, make, model, trim,
+                                fb_listing_id, title_value, marketplace_category_id, currency, fb_creation_time,
+                                city, state, postal_code, latitude, longitude,
+                                is_live, is_sold, is_pending, seller_type,
+                                custom_title, dealership_name, delivery_types, listing_inventory_type,
+                                country, city_display_name, fb_city_id,
+                                is_on_marketplace, is_draft, fb_is_hidden,
+                                vehicle_condition_val, vehicle_title_status, vehicle_features,
+                                vehicle_number_of_owners, vehicle_is_paid_off, odometer_unit,
+                                horse_power, gas_mileage_city, gas_mileage_highway, gas_mileage_combined,
+                                co2_emissions,
+                                safety_rating_overall, safety_rating_front, safety_rating_side,
+                                safety_rating_rollover, safety_rating_side_barrier,
                             ))
                             new_id = str(cur.fetchone()[0])
                             logging.debug(f"Successfully inserted listing with ID: {new_id}, VIN: {vin}, source: {norm.get('source')}")
@@ -362,14 +462,22 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                                 if existing_contact:
                                     contact_id = existing_contact[0]
                                     logging.info(f"Found existing contact {contact_id} (phone={phone_for_lookup}, fb_user_id={fb_user_id})")
-                                    # Patch missing fb fields without overwriting existing values
+                                    # Patch missing fb identity fields without overwriting existing values;
+                                    # refresh rating / verified-badge snapshot unconditionally (latest wins).
                                     cur.execute("""
                                         UPDATE contacts
-                                        SET fb_user_id     = COALESCE(fb_user_id, %s),
-                                            fb_joined_date = COALESCE(fb_joined_date, %s),
-                                            updated_at     = NOW()
+                                        SET fb_user_id             = COALESCE(fb_user_id, %s),
+                                            fb_joined_date         = COALESCE(fb_joined_date, %s),
+                                            fb_seller_rating       = COALESCE(%s, fb_seller_rating),
+                                            fb_seller_rating_count = COALESCE(%s, fb_seller_rating_count),
+                                            fb_verified            = COALESCE(%s, fb_verified),
+                                            updated_at             = NOW()
                                         WHERE id = %s
-                                    """, (fb_user_id, seller_joined_date, contact_id))
+                                    """, (
+                                        fb_user_id, seller_joined_date,
+                                        fb_seller_rating, fb_seller_rating_count, fb_verified,
+                                        contact_id,
+                                    ))
                                 else:
                                     # Parse seller_name for first_name and last_name
                                     first_name = "Seller"
@@ -404,9 +512,13 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                                                 INSERT INTO contacts (
                                                     first_name, last_name, phone, company, notes,
                                                     fb_user_id, fb_joined_date,
+                                                    fb_seller_rating, fb_seller_rating_count, fb_verified,
                                                     is_active, created_by, created_at, updated_at
                                                 ) VALUES (
-                                                    %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW()
+                                                    %s, %s, %s, %s, %s,
+                                                    %s, %s,
+                                                    %s, %s, %s,
+                                                    %s, %s, NOW(), NOW()
                                                 ) RETURNING id
                                             """, (
                                                 first_name,
@@ -416,8 +528,11 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                                                 f"Auto-created from listing {new_id}. Source: {norm.get('source', 'Unknown')}",
                                                 fb_user_id,
                                                 seller_joined_date,
+                                                fb_seller_rating,
+                                                fb_seller_rating_count,
+                                                fb_verified,
                                                 True,
-                                                created_by_user
+                                                created_by_user,
                                             ))
                                             
                                             contact_result = cur.fetchone()

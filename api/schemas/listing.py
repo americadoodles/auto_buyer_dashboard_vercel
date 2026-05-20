@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field
 from uuid import UUID
 
@@ -14,6 +14,12 @@ class ListingIn(BaseModel):
     price: float
     miles: int
     title: Optional[str] = None
+    # Direct year/make/model/trim from the source (e.g. FB's
+    # vehicle_make_display_name). Win over the AI-extracted values when present.
+    year: Optional[int] = None
+    make: Optional[str] = None
+    model: Optional[str] = None
+    trim: Optional[str] = None
     dom: int
     location: Optional[str] = None
     radius: Optional[int] = 25
@@ -44,6 +50,50 @@ class ListingIn(BaseModel):
     buyer_id: Optional[str] = None
     decision: Optional[Decision] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    # FB Marketplace fields (added migration 023)
+    fbListingId: Optional[str] = None
+    marketplaceCategoryId: Optional[str] = None
+    currency: Optional[str] = None
+    fbCreationTime: Optional[int] = None   # FB epoch seconds; converted to TIMESTAMPTZ on insert
+    city: Optional[str] = None
+    state: Optional[str] = None
+    postalCode: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    isLive: Optional[bool] = None
+    isSold: Optional[bool] = None
+    isPending: Optional[bool] = None
+    sellerType: Optional[str] = None
+    fbSellerRating: Optional[float] = None
+    fbSellerRatingCount: Optional[int] = None
+    fbVerified: Optional[bool] = None
+    # Additional FB Marketplace fields (migration 024)
+    customTitle: Optional[str] = None
+    dealershipName: Optional[str] = None
+    deliveryTypes: Optional[List[str]] = None
+    listingInventoryType: Optional[str] = None
+    country: Optional[str] = None
+    cityDisplayName: Optional[str] = None
+    fbCityId: Optional[str] = None
+    isOnMarketplace: Optional[bool] = None
+    isDraft: Optional[bool] = None
+    fbIsHidden: Optional[bool] = None
+    vehicleCondition: Optional[str] = None
+    vehicleTitleStatus: Optional[str] = None
+    vehicleFeatures: Optional[List[str]] = None
+    vehicleNumberOfOwners: Optional[int] = None
+    vehicleIsPaidOff: Optional[bool] = None
+    odometerUnit: Optional[str] = None
+    horsePower: Optional[float] = None
+    gasMileageCity: Optional[float] = None
+    gasMileageHighway: Optional[float] = None
+    gasMileageCombined: Optional[float] = None
+    co2Emissions: Optional[float] = None
+    safetyRatingOverall: Optional[float] = None
+    safetyRatingFront: Optional[float] = None
+    safetyRatingSide: Optional[float] = None
+    safetyRatingRollover: Optional[float] = None
+    safetyRatingSideBarrier: Optional[float] = None
 
 class ListingOut(BaseModel):
     id: str

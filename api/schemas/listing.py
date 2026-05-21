@@ -40,6 +40,7 @@ class ListingIn(BaseModel):
     fbUserId: Optional[str] = None
     phoneNumber: Optional[str] = None
     engine: Optional[str] = None
+    engine_size: Optional[str] = None
     driveType: Optional[str] = None
     bodyStyle: Optional[str] = None
     source: Optional[str] = None
@@ -125,6 +126,7 @@ class ListingOut(BaseModel):
     fbUserId: Optional[str] = None
     phoneNumber: Optional[str] = None
     engine: Optional[str] = None
+    engine_size: Optional[str] = None
     driveType: Optional[str] = None
     bodyStyle: Optional[str] = None
     source: Optional[str] = None

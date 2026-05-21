@@ -15,7 +15,7 @@ from ..core.config import settings
 
 def _get_openai_client() -> OpenAI:
     """Get initialized OpenAI client with proper error handling"""
-    if not settings.OPENAI_API_KEY:
+    if not settings.AI_ENABLED or not settings.OPENAI_API_KEY:
         raise ValueError("OpenAI API key not configured")
     
     client_kwargs = {
@@ -50,7 +50,7 @@ def extract_vehicle_info_from_title(title: str) -> Dict[str, Any]:
         raise ValueError("Title cannot be empty")
     
     # Check API key configuration
-    if not settings.OPENAI_API_KEY:
+    if not settings.AI_ENABLED or not settings.OPENAI_API_KEY:
         logging.warning("OpenAI API key not configured, cannot extract vehicle info from title")
         raise ValueError("OpenAI API key not configured")
     
@@ -203,7 +203,7 @@ def extract_phone_number_from_text(text: str) -> Optional[str]:
         return None
     
     # Check API key configuration
-    if not settings.OPENAI_API_KEY:
+    if not settings.AI_ENABLED or not settings.OPENAI_API_KEY:
         logging.warning("OpenAI API key not configured, cannot extract phone number from text")
         return None
     
@@ -277,7 +277,7 @@ def generate_deal_draft(request: DealAIDraftRequest) -> DealAIDraftResponse:
         logging.warning(f"Could not get OpenAI version: {str(e)}")
     
     # Step 2: Check API key configuration
-    if not settings.OPENAI_API_KEY:
+    if not settings.AI_ENABLED or not settings.OPENAI_API_KEY:
         logging.error("OpenAI API key not configured - OPENAI_API_KEY is empty or missing")
         raise ValueError("OpenAI API key not configured")
     
@@ -444,7 +444,7 @@ def generate_task_draft(request: TaskAIDraftRequest) -> TaskAIDraftResponse:
         logging.warning(f"Could not get OpenAI version: {str(e)}")
     
     # Step 2: Check API key configuration
-    if not settings.OPENAI_API_KEY:
+    if not settings.AI_ENABLED or not settings.OPENAI_API_KEY:
         logging.error("OpenAI API key not configured - OPENAI_API_KEY is empty or missing")
         raise ValueError("OpenAI API key not configured")
     
@@ -584,7 +584,7 @@ def calculate_listing_score(listing_data: Dict[str, Any]) -> Dict[str, Any]:
             logging.warning(f"Could not fetch adjusted MMR for VIN {vin}: {_mmr_err}")
 
     # Check API key configuration
-    if not settings.OPENAI_API_KEY:
+    if not settings.AI_ENABLED or not settings.OPENAI_API_KEY:
         logging.warning("OpenAI API key not configured — using fallback heuristic scoring")
         return _fallback_score_calculation(listing_data)
     

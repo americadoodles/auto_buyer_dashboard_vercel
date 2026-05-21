@@ -5,6 +5,7 @@ The FB monitor can POST the raw FB JSON to /api/ingest/facebook unchanged;
 this module reshapes it into the flat ListingIn schema before it hits the
 standard ingestion pipeline.
 """
+import re
 from typing import Any, Dict, List, Optional
 
 
@@ -59,6 +60,57 @@ def _as_bool_enum(v: Any, truthy: tuple = (), falsy: tuple = ()) -> Optional[boo
         if s in falsy:
             return False
     return None
+
+
+_LEADING_NUMBER_RE = re.compile(r"^\s*([+-]?\d+(?:\.\d+)?)")
+
+
+def _as_spec_number(v: Any) -> Optional[float]:
+    """FB's vehicle_specifications fields come back as either:
+      - a raw number (or null), e.g. 23
+      - a dict like {"type": "...", "units": "MPG", "value": "21.00"}
+      - a dict whose .value is a non-numeric label like "5 Star Rating"
+    Coerce all forms. For the labelled form, extract the leading number
+    so "5 Star Rating" -> 5.0 lands in the NUMERIC column."""
+    if v is None:
+        return None
+    if isinstance(v, bool):
+        return None
+    if isinstance(v, dict):
+        return _as_spec_number(v.get("value"))
+    if isinstance(v, (int, float)):
+        return float(v)
+    if isinstance(v, str):
+        s = v.strip()
+        if not s:
+            return None
+        try:
+            return float(s)
+        except (TypeError, ValueError):
+            m = _LEADING_NUMBER_RE.match(s)
+            if m:
+                try:
+                    return float(m.group(1))
+                except (TypeError, ValueError):
+                    return None
+    return None
+
+
+_YEAR_RE = re.compile(r"\b(19[5-9]\d|20\d{2})\b")
+
+
+def _extract_year_from_title(title: Optional[str]) -> Optional[int]:
+    """Pull a 4-digit year out of a title like '2010 Nissan Rogue · S Krom…'.
+    First 4-digit year in [1950, 2099] wins. Returns None if absent."""
+    if not title:
+        return None
+    m = _YEAR_RE.search(title)
+    if not m:
+        return None
+    try:
+        return int(m.group(1))
+    except (TypeError, ValueError):
+        return None
 
 
 def _as_owner_count(v: Any) -> Optional[int]:
@@ -125,6 +177,9 @@ def fb_payload_to_listing_in(fb: Dict[str, Any]) -> Dict[str, Any]:
 
         # Vehicle identity (direct overrides; bypasses AI extraction)
         "vin": fb.get("vehicle_identification_number"),
+        # Year is not in the FB target; extract from the title so the column
+        # is populated even when AI extraction is disabled.
+        "year": _extract_year_from_title(title),
         "make": fb.get("vehicle_make_display_name"),
         "model": fb.get("vehicle_model_display_name"),
         "trim": fb.get("vehicle_trim_display_name"),
@@ -146,17 +201,25 @@ def fb_payload_to_listing_in(fb: Dict[str, Any]) -> Dict[str, Any]:
         "fuelType": fb.get("vehicle_fuel_type"),
         "transmission": fb.get("vehicle_transmission_type"),
 
-        # Vehicle specs
-        "horsePower": _as_float(specs.get("horse_power")),
-        "gasMileageCity": _as_float(specs.get("gas_mileage_city")),
-        "gasMileageHighway": _as_float(specs.get("gas_mileage_highway")),
-        "gasMileageCombined": _as_float(specs.get("gas_mileage_combined")),
-        "co2Emissions": _as_float(specs.get("co2_emissions")),
-        "safetyRatingOverall": _as_float(specs.get("safety_rating_overall")),
-        "safetyRatingFront": _as_float(specs.get("safety_rating_front")),
-        "safetyRatingSide": _as_float(specs.get("safety_rating_side")),
-        "safetyRatingRollover": _as_float(specs.get("safety_rating_rollover")),
-        "safetyRatingSideBarrier": _as_float(specs.get("safety_rating_side_barrier")),
+        # Vehicle specs — FB returns these as either raw numbers or
+        # {type, units, value} objects; _as_spec_number handles both.
+        # engine_size is a string on listings (e.g. "2.5L"), so pass the
+        # value through directly instead of forcing it to a number.
+        "engine_size": (
+            specs.get("engine_size", {}).get("value")
+            if isinstance(specs.get("engine_size"), dict)
+            else specs.get("engine_size")
+        ),
+        "horsePower": _as_spec_number(specs.get("horse_power")),
+        "gasMileageCity": _as_spec_number(specs.get("gas_mileage_city")),
+        "gasMileageHighway": _as_spec_number(specs.get("gas_mileage_highway")),
+        "gasMileageCombined": _as_spec_number(specs.get("gas_mileage_combined")),
+        "co2Emissions": _as_spec_number(specs.get("co2_emissions")),
+        "safetyRatingOverall": _as_spec_number(specs.get("safety_rating_overall")),
+        "safetyRatingFront": _as_spec_number(specs.get("safety_rating_front")),
+        "safetyRatingSide": _as_spec_number(specs.get("safety_rating_side")),
+        "safetyRatingRollover": _as_spec_number(specs.get("safety_rating_rollover")),
+        "safetyRatingSideBarrier": _as_spec_number(specs.get("safety_rating_side_barrier")),
 
         # Geo
         "city": city,

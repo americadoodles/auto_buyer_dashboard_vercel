@@ -37,6 +37,48 @@ def _as_int(v: Any) -> Optional[int]:
         return None
 
 
+# FB returns vehicle_number_of_owners as a word enum ("ONE", "TWO", …)
+# rather than a digit. Map to int so it lands in the INTEGER column.
+_OWNER_WORDS = {
+    "ZERO": 0, "ONE": 1, "TWO": 2, "THREE": 3, "FOUR": 4,
+    "FIVE": 5, "SIX": 6, "SEVEN": 7, "EIGHT": 8, "NINE": 9, "TEN": 10,
+}
+
+
+def _as_bool_enum(v: Any, truthy: tuple = (), falsy: tuple = ()) -> Optional[bool]:
+    """Coerce FB's string-enum booleans (e.g. 'IS_PAID_OFF' / 'NOT_PAID_OFF')
+    to real booleans. Real bool values pass through; unknown strings become None."""
+    if v is None:
+        return None
+    if isinstance(v, bool):
+        return v
+    if isinstance(v, str):
+        s = v.strip().upper()
+        if s in truthy:
+            return True
+        if s in falsy:
+            return False
+    return None
+
+
+def _as_owner_count(v: Any) -> Optional[int]:
+    if v is None:
+        return None
+    if isinstance(v, bool):
+        return None
+    if isinstance(v, (int, float)):
+        return int(v)
+    if isinstance(v, str):
+        s = v.strip().upper()
+        if s in _OWNER_WORDS:
+            return _OWNER_WORDS[s]
+        try:
+            return int(s)
+        except (TypeError, ValueError):
+            return None
+    return None
+
+
 def fb_payload_to_listing_in(fb: Dict[str, Any]) -> Dict[str, Any]:
     """Flatten a raw FB Marketplace payload into a ListingIn-shaped dict.
 
@@ -92,8 +134,12 @@ def fb_payload_to_listing_in(fb: Dict[str, Any]) -> Dict[str, Any]:
         "vehicleCondition": fb.get("vehicle_condition"),
         "vehicleTitleStatus": fb.get("vehicle_title_status"),
         "vehicleFeatures": fb.get("vehicle_features"),
-        "vehicleNumberOfOwners": fb.get("vehicle_number_of_owners"),
-        "vehicleIsPaidOff": fb.get("vehicle_is_paid_off"),
+        "vehicleNumberOfOwners": _as_owner_count(fb.get("vehicle_number_of_owners")),
+        "vehicleIsPaidOff": _as_bool_enum(
+            fb.get("vehicle_is_paid_off"),
+            truthy=("IS_PAID_OFF", "PAID_OFF", "TRUE", "YES"),
+            falsy=("NOT_PAID_OFF", "FALSE", "NO"),
+        ),
         "odometerUnit": odometer.get("unit"),
         "exteriorColor": fb.get("vehicle_exterior_color"),
         "interiorColor": fb.get("vehicle_interior_color"),

@@ -45,7 +45,11 @@ create table if not exists scores (
   created_at timestamptz default now()
 );
 
-create or replace view v_latest_scores as
+-- Drop-then-create instead of CREATE OR REPLACE because the old view's
+-- column list (which included vehicle_key) is incompatible with the new
+-- shape, and CREATE OR REPLACE VIEW can only add columns at the end.
+drop view if exists v_latest_scores;
+create view v_latest_scores as
 select distinct on (vin) vin, score, buy_max, reason_codes, created_at
 from scores
 where vin is not null

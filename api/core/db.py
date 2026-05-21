@@ -283,6 +283,7 @@ def apply_schema_if_needed() -> None:
                     "migrations/022_drop_listing_seller_columns.sql",
                     "migrations/023_add_fb_marketplace_fields.sql",
                     "migrations/024_flatten_fb_marketplace_fields.sql",
+                    "migrations/025_add_engine_size_to_listings.sql",
                 ]
                 for mig_file in _migration_files:
                     mig_sql = _read_migration_file(mig_file)

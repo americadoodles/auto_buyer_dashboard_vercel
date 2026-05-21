@@ -42,19 +42,19 @@ export const CompactCarfaxSection: React.FC<CompactCarfaxSectionProps> = ({
     <>
       {/* Clickable Title Card */}
       <div
-        className="bg-white dark:bg-[#1a1d29] rounded-lg shadow-sm border border-gray-200 dark:border-gray-700/50 px-6 py-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+        className="bg-claude-surface dark:bg-[#1a1d29] rounded-lg shadow-sm border border-claude-border dark:border-coal-700/50 px-6 py-2 cursor-pointer hover:bg-claude-cream dark:hover:bg-coal-850/50 transition-colors"
         onClick={() => setIsPanelOpen(true)}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Icon name="carfax" size={24} className="opacity-80" />
-            <span className="text-lg font-bold text-black dark:text-white">CARFAX</span>
+            <span className="text-lg font-bold text-black dark:text-coal-100">CARFAX</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className={`text-sm font-medium ${isClean ? 'text-green-600 dark:text-green-400' : 'text-black dark:text-gray-400'}`}>
+            <span className={`text-sm font-medium ${isClean ? 'text-green-600 dark:text-green-400' : 'text-black dark:text-coal-400'}`}>
               {status}
             </span>
-            <ChevronRight className="w-5 h-5 text-gray-400" />
+            <ChevronRight className="w-5 h-5 text-claude-subtle" />
           </div>
         </div>
       </div>
@@ -63,39 +63,39 @@ export const CompactCarfaxSection: React.FC<CompactCarfaxSectionProps> = ({
       {isPanelOpen && (
         <>
           <div className={`fixed inset-0 bg-black/50 z-40 ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`} onClick={handleClose} />
-          <div className={`fixed top-0 right-0 h-full w-[30%] min-w-[320px] bg-white dark:bg-[#1a1d29] shadow-xl z-50 overflow-y-auto ${isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'}`}>
-            <div className="sticky top-0 bg-white dark:bg-[#1a1d29] border-b border-gray-200 dark:border-gray-700/50 px-6 py-4 flex items-center justify-between">
+          <div className={`fixed top-0 right-0 h-full w-[30%] min-w-[320px] bg-claude-surface dark:bg-[#1a1d29] shadow-xl z-50 overflow-y-auto ${isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'}`}>
+            <div className="sticky top-0 bg-claude-surface dark:bg-[#1a1d29] border-b border-claude-border dark:border-coal-700/50 px-6 py-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Icon name="carfax" size={24} className="opacity-80" />
-                <span className="text-lg font-bold text-black dark:text-white">CARFAX</span>
+                <span className="text-lg font-bold text-black dark:text-coal-100">CARFAX</span>
               </div>
-              <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-white">
+              <button onClick={handleClose} className="text-claude-subtle hover:text-claude-muted dark:hover:text-coal-100">
                 <X className="w-6 h-6" />
               </button>
             </div>
             <div className="px-6 py-4 space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-black dark:text-gray-300">Status</span>
-                <span className={`text-sm font-medium ${isClean ? 'text-green-600 dark:text-green-400' : 'text-black dark:text-gray-400'}`}>
+                <span className="text-sm text-black dark:text-coal-300">Status</span>
+                <span className={`text-sm font-medium ${isClean ? 'text-green-600 dark:text-green-400' : 'text-black dark:text-coal-400'}`}>
                   {status}
                 </span>
               </div>
               {previousOwners !== undefined && (
                 <div>
-                  <div className="text-3xl font-bold text-black dark:text-white mb-1">{previousOwners}</div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">Previous Owners</div>
+                  <div className="text-3xl font-bold text-black dark:text-coal-100 mb-1">{previousOwners}</div>
+                  <div className="text-sm text-claude-subtle dark:text-coal-400">Previous Owners</div>
                 </div>
               )}
               {images && images.length > 0 && (
                 <div>
-                  <div className="text-sm font-semibold text-black dark:text-gray-400 mb-2">Images</div>
+                  <div className="text-sm font-semibold text-black dark:text-coal-400 mb-2">Images</div>
                   <div className="flex items-center gap-2 flex-wrap">
                     {images.slice(0, 6).map((image, index) => (
                       <img
                         key={index}
                         src={image}
                         alt={`Vehicle view ${index + 1}`}
-                        className="w-20 h-14 object-cover rounded border border-gray-200 dark:border-gray-700"
+                        className="w-20 h-14 object-cover rounded border border-claude-border dark:border-coal-700"
                       />
                     ))}
                   </div>

@@ -484,10 +484,10 @@ export default function ListingDetailPage() {
 
   if (loading) {
     return (
-      <div className="h-full overflow-y-auto bg-white dark:bg-gray-900">
+      <div className="h-full overflow-y-auto bg-claude-surface dark:bg-coal-900">
         <div className="p-6 flex items-center justify-center min-h-screen">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
-          <span className="ml-3 text-gray-800 dark:text-gray-200 font-medium">Loading listing details...</span>
+          <span className="ml-3 text-claude-ink dark:text-coal-200 font-medium">Loading listing details...</span>
         </div>
       </div>
     );
@@ -495,11 +495,11 @@ export default function ListingDetailPage() {
 
   if (!listing) {
     return (
-      <div className="h-full overflow-y-auto bg-white dark:bg-gray-900">
+      <div className="h-full overflow-y-auto bg-claude-surface dark:bg-coal-900">
         <div className="p-6">
           <div className="text-center py-12">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Listing Not Found</h2>
-            <p className="text-gray-700 dark:text-gray-300 mb-4 font-medium">{error || 'The listing you are looking for does not exist.'}</p>
+            <h2 className="text-2xl font-bold text-claude-ink dark:text-coal-100 mb-2">Listing Not Found</h2>
+            <p className="text-claude-text dark:text-coal-300 mb-4 font-medium">{error || 'The listing you are looking for does not exist.'}</p>
             <Button 
               onClick={() => {
                 // Preserve page parameter when navigating back
@@ -523,8 +523,8 @@ export default function ListingDetailPage() {
   }
 
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-gray-900">
-      <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 pb-6 flex-shrink-0 shadow-sm">
+    <div className="h-full flex flex-col bg-claude-surface dark:bg-coal-900">
+      <div className="p-6 border-b border-claude-border dark:border-coal-700 bg-claude-surface dark:bg-coal-850 pb-6 flex-shrink-0 shadow-sm">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
@@ -547,10 +547,10 @@ export default function ListingDetailPage() {
               <span>Back</span>
             </Button>
             <div className="w-12 h-12 bg-blue-600 dark:bg-blue-500 rounded-xl flex items-center justify-center shadow-lg">
-              <Icon name="car" className="h-7 w-7 text-white" />
+              <Icon name="car" className="h-7 w-7 text-coal-100" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+              <h1 className="text-3xl font-bold text-claude-ink dark:text-coal-100">
                 {listing.year} {listing.make} {listing.model}
               </h1>
             </div>
@@ -568,17 +568,17 @@ export default function ListingDetailPage() {
           <div className="mt-4 flex items-center justify-between">
             <div className="flex items-center space-x-4">
               {listing.score !== undefined && (
-                <Badge color="blue" className="bg-blue-500 dark:bg-blue-600 text-white font-semibold shadow-sm">
+                <Badge color="blue" className="bg-blue-500 dark:bg-blue-600 text-coal-100 font-semibold shadow-sm">
                   Score: {listing.score}
                 </Badge>
               )}
               {listing.buyMax && (
-                <Badge color="green" className="bg-emerald-500 dark:bg-emerald-600 text-white font-semibold shadow-sm">
+                <Badge color="green" className="bg-emerald-500 dark:bg-emerald-600 text-coal-100 font-semibold shadow-sm">
                   Buy Max: ${listing.buyMax.toLocaleString()}
                 </Badge>
               )}
               {listing.decision?.status && (
-                <Badge color="orange" className="bg-orange-500 dark:bg-orange-600 text-white font-semibold shadow-sm">
+                <Badge color="orange" className="bg-orange-500 dark:bg-orange-600 text-coal-100 font-semibold shadow-sm">
                   Status: {listing.decision.status}
                 </Badge>
               )}
@@ -606,7 +606,7 @@ export default function ListingDetailPage() {
                 onClick={() => setIsDeleteConfirmOpen(true)}
                 variant="outline"
                 size="sm"
-                className="flex items-center gap-2 bg-red-600 dark:bg-red-500 hover:bg-red-700 dark:hover:bg-red-600 text-white border-0 shadow-md font-semibold cursor-pointer"
+                className="flex items-center gap-2 bg-red-600 dark:bg-red-500 hover:bg-red-700 dark:hover:bg-red-600 text-coal-100 border-0 shadow-md font-semibold cursor-pointer"
               >
                 <Trash2 className="h-4 w-4" />
                 Remove
@@ -617,14 +617,14 @@ export default function ListingDetailPage() {
           {/* Delete Confirmation Modal */}
           {isDeleteConfirmOpen && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+              <div className="bg-claude-surface dark:bg-coal-850 rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
                     <Trash2 className="h-5 w-5 text-red-600 dark:text-red-400" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Delete Listing</h3>
+                  <h3 className="text-lg font-semibold text-claude-ink dark:text-coal-100">Delete Listing</h3>
                 </div>
-                <p className="text-gray-600 dark:text-gray-300 mb-6">
+                <p className="text-claude-muted dark:text-coal-300 mb-6">
                   Are you sure you want to delete this listing? This action cannot be undone and will remove all associated data including images.
                 </p>
                 <div className="flex justify-end gap-3">
@@ -632,14 +632,14 @@ export default function ListingDetailPage() {
                     onClick={() => setIsDeleteConfirmOpen(false)}
                     variant="outline"
                     disabled={deleting}
-                    className="border-gray-300 dark:border-gray-600"
+                    className="border-claude-divider dark:border-coal-600"
                   >
                     Cancel
                   </Button>
                   <Button
                     onClick={handleDeleteListing}
                     disabled={deleting}
-                    className="bg-red-600 hover:bg-red-700 text-white"
+                    className="bg-red-600 hover:bg-red-700 text-coal-100"
                   >
                     {deleting ? (
                       <>
@@ -656,9 +656,9 @@ export default function ListingDetailPage() {
           )}
 
           {/* Edit Fields Section */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-3">
-              <h4 className="text-lg font-bold text-gray-900 dark:text-gray-100">Vehicle Information</h4>
+          <div className="bg-claude-surface dark:bg-coal-850 rounded-lg shadow-sm border border-claude-border dark:border-coal-700 p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-claude-border dark:border-coal-700 pb-3">
+              <h4 className="text-lg font-bold text-claude-ink dark:text-coal-100">Vehicle Information</h4>
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleNotify}
@@ -685,34 +685,34 @@ export default function ListingDetailPage() {
             </div>
             
             {/* Read-only basic info */}
-            <div className="grid grid-cols-4 gap-4 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-md">
+            <div className="grid grid-cols-4 gap-4 p-3 bg-claude-cream dark:bg-coal-900/50 rounded-md">
               <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Year</label>
-                <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">{listing.year}</div>
+                <label className="block text-xs font-medium text-claude-subtle dark:text-coal-400 mb-1">Year</label>
+                <div className="text-sm font-semibold text-claude-ink dark:text-coal-100">{listing.year}</div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Make</label>
-                <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">{listing.make}</div>
+                <label className="block text-xs font-medium text-claude-subtle dark:text-coal-400 mb-1">Make</label>
+                <div className="text-sm font-semibold text-claude-ink dark:text-coal-100">{listing.make}</div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Model</label>
-                <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">{listing.model}</div>
+                <label className="block text-xs font-medium text-claude-subtle dark:text-coal-400 mb-1">Model</label>
+                <div className="text-sm font-semibold text-claude-ink dark:text-coal-100">{listing.model}</div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Trim</label>
-                <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">{listing.trim || ''}</div>
+                <label className="block text-xs font-medium text-claude-subtle dark:text-coal-400 mb-1">Trim</label>
+                <div className="text-sm font-semibold text-claude-ink dark:text-coal-100">{listing.trim || ''}</div>
               </div>
             </div>
             
             <div className="grid grid-cols-2 gap-x-8 gap-y-1">
               <div className="flex items-center w-full group">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">VIN Number:</span>
+                <span className="text-sm font-semibold text-claude-ink dark:text-coal-200 w-32 flex-shrink-0">VIN Number:</span>
                 {editingField === 'vin' ? (
                   <div className="flex items-center gap-2 flex-1">
                     <Input
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      className="uppercase border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      className="uppercase border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-claude-ink dark:text-coal-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
                       autoFocus
                     />
                     <button
@@ -736,13 +736,13 @@ export default function ListingDetailPage() {
                   <div className="flex items-center gap-2">
                     <span 
                       onClick={() => startEditing('vin', listing.vin || '')}
-                      className="text-sm text-gray-900 dark:text-gray-100 uppercase cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      className="text-sm text-claude-ink dark:text-coal-100 uppercase cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                     >
                       {listing.vin || ''}
                     </span>
                     <button
                       onClick={() => startEditing('vin', listing.vin || '')}
-                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      className="p-1 text-claude-subtle hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
                       title="Edit"
                     >
                       <Edit2 className="h-4 w-4" />
@@ -752,13 +752,13 @@ export default function ListingDetailPage() {
               </div>
               
               <div className="flex items-center w-full group">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">LPN:</span>
+                <span className="text-sm font-semibold text-claude-ink dark:text-coal-200 w-32 flex-shrink-0">LPN:</span>
                 {editingField === 'lpn' ? (
                   <div className="flex items-center gap-2 flex-1">
                     <Input
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      className="uppercase border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      className="uppercase border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-claude-ink dark:text-coal-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
                       autoFocus
                     />
                     <button
@@ -782,13 +782,13 @@ export default function ListingDetailPage() {
                   <div className="flex items-center gap-2">
                     <span 
                       onClick={() => startEditing('lpn', listing.lpn || '')}
-                      className="text-sm text-gray-900 dark:text-gray-100 uppercase cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      className="text-sm text-claude-ink dark:text-coal-100 uppercase cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                     >
                       {listing.lpn || '—'}
                     </span>
                     <button
                       onClick={() => startEditing('lpn', listing.lpn || '')}
-                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      className="p-1 text-claude-subtle hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
                       title="Edit"
                     >
                       <Edit2 className="h-4 w-4" />
@@ -798,13 +798,13 @@ export default function ListingDetailPage() {
               </div>
               
               <div className="flex items-center w-full group">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Location:</span>
+                <span className="text-sm font-semibold text-claude-ink dark:text-coal-200 w-32 flex-shrink-0">Location:</span>
                 {editingField === 'location' ? (
                   <div className="flex items-center gap-2 flex-1">
                     <Input
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-claude-ink dark:text-coal-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
                       autoFocus
                     />
                     <button
@@ -828,13 +828,13 @@ export default function ListingDetailPage() {
                   <div className="flex items-center gap-2">
                     <span 
                       onClick={() => startEditing('location', listing.location || '')}
-                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      className="text-sm text-claude-ink dark:text-coal-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                     >
                       {listing.location || ''}
                     </span>
                     <button
                       onClick={() => startEditing('location', listing.location || '')}
-                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      className="p-1 text-claude-subtle hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
                       title="Edit"
                     >
                       <Edit2 className="h-4 w-4" />
@@ -844,14 +844,14 @@ export default function ListingDetailPage() {
               </div>
               
               <div className="flex items-center w-full group">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Price:</span>
+                <span className="text-sm font-semibold text-claude-ink dark:text-coal-200 w-32 flex-shrink-0">Price:</span>
                 {editingField === 'price' ? (
                   <div className="flex items-center gap-2 flex-1">
                     <Input
                       type="text"
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-claude-ink dark:text-coal-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
                       autoFocus
                     />
                     <button
@@ -875,13 +875,13 @@ export default function ListingDetailPage() {
                   <div className="flex items-center gap-2">
                     <span 
                       onClick={() => startEditing('price', listing.price || '')}
-                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      className="text-sm text-claude-ink dark:text-coal-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                     >
                       {listing.price ? `$${formatNumberWithCommas(listing.price)}` : ''}
                     </span>
                     <button
                       onClick={() => startEditing('price', listing.price || '')}
-                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      className="p-1 text-claude-subtle hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
                       title="Edit"
                     >
                       <Edit2 className="h-4 w-4" />
@@ -891,14 +891,14 @@ export default function ListingDetailPage() {
               </div>
               
               <div className="flex items-center w-full group">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Miles:</span>
+                <span className="text-sm font-semibold text-claude-ink dark:text-coal-200 w-32 flex-shrink-0">Miles:</span>
                 {editingField === 'miles' ? (
                   <div className="flex items-center gap-2 flex-1">
                     <Input
                       type="text"
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-claude-ink dark:text-coal-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
                       autoFocus
                     />
                     <button
@@ -922,13 +922,13 @@ export default function ListingDetailPage() {
                   <div className="flex items-center gap-2">
                     <span 
                       onClick={() => startEditing('miles', listing.miles || '')}
-                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      className="text-sm text-claude-ink dark:text-coal-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                     >
                       {listing.miles ? formatNumberWithCommas(listing.miles) : ''}
                     </span>
                     <button
                       onClick={() => startEditing('miles', listing.miles || '')}
-                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      className="p-1 text-claude-subtle hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
                       title="Edit"
                     >
                       <Edit2 className="h-4 w-4" />
@@ -938,14 +938,14 @@ export default function ListingDetailPage() {
               </div>
 
               <div className="flex items-center w-full group">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">MMR:</span>
+                <span className="text-sm font-semibold text-claude-ink dark:text-coal-200 w-32 flex-shrink-0">MMR:</span>
                 {editingField === 'mmr' ? (
                   <div className="flex items-center gap-2 flex-1">
                     <Input
                       type="text"
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-claude-ink dark:text-coal-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
                       autoFocus
                     />
                     <button
@@ -969,13 +969,13 @@ export default function ListingDetailPage() {
                   <div className="flex items-center gap-2">
                     <span 
                       onClick={() => startEditing('mmr', listing.mmr || '')}
-                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      className="text-sm text-claude-ink dark:text-coal-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                     >
                       {listing.mmr ? formatNumberWithCommas(listing.mmr) : ''}
                     </span>
                     <button
                       onClick={() => startEditing('mmr', listing.mmr || '')}
-                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      className="p-1 text-claude-subtle hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
                       title="Edit"
                     >
                       <Edit2 className="h-4 w-4" />
@@ -985,14 +985,14 @@ export default function ListingDetailPage() {
               </div>
               
               <div className="flex items-center w-full group">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">DOM:</span>
+                <span className="text-sm font-semibold text-claude-ink dark:text-coal-200 w-32 flex-shrink-0">DOM:</span>
                 {editingField === 'dom' ? (
                   <div className="flex items-center gap-2 flex-1">
                     <Input
                       type="text"
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-claude-ink dark:text-coal-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
                       autoFocus
                     />
                     <button
@@ -1016,13 +1016,13 @@ export default function ListingDetailPage() {
                   <div className="flex items-center gap-2">
                     <span 
                       onClick={() => startEditing('dom', listing.dom || '')}
-                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      className="text-sm text-claude-ink dark:text-coal-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                     >
                       {listing.dom || ''}
                     </span>
                     <button
                       onClick={() => startEditing('dom', listing.dom || '')}
-                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      className="p-1 text-claude-subtle hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
                       title="Edit"
                     >
                       <Edit2 className="h-4 w-4" />
@@ -1032,13 +1032,13 @@ export default function ListingDetailPage() {
               </div>
 
               <div className="flex items-center w-full group">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Status:</span>
+                <span className="text-sm font-semibold text-claude-ink dark:text-coal-200 w-32 flex-shrink-0">Status:</span>
                 {editingField === 'status' ? (
                   <div className="flex items-center gap-2 flex-1">
                     <Input
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-claude-ink dark:text-coal-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
                       autoFocus
                     />
                     <button
@@ -1062,13 +1062,13 @@ export default function ListingDetailPage() {
                   <div className="flex items-center gap-2">
                     <span 
                       onClick={() => startEditing('status', listing.status || listing.decision?.status || '')}
-                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      className="text-sm text-claude-ink dark:text-coal-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                     >
                       {listing.status || listing.decision?.status || ''}
                     </span>
                     <button
                       onClick={() => startEditing('status', listing.status || listing.decision?.status || '')}
-                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      className="p-1 text-claude-subtle hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
                       title="Edit"
                     >
                       <Edit2 className="h-4 w-4" />
@@ -1078,14 +1078,14 @@ export default function ListingDetailPage() {
               </div>
               
               <div className="flex items-center w-full group">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Score:</span>
+                <span className="text-sm font-semibold text-claude-ink dark:text-coal-200 w-32 flex-shrink-0">Score:</span>
                 {editingField === 'score' ? (
                   <div className="flex items-center gap-2 flex-1">
                     <Input
                       type="text"
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-claude-ink dark:text-coal-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
                       autoFocus
                     />
                     <button
@@ -1109,13 +1109,13 @@ export default function ListingDetailPage() {
                   <div className="flex items-center gap-2">
                     <span 
                       onClick={() => startEditing('score', listing.score !== undefined ? listing.score.toString() : '')}
-                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      className="text-sm text-claude-ink dark:text-coal-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                     >
                       {listing.score !== undefined ? listing.score.toString() : ''}
                     </span>
                     <button
                       onClick={() => startEditing('score', listing.score !== undefined ? listing.score.toString() : '')}
-                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      className="p-1 text-claude-subtle hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
                       title="Edit"
                     >
                       <Edit2 className="h-4 w-4" />
@@ -1125,14 +1125,14 @@ export default function ListingDetailPage() {
               </div>
 
               <div className="flex items-center w-full group">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Buy Max:</span>
+                <span className="text-sm font-semibold text-claude-ink dark:text-coal-200 w-32 flex-shrink-0">Buy Max:</span>
                 {editingField === 'buyMax' ? (
                   <div className="flex items-center gap-2 flex-1">
                     <Input
                       type="text"
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-claude-ink dark:text-coal-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
                       autoFocus
                     />
                     <button
@@ -1156,13 +1156,13 @@ export default function ListingDetailPage() {
                   <div className="flex items-center gap-2">
                     <span 
                       onClick={() => startEditing('buyMax', listing.buyMax || '')}
-                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      className="text-sm text-claude-ink dark:text-coal-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                     >
                       {listing.buyMax ? `$${listing.buyMax.toLocaleString()}` : ''}
                     </span>
                     <button
                       onClick={() => startEditing('buyMax', listing.buyMax || '')}
-                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      className="p-1 text-claude-subtle hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
                       title="Edit"
                     >
                       <Edit2 className="h-4 w-4" />
@@ -1172,13 +1172,13 @@ export default function ListingDetailPage() {
               </div>
 
               <div className="flex items-center w-full group">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Interior Color:</span>
+                <span className="text-sm font-semibold text-claude-ink dark:text-coal-200 w-32 flex-shrink-0">Interior Color:</span>
                 {editingField === 'interior_color' ? (
                   <div className="flex items-center gap-2 flex-1">
                     <Input
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-claude-ink dark:text-coal-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
                       autoFocus
                     />
                     <button
@@ -1202,13 +1202,13 @@ export default function ListingDetailPage() {
                   <div className="flex items-center gap-2">
                     <span 
                       onClick={() => startEditing('interior_color', listing.interiorColor || '')}
-                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      className="text-sm text-claude-ink dark:text-coal-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                     >
                       {listing.interiorColor || ''}
                     </span>
                     <button
                       onClick={() => startEditing('interior_color', listing.interiorColor || '')}
-                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      className="p-1 text-claude-subtle hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
                       title="Edit"
                     >
                       <Edit2 className="h-4 w-4" />
@@ -1218,13 +1218,13 @@ export default function ListingDetailPage() {
               </div>
               
               <div className="flex items-center w-full group">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Exterior Color:</span>
+                <span className="text-sm font-semibold text-claude-ink dark:text-coal-200 w-32 flex-shrink-0">Exterior Color:</span>
                 {editingField === 'exterior_color' ? (
                   <div className="flex items-center gap-2 flex-1">
                     <Input
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-claude-ink dark:text-coal-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
                       autoFocus
                     />
                     <button
@@ -1248,13 +1248,13 @@ export default function ListingDetailPage() {
                   <div className="flex items-center gap-2">
                     <span 
                       onClick={() => startEditing('exterior_color', listing.exteriorColor || '')}
-                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      className="text-sm text-claude-ink dark:text-coal-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                     >
                       {listing.exteriorColor || ''}
                     </span>
                     <button
                       onClick={() => startEditing('exterior_color', listing.exteriorColor || '')}
-                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      className="p-1 text-claude-subtle hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
                       title="Edit"
                     >
                       <Edit2 className="h-4 w-4" />
@@ -1264,13 +1264,13 @@ export default function ListingDetailPage() {
               </div>
 
               <div className="flex items-center w-full group">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Transmission:</span>
+                <span className="text-sm font-semibold text-claude-ink dark:text-coal-200 w-32 flex-shrink-0">Transmission:</span>
                 {editingField === 'transmission' ? (
                   <div className="flex items-center gap-2 flex-1">
                     <Input
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-claude-ink dark:text-coal-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
                       autoFocus
                     />
                     <button
@@ -1294,13 +1294,13 @@ export default function ListingDetailPage() {
                   <div className="flex items-center gap-2">
                     <span 
                       onClick={() => startEditing('transmission', listing.transmission || '')}
-                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      className="text-sm text-claude-ink dark:text-coal-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                     >
                       {listing.transmission || ''}
                     </span>
                     <button
                       onClick={() => startEditing('transmission', listing.transmission || '')}
-                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      className="p-1 text-claude-subtle hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
                       title="Edit"
                     >
                       <Edit2 className="h-4 w-4" />
@@ -1310,13 +1310,13 @@ export default function ListingDetailPage() {
               </div>
               
               <div className="flex items-center w-full group">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Fuel Type:</span>
+                <span className="text-sm font-semibold text-claude-ink dark:text-coal-200 w-32 flex-shrink-0">Fuel Type:</span>
                 {editingField === 'fuel_type' ? (
                   <div className="flex items-center gap-2 flex-1">
                     <Input
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-claude-ink dark:text-coal-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
                       autoFocus
                     />
                     <button
@@ -1340,13 +1340,13 @@ export default function ListingDetailPage() {
                   <div className="flex items-center gap-2">
                     <span 
                       onClick={() => startEditing('fuel_type', listing.fuelType || '')}
-                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      className="text-sm text-claude-ink dark:text-coal-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                     >
                       {listing.fuelType || ''}
                     </span>
                     <button
                       onClick={() => startEditing('fuel_type', listing.fuelType || '')}
-                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      className="p-1 text-claude-subtle hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
                       title="Edit"
                     >
                       <Edit2 className="h-4 w-4" />
@@ -1356,13 +1356,13 @@ export default function ListingDetailPage() {
               </div>
 
               <div className="flex items-center w-full group">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Drivetrain:</span>
+                <span className="text-sm font-semibold text-claude-ink dark:text-coal-200 w-32 flex-shrink-0">Drivetrain:</span>
                 {editingField === 'drivetrain' ? (
                   <div className="flex items-center gap-2 flex-1">
                     <Input
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-claude-ink dark:text-coal-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
                       autoFocus
                     />
                     <button
@@ -1386,13 +1386,13 @@ export default function ListingDetailPage() {
                   <div className="flex items-center gap-2">
                     <span 
                       onClick={() => startEditing('drivetrain', listing.driveType || '')}
-                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      className="text-sm text-claude-ink dark:text-coal-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                     >
                       {listing.driveType || ''}
                     </span>
                     <button
                       onClick={() => startEditing('drivetrain', listing.driveType || '')}
-                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      className="p-1 text-claude-subtle hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
                       title="Edit"
                     >
                       <Edit2 className="h-4 w-4" />
@@ -1402,13 +1402,13 @@ export default function ListingDetailPage() {
               </div>
               
               <div className="flex items-center w-full group">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Engine:</span>
+                <span className="text-sm font-semibold text-claude-ink dark:text-coal-200 w-32 flex-shrink-0">Engine:</span>
                 {editingField === 'engine_size' ? (
                   <div className="flex items-center gap-2 flex-1">
                     <Input
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-claude-ink dark:text-coal-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
                       autoFocus
                     />
                     <button
@@ -1432,13 +1432,13 @@ export default function ListingDetailPage() {
                   <div className="flex items-center gap-2">
                     <span 
                       onClick={() => startEditing('engine_size', listing.engine || '')}
-                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      className="text-sm text-claude-ink dark:text-coal-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                     >
                       {listing.engine || ''}
                     </span>
                     <button
                       onClick={() => startEditing('engine_size', listing.engine || '')}
-                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      className="p-1 text-claude-subtle hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
                       title="Edit"
                     >
                       <Edit2 className="h-4 w-4" />
@@ -1448,13 +1448,13 @@ export default function ListingDetailPage() {
               </div>
 
               <div className="flex items-center w-full group">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Body Style:</span>
+                <span className="text-sm font-semibold text-claude-ink dark:text-coal-200 w-32 flex-shrink-0">Body Style:</span>
                 {editingField === 'body_style' ? (
                   <div className="flex items-center gap-2 flex-1">
                     <Input
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-claude-ink dark:text-coal-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
                       autoFocus
                     />
                     <button
@@ -1478,13 +1478,13 @@ export default function ListingDetailPage() {
                   <div className="flex items-center gap-2">
                     <span 
                       onClick={() => startEditing('body_style', listing.bodyStyle || '')}
-                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      className="text-sm text-claude-ink dark:text-coal-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                     >
                       {listing.bodyStyle || ''}
                     </span>
                     <button
                       onClick={() => startEditing('body_style', listing.bodyStyle || '')}
-                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      className="p-1 text-claude-subtle hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
                       title="Edit"
                     >
                       <Edit2 className="h-4 w-4" />
@@ -1494,14 +1494,14 @@ export default function ListingDetailPage() {
               </div>
 
               <div className="flex items-center w-full group">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">MPG:</span>
+                <span className="text-sm font-semibold text-claude-ink dark:text-coal-200 w-32 flex-shrink-0">MPG:</span>
                 {editingField === 'mpg' ? (
                   <div className="flex items-center gap-2 flex-1">
                     <Input
                       type="text"
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-claude-ink dark:text-coal-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
                       autoFocus
                     />
                     <button
@@ -1525,13 +1525,13 @@ export default function ListingDetailPage() {
                   <div className="flex items-center gap-2">
                     <span 
                       onClick={() => startEditing('mpg', listing.mpg || '')}
-                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      className="text-sm text-claude-ink dark:text-coal-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                     >
                       {listing.mpg || ''}
                     </span>
                     <button
                       onClick={() => startEditing('mpg', listing.mpg || '')}
-                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      className="p-1 text-claude-subtle hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
                       title="Edit"
                     >
                       <Edit2 className="h-4 w-4" />
@@ -1541,13 +1541,13 @@ export default function ListingDetailPage() {
               </div>
               
               <div className="flex items-center w-full group">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Overall Rating:</span>
+                <span className="text-sm font-semibold text-claude-ink dark:text-coal-200 w-32 flex-shrink-0">Overall Rating:</span>
                 {editingField === 'overall_rating' ? (
                   <div className="flex items-center gap-2 flex-1">
                     <Input
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-claude-ink dark:text-coal-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
                       autoFocus
                     />
                     <button
@@ -1571,13 +1571,13 @@ export default function ListingDetailPage() {
                   <div className="flex items-center gap-2">
                     <span 
                       onClick={() => startEditing('overall_rating', listing.overallRating || '')}
-                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      className="text-sm text-claude-ink dark:text-coal-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                     >
                       {listing.overallRating || ''}
                     </span>
                     <button
                       onClick={() => startEditing('overall_rating', listing.overallRating || '')}
-                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      className="p-1 text-claude-subtle hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
                       title="Edit"
                     >
                       <Edit2 className="h-4 w-4" />
@@ -1587,13 +1587,13 @@ export default function ListingDetailPage() {
               </div>
 
               <div className="flex items-center w-full group">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Condition:</span>
+                <span className="text-sm font-semibold text-claude-ink dark:text-coal-200 w-32 flex-shrink-0">Condition:</span>
                 {editingField === 'condition' ? (
                   <div className="flex items-center gap-2 flex-1">
                     <Input
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-claude-ink dark:text-coal-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
                       autoFocus
                     />
                     <button
@@ -1617,13 +1617,13 @@ export default function ListingDetailPage() {
                   <div className="flex items-center gap-2">
                     <span 
                       onClick={() => startEditing('condition', listing.condition || '')}
-                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      className="text-sm text-claude-ink dark:text-coal-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                     >
                       {listing.condition || ''}
                     </span>
                     <button
                       onClick={() => startEditing('condition', listing.condition || '')}
-                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      className="p-1 text-claude-subtle hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
                       title="Edit"
                     >
                       <Edit2 className="h-4 w-4" />
@@ -1633,14 +1633,14 @@ export default function ListingDetailPage() {
               </div>
 
               <div className="flex items-center w-full group">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Detailed Ratings:</span>
+                <span className="text-sm font-semibold text-claude-ink dark:text-coal-200 w-32 flex-shrink-0">Detailed Ratings:</span>
                 {editingField === 'detailed_ratings' ? (
                   <div className="flex items-center gap-2 flex-1">
                     <Input
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
                       placeholder="Comma-separated ratings"
-                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-claude-ink dark:text-coal-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
                       autoFocus
                     />
                     <button
@@ -1668,15 +1668,15 @@ export default function ListingDetailPage() {
                     >
                       {listing.detailedRatings && listing.detailedRatings.length > 0 ? (
                         listing.detailedRatings.map((rating, idx) => (
-                          <Badge key={idx} color="blue" className="bg-blue-500 dark:bg-blue-600 text-white">{rating}</Badge>
+                          <Badge key={idx} color="blue" className="bg-blue-500 dark:bg-blue-600 text-coal-100">{rating}</Badge>
                         ))
                       ) : (
-                        <span className="text-sm text-gray-500 dark:text-gray-400"></span>
+                        <span className="text-sm text-claude-subtle dark:text-coal-400"></span>
                       )}
                     </div>
                     <button
                       onClick={() => startEditing('detailed_ratings', listing.detailedRatings ? listing.detailedRatings.join(', ') : '')}
-                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      className="p-1 text-claude-subtle hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
                       title="Edit"
                     >
                       <Edit2 className="h-4 w-4" />
@@ -1686,13 +1686,13 @@ export default function ListingDetailPage() {
               </div>
 
               <div className="flex items-center w-full group">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Clean Title:</span>
+                <span className="text-sm font-semibold text-claude-ink dark:text-coal-200 w-32 flex-shrink-0">Clean Title:</span>
                 {editingField === 'clean_title' ? (
                   <div className="flex items-center gap-2 flex-1">
                     <Input
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-claude-ink dark:text-coal-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
                       autoFocus
                     />
                     <button
@@ -1716,13 +1716,13 @@ export default function ListingDetailPage() {
                   <div className="flex items-center gap-2">
                     <span 
                       onClick={() => startEditing('clean_title', listing.cleanTitle ? 'Yes' : 'No')}
-                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      className="text-sm text-claude-ink dark:text-coal-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                     >
                       {listing.cleanTitle ? 'Yes' : 'No'}
                     </span>
                     <button
                       onClick={() => startEditing('clean_title', listing.cleanTitle ? 'Yes' : 'No')}
-                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      className="p-1 text-claude-subtle hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
                       title="Edit"
                     >
                       <Edit2 className="h-4 w-4" />
@@ -1732,13 +1732,13 @@ export default function ListingDetailPage() {
               </div>
               
               <div className="flex items-center w-full group">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Paid Status:</span>
+                <span className="text-sm font-semibold text-claude-ink dark:text-coal-200 w-32 flex-shrink-0">Paid Status:</span>
                 {editingField === 'paid_status' ? (
                   <div className="flex items-center gap-2 flex-1">
                     <Input
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-claude-ink dark:text-coal-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
                       autoFocus
                     />
                     <button
@@ -1762,13 +1762,13 @@ export default function ListingDetailPage() {
                   <div className="flex items-center gap-2">
                     <span 
                       onClick={() => startEditing('paid_status', listing.paidStatus || '')}
-                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      className="text-sm text-claude-ink dark:text-coal-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                     >
                       {listing.paidStatus || ''}
                     </span>
                     <button
                       onClick={() => startEditing('paid_status', listing.paidStatus || '')}
-                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      className="p-1 text-claude-subtle hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
                       title="Edit"
                     >
                       <Edit2 className="h-4 w-4" />
@@ -1778,13 +1778,13 @@ export default function ListingDetailPage() {
               </div>
 
               <div className="flex items-center w-full group">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Seller Name:</span>
+                <span className="text-sm font-semibold text-claude-ink dark:text-coal-200 w-32 flex-shrink-0">Seller Name:</span>
                 {editingField === 'seller_name' ? (
                   <div className="flex items-center gap-2 flex-1">
                     <Input
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-claude-ink dark:text-coal-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
                       autoFocus
                     />
                     <button
@@ -1808,13 +1808,13 @@ export default function ListingDetailPage() {
                   <div className="flex items-center gap-2">
                     <span 
                       onClick={() => startEditing('seller_name', listing.sellerName || '')}
-                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      className="text-sm text-claude-ink dark:text-coal-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                     >
                       {listing.sellerName || ''}
                     </span>
                     <button
                       onClick={() => startEditing('seller_name', listing.sellerName || '')}
-                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      className="p-1 text-claude-subtle hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
                       title="Edit"
                     >
                       <Edit2 className="h-4 w-4" />
@@ -1824,13 +1824,13 @@ export default function ListingDetailPage() {
               </div>
 
               <div className="flex items-center w-full group">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Phone Number:</span>
+                <span className="text-sm font-semibold text-claude-ink dark:text-coal-200 w-32 flex-shrink-0">Phone Number:</span>
                 {editingField === 'phone_number' ? (
                   <div className="flex items-center gap-2 flex-1">
                     <Input
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-claude-ink dark:text-coal-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
                       autoFocus
                     />
                     <button
@@ -1854,13 +1854,13 @@ export default function ListingDetailPage() {
                   <div className="flex items-center gap-2">
                     <span 
                       onClick={() => startEditing('phone_number', listing.phoneNumber || '')}
-                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      className="text-sm text-claude-ink dark:text-coal-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                     >
                       {listing.phoneNumber || ''}
                     </span>
                     <button
                       onClick={() => startEditing('phone_number', listing.phoneNumber || '')}
-                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      className="p-1 text-claude-subtle hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
                       title="Edit"
                     >
                       <Edit2 className="h-4 w-4" />
@@ -1870,13 +1870,13 @@ export default function ListingDetailPage() {
               </div>       
 
               <div className="flex items-center w-full group">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Seller Joined Date:</span>
+                <span className="text-sm font-semibold text-claude-ink dark:text-coal-200 w-32 flex-shrink-0">Seller Joined Date:</span>
                 {editingField === 'seller_joined_date' ? (
                   <div className="flex items-center gap-2 flex-1">
                     <Input
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-claude-ink dark:text-coal-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
                       autoFocus
                     />
                     <button
@@ -1900,13 +1900,13 @@ export default function ListingDetailPage() {
                   <div className="flex items-center gap-2">
                     <span 
                       onClick={() => startEditing('seller_joined_date', listing.sellerJoinedDate || '')}
-                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      className="text-sm text-claude-ink dark:text-coal-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                     >
                       {listing.sellerJoinedDate || ''}
                     </span>
                     <button
                       onClick={() => startEditing('seller_joined_date', listing.sellerJoinedDate || '')}
-                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      className="p-1 text-claude-subtle hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
                       title="Edit"
                     >
                       <Edit2 className="h-4 w-4" />
@@ -1916,13 +1916,13 @@ export default function ListingDetailPage() {
               </div>
 
               <div className="flex items-center w-full group">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Radius:</span>
+                <span className="text-sm font-semibold text-claude-ink dark:text-coal-200 w-32 flex-shrink-0">Radius:</span>
                 {editingField === 'radius' ? (
                   <div className="flex items-center gap-2 flex-1">
                     <Input
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-gray-900 dark:text-gray-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
+                      className="border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-claude-ink dark:text-coal-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
                       autoFocus
                     />
                     <button
@@ -1946,13 +1946,13 @@ export default function ListingDetailPage() {
                   <div className="flex items-center gap-2">
                     <span 
                       onClick={() => startEditing('radius', listing.radius || '')}
-                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      className="text-sm text-claude-ink dark:text-coal-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                     >
                       {listing.radius || ''}
                     </span>
                     <button
                       onClick={() => startEditing('radius', listing.radius || '')}
-                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
+                      className="p-1 text-claude-subtle hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
                       title="Edit"
                     >
                       <Edit2 className="h-4 w-4" />
@@ -1961,13 +1961,13 @@ export default function ListingDetailPage() {
                 )}
               </div>
               <div className="flex items-start col-span-2 w-full group">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0">Seller Description:</span>
+                <span className="text-sm font-semibold text-claude-ink dark:text-coal-200 w-32 flex-shrink-0">Seller Description:</span>
                 {editingField === 'seller_description' ? (
                   <div className="flex items-start gap-2 flex-1">
                     <textarea
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      className="flex-1 px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      className="flex-1 px-3 py-1 border border-claude-divider dark:border-coal-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100"
                       rows={3}
                       autoFocus
                     />
@@ -1994,13 +1994,13 @@ export default function ListingDetailPage() {
                   <div className="flex items-start gap-2">
                     <span 
                       onClick={() => startEditing('seller_description', listing.sellerDescription || '')}
-                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      className="text-sm text-claude-ink dark:text-coal-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                     >
                       {listing.sellerDescription || ''}
                     </span>
                     <button
                       onClick={() => startEditing('seller_description', listing.sellerDescription || '')}
-                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100 mt-1"
+                      className="p-1 text-claude-subtle hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100 mt-1"
                       title="Edit"
                     >
                       <Edit2 className="h-4 w-4" />
@@ -2009,13 +2009,13 @@ export default function ListingDetailPage() {
                 )}
               </div>
               <div className="flex items-start col-span-2 w-full group">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 w-32 flex-shrink-0 pt-1">Notes:</span>
+                <span className="text-sm font-semibold text-claude-ink dark:text-coal-200 w-32 flex-shrink-0 pt-1">Notes:</span>
                 {editingField === 'notes' ? (
                   <div className="flex items-start gap-2 flex-1">
                     <textarea
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      className="flex-1 px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      className="flex-1 px-3 py-1 border border-claude-divider dark:border-coal-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100"
                       rows={3}
                       autoFocus
                     />
@@ -2042,13 +2042,13 @@ export default function ListingDetailPage() {
                   <div className="flex items-start gap-2">
                     <span 
                       onClick={() => startEditing('notes', listing.notes || '')}
-                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      className="text-sm text-claude-ink dark:text-coal-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                     >
                       {listing.notes || ''}
                     </span>
                     <button
                       onClick={() => startEditing('notes', listing.notes || '')}
-                      className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100 mt-1"
+                      className="p-1 text-claude-subtle hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100 mt-1"
                       title="Edit"
                     >
                       <Edit2 className="h-4 w-4" />
@@ -2060,10 +2060,10 @@ export default function ListingDetailPage() {
           </div>
 
           {/* Image Carousel Section */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <div className="bg-claude-surface dark:bg-coal-850 rounded-lg shadow-sm border border-claude-border dark:border-coal-700 p-6">
             <div className="flex items-center justify-between mb-4">
-              <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100">Vehicle Images</h4>
-              <label className="flex items-center gap-2 px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 cursor-pointer transition-colors font-medium">
+              <h4 className="text-md font-semibold text-claude-ink dark:text-coal-100">Vehicle Images</h4>
+              <label className="flex items-center gap-2 px-4 py-2 bg-blue-600 dark:bg-blue-500 text-coal-100 rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 cursor-pointer transition-colors font-medium">
                 <Upload className="h-4 w-4" />
                 {uploadingImages ? 'Uploading...' : 'Upload Images'}
                 <input
@@ -2086,11 +2086,11 @@ export default function ListingDetailPage() {
                       <img
                         src={image}
                         alt={`Vehicle image ${index + 1}`}
-                        className="w-full h-24 object-cover rounded-md border-2 border-gray-200 dark:border-gray-600"
+                        className="w-full h-24 object-cover rounded-md border-2 border-claude-border dark:border-coal-600"
                       />
                       <button
                         onClick={() => handleRemoveImage(index)}
-                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute top-1 right-1 bg-red-500 text-coal-100 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
                         title="Remove image"
                       >
                         <X className="h-3 w-3" />
@@ -2105,10 +2105,10 @@ export default function ListingDetailPage() {
           </div>
 
           {/* Activity Log Timeline */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-2">
-            <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 pb-2">Activity Log</h4>
+          <div className="bg-claude-surface dark:bg-coal-850 rounded-lg shadow-sm border border-claude-border dark:border-coal-700 p-6 space-y-2">
+            <h4 className="text-md font-semibold text-claude-ink dark:text-coal-100 border-b border-claude-border dark:border-coal-700 pb-2">Activity Log</h4>
             {activities.length === 0 ? (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400 text-sm font-medium">
+              <div className="text-center py-8 text-claude-subtle dark:text-coal-400 text-sm font-medium">
                 No activities yet
               </div>
             ) : (
@@ -2117,7 +2117,7 @@ export default function ListingDetailPage() {
                   <div key={activity.id} className="relative flex items-start space-x-3 pb-4">
                     {/* Timeline line */}
                     {index < activities.length - 1 && (
-                      <div className="absolute left-4 top-8 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-600"></div>
+                      <div className="absolute left-4 top-8 bottom-0 w-0.5 bg-claude-sand dark:bg-coal-600"></div>
                     )}
                     {/* Icon */}
                     <div className="relative flex-shrink-0 mt-1 z-10">
@@ -2129,17 +2129,17 @@ export default function ListingDetailPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
-                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          <span className="text-sm font-medium text-claude-ink dark:text-coal-100">
                             {activity.description || activity.activity_type}
                           </span>
-                          <Badge color="blue" className="bg-blue-500 dark:bg-blue-600 text-white">{activity.activity_type}</Badge>
+                          <Badge color="blue" className="bg-blue-500 dark:bg-blue-600 text-coal-100">{activity.activity_type}</Badge>
                         </div>
-                        <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
+                        <span className="text-xs text-claude-muted dark:text-coal-400 font-medium">
                           {formatDateTime(activity.created_at)}
                         </span>
                       </div>
                       {activity.field_name && (
-                        <p className="text-sm text-gray-700 dark:text-gray-300 mt-1 font-medium">
+                        <p className="text-sm text-claude-text dark:text-coal-300 mt-1 font-medium">
                           {activity.field_name}: {activity.old_value} → {activity.new_value}
                         </p>
                       )}
@@ -2151,11 +2151,11 @@ export default function ListingDetailPage() {
           </div>
 
           {/* Listing Metadata */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-2">
-            <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 pb-2">Listing Information</h4>
+          <div className="bg-claude-surface dark:bg-coal-850 rounded-lg shadow-sm border border-claude-border dark:border-coal-700 p-6 space-y-2">
+            <h4 className="text-md font-semibold text-claude-ink dark:text-coal-100 border-b border-claude-border dark:border-coal-700 pb-2">Listing Information</h4>
             <div className="flex flex-col space-y-2 text-sm">
               <div>
-                <span className="font-medium text-gray-800 dark:text-gray-200">Source:</span>
+                <span className="font-medium text-claude-ink dark:text-coal-200">Source:</span>
                 {listing.source ? (
                   <Link
                     href={listing.source}
@@ -2167,27 +2167,27 @@ export default function ListingDetailPage() {
                     <ExternalLink className="h-3 w-3 flex-shrink-0" />
                   </Link>
                 ) : (
-                  <span className="ml-2 text-gray-600 dark:text-gray-400 font-medium"></span>
+                  <span className="ml-2 text-claude-muted dark:text-coal-400 font-medium"></span>
                 )}
               </div>
               <div>
-                <span className="font-medium text-gray-800 dark:text-gray-200">DOM:</span>
-                <span className="ml-2 text-gray-700 dark:text-gray-300 font-medium">{listing.dom ? listing.dom.toLocaleString('en-US') : ''} days</span>
+                <span className="font-medium text-claude-ink dark:text-coal-200">DOM:</span>
+                <span className="ml-2 text-claude-text dark:text-coal-300 font-medium">{listing.dom ? listing.dom.toLocaleString('en-US') : ''} days</span>
               </div>
               <div>
-                <span className="font-medium text-gray-800 dark:text-gray-200">Buyer:</span>
-                <span className="ml-2 text-gray-700 dark:text-gray-300 font-medium">{listing.buyer_username || ''}</span>
+                <span className="font-medium text-claude-ink dark:text-coal-200">Buyer:</span>
+                <span className="ml-2 text-claude-text dark:text-coal-300 font-medium">{listing.buyer_username || ''}</span>
               </div>
               <div>
-                <span className="font-medium text-gray-800 dark:text-gray-200">Updated:</span>
-                <span className="ml-2 text-gray-700 dark:text-gray-300 font-medium">
+                <span className="font-medium text-claude-ink dark:text-coal-200">Updated:</span>
+                <span className="ml-2 text-claude-text dark:text-coal-300 font-medium">
                   {listing.updated_at ? formatDateTime(listing.updated_at) : ''}
                 </span>
               </div>
               {listing.created_at && (
                 <div>
-                  <span className="font-medium text-gray-800 dark:text-gray-200">Created:</span>
-                  <span className="ml-2 text-gray-700 dark:text-gray-300 font-medium">{formatDateTime(listing.created_at)}</span>
+                  <span className="font-medium text-claude-ink dark:text-coal-200">Created:</span>
+                  <span className="ml-2 text-claude-text dark:text-coal-300 font-medium">{formatDateTime(listing.created_at)}</span>
                 </div>
               )}
             </div>
@@ -2208,7 +2208,7 @@ export default function ListingDetailPage() {
                 router.push(queryString ? `/listings?${queryString}` : '/listings');
               }} 
               disabled={saving} 
-              className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+              className="border-claude-divider dark:border-coal-600 text-claude-text dark:text-coal-300 hover:bg-claude-cream dark:hover:bg-coal-700"
             >
               Cancel
             </Button>

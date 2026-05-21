@@ -138,7 +138,7 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
     }
     
     // Default to gray if no match
-    return { bg: 'bg-gray-50 dark:bg-gray-900/20', border: 'border-gray-200 dark:border-gray-800' };
+    return { bg: 'bg-claude-cream dark:bg-coal-900/20', border: 'border-claude-border dark:border-coal-700' };
   };
 
   const getStageColor = (stageName: string) => {
@@ -302,7 +302,7 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
       {/* Header */}
       <div className="flex justify-between items-center mb-2 flex-shrink-0">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Deal Pipeline</h1>
+          <h1 className="text-3xl font-bold text-claude-ink dark:text-coal-100">Deal Pipeline</h1>
         </div>
         <div className="flex space-x-2">
           <Button variant="outline" onClick={onExportDeals}>
@@ -322,9 +322,9 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
                   <Icon name="briefcase" className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 </div>
               </div>
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Total Deals</p>
+              <p className="text-sm font-medium text-claude-subtle dark:text-coal-400 whitespace-nowrap">Total Deals</p>
             </div>
-              <p className="text-2xl font-semibold text-gray-900 dark:text-white">{dealsToDisplay.length}</p>
+              <p className="text-2xl font-semibold text-claude-ink dark:text-coal-100">{dealsToDisplay.length}</p>
           </div>
         </Card>
         <Card className="px-4 py-2">
@@ -335,9 +335,9 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
                   <Icon name="check-circle" className="w-4 h-4 text-green-600 dark:text-green-400" />
                 </div>
               </div>
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Won</p>
+              <p className="text-sm font-medium text-claude-subtle dark:text-coal-400 whitespace-nowrap">Won</p>
             </div>
-            <p className="text-2xl font-semibold text-gray-900 dark:text-white">{closedWonDeals.length}</p>
+            <p className="text-2xl font-semibold text-claude-ink dark:text-coal-100">{closedWonDeals.length}</p>
           </div>
         </Card>
         <Card className="px-4 py-2">
@@ -348,9 +348,9 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
                   <Icon name="x-circle" className="w-4 h-4 text-red-600 dark:text-red-400" />
                 </div>
               </div>
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Lost</p>
+              <p className="text-sm font-medium text-claude-subtle dark:text-coal-400 whitespace-nowrap">Lost</p>
             </div>
-            <p className="text-2xl font-semibold text-gray-900 dark:text-white">{closedLostDeals.length}</p>
+            <p className="text-2xl font-semibold text-claude-ink dark:text-coal-100">{closedLostDeals.length}</p>
           </div>
         </Card>
         <Card className="px-4 py-2">
@@ -361,9 +361,9 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
                   <Icon name="dollar-sign" className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                 </div>
               </div>
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Pipeline Value</p>
+              <p className="text-sm font-medium text-claude-subtle dark:text-coal-400 whitespace-nowrap">Pipeline Value</p>
             </div>
-            <p className="text-2xl font-semibold text-gray-900 dark:text-white">{formatCurrency(totalPipelineValue)}</p>
+            <p className="text-2xl font-semibold text-claude-ink dark:text-coal-100">{formatCurrency(totalPipelineValue)}</p>
           </div>
         </Card>
       </div>
@@ -374,7 +374,7 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
         <Card className="p-4 lg:w-72 flex-shrink-0">
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-2">
                 Search
               </label>
               <Input
@@ -386,13 +386,13 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-2">
                 Stage
               </label>
               <select
                 value={stageFilter}
                 onChange={(e) => handleStageFilterChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-claude-divider dark:border-coal-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100"
                 disabled={stagesLoading}
               >
                 <option value="all">All Stages</option>
@@ -404,13 +404,13 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-2">
                 Category
               </label>
               <select
                 value={categoryFilter}
                 onChange={(e) => handleCategoryFilterChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-claude-divider dark:border-coal-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100"
                 disabled={categoriesLoading}
               >
                 <option value="all">All Categories</option>
@@ -423,13 +423,13 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
             </div>
             {isAdmin && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-2">
                   Assigned To
                 </label>
                 <select
                   value={assignedFilter}
                   onChange={(e) => handleAssignedToFilterChange(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="w-full px-3 py-2 border border-claude-divider dark:border-coal-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100"
                   disabled={loading || usersLoading}
                 >
                   <option value="all">All Users</option>
@@ -452,9 +452,9 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
                 type="checkbox"
                 checked={viewAllDeals}
                 onChange={(e) => onViewAllToggle?.(e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 dark:bg-gray-700"
+                className="h-4 w-4 rounded border-claude-divider dark:border-coal-600 text-blue-600 focus:ring-blue-500 dark:bg-coal-700"
               />
-              <label htmlFor="view-all-deals-checkbox" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+              <label htmlFor="view-all-deals-checkbox" className="ml-2 text-sm text-claude-text dark:text-coal-300">
                 View All Deals
               </label>
             </div>
@@ -488,7 +488,7 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
                         e.stopPropagation();
                         onItemClick(deal);
                       }}
-                      className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-2 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 hover:underline transition-colors"
+                      className="text-lg font-semibold text-claude-ink dark:text-coal-100 line-clamp-2 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 hover:underline transition-colors"
                     >
                       {deal.name}
                     </h4>
@@ -496,7 +496,7 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
 
                   {/* Deal Value */}
                   <div className="">
-                    <div className="text-lg font-bold text-gray-900 dark:text-white">
+                    <div className="text-lg font-bold text-claude-ink dark:text-coal-100">
                       {formatCurrency(deal.deal_value)}
                     </div>
                   </div>
@@ -505,19 +505,19 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
                   {(deal.contact || deal.assigned_to) && (
                     <div className="flex gap-2">
                       {deal.contact && (
-                        <div className="flex-1 flex items-center space-x-2 text-xs text-gray-700 dark:text-gray-300 bg-blue-100 dark:bg-blue-900/30 rounded-lg px-2 py-1">
+                        <div className="flex-1 flex items-center space-x-2 text-xs text-claude-text dark:text-coal-300 bg-blue-100 dark:bg-blue-900/30 rounded-lg px-2 py-1">
                           <div className="w-5 h-5 rounded-full bg-blue-300 dark:bg-blue-700 flex items-center justify-center flex-shrink-0">
-                            <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                            <span className="text-xs font-medium text-claude-text dark:text-coal-300">
                               {(deal.contact.first_name?.[0]?.toUpperCase() || '')}{(deal.contact.last_name?.[0]?.toUpperCase() || '')}
                             </span>
                           </div>
-                          <span className="truncate text-gray-600 dark:text-gray-300">
+                          <span className="truncate text-claude-muted dark:text-coal-300">
                             {deal.contact.first_name?.charAt(0).toUpperCase() + deal.contact.first_name?.slice(1)} {deal.contact.last_name?.charAt(0).toUpperCase() + deal.contact.last_name?.slice(1)}
                           </span>
                         </div>
                       )}
                       {deal.assigned_to && (
-                        <div className="flex-1 flex items-center space-x-1 text-xs text-gray-700 dark:text-gray-300 bg-yellow-200 dark:bg-yellow-900/30 rounded-lg px-2 py-1">
+                        <div className="flex-1 flex items-center space-x-1 text-xs text-claude-text dark:text-coal-300 bg-yellow-200 dark:bg-yellow-900/30 rounded-lg px-2 py-1">
                           <Icon name="user" className="w-3 h-3 flex-shrink-0" />
                           <span className="truncate">
                             Owner: {typeof deal.assigned_to === 'object' && 
@@ -533,10 +533,10 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
                   {/* Probability */}
                   <div className="">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs text-gray-500 dark:text-gray-400">Probability</span>
-                      <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{deal.probability}%</span>
+                      <span className="text-xs text-claude-subtle dark:text-coal-400">Probability</span>
+                      <span className="text-xs font-medium text-claude-text dark:text-coal-300">{deal.probability}%</span>
                     </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+                    <div className="w-full bg-claude-sand dark:bg-coal-700 rounded-full h-1.5">
                       <div
                         className="h-1.5 rounded-full"
                         style={{ 
@@ -549,7 +549,7 @@ export const DealPipeline: React.FC<DealPipelineProps> = ({
 
                   {/* Expected Close Date */}
                   <div className="">
-                    <div className="flex items-center space-x-1 text-xs text-gray-500 dark:text-gray-400">
+                    <div className="flex items-center space-x-1 text-xs text-claude-subtle dark:text-coal-400">
                       <Icon name="calendar" className="w-3 h-3" />
                       <span>{formatDate(deal.expected_close_date)}</span>
                     </div>

@@ -54,7 +54,7 @@ export const ListingsTableContent: React.FC<ListingsTableContentProps> = ({
   return (
     <table className="w-full border-collapse">
       <thead>
-        <tr className="bg-slate-50 dark:bg-gray-700/50 border-b-2 border-slate-200 dark:border-gray-600">
+        <tr className="bg-slate-50 dark:bg-coal-700/50 border-b-2 border-slate-200 dark:border-coal-600">
           {listingsColumns.map(col => {
             const isActionColumn = ['notify', 'slack', 'workflow'].includes(col.key);
             const isSelectColumn = col.key === 'select';
@@ -62,7 +62,7 @@ export const ListingsTableContent: React.FC<ListingsTableContentProps> = ({
             return (
               <th
                 key={col.key}
-                className={`px-4 py-2 text-xs font-medium uppercase tracking-wide text-slate-600 dark:text-gray-300 ${
+                className={`px-4 py-2 text-xs font-medium uppercase tracking-wide text-slate-600 dark:text-coal-300 ${
                   isActionColumn ? 'text-center' : isSelectColumn ? 'text-center' : 'text-left'
                 }`}
               >
@@ -75,14 +75,14 @@ export const ListingsTableContent: React.FC<ListingsTableContentProps> = ({
                         if (input) input.indeterminate = isIndeterminate;
                       }}
                       onChange={(e) => onSelectAll?.(e.target.checked)}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-claude-divider rounded"
                       title={isAllSelected ? "Deselect all" : "Select all"}
                       onClick={(e) => e.stopPropagation()}
                     />
                   </div>
                 ) : !isActionColumn ? (
                   <button
-                    className="flex items-center gap-1 hover:text-slate-800 dark:hover:text-gray-100 transition-colors"
+                    className="flex items-center gap-1 hover:text-slate-800 dark:hover:text-coal-100 transition-colors"
                     onClick={() => onSort?.(col.key as keyof Listing | 'decision_status' | 'decision_reasons')}
                   >
                     <span className="truncate">{col.label}</span>
@@ -103,7 +103,7 @@ export const ListingsTableContent: React.FC<ListingsTableContentProps> = ({
           return (
             <tr
               key={listing.id}
-              className="border-t border-slate-200 dark:border-gray-700 hover:bg-slate-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
+              className="border-t border-slate-200 dark:border-coal-700 hover:bg-slate-50 dark:hover:bg-coal-700/50 transition-colors cursor-pointer"
               onClick={() => onEdit?.(listing)}
             >
               {/* Select Checkbox */}
@@ -112,7 +112,7 @@ export const ListingsTableContent: React.FC<ListingsTableContentProps> = ({
                   type="checkbox"
                   checked={selectedListings.has(listing.id)}
                   onChange={(e) => onSelectListing?.(listing.id, e.target.checked)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-claude-divider rounded"
                   title={selectedListings.has(listing.id) ? "Deselect listing" : "Select listing"}
                 />
               </td>
@@ -123,12 +123,12 @@ export const ListingsTableContent: React.FC<ListingsTableContentProps> = ({
               </td>
               
               {/* VIN */}
-              <td className="px-4 py-3 text-xs text-slate-600 dark:text-gray-300 font-mono max-w-[120px]">
+              <td className="px-4 py-3 text-xs text-slate-600 dark:text-coal-300 font-mono max-w-[120px]">
                 <span title={listing.vin} className="truncate block">{listing.vin}</span>
               </td>
               
               {/* LPN */}
-              <td className="px-4 py-3 text-xs text-slate-600 dark:text-gray-300 font-mono max-w-[120px]">
+              <td className="px-4 py-3 text-xs text-slate-600 dark:text-coal-300 font-mono max-w-[120px]">
                 <span title={listing.lpn} className="truncate block">{listing.lpn || '—'}</span>
               </td>
               
@@ -179,7 +179,7 @@ export const ListingsTableContent: React.FC<ListingsTableContentProps> = ({
                     </Link>
                   </div>
                 ) : (
-                  <span className="text-xs text-slate-600 dark:text-gray-300 truncate" title={listing.source || ""}>
+                  <span className="text-xs text-slate-600 dark:text-coal-300 truncate" title={listing.source || ""}>
                     {listing.source || "—"}
                   </span>
                 )}
@@ -211,7 +211,7 @@ export const ListingsTableContent: React.FC<ListingsTableContentProps> = ({
                     <Send className="h-3.5 w-3.5" />
                   </button>
                 ) : (
-                  <span className="text-slate-400 dark:text-gray-500 text-xs">—</span>
+                  <span className="text-slate-400 dark:text-coal-500 text-xs">—</span>
                 )}
               </td>
               
@@ -228,12 +228,12 @@ export const ListingsTableContent: React.FC<ListingsTableContentProps> = ({
                     <Workflow className="h-3.5 w-3.5" />
                   </button>
                 ) : (
-                  <span className="text-slate-400 dark:text-gray-500 text-xs">—</span>
+                  <span className="text-slate-400 dark:text-coal-500 text-xs">—</span>
                 )}
               </td>
               
               {/* Updated */}
-              <td className="px-4 py-3 text-xs text-slate-600 dark:text-gray-300">
+              <td className="px-4 py-3 text-xs text-slate-600 dark:text-coal-300">
                 <span title={formatDateTime(listing.updated_at)} className="truncate block">
                   {formatDateTime(listing.updated_at)}
                 </span>

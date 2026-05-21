@@ -60,7 +60,7 @@ export const SMSThreadCompact: React.FC<SMSThreadCompactProps> = ({
   };
 
   return (
-    <div className="flex flex-col gap-4 rounded-xl border bg-[#1a1d29] border-gray-700/50 p-4 flex-1 min-h-0">
+    <div className="flex flex-col gap-4 rounded-xl border bg-[#1a1d29] border-coal-700/50 p-4 flex-1 min-h-0">
       <div className="relative flex-1 pr-4 mb-4 overflow-y-auto min-h-0">
         <div className="space-y-4">
           {displayMessages.map((message) => (
@@ -72,7 +72,7 @@ export const SMSThreadCompact: React.FC<SMSThreadCompactProps> = ({
             >
               {message.sender === 'contact' && (
                 <div className="flex items-center gap-2 mb-1">
-                  <div className="h-6 w-6 rounded-full bg-gray-600 flex items-center justify-center text-xs">
+                  <div className="h-6 w-6 rounded-full bg-coal-600 flex items-center justify-center text-xs">
                     👤
                   </div>
                 </div>
@@ -80,13 +80,13 @@ export const SMSThreadCompact: React.FC<SMSThreadCompactProps> = ({
               <div
                 className={`max-w-[85%] rounded-lg px-4 py-2 ${
                   message.sender === 'user'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-700 text-gray-100'
+                    ? 'bg-blue-600 text-coal-100'
+                    : 'bg-coal-700 text-coal-100'
                 }`}
               >
                 <p className="text-sm">{message.text}</p>
               </div>
-              <p className="text-xs mt-1 text-gray-500">{message.timestamp}</p>
+              <p className="text-xs mt-1 text-claude-subtle">{message.timestamp}</p>
             </div>
           ))}
         </div>
@@ -96,7 +96,7 @@ export const SMSThreadCompact: React.FC<SMSThreadCompactProps> = ({
           value={messageText}
           onChange={(e) => setMessageText(e.target.value)}
           placeholder={`Message ${contactName}...`}
-          className="flex-1 bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
+          className="flex-1 bg-coal-850 border-coal-700 text-coal-100 placeholder:text-claude-subtle"
           onKeyPress={(e) => {
             if (e.key === 'Enter') {
               handleSend();

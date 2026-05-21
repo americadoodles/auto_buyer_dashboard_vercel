@@ -91,9 +91,9 @@ export const VehiclePhotoGallery: React.FC<VehiclePhotoGalleryProps> = ({ images
 
   return (
     <>
-      <div className={`flex flex-col h-full min-h-0 rounded-xl border overflow-hidden bg-white dark:bg-[#1a1d29] border-gray-200 dark:border-gray-700/50 ${className}`.trim()}>
+      <div className={`flex flex-col h-full min-h-0 rounded-xl border overflow-hidden bg-claude-surface dark:bg-[#1a1d29] border-claude-border dark:border-coal-700/50 ${className}`.trim()}>
         {/* Fill available height to match sibling column */}
-        <div className="relative flex-1 min-h-0 w-full bg-gray-100 dark:bg-gray-900">
+        <div className="relative flex-1 min-h-0 w-full bg-claude-sand dark:bg-coal-900">
           <img
             src={images[currentIndex]}
             alt={`Vehicle photo ${currentIndex + 1}`}
@@ -105,14 +105,14 @@ export const VehiclePhotoGallery: React.FC<VehiclePhotoGalleryProps> = ({ images
               <Button
                 onClick={goToPrevious}
                 variant="ghost"
-                className="!absolute !left-2 !top-1/2 !-translate-y-1/2 !bg-white/90 dark:!bg-gray-800 hover:!bg-gray-100 dark:hover:!bg-gray-700 !text-black dark:!text-white !size-9 !rounded-md !z-10 !p-0"
+                className="!absolute !left-2 !top-1/2 !-translate-y-1/2 !bg-claude-surface/90 dark:!bg-coal-850 hover:!bg-claude-sand dark:hover:!bg-coal-700 !text-black dark:!text-coal-100 !size-9 !rounded-md !z-10 !p-0"
               >
                 <ChevronLeft className="h-6 w-6" />
               </Button>
               <Button
                 onClick={goToNext}
                 variant="ghost"
-                className="!absolute !right-2 !top-1/2 !-translate-y-1/2 !bg-white/90 dark:!bg-gray-800 hover:!bg-gray-100 dark:hover:!bg-gray-700 !text-black dark:!text-white !size-9 !rounded-md !z-10 !p-0"
+                className="!absolute !right-2 !top-1/2 !-translate-y-1/2 !bg-claude-surface/90 dark:!bg-coal-850 hover:!bg-claude-sand dark:hover:!bg-coal-700 !text-black dark:!text-coal-100 !size-9 !rounded-md !z-10 !p-0"
               >
                 <ChevronRight className="h-6 w-6" />
               </Button>
@@ -152,13 +152,13 @@ export const VehiclePhotoGallery: React.FC<VehiclePhotoGalleryProps> = ({ images
           tabIndex={-1}
         >
           <div className="flex justify-between items-center p-4">
-            <div className="text-white text-sm">
+            <div className="text-coal-100 text-sm">
               Image {currentIndex + 1} of {images.length}
             </div>
             <Button
               variant="ghost"
               onClick={closeViewer}
-              className="text-white hover:text-gray-200 hover:bg-gray-800"
+              className="text-coal-100 hover:text-coal-200 hover:bg-coal-850"
             >
               <X className="h-6 w-6" />
             </Button>
@@ -191,31 +191,31 @@ export const VehiclePhotoGallery: React.FC<VehiclePhotoGalleryProps> = ({ images
             <Button
               onClick={zoomOut}
               variant="secondary"
-              className="px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-black dark:text-white"
+              className="px-4 py-2 bg-claude-sand dark:bg-coal-850 hover:bg-claude-divider dark:hover:bg-coal-700 text-black dark:text-coal-100"
             >
               <ZoomOut className="h-5 w-5" />
             </Button>
             <Button
               onClick={resetZoom}
               variant="secondary"
-              className="px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-black dark:text-white"
+              className="px-4 py-2 bg-claude-sand dark:bg-coal-850 hover:bg-claude-divider dark:hover:bg-coal-700 text-black dark:text-coal-100"
             >
               <RotateCcw className="h-5 w-5" />
             </Button>
             <Button
               onClick={zoomIn}
               variant="secondary"
-              className="px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-black dark:text-white"
+              className="px-4 py-2 bg-claude-sand dark:bg-coal-850 hover:bg-claude-divider dark:hover:bg-coal-700 text-black dark:text-coal-100"
             >
               <ZoomIn className="h-5 w-5" />
             </Button>
             {images.length > 1 && (
               <>
-                <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-2" />
+                <div className="w-px h-6 bg-claude-divider dark:bg-coal-600 mx-2" />
                 <Button
                   onClick={goToPrevious}
                   variant="secondary"
-                  className="px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-black dark:text-white"
+                  className="px-4 py-2 bg-claude-sand dark:bg-coal-850 hover:bg-claude-divider dark:hover:bg-coal-700 text-black dark:text-coal-100"
                   disabled={images.length === 1}
                 >
                   <ChevronLeft className="h-5 w-5" />
@@ -223,7 +223,7 @@ export const VehiclePhotoGallery: React.FC<VehiclePhotoGalleryProps> = ({ images
                 <Button
                   onClick={goToNext}
                   variant="secondary"
-                  className="px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-black dark:text-white"
+                  className="px-4 py-2 bg-claude-sand dark:bg-coal-850 hover:bg-claude-divider dark:hover:bg-coal-700 text-black dark:text-coal-100"
                   disabled={images.length === 1}
                 >
                   <ChevronRight className="h-5 w-5" />

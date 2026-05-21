@@ -58,7 +58,7 @@ const UserActivityCard: React.FC<UserActivityCardProps> = ({ className = "" }) =
       analyst: { bg: 'bg-green-100 dark:bg-transparent', text: 'text-green-800 dark:text-green-300', label: 'Analyst' }
     };
     
-    const config = roleConfig[role as keyof typeof roleConfig] || { bg: 'bg-gray-100 dark:bg-transparent', text: 'text-gray-800 dark:text-gray-300', label: role };
+    const config = roleConfig[role as keyof typeof roleConfig] || { bg: 'bg-claude-sand dark:bg-transparent', text: 'text-claude-ink dark:text-coal-300', label: role };
     
     return (
       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
@@ -118,7 +118,7 @@ const UserActivityCard: React.FC<UserActivityCardProps> = ({ className = "" }) =
 
   if (loading) {
     return (
-      <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 ${className}`}>
+      <div className={`bg-claude-surface dark:bg-coal-850 rounded-lg shadow-sm border border-claude-border dark:border-coal-700 p-6 ${className}`}>
         <div className="flex items-center justify-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
         </div>
@@ -128,7 +128,7 @@ const UserActivityCard: React.FC<UserActivityCardProps> = ({ className = "" }) =
 
   if (error) {
     return (
-      <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 ${className}`}>
+      <div className={`bg-claude-surface dark:bg-coal-850 rounded-lg shadow-sm border border-claude-border dark:border-coal-700 p-6 ${className}`}>
         <div className="flex items-center space-x-3 text-red-600 dark:text-red-400">
           <AlertCircle className="w-5 h-5" />
           <span className="text-sm font-medium">Error loading user activity: {error}</span>
@@ -138,17 +138,17 @@ const UserActivityCard: React.FC<UserActivityCardProps> = ({ className = "" }) =
   }
 
   return (
-    <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 ${className}`}>
+    <div className={`bg-claude-surface dark:bg-coal-850 rounded-lg shadow-sm border border-claude-border dark:border-coal-700 ${className}`}>
       {/* Header */}
-      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+      <div className="px-6 py-4 border-b border-claude-border dark:border-coal-700">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
               <Activity className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">User Activity Overview</h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <h2 className="text-lg font-semibold text-claude-ink dark:text-coal-100">User Activity Overview</h2>
+              <p className="text-sm text-claude-muted dark:text-coal-400">
                 {data.total_users} users • {data.active_today} active today • {data.total_listings_today} listings today
               </p>
             </div>
@@ -157,36 +157,36 @@ const UserActivityCard: React.FC<UserActivityCardProps> = ({ className = "" }) =
       </div>
 
       {/* Summary Stats */}
-      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+      <div className="px-6 py-4 border-b border-claude-border dark:border-coal-700">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+          <div className="flex items-center space-x-3 p-3 bg-claude-cream dark:bg-coal-700/50 rounded-lg">
             <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">{data.total_users}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Total Users</p>
+              <p className="text-sm font-medium text-claude-ink dark:text-coal-100">{data.total_users}</p>
+              <p className="text-xs text-claude-subtle dark:text-coal-400">Total Users</p>
             </div>
           </div>
-          <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+          <div className="flex items-center space-x-3 p-3 bg-claude-cream dark:bg-coal-700/50 rounded-lg">
             <UserCheck className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">{data.active_today}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Active Today</p>
+              <p className="text-sm font-medium text-claude-ink dark:text-coal-100">{data.active_today}</p>
+              <p className="text-xs text-claude-subtle dark:text-coal-400">Active Today</p>
             </div>
           </div>
-          <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+          <div className="flex items-center space-x-3 p-3 bg-claude-cream dark:bg-coal-700/50 rounded-lg">
             <Car className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">{data.total_listings_today}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Listings Today</p>
+              <p className="text-sm font-medium text-claude-ink dark:text-coal-100">{data.total_listings_today}</p>
+              <p className="text-xs text-claude-subtle dark:text-coal-400">Listings Today</p>
             </div>
           </div>
-          <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+          <div className="flex items-center space-x-3 p-3 bg-claude-cream dark:bg-coal-700/50 rounded-lg">
             <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">
+              <p className="text-sm font-medium text-claude-ink dark:text-coal-100">
                 {data.total_users > 0 ? Math.round((data.active_today / data.total_users) * 100) : 0}%
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Activity Rate</p>
+              <p className="text-xs text-claude-subtle dark:text-coal-400">Activity Rate</p>
             </div>
           </div>
         </div>
@@ -199,7 +199,7 @@ const UserActivityCard: React.FC<UserActivityCardProps> = ({ className = "" }) =
             columns={tableColumns} 
             onColumnSort={handleSort}
           />
-          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+          <tbody className="bg-claude-surface dark:bg-coal-850 divide-y divide-gray-200 dark:divide-gray-700">
             {getSortedUsers().map((user) => {
               const activityStatus = getActivityStatus(user.last_activity, user.today_listings);
               
@@ -207,21 +207,21 @@ const UserActivityCard: React.FC<UserActivityCardProps> = ({ className = "" }) =
                 <TableRow 
                   key={user.user_id}
                   onClick={() => handleUserClick(user.user_id)}
-                  className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200"
+                  className="cursor-pointer hover:bg-claude-cream dark:hover:bg-coal-700/50 transition-colors duration-200"
                 >
                   {/* User */}
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10">
-                        <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <div className="h-10 w-10 rounded-full bg-claude-sand dark:bg-coal-700 flex items-center justify-center">
+                          <span className="text-sm font-medium text-claude-text dark:text-coal-300">
                             {user.username.charAt(0).toUpperCase()}
                           </span>
                         </div>
                       </div>
                       <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">{user.username}</div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">{user.email}</div>
+                        <div className="text-sm font-medium text-claude-ink dark:text-coal-100">{user.username}</div>
+                        <div className="text-sm text-claude-subtle dark:text-coal-400">{user.email}</div>
                       </div>
                     </div>
                   </td>
@@ -247,22 +247,22 @@ const UserActivityCard: React.FC<UserActivityCardProps> = ({ className = "" }) =
                   </td>
                   
                   {/* Total Listings */}
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-claude-ink dark:text-coal-100">
                     {user.total_listings}
                   </td>
                   
                   {/* Today Listings */}
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-claude-ink dark:text-coal-100">
                     {user.today_listings}
                   </td>
                   
                   {/* Last Login */}
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-claude-ink dark:text-coal-100">
                     {formatDate(user.last_login)}
                   </td>
                   
                   {/* Last Activity */}
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-claude-ink dark:text-coal-100">
                     {formatDate(user.last_activity)}
                   </td>
                   
@@ -285,9 +285,9 @@ const UserActivityCard: React.FC<UserActivityCardProps> = ({ className = "" }) =
         
         {data.users.length === 0 && (
           <div className="text-center py-8">
-            <Users className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No users found</h3>
-            <p className="text-gray-500 dark:text-gray-400">No user activity data available.</p>
+            <Users className="w-12 h-12 text-claude-subtle dark:text-coal-500 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-claude-ink dark:text-coal-100 mb-2">No users found</h3>
+            <p className="text-claude-subtle dark:text-coal-400">No user activity data available.</p>
           </div>
         )}
       </div>

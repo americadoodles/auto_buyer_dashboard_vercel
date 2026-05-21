@@ -37,11 +37,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
   return (
     <TwilioProvider>
-      <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
+      <div className="flex h-screen bg-claude-cream dark:bg-coal-900 overflow-hidden">
         <AdminNavPanel />
         <div className="flex-1 overflow-hidden min-w-0 h-full flex flex-col">
           <Header />
-          <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+          <div className="flex-1 overflow-y-auto bg-claude-cream dark:bg-coal-900">
             {children}
           </div>
         </div>

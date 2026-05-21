@@ -37,11 +37,11 @@ export const Header: React.FC = () => {
   }, [handleEscapeKey]);
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between border-b border-gray-200 bg-white px-2 py-1.5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+    <header className="sticky top-0 z-30 flex items-center justify-between border-b border-claude-border bg-claude-surface px-2 py-1.5 shadow-sm dark:border-coal-700 dark:bg-coal-850">
       {/* Left side - Search */}
       <div className="flex-1 max-w-md">
         <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-claude-subtle" />
           <Input
             type="search"
             placeholder="Search..."
@@ -78,11 +78,11 @@ export const Header: React.FC = () => {
               />
               
               {/* Dropdown Panel */}
-              <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50 dark:bg-gray-800 dark:border-gray-700">
-                <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                  <h3 className="font-semibold text-gray-900 dark:text-white">Notifications</h3>
+              <div className="absolute right-0 mt-2 w-80 bg-claude-surface border border-claude-border rounded-lg shadow-lg z-50 dark:bg-coal-850 dark:border-coal-700">
+                <div className="p-4 border-b border-claude-border dark:border-coal-700">
+                  <h3 className="font-semibold text-claude-ink dark:text-coal-100">Notifications</h3>
                 </div>
-                <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                <div className="p-4 text-center text-claude-subtle dark:text-coal-400">
                   <p>No new notifications</p>
                 </div>
               </div>
@@ -98,7 +98,7 @@ export const Header: React.FC = () => {
             onClick={() => setShowUserMenu(!showUserMenu)}
             className="flex items-center gap-1.5 px-2 py-1"
           >
-            <div className="h-6 w-6 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-medium">
+            <div className="h-6 w-6 rounded-full bg-claude-accent flex items-center justify-center text-coal-100 text-xs font-medium">
               {user?.username?.charAt(0).toUpperCase() || 'U'}
             </div>
             <span className="hidden md:block text-sm font-medium">{user?.username || 'User'}</span>
@@ -114,17 +114,17 @@ export const Header: React.FC = () => {
               />
               
               {/* Dropdown Menu */}
-              <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-50 dark:bg-gray-800 dark:border-gray-700">
-                <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+              <div className="absolute right-0 mt-2 w-56 bg-claude-surface border border-claude-border rounded-lg shadow-lg z-50 dark:bg-coal-850 dark:border-coal-700">
+                <div className="p-4 border-b border-claude-border dark:border-coal-700">
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-medium">
+                    <div className="h-10 w-10 rounded-full bg-claude-accent flex items-center justify-center text-coal-100 font-medium">
                       {user?.username?.charAt(0).toUpperCase() || 'U'}
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      <p className="text-sm font-medium text-claude-ink dark:text-coal-100">
                         {user?.username || 'User'}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                      <p className="text-xs text-claude-subtle dark:text-coal-400">
                         {user?.email || ''}
                       </p>
                     </div>
@@ -137,7 +137,7 @@ export const Header: React.FC = () => {
                       router.push('/profile');
                       setShowUserMenu(false);
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-claude-text rounded-md hover:bg-claude-sand dark:text-coal-300 dark:hover:bg-coal-700"
                   >
                     <User className="h-4 w-4" />
                     <span>View Profile</span>
@@ -148,14 +148,14 @@ export const Header: React.FC = () => {
                       router.push('/settings');
                       setShowUserMenu(false);
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-claude-text rounded-md hover:bg-claude-sand dark:text-coal-300 dark:hover:bg-coal-700"
                   >
                     <Settings className="h-4 w-4" />
                     <span>Settings</span>
                   </button>
                 </div>
 
-                <div className="p-2 border-t border-gray-200 dark:border-gray-700">
+                <div className="p-2 border-t border-claude-border dark:border-coal-700">
                   <button
                     onClick={handleLogout}
                     className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 rounded-md hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"

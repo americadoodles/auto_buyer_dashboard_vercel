@@ -49,7 +49,7 @@ export const KpiCard: React.FC<KpiCardProps> = ({
      '#ef4444');
 
   return (
-    <div className={`rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden ${className}`}>
+    <div className={`rounded-xl border border-claude-border dark:border-coal-700 bg-claude-surface dark:bg-coal-850 p-6 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden ${className}`}>
       <div className="flex items-center justify-between">
         <div className="flex-1 min-w-0">
           <div className="flex items-center space-x-3 mb-3">
@@ -59,8 +59,8 @@ export const KpiCard: React.FC<KpiCardProps> = ({
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{label}</div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">{String(value)}</div>
+              <div className="text-sm font-medium text-claude-muted dark:text-coal-400 mb-1">{label}</div>
+              <div className="text-2xl font-bold text-claude-ink dark:text-coal-100">{String(value)}</div>
             </div>
           </div>
           
@@ -74,7 +74,7 @@ export const KpiCard: React.FC<KpiCardProps> = ({
               <span className={`text-sm font-medium ${trendUp ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                 {change || trend}
               </span>
-              <span className="text-xs text-gray-500 dark:text-gray-400">vs last month</span>
+              <span className="text-xs text-claude-subtle dark:text-coal-400">vs last month</span>
             </div>
           )}
 

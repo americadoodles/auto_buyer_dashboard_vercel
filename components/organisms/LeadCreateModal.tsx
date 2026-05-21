@@ -148,16 +148,16 @@ export const LeadCreateModal: React.FC<LeadCreateModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-3xl w-full max-h-[80vh] flex flex-col border border-gray-200 dark:border-gray-700">
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-black dark:text-gray-100">
+      <div className="bg-claude-surface dark:bg-coal-850 rounded-lg shadow-xl max-w-3xl w-full max-h-[80vh] flex flex-col border border-claude-border dark:border-coal-700">
+        <div className="flex items-center justify-between p-4 border-b border-claude-border dark:border-coal-700">
+          <h3 className="text-lg font-semibold text-black dark:text-coal-100">
             {existingLead && existingLead.id ? 'Update Lead - Select Contact' : 'Create Lead - Select Contact'}
           </h3>
           <Button 
             onClick={onClose} 
             variant="outline" 
             size="sm"
-            className="border-gray-300 dark:border-gray-600 text-black dark:text-gray-300 cursor-pointer"
+            className="border-claude-divider dark:border-coal-600 text-black dark:text-coal-300 cursor-pointer"
           >
             <X className="h-4 w-4" />
           </Button>
@@ -171,7 +171,7 @@ export const LeadCreateModal: React.FC<LeadCreateModalProps> = ({
               value={contactSearch}
               onChange={(e) => setContactSearch(e.target.value)}
               placeholder="Search contacts by name, email, phone, or company..."
-              className="w-full border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-black dark:text-gray-100"
+              className="w-full border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-black dark:text-coal-100"
             />
           </div>
 
@@ -179,10 +179,10 @@ export const LeadCreateModal: React.FC<LeadCreateModalProps> = ({
           {loadingContacts ? (
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
-              <span className="ml-3 text-black dark:text-gray-200 font-medium">Loading contacts...</span>
+              <span className="ml-3 text-black dark:text-coal-200 font-medium">Loading contacts...</span>
             </div>
           ) : filteredContacts.length === 0 ? (
-            <div className="text-center py-8 text-black dark:text-gray-400 text-sm font-medium">
+            <div className="text-center py-8 text-black dark:text-coal-400 text-sm font-medium">
               {contactSearch ? 'No contacts found matching your search' : 'No contacts available'}
             </div>
           ) : (
@@ -194,20 +194,20 @@ export const LeadCreateModal: React.FC<LeadCreateModalProps> = ({
                   className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
                     selectedContactId === contact.id
                       ? 'border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/30'
-                      : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                      : 'border-claude-border dark:border-coal-700 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-claude-cream dark:hover:bg-coal-700/50'
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-semibold text-black dark:text-gray-100">
+                        <span className="font-semibold text-black dark:text-coal-100">
                           {contact.first_name} {contact.last_name}
                         </span>
                         {selectedContactId === contact.id && (
-                          <Badge color="blue" className="bg-blue-500 dark:bg-blue-600 text-white">Selected</Badge>
+                          <Badge color="blue" className="bg-blue-500 dark:bg-blue-600 text-coal-100">Selected</Badge>
                         )}
                       </div>
-                      <div className="text-sm text-black dark:text-gray-400 space-y-1">
+                      <div className="text-sm text-black dark:text-coal-400 space-y-1">
                         {contact.email && (
                           <div className="flex items-center gap-1">
                             <Icon name="mail" className="w-3 h-3" />
@@ -227,7 +227,7 @@ export const LeadCreateModal: React.FC<LeadCreateModalProps> = ({
                           </div>
                         )}
                         {contact.job_title && (
-                          <div className="text-xs text-black dark:text-gray-500">
+                          <div className="text-xs text-black dark:text-coal-500">
                             {contact.job_title}
                           </div>
                         )}
@@ -240,11 +240,11 @@ export const LeadCreateModal: React.FC<LeadCreateModalProps> = ({
           )}
           
           {/* Footer */}
-          <div className="flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-700 mt-4">
+          <div className="flex gap-2 pt-4 border-t border-claude-border dark:border-coal-700 mt-4">
             <Button
               onClick={onClose}
               variant="outline"
-              className="flex-1 border-gray-300 dark:border-gray-600 text-black dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
+              className="flex-1 border-claude-divider dark:border-coal-600 text-black dark:text-coal-300 hover:bg-claude-cream dark:hover:bg-coal-700 cursor-pointer"
               disabled={creatingLead}
             >
               Cancel

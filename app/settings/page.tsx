@@ -147,7 +147,7 @@ const SettingsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-claude-cream dark:bg-coal-900 flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
       </div>
     );
@@ -160,13 +160,13 @@ const SettingsPage: React.FC = () => {
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
-        <div className="max-w-3xl mx-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
+      <div className="min-h-screen bg-claude-cream dark:bg-coal-900 p-6">
+        <div className="max-w-3xl mx-auto bg-claude-surface dark:bg-coal-850 border border-claude-border dark:border-coal-700 rounded-xl p-6">
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-6 h-6 text-amber-500 mt-0.5" />
             <div>
-              <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Access Restricted</h1>
-              <p className="text-gray-600 dark:text-gray-300 mt-2">
+              <h1 className="text-xl font-semibold text-claude-ink dark:text-coal-100">Access Restricted</h1>
+              <p className="text-claude-muted dark:text-coal-300 mt-2">
                 Only admin users can access database backup and restore settings.
               </p>
             </div>
@@ -177,16 +177,16 @@ const SettingsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+    <div className="min-h-screen bg-claude-cream dark:bg-coal-900 p-6">
       <div className="max-w-6xl mx-auto space-y-6">
-        <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-5">
+        <div className="flex items-center justify-between border-b border-claude-border dark:border-coal-700 pb-5">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Settings</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">Manage system-level configuration and maintenance actions.</p>
+            <h1 className="text-3xl font-bold text-claude-ink dark:text-coal-100">Settings</h1>
+            <p className="text-claude-muted dark:text-coal-400 mt-2">Manage system-level configuration and maintenance actions.</p>
           </div>
           <button
             onClick={() => router.back()}
-            className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+            className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-md border border-claude-divider dark:border-coal-600 text-claude-text dark:text-coal-200 hover:bg-claude-sand dark:hover:bg-coal-850"
           >
             <ArrowLeft className="w-4 h-4" />
             Back
@@ -194,13 +194,13 @@ const SettingsPage: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <aside className="lg:col-span-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-3 h-fit">
+          <aside className="lg:col-span-1 bg-claude-surface dark:bg-coal-850 border border-claude-border dark:border-coal-700 rounded-xl p-3 h-fit">
             <button
               onClick={() => setActiveTab("database-backup")}
               className={`w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors ${
                 activeTab === "database-backup"
                   ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
-                  : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200"
+                  : "hover:bg-claude-sand dark:hover:bg-coal-700 text-claude-text dark:text-coal-200"
               }`}
             >
               <Database className="w-4 h-4" />
@@ -208,7 +208,7 @@ const SettingsPage: React.FC = () => {
             </button>
           </aside>
 
-          <section className="lg:col-span-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 space-y-6">
+          <section className="lg:col-span-3 bg-claude-surface dark:bg-coal-850 border border-claude-border dark:border-coal-700 rounded-xl p-6 space-y-6">
             {message && (
               <div
                 className={`rounded-lg border p-3 text-sm ${
@@ -231,24 +231,24 @@ const SettingsPage: React.FC = () => {
               </div>
             )}
 
-            <div className="border border-gray-200 dark:border-gray-700 rounded-xl p-5">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Backup Database</h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            <div className="border border-claude-border dark:border-coal-700 rounded-xl p-5">
+              <h2 className="text-lg font-semibold text-claude-ink dark:text-coal-100">Backup Database</h2>
+              <p className="text-sm text-claude-muted dark:text-coal-400 mt-1">
                 Download a full SQL backup of the current database.
               </p>
               <button
                 onClick={handleBackup}
                 disabled={backupLoading}
-                className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white"
+                className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-coal-100"
               >
                 {backupLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                 {backupLoading ? "Creating Backup..." : "Backup Database"}
               </button>
             </div>
 
-            <div className="border border-gray-200 dark:border-gray-700 rounded-xl p-5">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Restore Database</h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            <div className="border border-claude-border dark:border-coal-700 rounded-xl p-5">
+              <h2 className="text-lg font-semibold text-claude-ink dark:text-coal-100">Restore Database</h2>
+              <p className="text-sm text-claude-muted dark:text-coal-400 mt-1">
                 Upload a SQL backup file and restore it to the current database.
               </p>
 
@@ -261,13 +261,13 @@ const SettingsPage: React.FC = () => {
                     setProgressLog([]);
                     setMessage("");
                   }}
-                  className="block w-full text-sm text-gray-700 dark:text-gray-200 file:mr-4 file:py-2 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-gray-100 dark:file:bg-gray-700 file:text-gray-700 dark:file:text-gray-100 hover:file:bg-gray-200 dark:hover:file:bg-gray-600"
+                  className="block w-full text-sm text-claude-text dark:text-coal-200 file:mr-4 file:py-2 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-claude-sand dark:file:bg-coal-700 file:text-claude-text dark:file:text-coal-100 hover:file:bg-claude-sand dark:hover:file:bg-coal-600"
                 />
 
                 <button
                   onClick={handleRestore}
                   disabled={restoreLoading || !restoreFile}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-amber-600 hover:bg-amber-700 disabled:opacity-60 disabled:cursor-not-allowed text-white"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-amber-600 hover:bg-amber-700 disabled:opacity-60 disabled:cursor-not-allowed text-coal-100"
                 >
                   {restoreLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                   {restoreLoading ? "Restoring..." : "Restore Database"}
@@ -275,7 +275,7 @@ const SettingsPage: React.FC = () => {
 
                 {/* Live progress log */}
                 {(restoreLoading || progressLog.length > 0) && (
-                  <div className="mt-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 overflow-hidden">
+                  <div className="mt-3 rounded-lg border border-claude-border dark:border-coal-700 bg-claude-cream dark:bg-coal-900 overflow-hidden">
                     {currentTable && (
                       <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-xs font-mono">
                         <Loader2 className="w-3 h-3 animate-spin shrink-0" />
@@ -290,15 +290,15 @@ const SettingsPage: React.FC = () => {
                             : <CheckCircle2 className="w-3.5 h-3.5 text-green-500 mt-0.5 shrink-0" />
                           }
                           <div className="min-w-0">
-                            <span className="font-mono text-gray-700 dark:text-gray-300">{entry.table}</span>
-                            <span className="text-gray-400 dark:text-gray-500 ml-2">{entry.rows} row(s)</span>
+                            <span className="font-mono text-claude-text dark:text-coal-300">{entry.table}</span>
+                            <span className="text-claude-subtle dark:text-coal-500 ml-2">{entry.rows} row(s)</span>
                             {entry.errors && entry.errors.length > 0 && (
                               <ul className="mt-0.5 space-y-0.5">
                                 {entry.errors.slice(0, 3).map((e, j) => (
                                   <li key={j} className="text-red-500 dark:text-red-400 font-mono break-all">{e}</li>
                                 ))}
                                 {entry.errors.length > 3 && (
-                                  <li className="text-gray-400">+{entry.errors.length - 3} more</li>
+                                  <li className="text-claude-subtle">+{entry.errors.length - 3} more</li>
                                 )}
                               </ul>
                             )}

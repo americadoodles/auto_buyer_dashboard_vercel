@@ -161,10 +161,10 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 
   return (
     <div
-      className={`group relative bg-gray-50 dark:bg-gray-800 rounded-xl border-2 transition-all duration-200 hover:shadow-lg cursor-pointer flex flex-col h-full ${
+      className={`group relative bg-claude-cream dark:bg-coal-850 rounded-xl border-2 transition-all duration-200 hover:shadow-lg cursor-pointer flex flex-col h-full ${
         isSelected 
           ? 'border-blue-500 dark:border-blue-400 shadow-md' 
-          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+          : 'border-claude-border dark:border-coal-700 hover:border-claude-divider dark:hover:border-coal-600'
       }`}
       onClick={handleCardClick}
     >
@@ -175,14 +175,14 @@ export const LeadCard: React.FC<LeadCardProps> = ({
             type="checkbox"
             checked={isSelected}
             onChange={(e) => onSelect(lead.id, e.target.checked)}
-            className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
+            className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-claude-divider rounded cursor-pointer"
             onClick={(e) => e.stopPropagation()}
           />
         </div>
       )}
 
       {/* Image Section */}
-      <div className="relative w-full h-48 bg-gray-100 dark:bg-gray-700 rounded-t-xl overflow-hidden">
+      <div className="relative w-full h-48 bg-claude-sand dark:bg-coal-700 rounded-t-xl overflow-hidden">
         {primaryImage && !imageError ? (
           <img
             src={primaryImage}
@@ -191,14 +191,14 @@ export const LeadCard: React.FC<LeadCardProps> = ({
             onError={() => setImageError(true)}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-500">
+          <div className="w-full h-full flex items-center justify-center text-claude-subtle dark:text-coal-500">
             <Gauge className="h-12 w-12" />
           </div>
         )}
         
         {/* Image Count Badge */}
         {lead.listing?.images && lead.listing.images.length > 1 && (
-          <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
+          <div className="absolute bottom-2 right-2 bg-black/60 text-coal-100 text-xs px-2 py-1 rounded">
             +{lead.listing.images.length - 1}
           </div>
         )}
@@ -216,10 +216,10 @@ export const LeadCard: React.FC<LeadCardProps> = ({
         {/* Contact Info */}
         <div className="flex items-start justify-between gap-2 min-w-0">
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white truncate" title={contactName}>
+            <h3 className="text-lg font-bold text-claude-ink dark:text-coal-100 truncate" title={contactName}>
               {contactName}
             </h3>
-            <div className="flex items-center gap-2 mt-1 text-sm text-gray-600 dark:text-gray-400 min-w-0">
+            <div className="flex items-center gap-2 mt-1 text-sm text-claude-muted dark:text-coal-400 min-w-0">
               {lead.contact?.email && (
                 <div className="flex items-center gap-1 min-w-0">
                   <Mail className="h-3 w-3 flex-shrink-0" />
@@ -228,7 +228,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({
               )}
             </div>
             {lead.contact?.phone && (
-              <div className="flex items-center gap-1 mt-1 text-sm text-gray-600 dark:text-gray-400">
+              <div className="flex items-center gap-1 mt-1 text-sm text-claude-muted dark:text-coal-400">
                 <Phone className="h-3 w-3 flex-shrink-0" />
                 <span className="truncate">{lead.contact.phone}</span>
               </div>
@@ -239,11 +239,11 @@ export const LeadCard: React.FC<LeadCardProps> = ({
         {/* Vehicle Info */}
         {lead.listing && (
           <>
-            <div className="border-t border-gray-200 dark:border-gray-700 pt-3 min-w-0">
-              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 truncate">Vehicle Interest</h4>
+            <div className="border-t border-claude-border dark:border-coal-700 pt-3 min-w-0">
+              <h4 className="text-sm font-semibold text-claude-text dark:text-coal-300 mb-2 truncate">Vehicle Interest</h4>
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-2 min-w-0">
-                  <span className="text-sm font-medium text-gray-900 dark:text-white truncate" title={vehicleTitle}>{vehicleTitle}</span>
+                  <span className="text-sm font-medium text-claude-ink dark:text-coal-100 truncate" title={vehicleTitle}>{vehicleTitle}</span>
                   {lead.listing.price && (
                     <span className="text-base font-bold text-green-600 dark:text-green-400 flex-shrink-0">
                       {formatCurrency(lead.listing.price)}
@@ -252,7 +252,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({
                 </div>
                 
                 {/* Vehicle Details */}
-                <div className="flex items-center gap-4 text-xs text-gray-600 dark:text-gray-400 flex-wrap">
+                <div className="flex items-center gap-4 text-xs text-claude-muted dark:text-coal-400 flex-wrap">
                   {lead.listing.miles !== undefined && (
                     <div className="flex items-center gap-1 flex-shrink-0">
                       <Gauge className="h-3 w-3 flex-shrink-0" />
@@ -277,10 +277,10 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 
                 {/* VIN & LPN */}
                 <div className="grid grid-cols-2 gap-2 mt-2">
-                  <div className="text-xs font-mono text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 px-2 py-1 rounded truncate" title={lead.listing.vin || 'Not Available'}>
+                  <div className="text-xs font-mono text-claude-subtle dark:text-coal-400 bg-claude-cream dark:bg-coal-700/50 px-2 py-1 rounded truncate" title={lead.listing.vin || 'Not Available'}>
                     VIN: {lead.listing.vin || 'Not Available'}
                   </div>
-                  <div className="text-xs font-mono text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 px-2 py-1 rounded truncate" title={lead.listing.lpn || 'Not Available'}>
+                  <div className="text-xs font-mono text-claude-subtle dark:text-coal-400 bg-claude-cream dark:bg-coal-700/50 px-2 py-1 rounded truncate" title={lead.listing.lpn || 'Not Available'}>
                     LPN: {lead.listing.lpn || 'Not Available'}
                   </div>
                 </div>
@@ -308,8 +308,8 @@ export const LeadCard: React.FC<LeadCardProps> = ({
                   const verificationIcons = getVerificationIcons(lead);
                   if (verificationIcons.length > 0) {
                     return (
-                      <div className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                        <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">Verified:</span>
+                      <div className="flex items-center gap-2 mt-2 pt-2 border-t border-claude-border dark:border-coal-700">
+                        <span className="text-xs text-claude-subtle dark:text-coal-400 flex-shrink-0">Verified:</span>
                         <div className="flex items-center gap-1.5 flex-wrap">
                           {verificationIcons.map((iconName) => (
                             <div
@@ -330,7 +330,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({
                                   />
                                   {hasAccuTradeData && (
                                     <div className="absolute -top-1 -right-1 bg-red-500 rounded-full p-0.5">
-                                      <Check className="h-3 w-3 text-white" strokeWidth={3} />
+                                      <Check className="h-3 w-3 text-coal-100" strokeWidth={3} />
                                     </div>
                                   )}
                                 </button>
@@ -347,7 +347,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({
                                   />
                                   {hasMMRData && (
                                     <div className="absolute -top-1 -right-1 bg-red-500 rounded-full p-0.5">
-                                      <Check className="h-3 w-3 text-white" strokeWidth={3} />
+                                      <Check className="h-3 w-3 text-coal-100" strokeWidth={3} />
                                     </div>
                                   )}
                                 </button>
@@ -372,23 +372,23 @@ export const LeadCard: React.FC<LeadCardProps> = ({
         )}
 
         {/* Lead Info */}
-        <div className="border-t border-gray-200 dark:border-gray-700 pt-3 space-y-2 min-w-0">
+        <div className="border-t border-claude-border dark:border-coal-700 pt-3 space-y-2 min-w-0">
           <div className="flex items-center justify-between text-xs gap-2">
-            <span className="text-gray-500 dark:text-gray-400 flex-shrink-0">Assigned to:</span>
-            <span className="font-medium text-gray-700 dark:text-gray-300 truncate" title={lead.assigned_to?.username || 'Unassigned'}>
+            <span className="text-claude-subtle dark:text-coal-400 flex-shrink-0">Assigned to:</span>
+            <span className="font-medium text-claude-text dark:text-coal-300 truncate" title={lead.assigned_to?.username || 'Unassigned'}>
               {lead.assigned_to?.username || 'Unassigned'}
             </span>
           </div>
           {lead.source && (
             <div className="flex items-center justify-between text-xs gap-2">
-              <span className="text-gray-500 dark:text-gray-400 flex-shrink-0">Source:</span>
-              <span className="font-medium text-gray-700 dark:text-gray-300 truncate" title={lead.source.name}>{lead.source.name}</span>
+              <span className="text-claude-subtle dark:text-coal-400 flex-shrink-0">Source:</span>
+              <span className="font-medium text-claude-text dark:text-coal-300 truncate" title={lead.source.name}>{lead.source.name}</span>
             </div>
           )}
         </div>
 
         {/* Footer: Score, Like, and Actions */}
-        <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700 mt-auto flex-shrink-0 gap-2">
+        <div className="flex items-center justify-between pt-2 border-t border-claude-border dark:border-coal-700 mt-auto flex-shrink-0 gap-2">
           <div className="flex items-center gap-2 flex-wrap min-w-0">
             {/* Lead Score Badge */}
             <Badge 
@@ -408,7 +408,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({
                 className={`p-2 rounded-lg transition-colors flex-shrink-0 ${
                   isLiked
                     ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20'
-                    : 'text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    : 'text-claude-subtle dark:text-coal-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-claude-sand dark:hover:bg-coal-700'
                 }`}
                 title={isLiked ? 'Unlike' : 'Like'}
               >
@@ -423,7 +423,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({
                   e.stopPropagation();
                   setShowActions(!showActions);
                 }}
-                className="p-2 rounded-lg text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="p-2 rounded-lg text-claude-subtle dark:text-coal-500 hover:text-claude-muted dark:hover:text-claude-subtle hover:bg-claude-sand dark:hover:bg-coal-700 transition-colors"
                 title="More actions"
               >
                 <MoreVertical className="h-5 w-5" />
@@ -439,14 +439,14 @@ export const LeadCard: React.FC<LeadCardProps> = ({
                       setShowActions(false);
                     }}
                   />
-                  <div className="absolute bottom-full left-0 mb-2 z-30 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 min-w-[160px]">
+                  <div className="absolute bottom-full left-0 mb-2 z-30 bg-claude-surface dark:bg-coal-850 rounded-lg shadow-lg border border-claude-border dark:border-coal-700 py-1 min-w-[160px]">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         router.push(`/crm/leads/${lead.id}`);
                         setShowActions(false);
                       }}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                      className="w-full text-left px-4 py-2 text-sm text-claude-text dark:text-coal-300 hover:bg-claude-sand dark:hover:bg-coal-700 flex items-center gap-2"
                     >
                       <span>✏️</span> Edit Lead
                     </button>
@@ -454,7 +454,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({
                       <a
                         href={`mailto:${lead.contact.email}`}
                         onClick={(e) => e.stopPropagation()}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                        className="w-full text-left px-4 py-2 text-sm text-claude-text dark:text-coal-300 hover:bg-claude-sand dark:hover:bg-coal-700 flex items-center gap-2"
                       >
                         <span>📧</span> Send Email
                       </a>
@@ -463,7 +463,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({
                       <a
                         href={`tel:${lead.contact.phone}`}
                         onClick={(e) => e.stopPropagation()}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                        className="w-full text-left px-4 py-2 text-sm text-claude-text dark:text-coal-300 hover:bg-claude-sand dark:hover:bg-coal-700 flex items-center gap-2"
                       >
                         <span>📞</span> Call
                       </a>
@@ -477,7 +477,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({
           {/* Additional Info */}
           <div className="flex items-center gap-2 flex-shrink-0">
             {lead.budget_range && (lead.budget_range.min || lead.budget_range.max) && (
-              <div className="text-xs text-gray-500 dark:text-gray-400 truncate" title={`Budget: ${lead.budget_range.min ? formatCurrency(lead.budget_range.min) : '—'} - ${lead.budget_range.max ? formatCurrency(lead.budget_range.max) : '—'}`}>
+              <div className="text-xs text-claude-subtle dark:text-coal-400 truncate" title={`Budget: ${lead.budget_range.min ? formatCurrency(lead.budget_range.min) : '—'} - ${lead.budget_range.max ? formatCurrency(lead.budget_range.max) : '—'}`}>
                 Budget: {lead.budget_range.min ? formatCurrency(lead.budget_range.min) : '—'} - {lead.budget_range.max ? formatCurrency(lead.budget_range.max) : '—'}
               </div>
             )}

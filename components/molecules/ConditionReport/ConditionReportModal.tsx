@@ -115,7 +115,7 @@ interface ConditionReportModalProps {
 const getPriceClass = (priceClass: string): string => {
   if (priceClass.includes('positive')) return 'text-green-600 dark:text-green-400';
   if (priceClass.includes('negative')) return 'text-red-600 dark:text-red-400';
-  return 'text-gray-600 dark:text-gray-400';
+  return 'text-claude-muted dark:text-coal-400';
 };
 
 // Formatted Price Component
@@ -124,12 +124,12 @@ const FormattedPrice: React.FC<{ price: string; className?: string; priceClass?:
   if (!finalPriceClass) {
     finalPriceClass = price.includes('+') ? 'text-green-600 dark:text-green-400' : 
                      price.includes('-') ? 'text-red-600 dark:text-red-400' : 
-                     'text-gray-600 dark:text-gray-400';
+                     'text-claude-muted dark:text-coal-400';
   } else {
     // Map priceClass string to Tailwind classes
     if (finalPriceClass.includes('positive')) finalPriceClass = 'text-green-600 dark:text-green-400';
     else if (finalPriceClass.includes('negative')) finalPriceClass = 'text-red-600 dark:text-red-400';
-    else finalPriceClass = 'text-gray-600 dark:text-gray-400';
+    else finalPriceClass = 'text-claude-muted dark:text-coal-400';
   }
   
   return (
@@ -149,7 +149,7 @@ const PanelHeader: React.FC<{
 }> = ({ title, subtitle, headerPrice, icon, panelClass }) => {
   const priceClass = panelClass === 'positive' ? 'text-green-600 dark:text-green-400' : 
                      panelClass === 'negative' ? 'text-red-600 dark:text-red-400' : 
-                     'text-gray-600 dark:text-gray-400';
+                     'text-claude-muted dark:text-coal-400';
 
   // Get the appropriate icon component based on title
   const getIconComponent = () => {
@@ -176,13 +176,13 @@ const PanelHeader: React.FC<{
   };
 
   return (
-    <header className="flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-gray-700/50">
+    <header className="flex items-center justify-between px-3 py-2 border-b border-claude-border dark:border-coal-700/50">
       <div className="flex items-center gap-3">
         {getIconComponent()}
         <div className="title-container">
-          <div className="title text-black dark:text-white font-semibold text-base">{title}</div>
+          <div className="title text-black dark:text-coal-100 font-semibold text-base">{title}</div>
           {subtitle && (
-            <div className="subtitle text-black dark:text-gray-400 text-sm mt-1">{subtitle}</div>
+            <div className="subtitle text-black dark:text-coal-400 text-sm mt-1">{subtitle}</div>
           )}
         </div>
       </div>
@@ -200,7 +200,7 @@ const StandardPanel: React.FC<{
   section: Section;
 }> = ({ section }) => {
   return (
-    <div className={`appraisal-panel bg-white dark:bg-[#1a1d29] rounded-lg shadow-sm border border-gray-200 dark:border-gray-700/50 overflow-hidden ${section.panelClass || ''}`}>
+    <div className={`appraisal-panel bg-claude-surface dark:bg-[#1a1d29] rounded-lg shadow-sm border border-claude-border dark:border-coal-700/50 overflow-hidden ${section.panelClass || ''}`}>
       <PanelHeader
         title={section.title}
         subtitle={section.subtitle}
@@ -216,7 +216,7 @@ const StandardPanel: React.FC<{
                 const priceClass = item.priceClass || '';
                 const textColorClass = priceClass.includes('positive') || item.price.includes('+') ? 'text-green-600 dark:text-green-400' : 
                                      priceClass.includes('negative') || item.price.includes('-') ? 'text-red-600 dark:text-red-400' : 
-                                     'text-gray-600 dark:text-gray-400';
+                                     'text-claude-muted dark:text-coal-400';
                 const dotColorClass = textColorClass.replace(/text-/g, 'bg-');
                 
                 // Remove bullet character (•) from text if present
@@ -263,7 +263,7 @@ const BodyDamageGraphic: React.FC<{ noDamage: boolean; svgImage?: string }> = ({
   if (!svgImage) return null;
   const svgToUse = svgImage;
   return (
-    <div className="w-full h-auto max-w-md mx-auto bg-white">
+    <div className="w-full h-auto max-w-md mx-auto bg-claude-surface">
       {/* Example usage: Using dangerouslySetInnerHTML with converted SVG */}
       <div dangerouslySetInnerHTML={getSvgHtml(svgToUse)} />
       
@@ -276,7 +276,7 @@ const InteriorDamageGraphic: React.FC<{ noDamage: boolean; svgImage?: string }> 
   if (!svgImage) return null;
   const svgToUse = svgImage;
   return (
-    <div className="w-full h-auto max-w-md mx-auto bg-white">
+    <div className="w-full h-auto max-w-md mx-auto bg-claude-surface">
       <div dangerouslySetInnerHTML={getSvgHtml(svgToUse)} />
     </div>
   );
@@ -287,7 +287,7 @@ const GlassDamageGraphic: React.FC<{ noDamage: boolean; svgImage?: string }> = (
   if (!svgImage) return null;
   const svgToUse = svgImage;
   return (
-    <div className="w-full h-auto max-w-md mx-auto bg-white">
+    <div className="w-full h-auto max-w-md mx-auto bg-claude-surface">
       <div dangerouslySetInnerHTML={getSvgHtml(svgToUse)} />
     </div>
   );
@@ -315,7 +315,7 @@ const DamagePanel: React.FC<{
 
   return (
     <div className="appraisal-damage-panel">
-      <div className={`appraisal-panel bg-white dark:bg-[#1a1d29] rounded-lg shadow-sm border border-gray-200 dark:border-gray-700/50 overflow-hidden`}>
+      <div className={`appraisal-panel bg-claude-surface dark:bg-[#1a1d29] rounded-lg shadow-sm border border-claude-border dark:border-coal-700/50 overflow-hidden`}>
         <PanelHeader
           title={section.title}
           headerPrice={section.headerPrice}
@@ -329,7 +329,7 @@ const DamagePanel: React.FC<{
             </div>
             <div className="appraisal-panel-damage-list">
               {noDamage ? (
-                <div className="no-items text-center py-1 text-black dark:text-gray-400 text-sm">
+                <div className="no-items text-center py-1 text-black dark:text-coal-400 text-sm">
                   {specialData.noDamageText || 'No Damage'}
                 </div>
               ) : (
@@ -345,7 +345,7 @@ const DamagePanel: React.FC<{
                       const itemClass = priceType === 'negative' ? 'negative' : priceType === 'positive' ? 'positive' : '';
                       const textColorClass = priceType === 'negative' ? 'text-red-600 dark:text-red-400' : 
                                            priceType === 'positive' ? 'text-green-600 dark:text-green-400' : 
-                                           'text-gray-600 dark:text-gray-400';
+                                           'text-claude-muted dark:text-coal-400';
                       const dotColorClass = textColorClass.replace(/text-/g, 'bg-');
                       
                       return (
@@ -392,7 +392,7 @@ const TiresPanel: React.FC<{
 
   return (
     <div className="appraisal-tires-panel">
-      <div className="appraisal-panel bg-white dark:bg-[#1a1d29] rounded-lg shadow-sm border border-gray-200 dark:border-gray-700/50 overflow-hidden">
+      <div className="appraisal-panel bg-claude-surface dark:bg-[#1a1d29] rounded-lg shadow-sm border border-claude-border dark:border-coal-700/50 overflow-hidden">
         <PanelHeader
           title={section.title}
           headerPrice={section.headerPrice}
@@ -402,22 +402,22 @@ const TiresPanel: React.FC<{
         <div className="appraisal-panel-content py-3 px-5">
           {/* Tread Section */}
           <header className="mb-2 pb-1">
-            <div className="title text-gray-900 dark:text-white font-medium text-sm">
+            <div className="title text-claude-ink dark:text-coal-100 font-medium text-sm">
               Tread
             </div>
-            <div className="tire text-gray-600 dark:text-gray-400 text-xs text-center">FL</div>
-            <div className="tire text-gray-600 dark:text-gray-400 text-xs text-center">FR</div>
-            <div className="tire text-gray-600 dark:text-gray-400 text-xs text-center">RL</div>
-            <div className="tire text-gray-600 dark:text-gray-400 text-xs text-center">RR</div>
+            <div className="tire text-claude-muted dark:text-coal-400 text-xs text-center">FL</div>
+            <div className="tire text-claude-muted dark:text-coal-400 text-xs text-center">FR</div>
+            <div className="tire text-claude-muted dark:text-coal-400 text-xs text-center">RL</div>
+            <div className="tire text-claude-muted dark:text-coal-400 text-xs text-center">RR</div>
             <div className="placeholder">&nbsp;</div>
           </header>
 
           {tread.map((row, index) => (
             <div key={index} className={`${row.rowClass || 'row'} mb-1`}>
-              <div className={`${row.titleClass || 'title'} text-gray-900 dark:text-white text-sm`}>{row.title}</div>
+              <div className={`${row.titleClass || 'title'} text-claude-ink dark:text-coal-100 text-sm`}>{row.title}</div>
               {row.tires.map((tire, tireIndex) => (
                 <div key={tireIndex} className="circle-container">
-                  <div className={`${tire.circleClass} w-4 h-4 rounded-full border-2 ${tire.circleState === 'bad' ? 'border-red-500 dark:border-red-400' : tire.circleState === 'good' ? 'border-green-500 dark:border-green-400' : 'border-gray-300 dark:border-gray-600'}`}></div>
+                  <div className={`${tire.circleClass} w-4 h-4 rounded-full border-2 ${tire.circleState === 'bad' ? 'border-red-500 dark:border-red-400' : tire.circleState === 'good' ? 'border-green-500 dark:border-green-400' : 'border-claude-divider dark:border-coal-600'}`}></div>
                 </div>
               ))}
               <div className="price">
@@ -428,17 +428,17 @@ const TiresPanel: React.FC<{
 
           {/* Wheel Issues Section */}
           <header className="wheels mt-2 mb-2 pb-1">
-            <div className="title text-black dark:text-white font-medium text-sm">
+            <div className="title text-black dark:text-coal-100 font-medium text-sm">
               Wheel Issues
             </div>
           </header>
 
           {wheelIssues.map((row, index) => (
             <div key={index} className={`${row.rowClass || 'row'} mb-1`}>
-              <div className={`${row.titleClass || 'title'} text-black dark:text-white text-sm`}>{row.title}</div>
+              <div className={`${row.titleClass || 'title'} text-black dark:text-coal-100 text-sm`}>{row.title}</div>
               {row.tires.map((tire, tireIndex) => (
                 <div key={tireIndex} className="circle-container">
-                  <div className={`${tire.circleClass} w-4 h-4 rounded-full border-2 ${tire.circleState === 'bad' ? 'border-red-500 dark:border-red-400' : tire.circleState === 'good' ? 'border-green-500 dark:border-green-400' : 'border-gray-300 dark:border-gray-600'}`}></div>
+                  <div className={`${tire.circleClass} w-4 h-4 rounded-full border-2 ${tire.circleState === 'bad' ? 'border-red-500 dark:border-red-400' : tire.circleState === 'good' ? 'border-green-500 dark:border-green-400' : 'border-claude-divider dark:border-coal-600'}`}></div>
                 </div>
               ))}
               <div className="price">
@@ -461,7 +461,7 @@ const TiresPanel: React.FC<{
                   const itemClass = priceType === 'negative' ? 'negative' : priceType === 'positive' ? 'positive' : '';
                   const textColorClass = priceType === 'negative' ? 'text-red-600 dark:text-red-400' : 
                                        priceType === 'positive' ? 'text-green-600 dark:text-green-400' : 
-                                       'text-gray-600 dark:text-gray-400';
+                                       'text-claude-muted dark:text-coal-400';
                   const dotColorClass = textColorClass.replace(/text-/g, 'bg-');
                   
                   return (
@@ -496,7 +496,7 @@ const TiresPanel: React.FC<{
            !wheelIssues.some(row => row.tires.some(t => t.circleState === 'bad' || t.circleClass.includes('good'))) &&
            (!specialData.damageItems || specialData.damageItems.length === 0) && (
             <div className="appraisal-panel-damage-list">
-              <div className="no-items text-center py-1 text-black dark:text-gray-400 text-sm">
+              <div className="no-items text-center py-1 text-black dark:text-coal-400 text-sm">
                 {specialData.noDamageText || 'No Damage'}
               </div>
             </div>
@@ -516,7 +516,7 @@ const OBDPanel: React.FC<{
 
   return (
     <div className="appraisal-obd-panel">
-      <div className={`appraisal-panel bg-white dark:bg-[#1a1d29] rounded-lg shadow-sm border border-gray-200 dark:border-gray-700/50 overflow-hidden ${section.panelClass || ''}`}>
+      <div className={`appraisal-panel bg-claude-surface dark:bg-[#1a1d29] rounded-lg shadow-sm border border-claude-border dark:border-coal-700/50 overflow-hidden ${section.panelClass || ''}`}>
         <PanelHeader
           title={section.title}
           panelClass={section.panelClass}
@@ -637,13 +637,13 @@ export const ConditionReportModal: React.FC<ConditionReportModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
-      <div className="w-full h-full bg-white dark:bg-[#0f1117] flex flex-col">
+      <div className="w-full h-full bg-claude-surface dark:bg-[#0f1117] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700/50 flex-shrink-0">
-          <h2 className="text-xl font-semibold text-black dark:text-white">Condition Report</h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-claude-border dark:border-coal-700/50 flex-shrink-0">
+          <h2 className="text-xl font-semibold text-black dark:text-coal-100">Condition Report</h2>
           <button
             onClick={onClose}
-            className="text-black dark:text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors"
+            className="text-black dark:text-coal-400 hover:text-claude-text dark:hover:text-coal-100 transition-colors"
             aria-label="Close"
           >
             <X className="w-6 h-6" />
@@ -651,40 +651,40 @@ export const ConditionReportModal: React.FC<ConditionReportModalProps> = ({
         </div>
         
         {/* Content - Scrollable */}
-          <div className="flex-1 overflow-y-auto p-6 bg-gray-50 dark:bg-[#0f1117]">
+          <div className="flex-1 overflow-y-auto p-6 bg-claude-cream dark:bg-[#0f1117]">
             <div className={`${numColumns === 4 ? 'max-w-[1920px]' : 'max-w-6xl'} mx-auto`}>
               {isLoading ? (
                 <div className="flex items-center justify-center h-64">
-                  <p className="text-black dark:text-gray-400 text-lg">Loading condition report...</p>
+                  <p className="text-black dark:text-coal-400 text-lg">Loading condition report...</p>
                 </div>
               ) : error && !reportData ? (
                 <div className="flex items-center justify-center h-64">
                   <div className="text-center">
                     <p className="text-red-600 dark:text-red-400 text-lg mb-2">Error loading condition report</p>
-                    <p className="text-black dark:text-gray-400 text-sm">{error}</p>
+                    <p className="text-black dark:text-coal-400 text-sm">{error}</p>
                   </div>
                 </div>
               ) : reportData && reportData.sections.length > 0 ? (
                 <div className="appraisal-adjustments-panels flex flex-col gap-4">
                   {/* Vehicle Info Section */}
                   {reportData.vehicleInfo && (
-                    <div className="bg-white dark:bg-[#1a1d29] rounded-lg shadow-sm border border-gray-200 dark:border-gray-700/50 overflow-hidden p-4">
+                    <div className="bg-claude-surface dark:bg-[#1a1d29] rounded-lg shadow-sm border border-claude-border dark:border-coal-700/50 overflow-hidden p-4">
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         {/* Left Column: Vehicle Details */}
                         <section>
-                          <div className="year-make-model text-lg font-semibold text-black dark:text-white mb-1">
+                          <div className="year-make-model text-lg font-semibold text-black dark:text-coal-100 mb-1">
                             {reportData.vehicleInfo.yearMakeModel}
                           </div>
-                          <div className="style text-sm text-gray-600 dark:text-gray-400 mb-2">
+                          <div className="style text-sm text-claude-muted dark:text-coal-400 mb-2">
                             {reportData.vehicleInfo.style}
                           </div>
-                          <div className="vin-mi-reports text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2 flex-wrap">
+                          <div className="vin-mi-reports text-sm text-claude-muted dark:text-coal-400 flex items-center gap-2 flex-wrap">
                             <span>{reportData.vehicleInfo.vin}</span>
-                            <span className="pipe text-gray-400">|</span>
+                            <span className="pipe text-claude-subtle">|</span>
                             <span className="miles">{reportData.vehicleInfo.miles}</span>
                             {reportData.vehicleInfo.hasAutocheck && (
                               <>
-                                <span className="pipe text-gray-400">|</span>
+                                <span className="pipe text-claude-subtle">|</span>
                                 <span className="text-blue-600 dark:text-blue-400">AutoCheck Available</span>
                               </>
                             )}
@@ -695,10 +695,10 @@ export const ConditionReportModal: React.FC<ConditionReportModalProps> = ({
                         {reportData.vehicleInfo.instantOffer && (
                           <section className="flex items-start justify-end">
                             <div className="price-label-container text-right">
-                              <label className="text-sm text-gray-600 dark:text-gray-400 mb-2 block">
+                              <label className="text-sm text-claude-muted dark:text-coal-400 mb-2 block">
                                 {reportData.vehicleInfo.priceLabel || 'Instant Offer'}
                               </label>
-                              <div className="price text-3xl font-bold text-black dark:text-white">
+                              <div className="price text-3xl font-bold text-black dark:text-coal-100">
                                 {reportData.vehicleInfo.instantOffer}
                               </div>
                               <div className="price-description"></div>
@@ -715,19 +715,19 @@ export const ConditionReportModal: React.FC<ConditionReportModalProps> = ({
                     <div className="flex justify-between gap-1">
                       {/* Equipment Options */}
                       {reportData.equipmentOptions && reportData.equipmentOptions.map((equipment, index) => (
-                        <div key={index} className="bg-white dark:bg-[#1a1d29] rounded-lg shadow-sm border border-gray-200 dark:border-gray-700/50 overflow-hidden p-4" style={{ width: '100%' }}>
-                          <header className="text-base font-semibold text-black dark:text-white mb-3">
+                        <div key={index} className="bg-claude-surface dark:bg-[#1a1d29] rounded-lg shadow-sm border border-claude-border dark:border-coal-700/50 overflow-hidden p-4" style={{ width: '100%' }}>
+                          <header className="text-base font-semibold text-black dark:text-coal-100 mb-3">
                             {equipment.header}
                           </header>
                           {equipment.standardEquipment && equipment.standardEquipment.length > 0 && (
                             <div className="mb-4">
-                              <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                              <div className="text-sm font-medium text-claude-text dark:text-coal-300 mb-2">
                                 Standard Equipment:
                               </div>
                               <div className="options-list space-y-1">
                                 {equipment.standardEquipment.map((option, optIndex) => (
-                                  <div key={optIndex} className="option text-sm text-gray-600 dark:text-gray-400 flex items-start gap-2">
-                                    <span className="bullet text-gray-400">•</span>
+                                  <div key={optIndex} className="option text-sm text-claude-muted dark:text-coal-400 flex items-start gap-2">
+                                    <span className="bullet text-claude-subtle">•</span>
                                     <span>{option}</span>
                                   </div>
                                 ))}
@@ -736,10 +736,10 @@ export const ConditionReportModal: React.FC<ConditionReportModalProps> = ({
                           )}
                           {equipment.commonProblems && (
                             <div className="row common-problems">
-                              <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">
+                              <label className="text-sm font-medium text-claude-text dark:text-coal-300 mb-1 block">
                                 Common Problems:
                               </label>
-                              <div className="text-sm text-gray-600 dark:text-gray-400">
+                              <div className="text-sm text-claude-muted dark:text-coal-400">
                                 {equipment.commonProblems}
                               </div>
                             </div>
@@ -749,15 +749,15 @@ export const ConditionReportModal: React.FC<ConditionReportModalProps> = ({
 
                       {/* Pricing Breakdown */}
                       {reportData.pricingBreakdown && reportData.pricingBreakdown.map((breakdown, index) => (
-                        <div key={index} className="bg-white dark:bg-[#1a1d29] rounded-lg shadow-sm border border-gray-200 dark:border-gray-700/50 overflow-hidden p-4" style={{ minWidth: '350px', width: '350px' }}>
-                          <header className="text-base font-semibold text-black dark:text-white mb-3">
+                        <div key={index} className="bg-claude-surface dark:bg-[#1a1d29] rounded-lg shadow-sm border border-claude-border dark:border-coal-700/50 overflow-hidden p-4" style={{ minWidth: '350px', width: '350px' }}>
+                          <header className="text-base font-semibold text-black dark:text-coal-100 mb-3">
                             {breakdown.header}
                           </header>
                           <div className="space-y-2">
                             {breakdown.rows.map((row, rowIndex) => (
                               <div key={rowIndex} className="row flex items-center justify-between">
-                                <div className="text-sm text-gray-600 dark:text-gray-400">{row.label}</div>
-                                <div className={`value text-sm font-medium ${row.isNegative ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'}`}>
+                                <div className="text-sm text-claude-muted dark:text-coal-400">{row.label}</div>
+                                <div className={`value text-sm font-medium ${row.isNegative ? 'text-red-600 dark:text-red-400' : 'text-claude-ink dark:text-coal-100'}`}>
                                   {row.value}
                                 </div>
                               </div>
@@ -785,7 +785,7 @@ export const ConditionReportModal: React.FC<ConditionReportModalProps> = ({
                 </div>
               ) : (
                 <div className="flex items-center justify-center h-64">
-                  <p className="text-black dark:text-gray-400 text-lg">No condition report data available</p>
+                  <p className="text-black dark:text-coal-400 text-lg">No condition report data available</p>
                 </div>
               )}
             </div>

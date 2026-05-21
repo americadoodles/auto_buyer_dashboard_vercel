@@ -116,27 +116,27 @@ const UserEditModal: React.FC<UserEditModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-black/70 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="bg-claude-surface dark:bg-coal-850 rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Edit User</h2>
+        <div className="flex items-center justify-between p-6 border-b border-claude-border dark:border-coal-700">
+          <h2 className="text-xl font-semibold text-claude-ink dark:text-coal-100">Edit User</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+            className="text-claude-subtle dark:text-coal-300 hover:text-claude-muted dark:hover:text-coal-200 transition-colors"
           >
             <X className="w-6 h-6" />
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="border-b border-gray-200 dark:border-gray-700">
+        <div className="border-b border-claude-border dark:border-coal-700">
           <nav className="flex space-x-8 px-6">
             <button
               onClick={() => setActiveTab("profile")}
               className={`py-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === "profile"
                   ? "border-blue-500 dark:border-blue-400 text-blue-600 dark:text-blue-400"
-                  : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600"
+                  : "border-transparent text-claude-subtle dark:text-coal-400 hover:text-claude-text dark:hover:text-claude-subtle hover:border-claude-divider dark:hover:border-coal-600"
               }`}
             >
               Profile Information
@@ -146,7 +146,7 @@ const UserEditModal: React.FC<UserEditModalProps> = ({
               className={`py-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === "password"
                   ? "border-blue-500 dark:border-blue-400 text-blue-600 dark:text-blue-400"
-                  : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600"
+                  : "border-transparent text-claude-subtle dark:text-coal-400 hover:text-claude-text dark:hover:text-claude-subtle hover:border-claude-divider dark:hover:border-coal-600"
               }`}
             >
               Change Password
@@ -176,7 +176,7 @@ const UserEditModal: React.FC<UserEditModalProps> = ({
           {activeTab === "profile" ? (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-1">
                   Email
                 </label>
                 <input
@@ -184,13 +184,13 @@ const UserEditModal: React.FC<UserEditModalProps> = ({
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="w-full px-3 py-2 border border-claude-divider dark:border-coal-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-1">
                   Username
                 </label>
                 <input
@@ -198,20 +198,20 @@ const UserEditModal: React.FC<UserEditModalProps> = ({
                   name="username"
                   value={formData.username}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="w-full px-3 py-2 border border-claude-divider dark:border-coal-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-1">
                   Role
                 </label>
                 <select
                   name="role_id"
                   value={formData.role_id}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="w-full px-3 py-2 border border-claude-divider dark:border-coal-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100"
                 >
                   {roles.map((role) => (
                     <option key={role.id} value={role.id}>
@@ -227,9 +227,9 @@ const UserEditModal: React.FC<UserEditModalProps> = ({
                   name="is_confirmed"
                   checked={formData.is_confirmed}
                   onChange={handleInputChange}
-                  className="h-4 w-4 text-blue-600 dark:text-blue-500 focus:ring-blue-500 dark:focus:ring-blue-400 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700"
+                  className="h-4 w-4 text-blue-600 dark:text-blue-500 focus:ring-blue-500 dark:focus:ring-blue-400 border-claude-divider dark:border-coal-600 rounded bg-claude-surface dark:bg-coal-700"
                 />
-                <label className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                <label className="ml-2 block text-sm text-claude-text dark:text-coal-300">
                   User is confirmed
                 </label>
               </div>
@@ -243,7 +243,7 @@ const UserEditModal: React.FC<UserEditModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-1">
                   New Password
                 </label>
                 <div className="relative">
@@ -252,7 +252,7 @@ const UserEditModal: React.FC<UserEditModalProps> = ({
                     name="new_password"
                     value={passwordData.new_password}
                     onChange={handlePasswordChange}
-                    className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-3 py-2 pr-10 border border-claude-divider dark:border-coal-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100"
                     required
                     minLength={6}
                   />
@@ -262,9 +262,9 @@ const UserEditModal: React.FC<UserEditModalProps> = ({
                     className="absolute inset-y-0 right-0 pr-3 flex items-center"
                   >
                     {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                      <EyeOff className="h-4 w-4 text-claude-subtle dark:text-coal-500" />
                     ) : (
-                      <Eye className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                      <Eye className="h-4 w-4 text-claude-subtle dark:text-coal-500" />
                     )}
                   </button>
                 </div>
@@ -273,11 +273,11 @@ const UserEditModal: React.FC<UserEditModalProps> = ({
           )}
 
           {/* Actions */}
-          <div className="flex justify-end space-x-3 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex justify-end space-x-3 mt-6 pt-6 border-t border-claude-border dark:border-coal-700">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+              className="px-4 py-2 text-sm font-medium text-claude-text dark:text-coal-300 bg-claude-surface dark:bg-coal-700 border border-claude-divider dark:border-coal-600 rounded-md hover:bg-claude-cream dark:hover:bg-coal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-blue-400"
             >
               Cancel
             </button>

@@ -103,20 +103,20 @@ export const BuyerPerformanceKpi: React.FC<BuyerPerformanceKpiProps> = ({ stats 
       value: formatDate(safeStats.first_listing),
       description: 'Activity started',
       icon: Calendar,
-      color: 'bg-gray-500',
+      color: 'bg-claude-subtle',
       trend: null
     }
   ];
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+    <div className="bg-claude-surface dark:bg-coal-850 rounded-lg shadow-sm border border-claude-border dark:border-coal-700 p-6">
       <div className="flex items-center space-x-3 mb-6">
         <div className="w-10 h-10 bg-gradient-to-br from-green-600 to-green-700 rounded-lg flex items-center justify-center">
-          <TrendingUp className="h-6 w-6 text-white" />
+          <TrendingUp className="h-6 w-6 text-coal-100" />
         </div>
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Buyer Performance Indicators</h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400">Key metrics and statistics</p>
+          <h2 className="text-xl font-semibold text-claude-ink dark:text-coal-100">Buyer Performance Indicators</h2>
+          <p className="text-sm text-claude-muted dark:text-coal-400">Key metrics and statistics</p>
         </div>
       </div>
 
@@ -124,33 +124,33 @@ export const BuyerPerformanceKpi: React.FC<BuyerPerformanceKpiProps> = ({ stats 
         {kpiCards.map((card, index) => {
           const Icon = card.icon;
           return (
-            <div key={index} className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+            <div key={index} className="bg-claude-cream dark:bg-coal-700/50 rounded-lg p-4 border border-claude-border dark:border-coal-600">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className={`p-2 rounded-lg ${card.color}`}>
-                    <Icon className="w-5 h-5 text-white" />
+                    <Icon className="w-5 h-5 text-coal-100" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-300">{card.title}</p>
-                    <p className={`text-2xl font-bold ${card.valueColor || 'text-gray-900 dark:text-white'}`}>
+                    <p className="text-sm font-medium text-claude-muted dark:text-coal-300">{card.title}</p>
+                    <p className={`text-2xl font-bold ${card.valueColor || 'text-claude-ink dark:text-coal-100'}`}>
                       {card.value}
                     </p>
                   </div>
                 </div>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{card.description}</p>
+              <p className="text-xs text-claude-subtle dark:text-coal-400 mt-2">{card.description}</p>
             </div>
           );
         })}
       </div>
 
       {/* Additional Stats Row */}
-      <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+      <div className="mt-6 pt-6 border-t border-claude-border dark:border-coal-700">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
             <div className="flex items-center space-x-3">
               <div className="p-2 rounded-lg bg-blue-500">
-                <Clock className="w-5 h-5 text-white" />
+                <Clock className="w-5 h-5 text-coal-100" />
               </div>
               <div>
                 <p className="text-sm font-medium text-blue-700 dark:text-blue-300">Last Activity</p>
@@ -164,7 +164,7 @@ export const BuyerPerformanceKpi: React.FC<BuyerPerformanceKpiProps> = ({ stats 
           <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
             <div className="flex items-center space-x-3">
               <div className="p-2 rounded-lg bg-green-500">
-                <Target className="w-5 h-5 text-white" />
+                <Target className="w-5 h-5 text-coal-100" />
               </div>
               <div>
                 <p className="text-sm font-medium text-green-700 dark:text-green-300">Scored Listings</p>

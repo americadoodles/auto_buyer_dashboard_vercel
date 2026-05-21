@@ -19,7 +19,8 @@ import {
   Handshake,
   CheckSquare,
   Plus,
-  FolderKanban
+  FolderKanban,
+  Bot
 } from 'lucide-react';
 import { useAuth } from '../../app/auth/useAuth';
 import { LeadCreateWithSelectionModal } from './LeadCreateWithSelectionModal';
@@ -41,6 +42,11 @@ const getNavItems = (userRole?: string): NavItem[] => {
       href: '/',
       label: 'Dashboard',
       icon: Home,
+    },
+    {
+      href: '/agents',
+      label: 'AI Agents',
+      icon: Bot,
     },
     {
       href: '/listings',
@@ -110,6 +116,7 @@ const getNavItems = (userRole?: string): NavItem[] => {
         return baseItems.filter(item =>
           item.href && [
             '/',
+            '/agents',
             '/listings',
             '/crm/leads',
             '/crm/contacts',
@@ -171,30 +178,30 @@ export const AdminNavPanel = () => {
 
   return (
     <nav 
-      className={`h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col transition-all duration-300 ease-in-out ${
+      className={`h-full bg-claude-surface dark:bg-coal-850 border-r border-claude-border dark:border-coal-700 flex flex-col transition-all duration-300 ease-in-out ${
         isExpanded ? 'w-48' : 'w-14'
       }`}
     >
       {/* Header */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+      <div className="p-4 border-b border-claude-border dark:border-coal-700">
         <div className="flex items-center justify-between">
           {isExpanded && (
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <Car className="h-5 w-5 text-white" />
+              <div className="w-8 h-8 bg-claude-accent rounded-lg flex items-center justify-center">
+                <Car className="h-5 w-5 text-coal-100" />
               </div>
-              <span className="text-lg font-bold text-gray-900 dark:text-white">Dashboard</span>
+              <span className="text-lg font-bold text-claude-ink dark:text-coal-100">Dashboard</span>
             </div>
           )}
           <button
             onClick={toggleExpanded}
-            className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="p-1 rounded-md hover:bg-claude-sand dark:hover:bg-coal-700 transition-colors"
             title={isExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
           >
             {isExpanded ? (
-              <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+              <ChevronLeft className="w-4 h-4 text-claude-muted dark:text-coal-300" />
             ) : (
-              <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+              <ChevronRight className="w-4 h-4 text-claude-muted dark:text-coal-300" />
             )}
           </button>
         </div>
@@ -216,8 +223,8 @@ export const AdminNavPanel = () => {
                     <div 
                       className={`group/item flex items-center px-2 py-1 rounded-lg transition-all duration-200 cursor-pointer ${
                         isActive
-                          ? 'bg-blue-50 dark:bg-blue-900/30'
-                          : 'hover:bg-gray-50 dark:hover:bg-gray-700'
+                          ? 'bg-claude-accent/10 dark:bg-claude-accent/15'
+                          : 'hover:bg-claude-sand dark:hover:bg-coal-700'
                       }`}
                       onClick={(e) => {
                         if (hasSubItems) {
@@ -244,18 +251,18 @@ export const AdminNavPanel = () => {
                         }}
                         title={!isExpanded ? item.label : undefined}
                       >
-                        <Icon 
+                        <Icon
                           className={`w-5 h-5 flex-shrink-0 ${
-                            isActive 
-                              ? 'text-blue-700 dark:text-blue-400' 
-                              : 'text-gray-500 dark:text-gray-400 group-hover/item:text-gray-700 dark:group-hover/item:text-gray-200'
+                            isActive
+                              ? 'text-claude-accent dark:text-claude-accent'
+                              : 'text-claude-muted dark:text-coal-400 group-hover/item:text-claude-ink dark:group-hover/item:text-coal-200'
                           }`}
                         />
                         {isExpanded && (
                           <span className={`ml-3 min-w-0 flex-1 text-sm font-medium truncate ${
-                            isActive 
-                              ? 'text-blue-700 dark:text-blue-400' 
-                              : 'text-gray-700 dark:text-gray-300 group-hover/item:text-gray-900 dark:group-hover/item:text-white'
+                            isActive
+                              ? 'text-claude-accent dark:text-claude-accent'
+                              : 'text-claude-text dark:text-coal-300 group-hover/item:text-claude-ink dark:group-hover/item:text-coal-100'
                           }`}>
                             {item.label}
                           </span>
@@ -266,9 +273,9 @@ export const AdminNavPanel = () => {
                           className={`w-4 h-4 flex-shrink-0 ml-1 transition-transform ${
                             isItemExpanded ? 'rotate-90' : ''
                           } ${
-                            isActive 
-                              ? 'text-blue-700 dark:text-blue-400' 
-                              : 'text-gray-500 dark:text-gray-400 group-hover/item:text-gray-700 dark:group-hover/item:text-gray-200'
+                            isActive
+                              ? 'text-claude-accent dark:text-claude-accent'
+                              : 'text-claude-muted dark:text-coal-400 group-hover/item:text-claude-ink dark:group-hover/item:text-coal-200'
                           }`}
                         />
                       )}
@@ -276,11 +283,11 @@ export const AdminNavPanel = () => {
                   ) : (
                     <button
                       onClick={() => handleItemClick(item)}
-                      className={`group flex items-center w-full px-2 py-1 rounded-lg transition-all duration-200 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white`}
+                      className={`group flex items-center w-full px-2 py-1 rounded-lg transition-all duration-200 text-claude-text dark:text-coal-300 hover:bg-claude-sand dark:hover:bg-coal-700 hover:text-claude-ink dark:hover:text-coal-100`}
                       title={!isExpanded ? item.label : undefined}
                     >
-                      <Icon 
-                        className="w-5 h-5 flex-shrink-0 text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-200"
+                      <Icon
+                        className="w-5 h-5 flex-shrink-0 text-claude-muted dark:text-coal-400 group-hover:text-claude-ink dark:group-hover:text-coal-200"
                       />
                       {isExpanded && (
                         <div className="ml-3 min-w-0 flex-1 text-left">
@@ -311,10 +318,10 @@ export const AdminNavPanel = () => {
                                   setIsCreateLeadModalOpen(true);
                                 }
                               }}
-                              className="group flex items-center w-full px-2 py-1 rounded-lg transition-all duration-200 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
+                              className="group flex items-center w-full px-2 py-1 rounded-lg transition-all duration-200 text-claude-muted dark:text-coal-400 hover:bg-claude-sand dark:hover:bg-coal-700 hover:text-claude-ink dark:hover:text-coal-100"
                             >
-                              <SubIcon 
-                                className="w-4 h-4 flex-shrink-0 text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300"
+                              <SubIcon
+                                className="w-4 h-4 flex-shrink-0 text-claude-subtle dark:text-coal-500 group-hover:text-claude-muted dark:group-hover:text-coal-300"
                               />
                               <span className="ml-2 text-xs font-medium truncate">
                                 {subItem.label}
@@ -334,16 +341,16 @@ export const AdminNavPanel = () => {
 
       {/* Footer */}
       {isExpanded && (
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-          <div className="flex items-center space-x-3 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50">
-            <div className="w-8 h-8 bg-gray-600 dark:bg-gray-600 rounded-full flex items-center justify-center">
-              <Settings className="w-4 h-4 text-white" />
+        <div className="p-4 border-t border-claude-border dark:border-coal-700">
+          <div className="flex items-center space-x-3 p-2 rounded-lg bg-claude-sand dark:bg-coal-800/70">
+            <div className="w-8 h-8 bg-claude-accent rounded-full flex items-center justify-center">
+              <Settings className="w-4 h-4 text-coal-100" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+              <p className="text-sm font-medium text-claude-ink dark:text-coal-100 truncate">
                 {user?.role === 'admin' ? 'Admin Panel' : user?.role === 'buyer' ? 'Buyer Dashboard' : 'Dashboard'}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+              <p className="text-xs text-claude-muted dark:text-coal-400 truncate">
                 {user?.role === 'admin' ? 'Full access control' : user?.role === 'buyer' ? 'Buyer access' : 'User access'}
               </p>
             </div>

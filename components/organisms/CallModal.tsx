@@ -488,15 +488,15 @@ export const CallModal: React.FC<CallModalProps> = ({
       <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
         {/* Background overlay */}
         <div
-          className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75 dark:bg-gray-900 dark:bg-opacity-75"
+          className="fixed inset-0 transition-opacity bg-claude-subtle bg-opacity-75 dark:bg-coal-900 dark:bg-opacity-75"
           onClick={handleClose}
         />
 
         {/* Modal panel */}
-        <div className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full">
-          <div className="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+        <div className="inline-block align-bottom bg-claude-surface dark:bg-coal-850 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full">
+          <div className="bg-claude-surface dark:bg-coal-850 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-white">
+              <h3 className="text-lg font-medium leading-6 text-claude-ink dark:text-coal-100">
                 {isAcceptedIncoming ? 'Incoming Call' : isCallActive ? 'Call in Progress' : 'Make a Call'}
               </h3>
               <div className="flex items-center space-x-2">
@@ -505,7 +505,7 @@ export const CallModal: React.FC<CallModalProps> = ({
                   className={`p-1.5 rounded-md transition-colors ${
                     soundEnabled 
                       ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30' 
-                      : 'text-gray-400 hover:text-gray-500 dark:hover:text-gray-300'
+                      : 'text-claude-subtle hover:text-claude-subtle dark:hover:text-claude-subtle'
                   }`}
                   title={soundEnabled ? 'Mute ring sound' : 'Unmute ring sound'}
                 >
@@ -514,7 +514,7 @@ export const CallModal: React.FC<CallModalProps> = ({
                 <button
                   onClick={handleClose}
                   disabled={isCallActive}
-                  className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 focus:outline-none disabled:opacity-50"
+                  className="text-claude-subtle hover:text-claude-subtle dark:hover:text-claude-subtle focus:outline-none disabled:opacity-50"
                 >
                   <Icon name="x" className="w-5 h-5" />
                 </button>
@@ -578,7 +578,7 @@ export const CallModal: React.FC<CallModalProps> = ({
                       : callState === 'ringing' || callState === 'connecting'
                       ? 'bg-blue-100 dark:bg-blue-900/30'
                       : callState === 'completed'
-                      ? 'bg-gray-100 dark:bg-gray-700'
+                      ? 'bg-claude-sand dark:bg-coal-700'
                       : callState === 'initializing'
                       ? 'bg-yellow-100 dark:bg-yellow-900/30'
                       : 'bg-blue-100 dark:bg-blue-900/30'
@@ -602,14 +602,14 @@ export const CallModal: React.FC<CallModalProps> = ({
               </div>
 
               <div className="text-center mb-6">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                <p className="text-sm text-claude-muted dark:text-coal-400 mb-2">
                   {getCallStateText()}
                 </p>
-                <p className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                <p className="text-xl font-semibold text-claude-ink dark:text-coal-100 mb-2">
                   {contactName}
                 </p>
                 {(callState === 'in-progress' || callState === 'completed') && callDuration > 0 && (
-                  <p className="text-lg font-mono text-gray-700 dark:text-gray-300 mb-2">
+                  <p className="text-lg font-mono text-claude-text dark:text-coal-300 mb-2">
                     {formatDuration(callDuration)}
                   </p>
                 )}
@@ -623,7 +623,7 @@ export const CallModal: React.FC<CallModalProps> = ({
                   <>
                     {hasMultipleNumbers ? (
                       <div className="mt-4">
-                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                        <p className="text-sm font-medium text-claude-text dark:text-coal-300 mb-3">
                           Select phone number to call:
                         </p>
                         <div className="space-y-2">
@@ -634,7 +634,7 @@ export const CallModal: React.FC<CallModalProps> = ({
                               className={`w-full p-3 rounded-lg border-2 transition-all ${
                                 selectedPhoneNumber === mobile
                                   ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                                  : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-500'
+                                  : 'border-claude-border dark:border-coal-600 bg-claude-surface dark:bg-coal-700 text-claude-text dark:text-coal-300 hover:border-claude-divider dark:hover:border-coal-500'
                               } disabled:opacity-50 disabled:cursor-not-allowed`}
                             >
                               <div className="flex items-center justify-between">
@@ -653,7 +653,7 @@ export const CallModal: React.FC<CallModalProps> = ({
                               className={`w-full p-3 rounded-lg border-2 transition-all ${
                                 selectedPhoneNumber === phone
                                   ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                                  : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-500'
+                                  : 'border-claude-border dark:border-coal-600 bg-claude-surface dark:bg-coal-700 text-claude-text dark:text-coal-300 hover:border-claude-divider dark:hover:border-coal-500'
                               } disabled:opacity-50 disabled:cursor-not-allowed`}
                             >
                               <div className="flex items-center justify-between">
@@ -668,7 +668,7 @@ export const CallModal: React.FC<CallModalProps> = ({
                         </div>
                       </div>
                     ) : (
-                      <div className="flex items-center justify-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+                      <div className="flex items-center justify-center space-x-2 text-sm text-claude-subtle dark:text-coal-400">
                         <Icon name="phone" className="w-4 h-4" />
                         <span>{selectedPhoneNumber || 'No phone number available'}</span>
                       </div>
@@ -687,7 +687,7 @@ export const CallModal: React.FC<CallModalProps> = ({
             </div>
           </div>
 
-          <div className="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6">
+          <div className="bg-claude-cream dark:bg-coal-700 px-4 py-3 sm:px-6">
             {!isCallActive && callState !== 'completed' && callState !== 'failed' && callState !== 'busy' ? (
               <div className="flex flex-col sm:flex-row sm:justify-end gap-3">
                 <Button
@@ -724,7 +724,7 @@ export const CallModal: React.FC<CallModalProps> = ({
                   className={`w-full sm:w-auto ${
                     isMuted
                       ? 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/30'
-                      : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      : 'bg-claude-surface dark:bg-coal-850 border-claude-divider dark:border-coal-600 text-claude-text dark:text-coal-300 hover:bg-claude-cream dark:hover:bg-coal-700'
                   }`}
                   title={isMuted ? 'Unmute microphone' : 'Mute microphone'}
                 >

@@ -76,7 +76,7 @@ export const SignupForm: React.FC = () => {
           )}
 
           {/* Features */}
-          <div className="mt-6 pt-6 border-t font-heading border-gray-100">
+          <div className="mt-6 pt-6 border-t font-heading border-claude-border">
             <div className="grid grid-cols-1 gap-3">
               <div className="flex items-center space-x-3 text-sm text-brand-primary">
                 <DefenceIcon className="w-4 h-4" />

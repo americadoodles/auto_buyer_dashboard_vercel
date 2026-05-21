@@ -160,11 +160,11 @@ export default function Page() {
   ];
 
   return (
-    <div className="p-6 space-y-6 h-full overflow-y-auto bg-gray-50 dark:bg-gray-900">
+    <div className="p-6 space-y-6 h-full overflow-y-auto bg-claude-cream dark:bg-coal-900">
         {/* Header */}
-        <div className="border-b border-gray-200 dark:border-gray-700 pb-6">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
+        <div className="border-b border-claude-border dark:border-coal-700 pb-6">
+          <h1 className="text-3xl font-bold text-claude-ink dark:text-coal-100">Dashboard</h1>
+          <p className="text-claude-muted dark:text-coal-400 mt-2">
             Welcome back, {user?.email}. Manage your application from here.
           </p>
         </div>
@@ -212,17 +212,17 @@ export default function Page() {
             {statCards.map((card, index) => {
               const Icon = card.icon;
               return (
-                <div key={index} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                <div key={index} className="bg-claude-surface dark:bg-coal-850 rounded-lg shadow-sm border border-claude-border dark:border-coal-700 p-6">
                   <div className="flex items-center">
                     <div className={`p-3 rounded-lg ${card.color}`}>
-                      <Icon className="w-6 h-6 text-white" />
+                      <Icon className="w-6 h-6 text-coal-100" />
                     </div>
                     <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{card.title}</p>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">{card.value}</p>
+                      <p className="text-sm font-medium text-claude-muted dark:text-coal-400">{card.title}</p>
+                      <p className="text-2xl font-bold text-claude-ink dark:text-coal-100">{card.value}</p>
                     </div>
                   </div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{card.description}</p>
+                  <p className="text-sm text-claude-subtle dark:text-coal-400 mt-2">{card.description}</p>
                 </div>
               );
             })}
@@ -231,8 +231,8 @@ export default function Page() {
 
         {/* Quick Actions - Admin Only */}
         {isAdmin && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h2>
+          <div className="bg-claude-surface dark:bg-coal-850 rounded-lg shadow-sm border border-claude-border dark:border-coal-700 p-6">
+            <h2 className="text-xl font-semibold text-claude-ink dark:text-coal-100 mb-4">Quick Actions</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {quickActions.map((action, index) => {
                 const Icon = action.icon;
@@ -240,17 +240,17 @@ export default function Page() {
                   <Link
                     key={index}
                     href={action.href}
-                    className="group p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md transition-all duration-200"
+                    className="group p-4 rounded-lg border border-claude-border dark:border-coal-700 bg-claude-surface dark:bg-coal-850 hover:border-claude-divider dark:hover:border-coal-600 hover:shadow-md transition-all duration-200"
                   >
                     <div className="flex items-center space-x-3">
                       <div className={`p-2 rounded-lg ${action.color} dark:opacity-80`}>
                         <Icon className="w-5 h-5" />
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        <h3 className="font-medium text-claude-ink dark:text-coal-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                           {action.title}
                         </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">{action.description}</p>
+                        <p className="text-sm text-claude-subtle dark:text-coal-400">{action.description}</p>
                       </div>
                     </div>
                   </Link>
@@ -263,13 +263,13 @@ export default function Page() {
         {/* Time-Series Charts (Spline Area) */}
         <div className="space-y-6">
           <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Analytics</h2>
+            <h2 className="text-2xl font-bold text-claude-ink dark:text-coal-100">Analytics</h2>
             <ChartTimeRangePicker value={timeRange} onChange={setTimeRange} />
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Profit Over Time</h3>
+              <h3 className="text-lg font-semibold text-claude-ink dark:text-coal-100 mb-4">Profit Over Time</h3>
             {chartLoading ? (
               <div className="flex items-center justify-center h-64">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -292,15 +292,15 @@ export default function Page() {
 
             <Card className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                <h3 className="text-lg font-semibold text-claude-ink dark:text-coal-100">
                   {listingsVolumeGranularity === 'daily' ? 'Daily Listings Volume' : 'Weekly Listings Volume'}
                 </h3>
-                <label className="text-sm text-gray-500 dark:text-gray-400">
+                <label className="text-sm text-claude-subtle dark:text-coal-400">
                   <span className="sr-only">Listings volume granularity</span>
                   <select
                     value={listingsVolumeGranularity}
                     onChange={(event) => setListingsVolumeGranularity(event.target.value as 'daily' | 'weekly')}
-                    className="rounded-md border border-gray-200 bg-white px-2 py-1 text-sm text-gray-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:focus:border-blue-400 dark:focus:ring-blue-500/30"
+                    className="rounded-md border border-claude-border bg-claude-surface px-2 py-1 text-sm text-claude-text shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-coal-700 dark:bg-coal-850 dark:text-coal-200 dark:focus:border-blue-400 dark:focus:ring-blue-500/30"
                   >
                     <option value="daily">Daily</option>
                     <option value="weekly">Weekly</option>
@@ -330,7 +330,7 @@ export default function Page() {
         {/* Distribution Charts (Bar) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Sourcing Activities per Agent</h3>
+            <h3 className="text-lg font-semibold text-claude-ink dark:text-coal-100 mb-4">Sourcing Activities per Agent</h3>
             {chartLoading ? (
               <div className="flex items-center justify-center h-64">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -351,7 +351,7 @@ export default function Page() {
           </Card>
 
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Car Categories Performance</h3>
+            <h3 className="text-lg font-semibold text-claude-ink dark:text-coal-100 mb-4">Car Categories Performance</h3>
             {chartLoading ? (
               <div className="flex items-center justify-center h-64">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -370,7 +370,7 @@ export default function Page() {
           </Card>
 
           <Card className="p-6 lg:col-span-2">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">States/Regions Performance</h3>
+            <h3 className="text-lg font-semibold text-claude-ink dark:text-coal-100 mb-4">States/Regions Performance</h3>
             {chartLoading ? (
               <div className="flex items-center justify-center h-64">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -403,23 +403,23 @@ export default function Page() {
         <UserActivityCard />
 
         {/* System Overview */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">System Overview</h2>
+        <div className="bg-claude-surface dark:bg-coal-850 rounded-lg shadow-sm border border-claude-border dark:border-coal-700 p-6">
+          <h2 className="text-xl font-semibold text-claude-ink dark:text-coal-100 mb-4">System Overview</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-claude-cream dark:bg-coal-700/50 rounded-lg">
                 <div className="flex items-center space-x-3">
                   <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span className="text-sm text-gray-900 dark:text-white">Backend Status</span>
+                  <span className="text-sm text-claude-ink dark:text-coal-100">Backend Status</span>
                 </div>
                 <span className={`text-sm font-medium ${backendOk ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                   {backendOk ? 'Connected' : 'Disconnected'}
                 </span>
               </div>
-              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-claude-cream dark:bg-coal-700/50 rounded-lg">
                 <div className="flex items-center space-x-3">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-gray-900 dark:text-white">Data Loading</span>
+                  <span className="text-sm text-claude-ink dark:text-coal-100">Data Loading</span>
                 </div>
                 <span className={`text-sm font-medium ${statsLoading ? 'text-yellow-600 dark:text-yellow-400' : 'text-green-600 dark:text-green-400'}`}>
                   {statsLoading ? 'Loading...' : 'Ready'}
@@ -427,19 +427,19 @@ export default function Page() {
               </div>
             </div>
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-claude-cream dark:bg-coal-700/50 rounded-lg">
                 <div className="flex items-center space-x-3">
                   <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                  <span className="text-sm text-gray-900 dark:text-white">Listings Data</span>
+                  <span className="text-sm text-claude-ink dark:text-coal-100">Listings Data</span>
                 </div>
                 <span className={`text-sm font-medium ${listings ? 'text-green-600 dark:text-green-400' : 'text-yellow-600 dark:text-yellow-400'}`}>
                   {listings ? `${listings.length} items` : 'Loading...'}
                 </span>
               </div>
-              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-claude-cream dark:bg-coal-700/50 rounded-lg">
                 <div className="flex items-center space-x-3">
                   <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
-                  <span className="text-sm text-gray-900 dark:text-white">User Session</span>
+                  <span className="text-sm text-claude-ink dark:text-coal-100">User Session</span>
                 </div>
                 <span className="text-sm font-medium text-green-600 dark:text-green-400">
                   {user?.email || 'Not logged in'}

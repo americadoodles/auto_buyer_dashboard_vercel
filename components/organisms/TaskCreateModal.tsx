@@ -201,10 +201,10 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-6 py-4 border-b sticky top-0 bg-white z-10">
+      <div className="bg-claude-surface rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-6 py-4 border-b sticky top-0 bg-claude-surface z-10">
           <h3 className="text-lg font-semibold">Create New Task{statusName ? ` - ${statusName}` : ''}</h3>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+          <button onClick={onClose} className="text-claude-subtle hover:text-claude-text">
             <Icon name="x" className="w-5 h-5" />
           </button>
         </div>
@@ -215,7 +215,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Related Deal</label>
+            <label className="block text-sm font-medium text-claude-text mb-1">Related Deal</label>
             <select
               className="w-full border rounded-md h-10 px-3"
               value={relatedDealId || ''}
@@ -232,7 +232,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
 
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-claude-text">
                 Task Title <span className="text-red-500">*</span>
               </label>
               <Button
@@ -264,7 +264,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <label className="block text-sm font-medium text-claude-text mb-1">Description</label>
             <textarea
               className="w-full border rounded-md px-3 py-2"
               rows={3}
@@ -276,7 +276,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-claude-text mb-1">
                 Status <span className="text-red-500">*</span>
               </label>
               <select
@@ -294,7 +294,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+              <label className="block text-sm font-medium text-claude-text mb-1">Priority</label>
               <select
                 className="w-full border rounded-md h-10 px-3"
                 value={priorityId ?? ''}
@@ -315,7 +315,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+              <label className="block text-sm font-medium text-claude-text mb-1">Due Date</label>
               <Input
                 type="date"
                 value={dueDate}
@@ -326,7 +326,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
 
         </div>
 
-        <div className="px-6 py-4 border-t flex justify-end space-x-2 sticky bottom-0 bg-white">
+        <div className="px-6 py-4 border-t flex justify-end space-x-2 sticky bottom-0 bg-claude-surface">
           <Button variant="outline" onClick={onClose} disabled={loading}>
             Cancel
           </Button>

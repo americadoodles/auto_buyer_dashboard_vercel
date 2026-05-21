@@ -291,26 +291,26 @@ export default function ListingsPage() {
   // Show loading state while authentication is being determined
   if (authLoading) {
     return (
-      <div className="p-6 flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="p-6 flex items-center justify-center bg-claude-cream dark:bg-coal-900">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+          <p className="text-claude-muted dark:text-coal-400">Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-      <div className="p-6 space-y-6 h-full overflow-y-auto bg-gray-50 dark:bg-gray-900">
+      <div className="p-6 space-y-6 h-full overflow-y-auto bg-claude-cream dark:bg-coal-900">
         {/* Header */}
-        <div className="border-b border-gray-200 dark:border-gray-700 pb-6">
+        <div className="border-b border-claude-border dark:border-coal-700 pb-6">
           <div className="flex items-center space-x-4">
             <div className="w-12 h-12 bg-gradient-to-br from-green-600 to-green-700 rounded-xl flex items-center justify-center shadow-lg">
-              <Car className="h-7 w-7 text-white" />
+              <Car className="h-7 w-7 text-coal-100" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Vehicle Listings</h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-2">
+              <h1 className="text-3xl font-bold text-claude-ink dark:text-coal-100">Vehicle Listings</h1>
+              <p className="text-claude-muted dark:text-coal-400 mt-2">
                 Manage and review all vehicle listings in the system
               </p>
             </div>
@@ -341,13 +341,13 @@ export default function ListingsPage() {
         )}
 
         {/* Search, Filters, and Date Controls */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-claude-surface dark:bg-coal-850 rounded-lg shadow-sm border border-claude-border dark:border-coal-700 p-6">
           {/* Top Row: Search + Actions */}
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             {/* Search Bar */}
             <div className="w-full md:max-w-xl">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-claude-subtle dark:text-coal-500 w-4 h-4" />
                 <Input
                   type="text"
                   placeholder="Search by make, model, VIN, LPN, or location..."
@@ -438,17 +438,17 @@ export default function ListingsPage() {
 
           {/* Advanced Filters */}
           {showFilters && (
-            <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <div className="mt-6 pt-6 border-t border-claude-border dark:border-coal-700">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-1">
                     Status
                   </label>
                   <select
                     aria-label="Filter by status"
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                    className="w-full px-3 py-2 border border-claude-divider dark:border-coal-600 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
                   >
                     <option value="">All Status</option>
                     <option value="scored">Scored</option>
@@ -459,14 +459,14 @@ export default function ListingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-1">
                     Make
                   </label>
                   <select
                     aria-label="Filter by make"
                     value={makeFilter}
                     onChange={(e) => setMakeFilter(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                    className="w-full px-3 py-2 border border-claude-divider dark:border-coal-600 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
                   >
                     <option value="">All Makes</option>
                     {uniqueMakes.map((make) => (
@@ -482,12 +482,12 @@ export default function ListingsPage() {
         </div>
 
         {/* Listings View */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="bg-claude-surface dark:bg-coal-850 rounded-lg shadow-sm border border-claude-border dark:border-coal-700">
+          <div className="px-6 py-4 border-b border-claude-border dark:border-coal-700">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Vehicle Listings</h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <h2 className="text-lg font-semibold text-claude-ink dark:text-coal-100">Vehicle Listings</h2>
+                <p className="text-sm text-claude-muted dark:text-coal-400">
                   {filteredListings.length} filtered listings • {paginatedFilteredListings.length} showing
                   {selectedListings.size > 0 && (
                     <span className="ml-2 text-blue-600 dark:text-blue-400 font-medium">
@@ -498,7 +498,7 @@ export default function ListingsPage() {
               </div>
               <div className="flex items-center space-x-3">
                 <ViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
-                <div className="text-sm text-gray-500 dark:text-gray-400">
+                <div className="text-sm text-claude-subtle dark:text-coal-400">
                   Page {currentPage} of {filteredTotalPages}
                 </div>
               </div>

@@ -21,7 +21,7 @@ export const Badge: React.FC<BadgeProps> = ({
     warning: 'bg-yellow-100 text-yellow-800',
     error: 'bg-red-100 text-red-800',
     destructive: 'bg-red-100 text-red-800',
-    outline: 'border border-slate-300 text-slate-700 bg-white'
+    outline: 'border border-slate-300 text-slate-700 bg-claude-surface'
   };
 
   const colorClasses = {
@@ -29,7 +29,7 @@ export const Badge: React.FC<BadgeProps> = ({
     blue: 'bg-blue-100 text-blue-800',
     purple: 'bg-purple-100 text-purple-800',
     orange: 'bg-orange-100 text-orange-800',
-    gray: 'bg-gray-100 text-gray-800',
+    gray: 'bg-claude-sand text-claude-ink',
     red: 'bg-red-100 text-red-800',
     yellow: 'bg-yellow-100 text-yellow-800'
   };
@@ -39,7 +39,7 @@ export const Badge: React.FC<BadgeProps> = ({
   
   // Use color if provided, otherwise use variant
   const styleClasses = color && !isHexColor ? (colorClasses[color as keyof typeof colorClasses] || colorClasses.gray) : variantClasses[variant];
-  const classes = `${baseClasses} ${isHexColor ? 'text-white' : styleClasses} ${className}`;
+  const classes = `${baseClasses} ${isHexColor ? 'text-coal-100' : styleClasses} ${className}`;
   
   return (
     <span 

@@ -336,10 +336,10 @@ export default function BuyerActivityPage() {
   };
 
   return (
-    <div className="h-full overflow-y-auto bg-gray-50 dark:bg-gray-900">
+    <div className="h-full overflow-y-auto bg-claude-cream dark:bg-coal-900">
     <div className="p-6 space-y-6">
         {/* Header */}
-        <div className="border-b border-gray-200 dark:border-gray-700 pb-6">
+        <div className="border-b border-claude-border dark:border-coal-700 pb-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Button
@@ -352,10 +352,10 @@ export default function BuyerActivityPage() {
                 <span>Back</span>
               </Button>
               <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg">
-                <User className="h-7 w-7 text-white" />
+                <User className="h-7 w-7 text-coal-100" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Buyer Activity</h1>
+                <h1 className="text-3xl font-bold text-claude-ink dark:text-coal-100">Buyer Activity</h1>
               </div>
             </div>
             <div className="flex items-center space-x-3">
@@ -372,11 +372,11 @@ export default function BuyerActivityPage() {
         </div>
 
         {/* Date Range Filter */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-claude-surface dark:bg-coal-850 rounded-lg shadow-sm border border-claude-border dark:border-coal-700 p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-2">
-              <Calendar className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Time Range Filter</h2>
+              <Calendar className="h-5 w-5 text-claude-subtle dark:text-coal-400" />
+              <h2 className="text-lg font-semibold text-claude-ink dark:text-coal-100">Time Range Filter</h2>
             </div>
             {(dateRange.start || dateRange.end) && (
               <Button
@@ -422,12 +422,12 @@ export default function BuyerActivityPage() {
         )}
 
         {/* Search and Filter Controls */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-claude-surface dark:bg-coal-850 rounded-lg shadow-sm border border-claude-border dark:border-coal-700 p-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
             {/* Search Bar */}
             <div className="flex-1 max-w-md">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-claude-subtle dark:text-coal-500 w-4 h-4" />
                 <Input
                   type="text"
                   placeholder="Search by make, model, VIN, or location..."
@@ -476,16 +476,16 @@ export default function BuyerActivityPage() {
 
           {/* Advanced Filters */}
           {showFilters && (
-            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="mt-4 pt-4 border-t border-claude-border dark:border-coal-700">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-1">
                     Status
                   </label>
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                    className="w-full px-3 py-2 border border-claude-divider dark:border-coal-600 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
                   >
                     <option value="">All Status</option>
                     <option value="scored">Scored</option>
@@ -496,13 +496,13 @@ export default function BuyerActivityPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-1">
                     Make
                   </label>
                   <select
                     value={makeFilter}
                     onChange={(e) => setMakeFilter(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                    className="w-full px-3 py-2 border border-claude-divider dark:border-coal-600 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
                   >
                     <option value="">All Makes</option>
                     {uniqueMakes.map((make) => (
@@ -518,12 +518,12 @@ export default function BuyerActivityPage() {
         </div>
 
         {/* Listings Table */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="bg-claude-surface dark:bg-coal-850 rounded-lg shadow-sm border border-claude-border dark:border-coal-700">
+          <div className="px-6 py-4 border-b border-claude-border dark:border-coal-700">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Vehicle Listings</h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <h2 className="text-lg font-semibold text-claude-ink dark:text-coal-100">Vehicle Listings</h2>
+                <p className="text-sm text-claude-muted dark:text-coal-400">
                   {sortedListings.length} filtered listings • {paginatedListings.length} showing
                   {selectedListings.size > 0 && (
                     <span className="ml-2 text-blue-600 dark:text-blue-400 font-medium">
@@ -544,7 +544,7 @@ export default function BuyerActivityPage() {
               </div>
               <div className="flex items-center space-x-3">
                 <ViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
-                <div className="text-sm text-gray-500 dark:text-gray-400">
+                <div className="text-sm text-claude-subtle dark:text-coal-400">
                   Page {currentPage} of {totalPages}
                 </div>
               </div>
@@ -555,15 +555,15 @@ export default function BuyerActivityPage() {
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
-                <span className="ml-3 text-gray-600 dark:text-gray-400">Loading buyer data...</span>
+                <span className="ml-3 text-claude-muted dark:text-coal-400">Loading buyer data...</span>
               </div>
             ) : listings.length === 0 ? (
               <div className="text-center py-12">
-                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Car className="w-8 h-8 text-gray-400 dark:text-gray-500" />
+                <div className="w-16 h-16 bg-claude-sand dark:bg-coal-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Car className="w-8 h-8 text-claude-subtle dark:text-coal-500" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No listings found</h3>
-                <p className="text-gray-500 dark:text-gray-400">
+                <h3 className="text-lg font-medium text-claude-ink dark:text-coal-100 mb-2">No listings found</h3>
+                <p className="text-claude-subtle dark:text-coal-400">
                   {backendOk === false 
                     ? "Cannot load data - backend server is not running."
                     : sortedListings.length === 0 && (searchTerm || statusFilter || makeFilter)
@@ -584,11 +584,11 @@ export default function BuyerActivityPage() {
               </div>
             ) : sortedListings.length === 0 ? (
               <div className="text-center py-12">
-                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Car className="w-8 h-8 text-gray-400 dark:text-gray-500" />
+                <div className="w-16 h-16 bg-claude-sand dark:bg-coal-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Car className="w-8 h-8 text-claude-subtle dark:text-coal-500" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No listings match your filters</h3>
-                <p className="text-gray-500 dark:text-gray-400 mb-4">
+                <h3 className="text-lg font-medium text-claude-ink dark:text-coal-100 mb-2">No listings match your filters</h3>
+                <p className="text-claude-subtle dark:text-coal-400 mb-4">
                   {listings.length} listing{listings.length !== 1 ? 's' : ''} found, but none match your current search or filter criteria.
                 </p>
                 <Button

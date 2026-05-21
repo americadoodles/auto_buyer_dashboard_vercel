@@ -78,14 +78,14 @@ const RoleManagementTable: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+      <div className="bg-claude-surface dark:bg-coal-850 rounded-lg shadow-sm border border-claude-border dark:border-coal-700 p-6">
         <div className="flex items-center space-x-3 mb-6">
           <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
             <Shield className="w-5 h-5 text-purple-600 dark:text-purple-300" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Role Management</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-200">
+            <h2 className="text-lg font-semibold text-claude-ink dark:text-coal-100">Role Management</h2>
+            <p className="text-sm text-claude-muted dark:text-coal-200">
               Configure user roles and permissions for your application
             </p>
           </div>
@@ -111,9 +111,9 @@ const RoleManagementTable: React.FC = () => {
       </div>
 
       {/* Roles Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Existing Roles</h3>
+      <div className="bg-claude-surface dark:bg-coal-850 rounded-lg shadow-sm border border-claude-border dark:border-coal-700">
+        <div className="px-6 py-4 border-b border-claude-border dark:border-coal-700">
+          <h3 className="text-lg font-medium text-claude-ink dark:text-coal-100">Existing Roles</h3>
         </div>
         
         <div className="p-6">
@@ -124,27 +124,27 @@ const RoleManagementTable: React.FC = () => {
           ) : roles.length > 0 ? (
             <div className="overflow-hidden">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className="bg-gray-50 dark:bg-gray-700">
+                <thead className="bg-claude-cream dark:bg-coal-700">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-claude-subtle dark:text-coal-300 uppercase tracking-wider">
                       Role Name
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-claude-subtle dark:text-coal-300 uppercase tracking-wider">
                       Description
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-claude-subtle dark:text-coal-300 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody className="bg-claude-surface dark:bg-coal-850 divide-y divide-gray-200 dark:divide-gray-700">
                   {roles.map((role) => (
-                    <tr key={role.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <tr key={role.id} className="hover:bg-claude-cream dark:hover:bg-coal-700">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">{role.name}</div>
+                        <div className="text-sm font-medium text-claude-ink dark:text-coal-100">{role.name}</div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="text-sm text-gray-500 dark:text-gray-300">
+                        <div className="text-sm text-claude-subtle dark:text-coal-300">
                           {role.description || "No description provided"}
                         </div>
                       </td>
@@ -153,7 +153,7 @@ const RoleManagementTable: React.FC = () => {
                           <button
                             onClick={() => setEditing(role)}
                             disabled={loading}
-                            className="inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="inline-flex items-center px-3 py-1.5 border border-claude-divider dark:border-coal-600 text-xs font-medium rounded-md text-claude-text dark:text-coal-200 bg-claude-surface dark:bg-coal-700 hover:bg-claude-cream dark:hover:bg-coal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <Edit className="w-3 h-3 mr-1" />
                             Edit
@@ -161,7 +161,7 @@ const RoleManagementTable: React.FC = () => {
                           <button
                             onClick={() => handleDelete(role.id)}
                             disabled={loading}
-                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-coal-100 bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <Trash2 className="w-3 h-3 mr-1" />
                             Delete
@@ -175,11 +175,11 @@ const RoleManagementTable: React.FC = () => {
             </div>
           ) : (
             <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Shield className="w-8 h-8 text-gray-400 dark:text-gray-500" />
+              <div className="w-16 h-16 bg-claude-sand dark:bg-coal-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Shield className="w-8 h-8 text-claude-subtle dark:text-coal-500" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No roles found</h3>
-              <p className="text-gray-500 dark:text-gray-300">Create your first role to get started.</p>
+              <h3 className="text-lg font-medium text-claude-ink dark:text-coal-100 mb-2">No roles found</h3>
+              <p className="text-claude-subtle dark:text-coal-300">Create your first role to get started.</p>
             </div>
           )}
         </div>

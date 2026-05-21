@@ -334,10 +334,10 @@ export default function LeadDetailPage() {
 
   if (loading || statusesLoading || sourcesLoading) {
     return (
-      <div className="h-full overflow-y-auto bg-white dark:bg-gray-900">
+      <div className="h-full overflow-y-auto bg-claude-surface dark:bg-coal-900">
         <div className="p-6 flex items-center justify-center min-h-screen">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
-          <span className="ml-3 text-black dark:text-gray-200 font-medium">Loading lead details...</span>
+          <span className="ml-3 text-black dark:text-coal-200 font-medium">Loading lead details...</span>
         </div>
       </div>
     );
@@ -345,11 +345,11 @@ export default function LeadDetailPage() {
 
   if (!lead) {
     return (
-      <div className="h-full overflow-y-auto bg-white dark:bg-gray-900">
+      <div className="h-full overflow-y-auto bg-claude-surface dark:bg-coal-900">
         <div className="p-6">
           <div className="text-center py-12">
-            <h2 className="text-2xl font-bold text-black dark:text-gray-100 mb-2">Lead Not Found</h2>
-            <p className="text-black dark:text-gray-300 mb-2 font-medium">{error || 'The lead you are looking for does not exist.'}</p>
+            <h2 className="text-2xl font-bold text-black dark:text-coal-100 mb-2">Lead Not Found</h2>
+            <p className="text-black dark:text-coal-300 mb-2 font-medium">{error || 'The lead you are looking for does not exist.'}</p>
             <Button onClick={() => router.push('/crm/leads')} variant="outline">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Leads
@@ -367,25 +367,25 @@ export default function LeadDetailPage() {
     : 'Lead Details';
 
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-[#0f1117]">
+    <div className="h-full flex flex-col bg-claude-surface dark:bg-[#0f1117]">
       {/* Main Content Layout - no page scroll; columns scroll internally */}
-      <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-white dark:bg-[#0f1117]">
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-claude-surface dark:bg-[#0f1117]">
         <div className="max-w-[1800px] mx-auto px-4 py-4 flex-1 flex flex-col min-h-0 w-full">
           {/* Status Badges */}
           <div className="flex items-center justify-between mb-2 flex-shrink-0">
             <div className="flex items-center space-x-4">
               {lead.status && (
-                <Badge color="blue" className="bg-blue-500 dark:bg-blue-600 text-white font-semibold shadow-sm">
+                <Badge color="blue" className="bg-blue-500 dark:bg-blue-600 text-coal-100 font-semibold shadow-sm">
                   Status: {lead.status.name}
                 </Badge>
               )}
               {lead.source && (
-                <Badge color="orange" className="bg-orange-500 dark:bg-orange-600 text-white font-semibold shadow-sm">
+                <Badge color="orange" className="bg-orange-500 dark:bg-orange-600 text-coal-100 font-semibold shadow-sm">
                   Source: {lead.source.name}
                 </Badge>
               )}
               {lead.lead_score !== undefined && (
-                <Badge color="green" className="bg-emerald-500 dark:bg-emerald-600 text-white font-semibold shadow-sm">
+                <Badge color="green" className="bg-emerald-500 dark:bg-emerald-600 text-coal-100 font-semibold shadow-sm">
                   Score: {lead.lead_score}
                 </Badge>
               )}
@@ -395,7 +395,7 @@ export default function LeadDetailPage() {
               onClick={() => setIsUpdateListingModalOpen(true)}
                 variant="outline"
               size="sm"
-                className="flex items-center gap-2 bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white dark:text-white border-0 shadow-md font-semibold cursor-pointer"
+                className="flex items-center gap-2 bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-coal-100 dark:text-coal-100 border-0 shadow-md font-semibold cursor-pointer"
             >
                 <Icon name="edit" className="w-4 h-4" />
               Update Lead
@@ -541,9 +541,9 @@ export default function LeadDetailPage() {
                             suggestedPrice={displayListing.buyMax || undefined}
                           />
                         ) : (
-                          <div className="bg-white dark:bg-[#1a1d29] border border-gray-200 dark:border-gray-700/50 rounded-lg p-5">
-                            <h3 className="text-black dark:text-white font-semibold mb-2">AccuTrade Data</h3>
-                            <p className="text-sm text-black dark:text-gray-400 mb-2">
+                          <div className="bg-claude-surface dark:bg-[#1a1d29] border border-claude-border dark:border-coal-700/50 rounded-lg p-5">
+                            <h3 className="text-black dark:text-coal-100 font-semibold mb-2">AccuTrade Data</h3>
+                            <p className="text-sm text-black dark:text-coal-400 mb-2">
                               No AccuTrade data found for VIN: {displayListing.vin}
                             </p>
                             <Button
@@ -551,7 +551,7 @@ export default function LeadDetailPage() {
                                 const accuTradeUrl = `${ACCU_TRADE_BASE_URL}=${encodeURIComponent(displayListing.vin!)}`;
                                 window.open(accuTradeUrl, '_blank');
                               }}
-                              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                              className="w-full bg-blue-600 hover:bg-blue-700 text-coal-100"
                             >
                               Open AccuTrade Appraisal
                             </Button>

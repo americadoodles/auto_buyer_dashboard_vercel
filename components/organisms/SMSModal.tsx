@@ -77,21 +77,21 @@ export const SMSModal: React.FC<SMSModalProps> = ({
       <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
         {/* Background overlay */}
         <div
-          className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75 dark:bg-gray-900 dark:bg-opacity-75"
+          className="fixed inset-0 transition-opacity bg-claude-subtle bg-opacity-75 dark:bg-coal-900 dark:bg-opacity-75"
           onClick={handleClose}
         />
 
         {/* Modal panel */}
-        <div className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-          <div className="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+        <div className="inline-block align-bottom bg-claude-surface dark:bg-coal-850 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+          <div className="bg-claude-surface dark:bg-coal-850 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-white">
+              <h3 className="text-lg font-medium leading-6 text-claude-ink dark:text-coal-100">
                 Send SMS to {contactName}
               </h3>
               <button
                 onClick={handleClose}
                 disabled={sending}
-                className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 focus:outline-none disabled:opacity-50"
+                className="text-claude-subtle hover:text-claude-subtle dark:hover:text-claude-subtle focus:outline-none disabled:opacity-50"
               >
                 <Icon name="x" className="w-5 h-5" />
               </button>
@@ -99,17 +99,17 @@ export const SMSModal: React.FC<SMSModalProps> = ({
 
             <div className="mt-4">
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-2">
                   Phone Number
                 </label>
-                <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+                <div className="flex items-center space-x-2 text-sm text-claude-muted dark:text-coal-400">
                   <Icon name="phone" className="w-4 h-4" />
                   <span>{phoneNumber || 'No phone number available'}</span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-2">
                   Message
                 </label>
                 <textarea
@@ -119,12 +119,12 @@ export const SMSModal: React.FC<SMSModalProps> = ({
                   rows={6}
                   maxLength={maxLength}
                   disabled={sending || !phoneNumber}
-                  className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 ${
+                  className={`w-full px-3 py-2 border border-claude-divider dark:border-coal-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100 placeholder-gray-400 dark:placeholder-gray-500 ${
                     sending || !phoneNumber ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
                 />
                 <div className="flex justify-between items-center mt-1">
-                  <span className={`text-xs ${isNearLimit ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'}`}>
+                  <span className={`text-xs ${isNearLimit ? 'text-red-500' : 'text-claude-subtle dark:text-coal-400'}`}>
                     {characterCount} / {maxLength} characters
                   </span>
                   {!phoneNumber && (
@@ -137,7 +137,7 @@ export const SMSModal: React.FC<SMSModalProps> = ({
             </div>
           </div>
 
-          <div className="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+          <div className="bg-claude-cream dark:bg-coal-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
             <Button
               onClick={handleSend}
               disabled={sending || !message.trim() || !phoneNumber}

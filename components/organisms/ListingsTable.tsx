@@ -68,7 +68,7 @@ export const ListingsTable: React.FC<ListingsTableProps> = ({
     router.push(`/listings/${listing.id}${queryString ? `?${queryString}` : ''}`);
   };
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
+    <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-coal-700 bg-claude-surface dark:bg-coal-850 shadow-sm">
       {/* Desktop/Tablet Table View with Horizontal Scroll */}
       <div className="hidden md:block overflow-x-auto">
         <div className="min-w-max">
@@ -92,14 +92,14 @@ export const ListingsTable: React.FC<ListingsTableProps> = ({
       {/* Mobile Card View */}
       <div className="md:hidden">
         {listings.map(listing => (
-          <div key={listing.id} className="border-b border-slate-200 dark:border-gray-700 p-4 last:border-b-0">
+          <div key={listing.id} className="border-b border-slate-200 dark:border-coal-700 p-4 last:border-b-0">
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
                   checked={selectedListings.has(listing.id)}
                   onChange={(e) => onSelectListing?.(listing.id, e.target.checked)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-claude-divider rounded"
                 />
                 <Badge variant="default">{listing.score}</Badge>
                 {listing.status && (

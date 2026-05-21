@@ -42,7 +42,7 @@ export default function AccuTradeDetailPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        <Loader2 className="h-8 w-8 animate-spin text-claude-subtle" />
       </div>
     );
   }
@@ -73,8 +73,8 @@ export default function AccuTradeDetailPage() {
         </Button>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">AccuTrade Data</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">VIN: {vin}</p>
+            <h1 className="text-2xl font-bold text-claude-ink dark:text-coal-100">AccuTrade Data</h1>
+            <p className="text-claude-muted dark:text-coal-400 mt-1">VIN: {vin}</p>
           </div>
           <Button onClick={handleOpenExternal}>
             <ExternalLink className="h-4 w-4 mr-2" />
@@ -86,17 +86,17 @@ export default function AccuTradeDetailPage() {
       <div className="grid gap-6">
         {data.pricebar && (
           <Card className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Price Bar</h2>
+            <h2 className="text-xl font-semibold text-claude-ink dark:text-coal-100 mb-4">Price Bar</h2>
             <div className="flex flex-wrap gap-4">
               {Object.entries(data.pricebar).map(([key, value]) => (
-                <div key={key} className="flex-1 min-w-[180px] border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-800/50">
+                <div key={key} className="flex-1 min-w-[180px] border border-claude-border dark:border-coal-700 rounded-lg p-4 bg-claude-cream dark:bg-coal-850/50">
                   <div className="flex flex-col">
                     <section className="mb-2">
-                      <div className="text-sm font-medium text-gray-600 dark:text-gray-400">{key}</div>
+                      <div className="text-sm font-medium text-claude-muted dark:text-coal-400">{key}</div>
                     </section>
                     <main>
                       <section className="mb-2">
-                        <div className="text-2xl font-bold text-gray-900 dark:text-white">{String(value)}</div>
+                        <div className="text-2xl font-bold text-claude-ink dark:text-coal-100">{String(value)}</div>
                       </section>
                     </main>
                   </div>
@@ -108,12 +108,12 @@ export default function AccuTradeDetailPage() {
 
         {data.options && (
           <Card className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Options</h2>
+            <h2 className="text-xl font-semibold text-claude-ink dark:text-coal-100 mb-4">Options</h2>
             <div className="space-y-2">
               {Object.entries(data.options).map(([key, value]) => (
-                <div key={key} className="flex justify-between py-2 border-b border-gray-200 dark:border-gray-700 last:border-0">
-                  <span className="text-gray-700 dark:text-gray-300">{key}</span>
-                  <span className="text-gray-900 dark:text-white font-medium">{String(value)}</span>
+                <div key={key} className="flex justify-between py-2 border-b border-claude-border dark:border-coal-700 last:border-0">
+                  <span className="text-claude-text dark:text-coal-300">{key}</span>
+                  <span className="text-claude-ink dark:text-coal-100 font-medium">{String(value)}</span>
                 </div>
               ))}
             </div>
@@ -122,7 +122,7 @@ export default function AccuTradeDetailPage() {
 
         {data.local_market_listing && (
           <Card className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Local Market Listing</h2>
+            <h2 className="text-xl font-semibold text-claude-ink dark:text-coal-100 mb-4">Local Market Listing</h2>
             <div className="local-market-most-recent-listing">
               <div className="content">
                 {/* Heading Row */}
@@ -130,7 +130,7 @@ export default function AccuTradeDetailPage() {
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <div className="flex items-center gap-2 flex-wrap">
                       <div className="label-and-age flex items-center gap-2">
-                        <div className="most-recent-listing text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <div className="most-recent-listing text-sm font-medium text-claude-text dark:text-coal-300">
                           Most Recent Listing:
                         </div>
                         {data.local_market_listing.age && (
@@ -143,7 +143,7 @@ export default function AccuTradeDetailPage() {
                       </div>
                       {data.local_market_listing.dealershipName && (
                         <div className="dealer flex items-center gap-2">
-                          <div className="dealership-name text-sm font-medium text-gray-900 dark:text-white">
+                          <div className="dealership-name text-sm font-medium text-claude-ink dark:text-coal-100">
                             {String(data.local_market_listing.dealershipName)}
                           </div>
                           {data.local_market_listing.dealershipWebsite && (
@@ -151,7 +151,7 @@ export default function AccuTradeDetailPage() {
                               href={String(data.local_market_listing.dealershipWebsite)}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="dealership-website text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                              className="dealership-website text-claude-subtle hover:text-claude-text dark:text-coal-400 dark:hover:text-coal-200"
                             >
                               <ExternalLink className="h-4 w-4" />
                             </a>
@@ -198,11 +198,11 @@ export default function AccuTradeDetailPage() {
                   {/* Details */}
                   <div className="details flex-1 min-w-0">
                     {data.local_market_listing.vehicleTitle && (
-                      <div className="first-row text-base font-semibold text-gray-900 dark:text-white mb-1">
+                      <div className="first-row text-base font-semibold text-claude-ink dark:text-coal-100 mb-1">
                         {String(data.local_market_listing.vehicleTitle)}
                       </div>
                     )}
-                    <div className="second-row text-sm text-gray-600 dark:text-gray-400 mb-2">
+                    <div className="second-row text-sm text-claude-muted dark:text-coal-400 mb-2">
                       {data.local_market_listing.vin && (
                         <span>{String(data.local_market_listing.vin)}</span>
                       )}
@@ -214,7 +214,7 @@ export default function AccuTradeDetailPage() {
                       )}
                     </div>
                     <div className="third-row flex items-center justify-between flex-wrap gap-2">
-                      <div className="text text-sm font-medium text-gray-900 dark:text-white">
+                      <div className="text text-sm font-medium text-claude-ink dark:text-coal-100">
                         {data.local_market_listing.price && (
                           <span>{String(data.local_market_listing.price)}</span>
                         )}
@@ -247,7 +247,7 @@ export default function AccuTradeDetailPage() {
 
         {data.local_market_stats && (
           <Card className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Local Market Stats</h2>
+            <h2 className="text-xl font-semibold text-claude-ink dark:text-coal-100 mb-4">Local Market Stats</h2>
             <div className="local-market-stats grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {(() => {
                 // Define the order of fields
@@ -294,8 +294,8 @@ export default function AccuTradeDetailPage() {
                   return (
                     <div key={key} className="block">
                       <div className="wrapper">
-                        <div className="label text-sm text-gray-600 dark:text-gray-400 mb-1">{key}</div>
-                        <div className="value text-lg font-semibold text-gray-900 dark:text-white">
+                        <div className="label text-sm text-claude-muted dark:text-coal-400 mb-1">{key}</div>
+                        <div className="value text-lg font-semibold text-claude-ink dark:text-coal-100">
                           {formatValue(value)}
                         </div>
                       </div>

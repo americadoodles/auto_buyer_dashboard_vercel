@@ -234,7 +234,7 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
         <div className="flex-1 flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400"></div>
-            <p className="text-gray-600 dark:text-gray-400 font-medium">Loading leads...</p>
+            <p className="text-claude-muted dark:text-coal-400 font-medium">Loading leads...</p>
           </div>
         </div>
       </div>
@@ -247,10 +247,10 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-3xl font-bold text-claude-ink dark:text-coal-100">
               Lead Management
             </h1>
-            <p className="text-gray-600 dark:text-gray-300 mt-1">
+            <p className="text-claude-muted dark:text-coal-300 mt-1">
               Manage and track your leads ({totalLeads} total)
             </p>
           </div>
@@ -273,7 +273,7 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
         <Card className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-2">
                 Search
               </label>
               <Input
@@ -285,13 +285,13 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-2">
                 Status
               </label>
               <select
                 value={statusFilter}
                 onChange={(e) => handleStatusFilterChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                className="w-full px-3 py-2 border border-claude-divider dark:border-coal-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100"
                 disabled={loading || statusesLoading}
               >
                 <option value="all">All Status</option>
@@ -303,13 +303,13 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-2">
                 Source
               </label>
               <select
                 value={sourceFilter}
                 onChange={(e) => handleSourceFilterChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                className="w-full px-3 py-2 border border-claude-divider dark:border-coal-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100"
                 disabled={loading || sourcesLoading}
               >
                 <option value="all">All Sources</option>
@@ -322,13 +322,13 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
             </div>
             {isAdmin && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-2">
                   Assigned To
                 </label>
                 <select
                   value={assignedFilter}
                   onChange={(e) => handleAssignedToFilterChange(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  className="w-full px-3 py-2 border border-claude-divider dark:border-coal-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100"
                   disabled={loading}
                 >
                   <option value="all">All Users</option>
@@ -349,13 +349,13 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
               </div>
             )}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-2">
                 Location
               </label>
               <select
                 value={locationFilter}
                 onChange={(e) => handleLocationFilterChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                className="w-full px-3 py-2 border border-claude-divider dark:border-coal-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100"
                 disabled={loading}
               >
                 <option value="all">All Locations</option>
@@ -383,8 +383,8 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
                 </div>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Leads</p>
-                <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+                <p className="text-sm font-medium text-claude-subtle dark:text-coal-400">Total Leads</p>
+                <p className="text-2xl font-semibold text-claude-ink dark:text-coal-100">
                   {totalLeads}
                 </p>
               </div>
@@ -401,8 +401,8 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
                 </div>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Qualified</p>
-                <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+                <p className="text-sm font-medium text-claude-subtle dark:text-coal-400">Qualified</p>
+                <p className="text-2xl font-semibold text-claude-ink dark:text-coal-100">
                   {
                     leads.filter((lead) => lead.status.name === "Qualified")
                       .length
@@ -419,10 +419,10 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
                 </div>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                <p className="text-sm font-medium text-claude-subtle dark:text-coal-400">
                   New This Week
                 </p>
-                <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+                <p className="text-2xl font-semibold text-claude-ink dark:text-coal-100">
                   {
                     leads.filter((lead) => {
                       const leadDate = new Date(lead.created_at);
@@ -446,8 +446,8 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
                 </div>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Avg Score</p>
-                <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+                <p className="text-sm font-medium text-claude-subtle dark:text-coal-400">Avg Score</p>
+                <p className="text-2xl font-semibold text-claude-ink dark:text-coal-100">
                   {Math.round(
                     leads.reduce((sum, lead) => sum + lead.lead_score, 0) /
                       leads.length
@@ -462,8 +462,8 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Leads</h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <h2 className="text-lg font-semibold text-claude-ink dark:text-coal-100">Leads</h2>
+              <p className="text-sm text-claude-muted dark:text-coal-400">
                 {leads.length} lead{leads.length !== 1 ? 's' : ''} showing
                 {selectedLeads.size > 0 && (
                   <span className="ml-2 text-blue-600 dark:text-blue-400 font-medium">
@@ -474,7 +474,7 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
             </div>
             <div className="flex items-center space-x-3">
               <ViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
-              <div className="text-sm text-gray-500 dark:text-gray-400">
+              <div className="text-sm text-claude-subtle dark:text-coal-400">
                 Page {currentPage} of {totalPages}
               </div>
             </div>
@@ -502,7 +502,7 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
                       { key: "verified", label: "Verified", sortable: false },
                     ]}
                   />
-                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  <tbody className="bg-claude-surface dark:bg-coal-850 divide-y divide-gray-200 dark:divide-gray-700">
                     {leads.map((lead) => (
                       <TableRow
                         key={lead.id}
@@ -514,28 +514,28 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
                             {lead.lead_score}
                           </Badge>
                         </td>
-                        <td className="px-4 py-2 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-gray-100">
+                        <td className="px-4 py-2 whitespace-nowrap text-sm font-semibold text-claude-ink dark:text-coal-100">
                           {lead.listing?.vin || "-"}
                         </td>
-                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                        <td className="px-4 py-2 whitespace-nowrap text-sm text-claude-ink dark:text-coal-100">
                           {lead.listing?.lpn || "-"}
                         </td>
-                        <td className="px-4 py-2 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-gray-100">
+                        <td className="px-4 py-2 whitespace-nowrap text-sm font-semibold text-claude-ink dark:text-coal-100">
                           {lead.listing?.price ? formatCurrency(lead.listing.price) : "-"}
                         </td>
-                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                        <td className="px-4 py-2 whitespace-nowrap text-sm text-claude-ink dark:text-coal-100">
                           {lead.listing?.year || "-"}
                         </td>
-                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                        <td className="px-4 py-2 whitespace-nowrap text-sm text-claude-ink dark:text-coal-100">
                           {lead.listing?.make || "-"}
                         </td>
-                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                        <td className="px-4 py-2 whitespace-nowrap text-sm text-claude-ink dark:text-coal-100">
                           {lead.listing?.model ? (lead.listing.model.length > 10 ? lead.listing.model.substring(0, 10) + "..." : lead.listing.model) : "-"}
                         </td>
-                        <td className="px-4 py-2 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-gray-100">
+                        <td className="px-4 py-2 whitespace-nowrap text-sm font-semibold text-claude-ink dark:text-coal-100">
                           {formatCurrency(Number(lead.listing?.miles || 0))}
                         </td>
-                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                        <td className="px-4 py-2 whitespace-nowrap text-sm text-claude-ink dark:text-coal-100">
                           {(() => {
                             const parsedSource = parseSourceUrl(lead.listing?.source);
                             if (parsedSource) {
@@ -565,17 +565,17 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
                           <div className="flex items-center">
                       
                             <div className="ml-4">
-                              <div className="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">
+                              <div className="text-sm font-semibold text-claude-ink dark:text-coal-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">
                                 {lead.contact?.first_name || "Unknown"}{" "}
                                 {lead.contact?.last_name || ""}
                               </div>
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                        <td className="px-4 py-2 whitespace-nowrap text-sm text-claude-ink dark:text-coal-100">
                           {lead.contact?.email || "-"}
                         </td>
-                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        <td className="px-4 py-2 whitespace-nowrap text-sm text-claude-subtle dark:text-coal-400">
                           {lead.updated_at ? formatDate(lead.updated_at) : formatDate(lead.created_at)}
                         </td>
                         <td className="px-4 py-2 whitespace-nowrap">
@@ -583,7 +583,7 @@ export const LeadManagement: React.FC<LeadManagementProps> = ({
                             {(() => {
                               const verificationIcons = getVerificationIcons(lead);
                               if (verificationIcons.length === 0) {
-                                return <span className="text-gray-400 dark:text-gray-500">-</span>;
+                                return <span className="text-claude-subtle dark:text-coal-500">-</span>;
                               }
                               return (
                                 <div className="flex items-center gap-1.5">

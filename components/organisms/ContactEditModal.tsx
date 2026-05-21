@@ -142,17 +142,17 @@ export const ContactEditModal: React.FC<ContactEditModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+        className="bg-claude-surface dark:bg-coal-850 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+        <div className="flex items-center justify-between p-6 border-b border-claude-border dark:border-coal-700 sticky top-0 bg-claude-surface dark:bg-coal-850 z-10">
+          <h2 className="text-xl font-semibold text-claude-ink dark:text-coal-100">
             {isEditMode ? 'Edit Contact' : 'Create New Contact'}
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+            className="text-claude-subtle dark:text-coal-300 hover:text-claude-muted dark:hover:text-coal-200 transition-colors"
             aria-label="Close"
           >
             <X className="w-6 h-6" />
@@ -163,10 +163,10 @@ export const ContactEditModal: React.FC<ContactEditModalProps> = ({
         <div className="p-6 space-y-6">
           {/* Contact Information */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Contact Information</h3>
+            <h3 className="text-lg font-semibold text-claude-ink dark:text-coal-100 mb-4">Contact Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-2">
                   First Name <span className="text-red-500 dark:text-red-400">*</span>
                 </label>
                 <Input
@@ -178,7 +178,7 @@ export const ContactEditModal: React.FC<ContactEditModalProps> = ({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-2">
                   Last Name <span className="text-red-500 dark:text-red-400">*</span>
                 </label>
                 <Input
@@ -190,7 +190,7 @@ export const ContactEditModal: React.FC<ContactEditModalProps> = ({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-2">
                   Email
                 </label>
                 <Input
@@ -201,7 +201,7 @@ export const ContactEditModal: React.FC<ContactEditModalProps> = ({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-2">
                   Phone
                 </label>
                 <Input
@@ -212,7 +212,7 @@ export const ContactEditModal: React.FC<ContactEditModalProps> = ({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-2">
                   Mobile
                 </label>
                 <Input
@@ -223,7 +223,7 @@ export const ContactEditModal: React.FC<ContactEditModalProps> = ({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-2">
                   Company
                 </label>
                 <Input
@@ -234,7 +234,7 @@ export const ContactEditModal: React.FC<ContactEditModalProps> = ({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-2">
                   Job Title
                 </label>
                 <Input
@@ -245,7 +245,7 @@ export const ContactEditModal: React.FC<ContactEditModalProps> = ({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-2">
                   Status
                 </label>
                 <div className="flex items-center">
@@ -253,9 +253,9 @@ export const ContactEditModal: React.FC<ContactEditModalProps> = ({
                     type="checkbox"
                     checked={isActive}
                     onChange={(e) => setIsActive(e.target.checked)}
-                    className="h-4 w-4 text-blue-600 dark:text-blue-500 focus:ring-blue-500 dark:focus:ring-blue-400 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700"
+                    className="h-4 w-4 text-blue-600 dark:text-blue-500 focus:ring-blue-500 dark:focus:ring-blue-400 border-claude-divider dark:border-coal-600 rounded bg-claude-surface dark:bg-coal-700"
                   />
-                  <label className="ml-2 text-sm text-gray-700 dark:text-gray-300">Active</label>
+                  <label className="ml-2 text-sm text-claude-text dark:text-coal-300">Active</label>
                 </div>
               </div>
             </div>
@@ -263,7 +263,7 @@ export const ContactEditModal: React.FC<ContactEditModalProps> = ({
 
           {/* Notes */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-2">
               Notes
             </label>
             <textarea
@@ -271,12 +271,12 @@ export const ContactEditModal: React.FC<ContactEditModalProps> = ({
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Enter notes"
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="w-full px-3 py-2 border border-claude-divider dark:border-coal-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100"
             />
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex justify-end space-x-3 pt-4 border-t border-claude-border dark:border-coal-700">
             <Button variant="outline" onClick={onClose} disabled={saving}>
               Cancel
             </Button>

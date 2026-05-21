@@ -360,10 +360,10 @@ export default function TaskDetailPage() {
 
   if (loading || statusesLoading || prioritiesLoading) {
     return (
-      <div className="h-full overflow-y-auto bg-gray-50 dark:bg-gray-900">
+      <div className="h-full overflow-y-auto bg-claude-cream dark:bg-coal-900">
         <div className="p-6 flex items-center justify-center min-h-screen">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
-          <span className="ml-3 text-gray-600 dark:text-gray-300">Loading task details...</span>
+          <span className="ml-3 text-claude-muted dark:text-coal-300">Loading task details...</span>
         </div>
       </div>
     );
@@ -371,11 +371,11 @@ export default function TaskDetailPage() {
 
   if (!task) {
     return (
-      <div className="h-full overflow-y-auto bg-gray-50 dark:bg-gray-900">
+      <div className="h-full overflow-y-auto bg-claude-cream dark:bg-coal-900">
         <div className="p-6">
           <div className="text-center py-12">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Task Not Found</h2>
-            <p className="text-gray-600 dark:text-gray-300 mb-4">{error || 'The task you are looking for does not exist.'}</p>
+            <h2 className="text-2xl font-bold text-claude-ink dark:text-coal-100 mb-2">Task Not Found</h2>
+            <p className="text-claude-muted dark:text-coal-300 mb-4">{error || 'The task you are looking for does not exist.'}</p>
             <Button onClick={() => router.push('/crm/tasks')} variant="outline">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Tasks
@@ -389,8 +389,8 @@ export default function TaskDetailPage() {
   const isCompleted = task.completed_at !== null && task.completed_at !== undefined;
 
   return (
-    <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-900">
-      <div className="p-6 border-b border-gray-200 dark:border-gray-700 pb-6 flex-shrink-0">
+    <div className="h-full flex flex-col bg-claude-cream dark:bg-coal-900">
+      <div className="p-6 border-b border-claude-border dark:border-coal-700 pb-6 flex-shrink-0">
         {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -404,7 +404,7 @@ export default function TaskDetailPage() {
                 <span>Back</span>
               </Button>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Task Details</h1>
+                <h1 className="text-3xl font-bold text-claude-ink dark:text-coal-100">Task Details</h1>
               </div>
             </div>
             <div className="flex items-center space-x-2">
@@ -433,7 +433,7 @@ export default function TaskDetailPage() {
                 </>
               ) : (
                 <>
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Are you sure?</span>
+                  <span className="text-sm text-claude-text dark:text-coal-300">Are you sure?</span>
                   <Button 
                     variant="outline" 
                     size="sm"
@@ -445,7 +445,7 @@ export default function TaskDetailPage() {
                   <Button 
                     onClick={handleDelete}
                     disabled={deleting}
-                    className="bg-red-400 dark:bg-red-600 hover:bg-red-500 dark:hover:bg-red-700 text-white"
+                    className="bg-red-400 dark:bg-red-600 hover:bg-red-500 dark:hover:bg-red-700 text-coal-100"
                   >
                     {deleting ? 'Deleting...' : 'Confirm Delete'}
                   </Button>
@@ -482,11 +482,11 @@ export default function TaskDetailPage() {
             </div>
 
             {/* Edit Fields Section */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-4">
-          <h4 className="text-md font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Edit Fields</h4>
+            <div className="bg-claude-surface dark:bg-coal-850 rounded-lg shadow-sm border border-claude-border dark:border-coal-700 p-6 space-y-4">
+          <h4 className="text-md font-semibold text-claude-ink dark:text-coal-100 border-b dark:border-coal-700 pb-2">Edit Fields</h4>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-1">
               Title <span className="text-red-500 dark:text-red-400">*</span>
             </label>
             <Input
@@ -498,9 +498,9 @@ export default function TaskDetailPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+            <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-1">Description</label>
             <textarea
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="w-full border border-claude-divider dark:border-coal-600 rounded-md px-3 py-2 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100"
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -509,7 +509,7 @@ export default function TaskDetailPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Due Date</label>
+            <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-1">Due Date</label>
             <Input
               type="date"
               value={dueDate}
@@ -519,9 +519,9 @@ export default function TaskDetailPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priority</label>
+              <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-1">Priority</label>
               <select
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-md h-10 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full border border-claude-divider dark:border-coal-600 rounded-md h-10 px-3 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100"
                 value={priorityId !== undefined ? String(priorityId) : ''}
                 onChange={(e) => setPriorityId(e.target.value ? Number(e.target.value) : undefined)}
                 disabled={prioritiesLoading}
@@ -535,9 +535,9 @@ export default function TaskDetailPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
+              <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-1">Status</label>
               <select
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-md h-10 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full border border-claude-divider dark:border-coal-600 rounded-md h-10 px-3 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100"
                 value={statusId !== undefined ? String(statusId) : ''}
                 onChange={(e) => setStatusId(e.target.value ? Number(e.target.value) : undefined)}
                 disabled={statusesLoading}
@@ -553,9 +553,9 @@ export default function TaskDetailPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Related Deal</label>
+            <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-1">Related Deal</label>
             <select
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-md h-10 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="w-full border border-claude-divider dark:border-coal-600 rounded-md h-10 px-3 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100"
               value={relatedDealId || ''}
               onChange={(e) => setRelatedDealId(e.target.value || undefined)}
             >
@@ -571,8 +571,8 @@ export default function TaskDetailPage() {
 
             {/* Related Deal Section */}
             {relatedDealId && (
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-2">
-                <h4 className="text-md font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Related Deal</h4>
+              <div className="bg-claude-surface dark:bg-coal-850 rounded-lg shadow-sm border border-claude-border dark:border-coal-700 p-6 space-y-2">
+                <h4 className="text-md font-semibold text-claude-ink dark:text-coal-100 border-b dark:border-coal-700 pb-2">Related Deal</h4>
                 <div className="flex flex-wrap gap-2">
                   <Button
                     variant="outline"
@@ -587,21 +587,21 @@ export default function TaskDetailPage() {
             )}
 
             {/* Task Metadata */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-2">
-          <h4 className="text-md font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Task Information</h4>
+            <div className="bg-claude-surface dark:bg-coal-850 rounded-lg shadow-sm border border-claude-border dark:border-coal-700 p-6 space-y-2">
+          <h4 className="text-md font-semibold text-claude-ink dark:text-coal-100 border-b dark:border-coal-700 pb-2">Task Information</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="font-medium text-gray-700 dark:text-gray-300">Created:</span>
-              <span className="ml-2 text-gray-600 dark:text-gray-400">{formatDate(task.created_at)}</span>
+              <span className="font-medium text-claude-text dark:text-coal-300">Created:</span>
+              <span className="ml-2 text-claude-muted dark:text-coal-400">{formatDate(task.created_at)}</span>
             </div>
             <div>
-              <span className="font-medium text-gray-700 dark:text-gray-300">Last Updated:</span>
-              <span className="ml-2 text-gray-600 dark:text-gray-400">{formatDate(task.updated_at)}</span>
+              <span className="font-medium text-claude-text dark:text-coal-300">Last Updated:</span>
+              <span className="ml-2 text-claude-muted dark:text-coal-400">{formatDate(task.updated_at)}</span>
             </div>
             {task.completed_at && (
               <div>
-                <span className="font-medium text-gray-700 dark:text-gray-300">Completed:</span>
-                <span className="ml-2 text-gray-600 dark:text-gray-400">{formatDate(task.completed_at)}</span>
+                <span className="font-medium text-claude-text dark:text-coal-300">Completed:</span>
+                <span className="ml-2 text-claude-muted dark:text-coal-400">{formatDate(task.completed_at)}</span>
               </div>
             )}
           </div>
@@ -620,7 +620,7 @@ export default function TaskDetailPage() {
 
           {/* Right Sidebar - Vehicle and Contact Information - Fixed Height */}
           <div className="w-[400px] flex-shrink-0 flex flex-col">
-            <div className="bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 p-6 h-full overflow-y-auto">
+            <div className="bg-claude-surface dark:bg-coal-850 shadow-sm border border-claude-border dark:border-coal-700 p-6 h-full overflow-y-auto">
               <VehicleContactCard
                 title="Vehicle & Contact Information"
                 vehicle={listing ? {

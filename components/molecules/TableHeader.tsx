@@ -34,16 +34,16 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
   // If columns prop is provided, use generic table header
   if (columns) {
     return (
-      <thead className="bg-gray-50 dark:bg-gray-700/50">
+      <thead className="bg-claude-cream dark:bg-coal-700/50">
         <tr>
           {columns.map((column) => (
             <th
               key={column.key}
-              className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              className="px-2 py-2 text-left text-xs font-medium text-claude-subtle dark:text-coal-400 uppercase tracking-wider"
             >
               {column.sortable ? (
                 <button
-                  className="flex items-center space-x-1 hover:text-gray-700 dark:hover:text-gray-200"
+                  className="flex items-center space-x-1 hover:text-claude-text dark:hover:text-coal-200"
                   onClick={() => onColumnSort?.(column.key)}
                 >
                   <span>{column.label}</span>
@@ -84,7 +84,7 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                   if (input) input.indeterminate = isIndeterminate;
                 }}
                 onChange={(e) => onSelectAll?.(e.target.checked)}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-claude-divider rounded"
                 title={isAllSelected ? "Deselect all" : "Select all"}
               />
             </div>

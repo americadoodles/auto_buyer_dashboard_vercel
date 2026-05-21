@@ -88,15 +88,15 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ listing }) => {
     <>
       {/* Clickable Title Card */}
       <div 
-        className="bg-white dark:bg-[#1a1d29] rounded-lg shadow-sm border border-gray-200 dark:border-gray-700/50 px-6 py-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+        className="bg-claude-surface dark:bg-[#1a1d29] rounded-lg shadow-sm border border-claude-border dark:border-coal-700/50 px-6 py-2 cursor-pointer hover:bg-claude-cream dark:hover:bg-coal-850/50 transition-colors"
         onClick={() => setIsPanelOpen(true)}
       >
         <div className="flex items-center justify-between">
-          <h4 className="text-lg font-bold text-black dark:text-white">
+          <h4 className="text-lg font-bold text-black dark:text-coal-100">
             Vehicle Detail
-            {marketplaceName && <span className="text-black dark:text-gray-400 font-normal"> ({marketplaceName})</span>}
+            {marketplaceName && <span className="text-black dark:text-coal-400 font-normal"> ({marketplaceName})</span>}
           </h4>
-          <ChevronRight className="w-5 h-5 text-gray-400" />
+          <ChevronRight className="w-5 h-5 text-claude-subtle" />
         </div>
       </div>
 
@@ -110,16 +110,16 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ listing }) => {
           />
           
           {/* Panel */}
-          <div className={`fixed top-0 right-0 h-full w-[30%] min-w-[320px] bg-white dark:bg-[#1a1d29] shadow-xl z-50 overflow-y-auto ${isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'}`}>
+          <div className={`fixed top-0 right-0 h-full w-[30%] min-w-[320px] bg-claude-surface dark:bg-[#1a1d29] shadow-xl z-50 overflow-y-auto ${isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'}`}>
             {/* Panel Header */}
-            <div className="sticky top-0 bg-white dark:bg-[#1a1d29] border-b border-gray-200 dark:border-gray-700/50 px-6 py-4 flex items-center justify-between">
-              <h4 className="text-lg font-bold text-black dark:text-white">
+            <div className="sticky top-0 bg-claude-surface dark:bg-[#1a1d29] border-b border-claude-border dark:border-coal-700/50 px-6 py-4 flex items-center justify-between">
+              <h4 className="text-lg font-bold text-black dark:text-coal-100">
                 Vehicle Detail
-                {marketplaceName && <span className="text-black dark:text-gray-400 font-normal"> ({marketplaceName})</span>}
+                {marketplaceName && <span className="text-black dark:text-coal-400 font-normal"> ({marketplaceName})</span>}
               </h4>
               <button
                 onClick={handleClose}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors"
+                className="text-claude-subtle hover:text-claude-muted dark:hover:text-coal-100 transition-colors"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -131,9 +131,9 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ listing }) => {
         {/* LPN */}
         {listing.lpn && (
           <div className="flex items-center w-full group">
-            <span className="text-sm font-semibold text-black dark:text-gray-300 w-32 flex-shrink-0">LPN:</span>
+            <span className="text-sm font-semibold text-black dark:text-coal-300 w-32 flex-shrink-0">LPN:</span>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-black dark:text-gray-300">{listing.lpn}</span>
+              <span className="text-sm text-black dark:text-coal-300">{listing.lpn}</span>
             </div>
           </div>
         )}
@@ -141,9 +141,9 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ listing }) => {
         {/* DOM */}
         {listing.dom !== undefined && (
           <div className="flex items-center w-full group">
-            <span className="text-sm font-semibold text-black dark:text-gray-300 w-32 flex-shrink-0">DOM:</span>
+            <span className="text-sm font-semibold text-black dark:text-coal-300 w-32 flex-shrink-0">DOM:</span>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-black dark:text-gray-300">{listing.dom} days</span>
+              <span className="text-sm text-black dark:text-coal-300">{listing.dom} days</span>
             </div>
           </div>
         )}
@@ -151,9 +151,9 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ listing }) => {
         {/* Location */}
         {listing.location && (
           <div className="flex items-center w-full group">
-            <span className="text-sm font-semibold text-black dark:text-gray-300 w-32 flex-shrink-0">Location:</span>
+            <span className="text-sm font-semibold text-black dark:text-coal-300 w-32 flex-shrink-0">Location:</span>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-black dark:text-gray-300">{listing.location}</span>
+              <span className="text-sm text-black dark:text-coal-300">{listing.location}</span>
             </div>
           </div>
         )}
@@ -161,9 +161,9 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ listing }) => {
         {/* Transmission */}
         {listing.transmission && (
           <div className="flex items-center w-full group">
-            <span className="text-sm font-semibold text-black dark:text-gray-300 w-32 flex-shrink-0">Transmission:</span>
+            <span className="text-sm font-semibold text-black dark:text-coal-300 w-32 flex-shrink-0">Transmission:</span>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-black dark:text-gray-300">{listing.transmission}</span>
+              <span className="text-sm text-black dark:text-coal-300">{listing.transmission}</span>
             </div>
           </div>
         )}
@@ -171,9 +171,9 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ listing }) => {
         {/* Exterior Color */}
         {listing.exteriorColor && (
           <div className="flex items-center w-full group">
-            <span className="text-sm font-semibold text-black dark:text-gray-300 w-32 flex-shrink-0">Exterior Color:</span>
+            <span className="text-sm font-semibold text-black dark:text-coal-300 w-32 flex-shrink-0">Exterior Color:</span>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-black dark:text-gray-300">{listing.exteriorColor}</span>
+              <span className="text-sm text-black dark:text-coal-300">{listing.exteriorColor}</span>
             </div>
           </div>
         )}
@@ -181,9 +181,9 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ listing }) => {
         {/* Interior Color */}
         {listing.interiorColor && (
           <div className="flex items-center w-full group">
-            <span className="text-sm font-semibold text-black dark:text-gray-300 w-32 flex-shrink-0">Interior Color:</span>
+            <span className="text-sm font-semibold text-black dark:text-coal-300 w-32 flex-shrink-0">Interior Color:</span>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-black dark:text-gray-300">{listing.interiorColor}</span>
+              <span className="text-sm text-black dark:text-coal-300">{listing.interiorColor}</span>
             </div>
           </div>
         )}
@@ -191,9 +191,9 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ listing }) => {
         {/* Fuel Type */}
         {listing.fuelType && (
           <div className="flex items-center w-full group">
-            <span className="text-sm font-semibold text-black dark:text-gray-300 w-32 flex-shrink-0">Fuel Type:</span>
+            <span className="text-sm font-semibold text-black dark:text-coal-300 w-32 flex-shrink-0">Fuel Type:</span>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-black dark:text-gray-300">{listing.fuelType}</span>
+              <span className="text-sm text-black dark:text-coal-300">{listing.fuelType}</span>
             </div>
           </div>
         )}
@@ -201,9 +201,9 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ listing }) => {
         {/* Body Style */}
         {listing.bodyStyle && (
           <div className="flex items-center w-full group">
-            <span className="text-sm font-semibold text-black dark:text-gray-300 w-32 flex-shrink-0">Body Style:</span>
+            <span className="text-sm font-semibold text-black dark:text-coal-300 w-32 flex-shrink-0">Body Style:</span>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-black dark:text-gray-300">{listing.bodyStyle}</span>
+              <span className="text-sm text-black dark:text-coal-300">{listing.bodyStyle}</span>
             </div>
           </div>
         )}
@@ -211,9 +211,9 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ listing }) => {
         {/* Engine */}
         {listing.engine && (
           <div className="flex items-center w-full group">
-            <span className="text-sm font-semibold text-black dark:text-gray-300 w-32 flex-shrink-0">Engine:</span>
+            <span className="text-sm font-semibold text-black dark:text-coal-300 w-32 flex-shrink-0">Engine:</span>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-black dark:text-gray-300">{listing.engine}</span>
+              <span className="text-sm text-black dark:text-coal-300">{listing.engine}</span>
             </div>
           </div>
         )}
@@ -221,9 +221,9 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ listing }) => {
         {/* Drive Type */}
         {listing.driveType && (
           <div className="flex items-center w-full group">
-            <span className="text-sm font-semibold text-black dark:text-gray-300 w-32 flex-shrink-0">Drive Type:</span>
+            <span className="text-sm font-semibold text-black dark:text-coal-300 w-32 flex-shrink-0">Drive Type:</span>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-black dark:text-gray-300">{listing.driveType}</span>
+              <span className="text-sm text-black dark:text-coal-300">{listing.driveType}</span>
             </div>
           </div>
         )}
@@ -231,9 +231,9 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ listing }) => {
         {/* Condition */}
         {listing.condition && (
           <div className="flex items-center w-full group">
-            <span className="text-sm font-semibold text-black dark:text-gray-300 w-32 flex-shrink-0">Condition:</span>
+            <span className="text-sm font-semibold text-black dark:text-coal-300 w-32 flex-shrink-0">Condition:</span>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-black dark:text-gray-300">{listing.condition}</span>
+              <span className="text-sm text-black dark:text-coal-300">{listing.condition}</span>
             </div>
           </div>
         )}
@@ -241,9 +241,9 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ listing }) => {
         {/* MPG */}
         {listing.mpg && (
           <div className="flex items-center w-full group">
-            <span className="text-sm font-semibold text-black dark:text-gray-300 w-32 flex-shrink-0">MPG:</span>
+            <span className="text-sm font-semibold text-black dark:text-coal-300 w-32 flex-shrink-0">MPG:</span>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-black dark:text-gray-300">{listing.mpg}</span>
+              <span className="text-sm text-black dark:text-coal-300">{listing.mpg}</span>
             </div>
           </div>
         )}
@@ -251,7 +251,7 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ listing }) => {
         {/* Clean Title */}
         {listing.cleanTitle !== undefined && (
           <div className="flex items-center w-full group">
-            <span className="text-sm font-semibold text-black dark:text-gray-300 w-32 flex-shrink-0">Clean Title:</span>
+            <span className="text-sm font-semibold text-black dark:text-coal-300 w-32 flex-shrink-0">Clean Title:</span>
             <div className="flex items-center gap-2">
               <span className={`text-sm ${listing.cleanTitle ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                 {listing.cleanTitle ? 'Yes' : 'No'}
@@ -263,9 +263,9 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ listing }) => {
         {/* Overall Rating */}
         {listing.overallRating && (
           <div className="flex items-center w-full group">
-            <span className="text-sm font-semibold text-black dark:text-gray-300 w-32 flex-shrink-0">Overall Rating:</span>
+            <span className="text-sm font-semibold text-black dark:text-coal-300 w-32 flex-shrink-0">Overall Rating:</span>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-black dark:text-gray-300">{listing.overallRating}</span>
+              <span className="text-sm text-black dark:text-coal-300">{listing.overallRating}</span>
             </div>
           </div>
         )}
@@ -273,9 +273,9 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ listing }) => {
         {/* Paid Status */}
         {listing.paidStatus && (
           <div className="flex items-center w-full group">
-            <span className="text-sm font-semibold text-black dark:text-gray-300 w-32 flex-shrink-0">Paid Status:</span>
+            <span className="text-sm font-semibold text-black dark:text-coal-300 w-32 flex-shrink-0">Paid Status:</span>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-black dark:text-gray-300">{listing.paidStatus}</span>
+              <span className="text-sm text-black dark:text-coal-300">{listing.paidStatus}</span>
             </div>
           </div>
         )}
@@ -283,9 +283,9 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ listing }) => {
         {/* Seller Name */}
         {listing.sellerName && (
           <div className="flex items-center w-full group">
-            <span className="text-sm font-semibold text-black dark:text-gray-300 w-32 flex-shrink-0">Seller Name:</span>
+            <span className="text-sm font-semibold text-black dark:text-coal-300 w-32 flex-shrink-0">Seller Name:</span>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-black dark:text-gray-300">{listing.sellerName}</span>
+              <span className="text-sm text-black dark:text-coal-300">{listing.sellerName}</span>
             </div>
           </div>
         )}
@@ -293,9 +293,9 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ listing }) => {
         {/* Phone Number */}
         {listing.phoneNumber && (
           <div className="flex items-center w-full group">
-            <span className="text-sm font-semibold text-black dark:text-gray-300 w-32 flex-shrink-0">Phone:</span>
+            <span className="text-sm font-semibold text-black dark:text-coal-300 w-32 flex-shrink-0">Phone:</span>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-black dark:text-gray-300">{listing.phoneNumber}</span>
+              <span className="text-sm text-black dark:text-coal-300">{listing.phoneNumber}</span>
             </div>
           </div>
         )}
@@ -303,9 +303,9 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ listing }) => {
         {/* Seller Joined Date */}
         {listing.sellerJoinedDate && (
           <div className="flex items-center w-full group">
-            <span className="text-sm font-semibold text-black dark:text-gray-300 w-32 flex-shrink-0">Seller Joined:</span>
+            <span className="text-sm font-semibold text-black dark:text-coal-300 w-32 flex-shrink-0">Seller Joined:</span>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-black dark:text-gray-300">{formatDateTime(listing.sellerJoinedDate)}</span>
+              <span className="text-sm text-black dark:text-coal-300">{formatDateTime(listing.sellerJoinedDate)}</span>
             </div>
           </div>
         )}
@@ -313,9 +313,9 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ listing }) => {
         {/* Status */}
         {listing.status && (
           <div className="flex items-center w-full group">
-            <span className="text-sm font-semibold text-black dark:text-gray-300 w-32 flex-shrink-0">Status:</span>
+            <span className="text-sm font-semibold text-black dark:text-coal-300 w-32 flex-shrink-0">Status:</span>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-black dark:text-gray-300">{listing.status}</span>
+              <span className="text-sm text-black dark:text-coal-300">{listing.status}</span>
             </div>
           </div>
         )}
@@ -323,9 +323,9 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ listing }) => {
         {/* Score */}
         {listing.score !== undefined && (
           <div className="flex items-center w-full group">
-            <span className="text-sm font-semibold text-black dark:text-gray-300 w-32 flex-shrink-0">Score:</span>
+            <span className="text-sm font-semibold text-black dark:text-coal-300 w-32 flex-shrink-0">Score:</span>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-black dark:text-gray-300">{listing.score}</span>
+              <span className="text-sm text-black dark:text-coal-300">{listing.score}</span>
             </div>
           </div>
         )}
@@ -333,9 +333,9 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ listing }) => {
         {/* Buy Max */}
         {listing.buyMax !== undefined && (
           <div className="flex items-center w-full group">
-            <span className="text-sm font-semibold text-black dark:text-gray-300 w-32 flex-shrink-0">Buy Max:</span>
+            <span className="text-sm font-semibold text-black dark:text-coal-300 w-32 flex-shrink-0">Buy Max:</span>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-black dark:text-gray-300">${formatNumberWithCommas(listing.buyMax)}</span>
+              <span className="text-sm text-black dark:text-coal-300">${formatNumberWithCommas(listing.buyMax)}</span>
             </div>
           </div>
         )}
@@ -343,9 +343,9 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ listing }) => {
                 {/* Reason Codes */}
                 {listing.reasonCodes && listing.reasonCodes.length > 0 && (
                   <div className="flex items-start w-full group">
-                    <span className="text-sm font-semibold text-gray-300 w-32 flex-shrink-0 pt-1">Reason Codes:</span>
+                    <span className="text-sm font-semibold text-claude-subtle w-32 flex-shrink-0 pt-1">Reason Codes:</span>
                     <div className="flex items-start gap-2 flex-1">
-                      <span className="text-sm text-black dark:text-gray-300">{listing.reasonCodes.join(', ')}</span>
+                      <span className="text-sm text-black dark:text-coal-300">{listing.reasonCodes.join(', ')}</span>
                     </div>
                   </div>
                 )}

@@ -18,13 +18,13 @@ export const ViewToggle: React.FC<ViewToggleProps> = ({
   className = '',
 }) => {
   return (
-    <div className={`flex items-center gap-2 bg-gray-100 dark:bg-gray-700 rounded-lg p-1 ${className}`}>
+    <div className={`flex items-center gap-2 bg-claude-sand dark:bg-coal-700 rounded-lg p-1 ${className}`}>
       <button
         onClick={() => onViewModeChange('table')}
         className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
           viewMode === 'table'
-            ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
-            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            ? 'bg-claude-surface dark:bg-coal-600 text-claude-ink dark:text-coal-100 shadow-sm'
+            : 'text-claude-muted dark:text-coal-400 hover:text-claude-ink dark:hover:text-coal-100'
         }`}
         title="Table view"
       >
@@ -35,8 +35,8 @@ export const ViewToggle: React.FC<ViewToggleProps> = ({
         onClick={() => onViewModeChange('cards')}
         className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
           viewMode === 'cards'
-            ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
-            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            ? 'bg-claude-surface dark:bg-coal-600 text-claude-ink dark:text-coal-100 shadow-sm'
+            : 'text-claude-muted dark:text-coal-400 hover:text-claude-ink dark:hover:text-coal-100'
         }`}
         title="Card view"
       >

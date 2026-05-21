@@ -35,7 +35,7 @@ export const AuthFields: React.FC<AuthFieldsProps> = ({ onSubmit, loading, submi
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Mail className="h-5 w-5 text-gray-400" />
+            <Mail className="h-5 w-5 text-claude-subtle" />
           </div>
           <input
             id="email"
@@ -43,7 +43,7 @@ export const AuthFields: React.FC<AuthFieldsProps> = ({ onSubmit, loading, submi
             type="email"
             value={email}
             onChange={e => setEmail(e.target.value)}
-            className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-colors"
+            className="block w-full pl-10 pr-3 py-3 border border-claude-divider rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-colors"
             placeholder="Enter your email"
             autoComplete="email"
             required
@@ -59,7 +59,7 @@ export const AuthFields: React.FC<AuthFieldsProps> = ({ onSubmit, loading, submi
           </label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <UserIcon className="h-5 w-5 text-gray-400" />
+              <UserIcon className="h-5 w-5 text-claude-subtle" />
             </div>
             <input
               id="username"
@@ -67,7 +67,7 @@ export const AuthFields: React.FC<AuthFieldsProps> = ({ onSubmit, loading, submi
               type="text"
               value={username}
               onChange={e => setUsername(e.target.value)}
-              className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-colors"
+              className="block w-full pl-10 pr-3 py-3 border border-claude-divider rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-colors"
               placeholder="Choose a username"
               autoComplete="username"
               required
@@ -83,7 +83,7 @@ export const AuthFields: React.FC<AuthFieldsProps> = ({ onSubmit, loading, submi
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Lock className="h-5 w-5 text-gray-400" />
+            <Lock className="h-5 w-5 text-claude-subtle" />
           </div>
           <input
             id="password"
@@ -91,7 +91,7 @@ export const AuthFields: React.FC<AuthFieldsProps> = ({ onSubmit, loading, submi
             type={showPassword ? "text" : "password"}
             value={password}
             onChange={e => setPassword(e.target.value)}
-            className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-colors"
+            className="block w-full pl-10 pr-12 py-3 border border-claude-divider rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-colors"
             placeholder="Enter your password"
             autoComplete="current-password"
             required
@@ -102,9 +102,9 @@ export const AuthFields: React.FC<AuthFieldsProps> = ({ onSubmit, loading, submi
             className="absolute inset-y-0 right-0 pr-3 flex items-center"
           >
             {showPassword ? (
-              <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+              <EyeOff className="h-5 w-5 text-claude-subtle hover:text-claude-muted" />
             ) : (
-              <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+              <Eye className="h-5 w-5 text-claude-subtle hover:text-claude-muted" />
             )}
           </button>
         </div>
@@ -118,7 +118,7 @@ export const AuthFields: React.FC<AuthFieldsProps> = ({ onSubmit, loading, submi
           </label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Lock className="h-5 w-5 text-gray-400" />
+              <Lock className="h-5 w-5 text-claude-subtle" />
             </div>
             <input
               id="confirmPassword"
@@ -126,7 +126,7 @@ export const AuthFields: React.FC<AuthFieldsProps> = ({ onSubmit, loading, submi
               type={showConfirmPasswordVisible ? "text" : "password"}
               value={confirmPassword}
               onChange={e => setConfirmPassword(e.target.value)}
-              className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-colors"
+              className="block w-full pl-10 pr-12 py-3 border border-claude-divider rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-colors"
               placeholder="Confirm your password"
               autoComplete="new-password"
               required
@@ -137,9 +137,9 @@ export const AuthFields: React.FC<AuthFieldsProps> = ({ onSubmit, loading, submi
               className="absolute inset-y-0 right-0 pr-3 flex items-center"
             >
               {showConfirmPasswordVisible ? (
-                <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                <EyeOff className="h-5 w-5 text-claude-subtle hover:text-claude-muted" />
               ) : (
-                <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                <Eye className="h-5 w-5 text-claude-subtle hover:text-claude-muted" />
               )}
             </button>
           </div>
@@ -148,7 +148,7 @@ export const AuthFields: React.FC<AuthFieldsProps> = ({ onSubmit, loading, submi
 
       {/* Submit Button */}
       <div className="pt-2">
-        <FormButton type="submit" loading={loading} className="w-full font-heading bg-brand-primary text-white hover:bg-brand-primary/80">
+        <FormButton type="submit" loading={loading} className="w-full font-heading bg-brand-primary text-coal-100 hover:bg-brand-primary/80">
           {submitLabel}
         </FormButton>
       </div>

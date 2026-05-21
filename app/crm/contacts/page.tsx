@@ -130,7 +130,7 @@ export default function ContactsPage() {
   // Show loading state
   if (loading && fetchedContacts.length === 0) {
     return (
-      <div className="p-4 bg-gray-50 dark:bg-gray-900 h-full flex items-center justify-center">
+      <div className="p-4 bg-claude-cream dark:bg-coal-900 h-full flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400"></div>
       </div>
     );
@@ -139,7 +139,7 @@ export default function ContactsPage() {
   // Show error state
   if (error) {
     return (
-      <div className="p-4 bg-gray-50 dark:bg-gray-900 h-full flex items-center justify-center">
+      <div className="p-4 bg-claude-cream dark:bg-coal-900 h-full flex items-center justify-center">
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4 max-w-md">
           <div className="flex">
             <div className="flex-shrink-0">
@@ -170,7 +170,7 @@ export default function ContactsPage() {
   }
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 h-full flex flex-col p-4">
+    <div className="bg-claude-cream dark:bg-coal-900 h-full flex flex-col p-4">
       {/* Chat Interface */}
       <div className="flex-1 min-h-0">
         <ContactChatInterface

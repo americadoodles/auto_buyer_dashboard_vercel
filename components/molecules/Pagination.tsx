@@ -26,28 +26,28 @@ export const Pagination: React.FC<PaginationProps> = ({
   };
 
   return (
-    <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+    <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 dark:border-coal-700 bg-claude-surface dark:bg-coal-850">
       {rowsPerPage && totalRows && onRowsPerPageChange ? (
         <div className="flex items-center space-x-4">
-          <span className="text-sm text-slate-600 dark:text-gray-400">
+          <span className="text-sm text-slate-600 dark:text-coal-400">
             Rows per page:
           </span>
           <select
             value={rowsPerPage}
             onChange={handleRowsPerPageChange}
-            className="border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent"
+            className="border border-slate-300 dark:border-coal-600 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent"
           >
             <option value={12}>12</option>
             <option value={24}>24</option>
             <option value={60}>60</option>
           </select>
-          <span className="text-sm text-slate-600 dark:text-gray-400">
+          <span className="text-sm text-slate-600 dark:text-coal-400">
             {startRow}-{endRow} of {totalRows}
           </span>
         </div>
       ) : (
         <div className="flex items-center space-x-4">
-          <span className="text-sm text-slate-600 dark:text-gray-400">
+          <span className="text-sm text-slate-600 dark:text-coal-400">
             Page {currentPage} of {totalPages}
           </span>
         </div>
@@ -57,7 +57,7 @@ export const Pagination: React.FC<PaginationProps> = ({
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="px-3 py-1 text-sm border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+          className="px-3 py-1 text-sm border border-slate-300 dark:border-coal-600 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-coal-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
         >
           Previous
         </button>
@@ -76,8 +76,8 @@ export const Pagination: React.FC<PaginationProps> = ({
                   onClick={() => onPageChange(page)}
                   className={`px-3 py-1 text-sm rounded-md ${
                     page === currentPage
-                      ? 'bg-blue-600 dark:bg-blue-500 text-white'
-                      : 'border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-slate-50 dark:hover:bg-gray-600'
+                      ? 'bg-blue-600 dark:bg-blue-500 text-coal-100'
+                      : 'border border-slate-300 dark:border-coal-600 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100 hover:bg-slate-50 dark:hover:bg-coal-600'
                   } focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400`}
                 >
                   {page}
@@ -87,7 +87,7 @@ export const Pagination: React.FC<PaginationProps> = ({
               page === currentPage - 2 ||
               page === currentPage + 2
             ) {
-              return <span key={page} className="px-2 text-slate-400 dark:text-gray-500">...</span>;
+              return <span key={page} className="px-2 text-slate-400 dark:text-coal-500">...</span>;
             }
             return null;
           })}
@@ -96,7 +96,7 @@ export const Pagination: React.FC<PaginationProps> = ({
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="px-3 py-1 text-sm border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+          className="px-3 py-1 text-sm border border-slate-300 dark:border-coal-600 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-coal-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
         >
           Next
         </button>

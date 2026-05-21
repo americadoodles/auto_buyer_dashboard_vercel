@@ -28,16 +28,16 @@ export const ChartTimeRangePicker: React.FC<ChartTimeRangePickerProps> = ({
 }) => {
   return (
     <div className={`flex items-center space-x-2 ${className}`}>
-      <Calendar className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-      <div className="flex space-x-1 bg-gray-100 dark:bg-gray-700/50 rounded-lg p-1">
+      <Calendar className="w-4 h-4 text-claude-subtle dark:text-coal-400" />
+      <div className="flex space-x-1 bg-claude-sand dark:bg-coal-700/50 rounded-lg p-1">
         {timeRangeOptions.map((option) => (
           <button
             key={option.value}
             onClick={() => onChange(option.value)}
             className={`px-3 py-1 text-sm font-medium rounded transition-colors ${
               value === option.value
-                ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-sm'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                ? 'bg-claude-surface dark:bg-coal-850 text-blue-600 dark:text-blue-400 shadow-sm'
+                : 'text-claude-muted dark:text-coal-400 hover:text-claude-ink dark:hover:text-coal-200'
             }`}
           >
             {option.label}

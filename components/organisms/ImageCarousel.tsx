@@ -23,11 +23,11 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, showPlaceh
     if (!showPlaceholder) return null;
     
     return (
-      <div className="w-full bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden border border-gray-200 dark:border-gray-700">
-        <div className="relative h-64 md:h-96 flex items-center justify-center bg-gray-100 dark:bg-gray-700">
-          <div className="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
+      <div className="w-full bg-claude-surface dark:bg-coal-850 rounded-lg shadow-md overflow-hidden border border-claude-border dark:border-coal-700">
+        <div className="relative h-64 md:h-96 flex items-center justify-center bg-claude-sand dark:bg-coal-700">
+          <div className="flex flex-col items-center justify-center text-claude-subtle dark:text-coal-400">
             <ImageIcon className="h-16 w-16 mb-4" />
-            <p className="text-lg font-medium text-gray-600 dark:text-gray-300">No images Available</p>
+            <p className="text-lg font-medium text-claude-muted dark:text-coal-300">No images Available</p>
           </div>
         </div>
       </div>
@@ -90,9 +90,9 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, showPlaceh
 
   return (
     <>
-    <div className="w-full bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden border border-gray-200 dark:border-gray-700">
+    <div className="w-full bg-claude-surface dark:bg-coal-850 rounded-lg shadow-md overflow-hidden border border-claude-border dark:border-coal-700">
       {/* Main Carousel Image */}
-      <div className="relative h-64 md:h-96 flex items-center justify-center bg-gray-100 dark:bg-gray-700">
+      <div className="relative h-64 md:h-96 flex items-center justify-center bg-claude-sand dark:bg-coal-700">
         <img
           src={currentImage}
           alt={`Vehicle image ${currentIndex + 1}`}
@@ -105,7 +105,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, showPlaceh
               onClick={goToPrevious}
               variant="ghost"
             //   size="icon"
-              className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-600 bg-opacity-75 dark:bg-opacity-90 hover:bg-opacity-100 dark:hover:bg-opacity-100 rounded-full p-2 shadow-md"
+              className="absolute left-2 top-1/2 -translate-y-1/2 text-claude-ink dark:text-coal-200 bg-claude-surface dark:bg-coal-600 bg-opacity-75 dark:bg-opacity-90 hover:bg-opacity-100 dark:hover:bg-opacity-100 rounded-full p-2 shadow-md"
             >
               <ChevronLeft className="h-6 w-6" />
             </Button>
@@ -113,7 +113,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, showPlaceh
               onClick={goToNext}
               variant="ghost"
             //   size="icon"
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-600 bg-opacity-75 dark:bg-opacity-90 hover:bg-opacity-100 dark:hover:bg-opacity-100 rounded-full p-2 shadow-md"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-claude-ink dark:text-coal-200 bg-claude-surface dark:bg-coal-600 bg-opacity-75 dark:bg-opacity-90 hover:bg-opacity-100 dark:hover:bg-opacity-100 rounded-full p-2 shadow-md"
             >
               <ChevronRight className="h-6 w-6" />
             </Button>
@@ -123,7 +123,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, showPlaceh
 
       {/* Thumbnails */}
       {images.length > 0 && (
-        <div className="p-2 bg-gray-50 dark:bg-gray-700 flex flex-nowrap justify-start gap-2 overflow-x-auto border-t border-gray-200 dark:border-gray-600">
+        <div className="p-2 bg-claude-cream dark:bg-coal-700 flex flex-nowrap justify-start gap-2 overflow-x-auto border-t border-claude-border dark:border-coal-600">
           {images.map((image, index) => (
             <img
               key={index}
@@ -143,7 +143,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, showPlaceh
     {isViewerOpen && (
       <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex flex-col">
         <div className="flex justify-end p-4">
-          <Button variant="ghost" onClick={closeViewer} className="text-white hover:text-gray-200">
+          <Button variant="ghost" onClick={closeViewer} className="text-coal-100 hover:text-coal-200">
             <X className="h-6 w-6" />
           </Button>
         </div>

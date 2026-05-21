@@ -97,7 +97,7 @@ const CurrentUsersTable: React.FC = () => {
       analyst: { bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-800 dark:text-green-300', label: 'Analyst' }
     };
     
-    const config = roleConfig[role as keyof typeof roleConfig] || { bg: 'bg-gray-100 dark:bg-gray-800', text: 'text-gray-800 dark:text-gray-300', label: role };
+    const config = roleConfig[role as keyof typeof roleConfig] || { bg: 'bg-claude-sand dark:bg-coal-850', text: 'text-claude-ink dark:text-coal-300', label: role };
     
     return (
       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
@@ -125,16 +125,16 @@ const CurrentUsersTable: React.FC = () => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+    <div className="bg-claude-surface dark:bg-coal-850 rounded-lg shadow-sm border border-claude-border dark:border-coal-700">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+      <div className="px-6 py-4 border-b border-claude-border dark:border-coal-700">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
             <Users className="w-5 h-5 text-green-600 dark:text-green-400" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Current Users</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-300">
+            <h2 className="text-lg font-semibold text-claude-ink dark:text-coal-100">Current Users</h2>
+            <p className="text-sm text-claude-muted dark:text-coal-300">
               {users.length} user{users.length !== 1 ? 's' : ''} registered
             </p>
           </div>
@@ -160,26 +160,26 @@ const CurrentUsersTable: React.FC = () => {
         ) : users.length > 0 ? (
           <div className="overflow-hidden">
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead className="bg-gray-50 dark:bg-gray-700">
+              <thead className="bg-claude-cream dark:bg-coal-700">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Email</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Username</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-claude-subtle dark:text-coal-300 uppercase tracking-wider">Email</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-claude-subtle dark:text-coal-300 uppercase tracking-wider">Username</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-claude-subtle dark:text-coal-300 uppercase tracking-wider">
                     Role
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-claude-subtle dark:text-coal-300 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-claude-subtle dark:text-coal-300 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              <tbody className="bg-claude-surface dark:bg-coal-850 divide-y divide-gray-200 dark:divide-gray-700">
                 {users.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                    <td className="px-6 py-4 whitespace-nowrap"><div className="text-sm font-medium text-gray-900 dark:text-white">{user.email}</div></td>
-                    <td className="px-6 py-4 whitespace-nowrap"><div className="text-sm text-gray-900 dark:text-white">{user.username}</div></td>
+                  <tr key={user.id} className="hover:bg-claude-cream dark:hover:bg-coal-700/50">
+                    <td className="px-6 py-4 whitespace-nowrap"><div className="text-sm font-medium text-claude-ink dark:text-coal-100">{user.email}</div></td>
+                    <td className="px-6 py-4 whitespace-nowrap"><div className="text-sm text-claude-ink dark:text-coal-100">{user.username}</div></td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getRoleBadge(user.role)}
                     </td>
@@ -205,7 +205,7 @@ const CurrentUsersTable: React.FC = () => {
                         <button
                           onClick={() => handleRemoveClick(user)}
                           disabled={loading}
-                          className="inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="inline-flex items-center px-3 py-1.5 border border-claude-divider dark:border-coal-600 text-xs font-medium rounded-md text-claude-text dark:text-coal-300 bg-claude-surface dark:bg-coal-700 hover:bg-claude-cream dark:hover:bg-coal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <Trash2 className="w-3 h-3 mr-1" />
                           Remove
@@ -219,11 +219,11 @@ const CurrentUsersTable: React.FC = () => {
           </div>
         ) : (
           <div className="text-center py-12">
-            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Users className="w-8 h-8 text-gray-400 dark:text-gray-500" />
+            <div className="w-16 h-16 bg-claude-sand dark:bg-coal-700 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Users className="w-8 h-8 text-claude-subtle dark:text-coal-500" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No users found</h3>
-            <p className="text-gray-500 dark:text-gray-400">No users have been registered yet.</p>
+            <h3 className="text-lg font-medium text-claude-ink dark:text-coal-100 mb-2">No users found</h3>
+            <p className="text-claude-subtle dark:text-coal-400">No users have been registered yet.</p>
           </div>
         )}
       </div>
@@ -242,29 +242,29 @@ const CurrentUsersTable: React.FC = () => {
       {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && userToRemove && (
         <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-black/70 flex items-center justify-center z-50" onClick={handleCloseDeleteModal}>
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-claude-surface dark:bg-coal-850 rounded-lg shadow-xl max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
             <div className="p-6">
               <div className="flex items-center space-x-3 mb-4">
                 <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center flex-shrink-0">
                   <Trash2 className="w-5 h-5 text-red-600 dark:text-red-400" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Confirm Removal</h3>
+                <h3 className="text-lg font-semibold text-claude-ink dark:text-coal-100">Confirm Removal</h3>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">
-                Are you sure you want to remove <span className="font-medium text-gray-900 dark:text-white">{userToRemove.username}</span> ({userToRemove.email})? This action cannot be undone.
+              <p className="text-sm text-claude-muted dark:text-coal-300 mb-6">
+                Are you sure you want to remove <span className="font-medium text-claude-ink dark:text-coal-100">{userToRemove.username}</span> ({userToRemove.email})? This action cannot be undone.
               </p>
               <div className="flex justify-end space-x-3">
                 <button
                   onClick={handleCloseDeleteModal}
                   disabled={loading}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 text-sm font-medium text-claude-text dark:text-coal-300 bg-claude-surface dark:bg-coal-700 border border-claude-divider dark:border-coal-600 rounded-md hover:bg-claude-cream dark:hover:bg-coal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleRemove}
                   disabled={loading}
-                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 dark:bg-red-700 border border-transparent rounded-md hover:bg-red-700 dark:hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:focus:ring-red-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 text-sm font-medium text-coal-100 bg-red-600 dark:bg-red-700 border border-transparent rounded-md hover:bg-red-700 dark:hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:focus:ring-red-400 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Removing...' : 'Remove'}
                 </button>

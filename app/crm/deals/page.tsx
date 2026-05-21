@@ -142,7 +142,7 @@ export default function DealsPage() {
   // Show loading state
   if (loading && deals.length === 0) {
     return (
-      <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
+      <div className="p-6 bg-claude-cream dark:bg-coal-900 min-h-screen">
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400"></div>
         </div>
@@ -153,7 +153,7 @@ export default function DealsPage() {
   // Show error state
   if (error) {
     return (
-      <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
+      <div className="p-6 bg-claude-cream dark:bg-coal-900 min-h-screen">
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
           <div className="flex">
             <div className="flex-shrink-0">
@@ -184,10 +184,10 @@ export default function DealsPage() {
   }
 
   return (
-      <div className="p-6 h-full overflow-hidden flex flex-col bg-gray-50 dark:bg-gray-900 min-h-screen">
+      <div className="p-6 h-full overflow-hidden flex flex-col bg-claude-cream dark:bg-coal-900 min-h-screen">
         {/* <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Deal Pipeline</h1>
-          <p className="text-gray-600 mt-1">Track and manage your sales opportunities</p>
+          <h1 className="text-2xl font-bold text-claude-ink">Deal Pipeline</h1>
+          <p className="text-claude-muted mt-1">Track and manage your sales opportunities</p>
         </div> */}
         <DealPipeline 
           deals={transformedDeals}

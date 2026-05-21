@@ -50,7 +50,7 @@ export const TableRow: React.FC<TableRowProps> = ({
   if (children) {
     return (
       <tr 
-        className={`${className || ''} ${onClick ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50' : ''}`}
+        className={`${className || ''} ${onClick ? 'cursor-pointer hover:bg-claude-cream dark:hover:bg-coal-700/50' : ''}`}
         onClick={onClick}
       >
         {children}
@@ -91,7 +91,7 @@ export const TableRow: React.FC<TableRowProps> = ({
           type="checkbox"
           checked={isSelected}
           onChange={(e) => onSelect?.(listing.id, e.target.checked)}
-          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-claude-divider rounded"
         />
       </div>
       

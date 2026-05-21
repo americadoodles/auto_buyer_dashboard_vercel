@@ -126,18 +126,18 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
   const phoneLabel = phone || 'No phone number';
 
   return (
-    <div className={`flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden h-full min-h-[280px] ${className}`}>
+    <div className={`flex flex-col bg-claude-surface dark:bg-coal-900 rounded-lg shadow-lg border border-claude-border dark:border-coal-700 overflow-hidden h-full min-h-[280px] ${className}`}>
       {/* Chat Header */}
-      <div className="flex items-center justify-between px-4 py-1 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0">
+      <div className="flex items-center justify-between px-4 py-1 border-b border-claude-border dark:border-coal-700 bg-claude-surface dark:bg-coal-850 flex-shrink-0">
         <div className="flex items-center min-w-0">
-          <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-medium flex-shrink-0">
+          <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-coal-100 text-sm font-medium flex-shrink-0">
             {getInitials(displayName)}
           </div>
           <div className="ml-3 min-w-0 truncate">
-            <span className="text-lg font-semibold text-gray-900 dark:text-white">
+            <span className="text-lg font-semibold text-claude-ink dark:text-coal-100">
               {displayName}
             </span>
-            <span className="text-sm text-gray-500 dark:text-gray-400">
+            <span className="text-sm text-claude-subtle dark:text-coal-400">
               {' · '}{phoneLabel}
             </span>
           </div>
@@ -157,13 +157,13 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
       </div>
 
       {/* Messages Area - flex-1 min-h-0 so it fills remaining height and can shrink/scroll */}
-      <div className="flex-1 min-h-0 overflow-y-scroll overflow-x-hidden px-4 py-2 bg-gray-50 dark:bg-gray-900">
+      <div className="flex-1 min-h-0 overflow-y-scroll overflow-x-hidden px-4 py-2 bg-claude-cream dark:bg-coal-900">
         {messagesLoading && communications.length === 0 ? (
           <div className="flex justify-center items-center h-full">
             <Icon name="loader-2" className="w-8 h-8 animate-spin text-blue-500" />
           </div>
         ) : communications.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full min-h-0 text-gray-500 dark:text-gray-400">
+          <div className="flex flex-col items-center justify-center h-full min-h-0 text-claude-subtle dark:text-coal-400">
             <Icon name="message-square" className="w-12 h-12 mb-3 opacity-50" />
             <p className="text-sm font-medium">No messages yet</p>
             <p className="text-xs">Send an SMS or make a call to start the conversation</p>
@@ -193,8 +193,8 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
                     <div
                       className={`max-w-[85%] rounded-2xl px-4 py-2 ${
                         comm.direction === 'outbound'
-                          ? 'bg-blue-500 text-white rounded-br-md'
-                          : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow rounded-bl-md'
+                          ? 'bg-blue-500 text-coal-100 rounded-br-md'
+                          : 'bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100 shadow rounded-bl-md'
                       }`}
                     >
                       <p className="text-sm whitespace-pre-wrap break-words">{comm.content}</p>
@@ -202,7 +202,7 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
                         className={`text-xs mt-1 ${
                           comm.direction === 'outbound'
                             ? 'text-blue-100'
-                            : 'text-gray-500 dark:text-gray-400'
+                            : 'text-claude-subtle dark:text-coal-400'
                         }`}
                       >
                         {formatMessageTime(comm.created_at)}
@@ -223,7 +223,7 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
       </div>
 
       {/* Message Input */}
-      <div className="px-2 py-2 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0">
+      <div className="px-2 py-2 border-t border-claude-border dark:border-coal-700 bg-claude-surface dark:bg-coal-850 flex-shrink-0">
         <div className="flex items-end space-x-2">
           <textarea
             ref={textareaRef}
@@ -233,7 +233,7 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
             onKeyDown={handleKeyDown}
             placeholder={hasContact && hasPhone ? 'Type a message...' : 'Add a contact and phone number to send SMS'}
             disabled={!hasContact || !hasPhone}
-            className="flex-1 min-h-[40px] max-h-[120px] py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 text-sm disabled:opacity-60 disabled:cursor-not-allowed resize-none overflow-y-auto"
+            className="flex-1 min-h-[40px] max-h-[120px] py-2 px-4 border border-claude-divider dark:border-coal-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-claude-cream dark:bg-coal-700 text-claude-ink dark:text-coal-100 placeholder-gray-400 dark:placeholder-gray-500 text-sm disabled:opacity-60 disabled:cursor-not-allowed resize-none overflow-y-auto"
           />
           <Button
             onClick={handleSendMessage}

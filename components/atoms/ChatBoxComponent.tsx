@@ -188,11 +188,11 @@ export const ChatBoxComponent: React.FC<ChatBoxComponentProps> = ({
     return (
       <div
         key={vehicle.vin || idx}
-        className="bg-gray-50 dark:bg-gray-900 rounded-lg p-2.5 border border-gray-100 dark:border-gray-700 text-xs"
+        className="bg-claude-cream dark:bg-coal-900 rounded-lg p-2.5 border border-claude-border dark:border-coal-700 text-xs"
       >
         {/* Title row */}
         <div className="flex items-start justify-between gap-2 mb-1.5">
-          <span className="font-semibold text-gray-900 dark:text-white text-[13px] leading-tight">
+          <span className="font-semibold text-claude-ink dark:text-coal-100 text-[13px] leading-tight">
             {title || 'Unknown Vehicle'}
           </span>
           {vehicle.score != null && (
@@ -203,11 +203,11 @@ export const ChatBoxComponent: React.FC<ChatBoxComponentProps> = ({
         </div>
 
         {/* Primary fields */}
-        <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-gray-600 dark:text-gray-400">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-claude-muted dark:text-coal-400">
           {vehicle.price != null && (
             <span className="flex items-center gap-1">
               <DollarSign className="h-3 w-3 shrink-0 text-green-500" />
-              <span className="font-medium text-gray-900 dark:text-white">{formatPrice(vehicle.price)}</span>
+              <span className="font-medium text-claude-ink dark:text-coal-100">{formatPrice(vehicle.price)}</span>
             </span>
           )}
           {miles != null && (
@@ -232,11 +232,11 @@ export const ChatBoxComponent: React.FC<ChatBoxComponentProps> = ({
 
         {/* Extra fields — show everything the API returned */}
         {extraFields.length > 0 && (
-          <div className="mt-1.5 pt-1.5 border-t border-gray-100 dark:border-gray-700 grid grid-cols-2 gap-x-3 gap-y-0.5 text-gray-500 dark:text-gray-400">
+          <div className="mt-1.5 pt-1.5 border-t border-claude-border dark:border-coal-700 grid grid-cols-2 gap-x-3 gap-y-0.5 text-claude-subtle dark:text-coal-400">
             {extraFields.map(([key, val]) => (
               <div key={key} className="truncate">
-                <span className="text-gray-400 dark:text-gray-500">{formatFieldName(key)}:</span>{' '}
-                <span className="text-gray-700 dark:text-gray-300">{formatFieldValue(val)}</span>
+                <span className="text-claude-subtle dark:text-coal-500">{formatFieldName(key)}:</span>{' '}
+                <span className="text-claude-text dark:text-coal-300">{formatFieldValue(val)}</span>
               </div>
             ))}
           </div>
@@ -245,7 +245,7 @@ export const ChatBoxComponent: React.FC<ChatBoxComponentProps> = ({
         {/* VIN + source link */}
         {vehicle.vin && (
           <div className="mt-1.5 flex items-center justify-between">
-            <span className="font-mono text-[10px] text-gray-400 dark:text-gray-500 truncate">{vehicle.vin}</span>
+            <span className="font-mono text-[10px] text-claude-subtle dark:text-coal-500 truncate">{vehicle.vin}</span>
             {vehicle.source_url && (
               <a
                 href={vehicle.source_url}
@@ -269,16 +269,16 @@ export const ChatBoxComponent: React.FC<ChatBoxComponentProps> = ({
     <div className={`fixed bottom-5 right-5 z-50 ${className}`}>
       {/* Chat Box Panel */}
       <div
-        className={`absolute bottom-20 right-0 w-[400px] max-h-[600px] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right ${
+        className={`absolute bottom-20 right-0 w-[400px] max-h-[600px] bg-claude-surface dark:bg-coal-850 rounded-2xl shadow-2xl border border-claude-border dark:border-coal-700 flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right ${
           isOpen
             ? 'scale-100 opacity-100 pointer-events-auto'
             : 'scale-0 opacity-0 pointer-events-none'
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white shrink-0">
+        <div className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-coal-100 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-full bg-claude-surface/20 flex items-center justify-center">
               <Bot className="h-5 w-5" />
             </div>
             <div>
@@ -291,7 +291,7 @@ export const ChatBoxComponent: React.FC<ChatBoxComponentProps> = ({
           </div>
           <button
             onClick={() => setIsOpen(false)}
-            className="p-1.5 rounded-lg hover:bg-white/20 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-claude-surface/20 transition-colors"
             aria-label="Close chat"
           >
             <X className="h-5 w-5" />
@@ -299,7 +299,7 @@ export const ChatBoxComponent: React.FC<ChatBoxComponentProps> = ({
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-[300px] bg-gray-50 dark:bg-gray-900">
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-[300px] bg-claude-cream dark:bg-coal-900">
           {messages.map((msg) => {
             const hasSources = msg.sender === 'bot' && msg.sources && msg.sources.length > 0;
 
@@ -313,8 +313,8 @@ export const ChatBoxComponent: React.FC<ChatBoxComponentProps> = ({
                 <div
                   className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 self-start mt-1 ${
                     msg.sender === 'user'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                      ? 'bg-blue-600 text-coal-100'
+                      : 'bg-claude-sand dark:bg-coal-700 text-claude-muted dark:text-coal-300'
                   }`}
                 >
                   {msg.sender === 'user' ? (
@@ -328,12 +328,12 @@ export const ChatBoxComponent: React.FC<ChatBoxComponentProps> = ({
                     hasSources ? 'max-w-[92%]' : 'max-w-[75%]'
                   } ${
                     msg.sender === 'user'
-                      ? 'bg-blue-600 text-white rounded-br-md'
-                      : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-700 rounded-bl-md'
+                      ? 'bg-blue-600 text-coal-100 rounded-br-md'
+                      : 'bg-claude-surface dark:bg-coal-850 text-claude-ink dark:text-coal-200 border border-claude-border dark:border-coal-700 rounded-bl-md'
                   }`}
                 >
                   {msg.isLoading ? (
-                    <span className="flex items-center gap-2 text-gray-400 dark:text-gray-500">
+                    <span className="flex items-center gap-2 text-claude-subtle dark:text-coal-500">
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                       Thinking...
                     </span>
@@ -345,7 +345,7 @@ export const ChatBoxComponent: React.FC<ChatBoxComponentProps> = ({
                       {/* Vehicle source cards */}
                       {hasSources && (
                         <div className="mt-3 space-y-2">
-                          <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                          <div className="flex items-center gap-1.5 text-xs font-semibold text-claude-subtle dark:text-coal-400 uppercase tracking-wide">
                             <Car className="h-3.5 w-3.5" />
                             {msg.sources!.length} Vehicle{msg.sources!.length !== 1 ? 's' : ''} Found
                           </div>
@@ -361,7 +361,7 @@ export const ChatBoxComponent: React.FC<ChatBoxComponentProps> = ({
                       className={`block text-[10px] mt-1 ${
                         msg.sender === 'user'
                           ? 'text-blue-200'
-                          : 'text-gray-400 dark:text-gray-500'
+                          : 'text-claude-subtle dark:text-coal-500'
                       }`}
                     >
                       {formatTime(msg.timestamp)}
@@ -375,7 +375,7 @@ export const ChatBoxComponent: React.FC<ChatBoxComponentProps> = ({
         </div>
 
         {/* Input */}
-        <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shrink-0">
+        <div className="px-4 py-3 border-t border-claude-border dark:border-coal-700 bg-claude-surface dark:bg-coal-850 shrink-0">
           <div className="flex items-end gap-2">
             <textarea
               ref={inputRef}
@@ -388,13 +388,13 @@ export const ChatBoxComponent: React.FC<ChatBoxComponentProps> = ({
               onKeyDown={handleKeyDown}
               placeholder={isLoading ? 'Waiting for response...' : 'Ask about your inventory...'}
               disabled={isLoading}
-              className="flex-1 px-4 py-2.5 text-sm bg-gray-100 dark:bg-gray-700 border-none rounded-2xl text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 resize-none overflow-y-auto leading-snug"
+              className="flex-1 px-4 py-2.5 text-sm bg-claude-sand dark:bg-coal-700 border-none rounded-2xl text-claude-ink dark:text-coal-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 resize-none overflow-y-auto leading-snug"
               style={{ maxHeight: '120px' }}
             />
             <button
               onClick={handleSend}
               disabled={!input.trim() || isLoading}
-              className="w-10 h-10 flex items-center justify-center rounded-full bg-blue-600 hover:bg-blue-700 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-blue-600 hover:bg-blue-700 text-coal-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
               aria-label="Send message"
             >
               {isLoading ? (
@@ -413,19 +413,19 @@ export const ChatBoxComponent: React.FC<ChatBoxComponentProps> = ({
         onClick={() => setIsOpen(!isOpen)}
         className={`flex items-center justify-center w-16 h-16 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer ${
           isOpen
-            ? 'bg-gray-700 hover:bg-gray-800 rotate-0'
+            ? 'bg-coal-700 hover:bg-coal-850 rotate-0'
             : 'bg-blue-600 hover:bg-blue-700 rotate-0'
         }`}
         aria-label={isOpen ? 'Close chat' : 'Open chat'}
       >
         <div className="relative w-7 h-7">
           <MessageCircle
-            className={`absolute inset-0 h-7 w-7 text-white transition-all duration-300 ${
+            className={`absolute inset-0 h-7 w-7 text-coal-100 transition-all duration-300 ${
               isOpen ? 'opacity-0 rotate-90 scale-0' : 'opacity-100 rotate-0 scale-100'
             }`}
           />
           <X
-            className={`absolute inset-0 h-7 w-7 text-white transition-all duration-300 ${
+            className={`absolute inset-0 h-7 w-7 text-coal-100 transition-all duration-300 ${
               isOpen ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-90 scale-0'
             }`}
           />

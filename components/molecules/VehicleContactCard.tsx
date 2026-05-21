@@ -37,7 +37,7 @@ export const VehicleContactCard: React.FC<VehicleContactCardProps> = ({
   return (
     <div className="space-y-2">
       {title && (
-        <h4 className="text-md font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">{title}</h4>
+        <h4 className="text-md font-semibold text-claude-ink dark:text-coal-100 border-b dark:border-coal-700 pb-2">{title}</h4>
       )}
       <div className="flex flex-col gap-4">
         {/* Vehicle Information */}

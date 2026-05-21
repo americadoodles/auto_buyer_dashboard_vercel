@@ -178,8 +178,8 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Contact Management</h1>
-            <p className="text-gray-600 dark:text-gray-300 mt-1">
+            <h1 className="text-3xl font-bold text-claude-ink dark:text-coal-100">Contact Management</h1>
+            <p className="text-claude-muted dark:text-coal-300 mt-1">
               Manage your contacts and customer relationships ({totalContacts} total)
             </p>
           </div>
@@ -202,7 +202,7 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
         <Card className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-2">
                 Search
               </label>
               <Input
@@ -214,13 +214,13 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-2">
                 Type
               </label>
               <select
                 value={typeFilter}
                 onChange={(e) => setTypeFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-claude-divider dark:border-coal-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100"
               >
                 <option value="all">All Types</option>
                 <option value="customer">Customer</option>
@@ -230,13 +230,13 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-2">
                 Status
               </label>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-claude-divider dark:border-coal-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100"
               >
                 <option value="all">All Status</option>
                 <option value="active">Active</option>
@@ -244,13 +244,13 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-2">
                 Assigned To
               </label>
               <select
                 value={assignedFilter}
                 onChange={(e) => setAssignedFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-claude-divider dark:border-coal-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100"
               >
                 <option value="all">All Users</option>
                 <option value="me">Me</option>
@@ -271,8 +271,8 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
                 </div>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Contacts</p>
-                <p className="text-2xl font-semibold text-gray-900 dark:text-white">{totalContacts}</p>
+                <p className="text-sm font-medium text-claude-subtle dark:text-coal-400">Total Contacts</p>
+                <p className="text-2xl font-semibold text-claude-ink dark:text-coal-100">{totalContacts}</p>
               </div>
             </div>
           </Card>
@@ -284,8 +284,8 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
                 </div>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Customers</p>
-                <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+                <p className="text-sm font-medium text-claude-subtle dark:text-coal-400">Customers</p>
+                <p className="text-2xl font-semibold text-claude-ink dark:text-coal-100">
                   {contacts.filter(contact => contact.contact_type.name === 'Customer').length}
                 </p>
               </div>
@@ -299,8 +299,8 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
                 </div>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Prospects</p>
-                <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+                <p className="text-sm font-medium text-claude-subtle dark:text-coal-400">Prospects</p>
+                <p className="text-2xl font-semibold text-claude-ink dark:text-coal-100">
                   {contacts.filter(contact => contact.contact_type.name === 'Prospect').length}
                 </p>
               </div>
@@ -314,8 +314,8 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
                 </div>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Active</p>
-                <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+                <p className="text-sm font-medium text-claude-subtle dark:text-coal-400">Active</p>
+                <p className="text-2xl font-semibold text-claude-ink dark:text-coal-100">
                   {contacts.filter(contact => contact.is_active).length}
                 </p>
               </div>
@@ -340,41 +340,41 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
                   { key: 'actions', label: 'Actions', sortable: false }
                 ]}
               />
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              <tbody className="bg-claude-surface dark:bg-coal-850 divide-y divide-gray-200 dark:divide-gray-700">
                 {contacts.map((contact) => (
-                  <TableRow key={contact.id} onClick={() => handleRowClick(contact)} className={isBuyer ? "group hover:bg-gray-50 dark:hover:bg-gray-700/50" : "cursor-pointer group hover:bg-gray-50 dark:hover:bg-gray-700/50"}>
+                  <TableRow key={contact.id} onClick={() => handleRowClick(contact)} className={isBuyer ? "group hover:bg-claude-cream dark:hover:bg-coal-700/50" : "cursor-pointer group hover:bg-claude-cream dark:hover:bg-coal-700/50"}>
                     <td className="px-2 py-2 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
-                          <div className="h-10 w-10 rounded-full bg-gray-300 dark:bg-gray-600 group-hover:bg-blue-500 dark:group-hover:bg-blue-600 transition-colors duration-150 flex items-center justify-center">
-                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-white transition-colors duration-150">
+                          <div className="h-10 w-10 rounded-full bg-claude-divider dark:bg-coal-600 group-hover:bg-blue-500 dark:group-hover:bg-blue-600 transition-colors duration-150 flex items-center justify-center">
+                            <span className="text-sm font-medium text-claude-text dark:text-coal-300 group-hover:text-coal-100 transition-colors duration-150">
                               {contact.first_name?.[0] || ''}{contact.last_name?.[0] || ''}
                             </span>
                           </div>
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">
+                          <div className="text-sm font-medium text-claude-ink dark:text-coal-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">
                             {contact.first_name} {contact.last_name}
                           </div>
                           {contact.job_title && (
-                            <div className="text-sm text-gray-500 dark:text-gray-400">{contact.job_title}</div>
+                            <div className="text-sm text-claude-subtle dark:text-coal-400">{contact.job_title}</div>
                           )}
                         </div>
                       </div>
                     </td>
-                    <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    <td className="px-2 py-2 whitespace-nowrap text-sm text-claude-ink dark:text-coal-100">
                       {contact.company || '-'}
                     </td>
-                    <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    <td className="px-2 py-2 whitespace-nowrap text-sm text-claude-ink dark:text-coal-100">
                       {contact.email || '-'}
                     </td>
-                    <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    <td className="px-2 py-2 whitespace-nowrap text-sm text-claude-ink dark:text-coal-100">
                       {contact.phone || '-'}
                     </td>
-                    <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    <td className="px-2 py-2 whitespace-nowrap text-sm text-claude-ink dark:text-coal-100">
                       {contact.mobile || '-'}
                     </td>
-                    <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    <td className="px-2 py-2 whitespace-nowrap text-sm text-claude-ink dark:text-coal-100">
                       {contact.assigned_to?.username || 'Unassigned'}
                     </td>
                     <td className="px-2 py-2 whitespace-nowrap text-center">
@@ -388,7 +388,7 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
                         </Badge>
                       )}
                     </td>
-                    <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    <td className="px-2 py-2 whitespace-nowrap text-sm text-claude-subtle dark:text-coal-400">
                       {formatCalendarDate(contact.updated_at)}
                     </td>
                     <td className="px-2 py-2 whitespace-nowrap text-sm font-medium">

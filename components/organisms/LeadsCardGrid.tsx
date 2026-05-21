@@ -38,7 +38,7 @@ export const LeadsCardGrid: React.FC<LeadsCardGridProps> = ({
 }) => {
   if (leads.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+      <div className="text-center py-12 text-claude-subtle dark:text-coal-400">
         <p className="text-lg">No leads found</p>
         <p className="text-sm mt-2">Try adjusting your filters or search criteria</p>
       </div>

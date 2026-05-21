@@ -27,7 +27,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   message,
   confirmText = 'Yes',
   cancelText = 'No',
-  confirmButtonClassName = 'bg-red-600 dark:bg-red-500 hover:bg-red-700 dark:hover:bg-red-600 text-white',
+  confirmButtonClassName = 'bg-red-600 dark:bg-red-500 hover:bg-red-700 dark:hover:bg-red-600 text-coal-100',
   variant = 'danger',
   icon: IconComponent,
   loading = false,
@@ -66,7 +66,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
       onClick={() => !loading && onClose()}
     >
       <div 
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4" 
+        className="bg-claude-surface dark:bg-coal-850 rounded-lg shadow-xl max-w-md w-full mx-4" 
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-6">
@@ -74,9 +74,9 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             <div className={`w-10 h-10 ${iconBgColor} rounded-full flex items-center justify-center flex-shrink-0`}>
               <IconToRender className={`w-5 h-5 ${iconColor}`} />
             </div>
-            <h3 className="text-lg font-semibold text-black dark:text-white">{displayTitle}</h3>
+            <h3 className="text-lg font-semibold text-black dark:text-coal-100">{displayTitle}</h3>
           </div>
-          <p className="text-sm text-black dark:text-gray-300 mb-6">
+          <p className="text-sm text-black dark:text-coal-300 mb-6">
             {message}
           </p>
           <div className="flex justify-end space-x-3">

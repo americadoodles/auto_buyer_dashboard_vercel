@@ -287,10 +287,10 @@ export default function DealDetailPage() {
 
   if (loading || stagesLoading || categoriesLoading || prioritiesLoading || statusesLoading) {
     return (
-      <div className="h-full overflow-y-auto bg-gray-50 dark:bg-gray-900">
+      <div className="h-full overflow-y-auto bg-claude-cream dark:bg-coal-900">
         <div className="p-6 flex items-center justify-center min-h-screen">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
-          <span className="ml-3 text-gray-600 dark:text-gray-300">Loading deal details...</span>
+          <span className="ml-3 text-claude-muted dark:text-coal-300">Loading deal details...</span>
         </div>
       </div>
     );
@@ -298,11 +298,11 @@ export default function DealDetailPage() {
 
   if (!deal) {
     return (
-      <div className="h-full overflow-y-auto bg-gray-50 dark:bg-gray-900">
+      <div className="h-full overflow-y-auto bg-claude-cream dark:bg-coal-900">
         <div className="p-6">
           <div className="text-center py-12">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Deal Not Found</h2>
-            <p className="text-gray-600 dark:text-gray-300 mb-4">{error || 'The deal you are looking for does not exist.'}</p>
+            <h2 className="text-2xl font-bold text-claude-ink dark:text-coal-100 mb-2">Deal Not Found</h2>
+            <p className="text-claude-muted dark:text-coal-300 mb-4">{error || 'The deal you are looking for does not exist.'}</p>
             <Button onClick={() => router.push('/crm/deals')} variant="outline">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Deals
@@ -314,8 +314,8 @@ export default function DealDetailPage() {
   }
 
   return (
-    <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-900">
-      <div className="p-6 border-b border-gray-200 dark:border-gray-700 pb-6 flex-shrink-0">
+    <div className="h-full flex flex-col bg-claude-cream dark:bg-coal-900">
+      <div className="p-6 border-b border-claude-border dark:border-coal-700 pb-6 flex-shrink-0">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
@@ -329,10 +329,10 @@ export default function DealDetailPage() {
               <span>Back</span>
             </Button>
             <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg">
-              <Icon name="briefcase" className="h-7 w-7 text-white" />
+              <Icon name="briefcase" className="h-7 w-7 text-coal-100" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Deal: {deal.name}</h1>
+              <h1 className="text-3xl font-bold text-claude-ink dark:text-coal-100">Deal: {deal.name}</h1>
             </div>
           </div>
           <div className="flex items-center space-x-2">
@@ -350,7 +350,7 @@ export default function DealDetailPage() {
               </>
             ) : (
               <>
-                <span className="text-sm text-gray-700 dark:text-gray-300">Are you sure?</span>
+                <span className="text-sm text-claude-text dark:text-coal-300">Are you sure?</span>
                 <Button 
                   variant="outline" 
                   size="sm"
@@ -362,7 +362,7 @@ export default function DealDetailPage() {
                 <Button 
                   onClick={handleDelete}
                   disabled={deleting}
-                  className="bg-red-400 dark:bg-red-600 hover:bg-red-500 dark:hover:bg-red-700 text-white"
+                  className="bg-red-400 dark:bg-red-600 hover:bg-red-500 dark:hover:bg-red-700 text-coal-100"
                 >
                   {deleting ? 'Deleting...' : 'Confirm Delete'}
                 </Button>
@@ -404,25 +404,25 @@ export default function DealDetailPage() {
           </div>
 
           {/* Edit Fields Section */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-4">
-          <div className="flex items-center justify-between border-b dark:border-gray-700 pb-2">
-            <h4 className="text-md font-semibold text-gray-900 dark:text-white">Edit Fields</h4>
+        <div className="bg-claude-surface dark:bg-coal-850 rounded-lg shadow-sm border border-claude-border dark:border-coal-700 p-6 space-y-4">
+          <div className="flex items-center justify-between border-b dark:border-coal-700 pb-2">
+            <h4 className="text-md font-semibold text-claude-ink dark:text-coal-100">Edit Fields</h4>
             <div className="flex items-center">
               <input
                 id="deal-hidden-checkbox"
                 type="checkbox"
                 checked={isHidden}
                 onChange={(e) => setIsHidden(e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 dark:bg-gray-700"
+                className="h-4 w-4 rounded border-claude-divider dark:border-coal-600 text-blue-600 focus:ring-blue-500 dark:bg-coal-700"
               />
-              <label htmlFor="deal-hidden-checkbox" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+              <label htmlFor="deal-hidden-checkbox" className="ml-2 text-sm text-claude-text dark:text-coal-300">
                 Hide from deals list
               </label>
             </div>
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-1">
               Title <span className="text-red-500 dark:text-red-400">*</span>
             </label>
             <Input
@@ -434,9 +434,9 @@ export default function DealDetailPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+            <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-1">Description</label>
             <textarea
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="w-full border border-claude-divider dark:border-coal-600 rounded-md px-3 py-2 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100"
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -446,15 +446,15 @@ export default function DealDetailPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Owner (Assigned To)</label>
-              <div className="w-full border border-gray-300 dark:border-gray-600 rounded-md h-10 px-3 flex items-center bg-gray-50 dark:bg-gray-700">
-                <span className="text-sm text-gray-700 dark:text-gray-300">
+              <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-1">Owner (Assigned To)</label>
+              <div className="w-full border border-claude-divider dark:border-coal-600 rounded-md h-10 px-3 flex items-center bg-claude-cream dark:bg-coal-700">
+                <span className="text-sm text-claude-text dark:text-coal-300">
                   {deal.assigned_to?.username || 'Unassigned'}
                 </span>
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expected Close Date</label>
+              <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-1">Expected Close Date</label>
               <Input
                 type="date"
                 value={expectedCloseDate}
@@ -465,7 +465,7 @@ export default function DealDetailPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Probability (%)</label>
+              <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-1">Probability (%)</label>
               <Input
                 type="number"
                 value={probability}
@@ -481,9 +481,9 @@ export default function DealDetailPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status (Stage)</label>
+              <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-1">Status (Stage)</label>
               <select
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-md h-10 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full border border-claude-divider dark:border-coal-600 rounded-md h-10 px-3 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100"
                 value={dealStageId || ''}
                 onChange={(e) => setDealStageId(e.target.value ? Number(e.target.value) : undefined)}
               >
@@ -499,9 +499,9 @@ export default function DealDetailPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
+              <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-1">Category</label>
               <select
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-md h-10 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full border border-claude-divider dark:border-coal-600 rounded-md h-10 px-3 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100"
                 value={dealCategoryId !== undefined ? String(dealCategoryId) : ''}
                 onChange={(e) => setDealCategoryId(e.target.value ? Number(e.target.value) : undefined)}
               >
@@ -514,7 +514,7 @@ export default function DealDetailPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Deal Value ($)</label>
+              <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-1">Deal Value ($)</label>
               <Input
                 type="number"
                 value={dealValue}
@@ -528,18 +528,18 @@ export default function DealDetailPage() {
         </div>
         {/* Related Tasks Section */}
         {relatedTasks.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-4">
-            <h4 className="text-md font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Related Tasks</h4>
+          <div className="bg-claude-surface dark:bg-coal-850 rounded-lg shadow-sm border border-claude-border dark:border-coal-700 p-6 space-y-4">
+            <h4 className="text-md font-semibold text-claude-ink dark:text-coal-100 border-b dark:border-coal-700 pb-2">Related Tasks</h4>
             <div className="space-y-3">
               {relatedTasks.map((task) => {
                 const priority = task.priority && typeof task.priority === 'object' ? task.priority : undefined;
                 const status = task.status && typeof task.status === 'object' ? task.status : undefined;
                 return (
-                  <div key={task.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                  <div key={task.id} className="border border-claude-border dark:border-coal-700 rounded-lg p-4 hover:bg-claude-cream dark:hover:bg-coal-700/50 transition-colors">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center space-x-2 mb-2">
-                          <h5 className="font-medium text-gray-900 dark:text-white">{task.title}</h5>
+                          <h5 className="font-medium text-claude-ink dark:text-coal-100">{task.title}</h5>
                           {priority && (
                             <Badge color="orange">Priority: {priority.name}</Badge>
                           )}
@@ -548,9 +548,9 @@ export default function DealDetailPage() {
                           )}
                         </div>
                         {task.description && (
-                          <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">{task.description}</p>
+                          <p className="text-sm text-claude-muted dark:text-coal-300 mb-2">{task.description}</p>
                         )}
-                        <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
+                        <div className="flex items-center space-x-4 text-xs text-claude-subtle dark:text-coal-400">
                           {task.due_date && (
                             <span>Due: {formatDate(task.due_date)}</span>
                           )}
@@ -576,8 +576,8 @@ export default function DealDetailPage() {
         )}
         {/* Related Entities Section */}
         {(contactId || leadId) && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-2">
-            <h4 className="text-md font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Related Entities</h4>
+          <div className="bg-claude-surface dark:bg-coal-850 rounded-lg shadow-sm border border-claude-border dark:border-coal-700 p-6 space-y-2">
+            <h4 className="text-md font-semibold text-claude-ink dark:text-coal-100 border-b dark:border-coal-700 pb-2">Related Entities</h4>
             <div className="flex flex-wrap gap-2">
               {contactId && (
                 <Button
@@ -604,10 +604,10 @@ export default function DealDetailPage() {
         )}
 
         {/* Activity Log Timeline */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-2">
-          <h4 className="text-md font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Activity Log</h4>
+        <div className="bg-claude-surface dark:bg-coal-850 rounded-lg shadow-sm border border-claude-border dark:border-coal-700 p-6 space-y-2">
+          <h4 className="text-md font-semibold text-claude-ink dark:text-coal-100 border-b dark:border-coal-700 pb-2">Activity Log</h4>
           {activities.length === 0 ? (
-            <div className="text-center py-8 text-gray-400 dark:text-gray-500 text-sm">
+            <div className="text-center py-8 text-claude-subtle dark:text-coal-500 text-sm">
               No activities yet
             </div>
           ) : (
@@ -616,7 +616,7 @@ export default function DealDetailPage() {
                 <div key={activity.id} className="relative flex items-start space-x-3 pb-4">
                   {/* Timeline line */}
                   {index < activities.length - 1 && (
-                    <div className="absolute left-4 top-8 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-700"></div>
+                    <div className="absolute left-4 top-8 bottom-0 w-0.5 bg-claude-sand dark:bg-coal-700"></div>
                   )}
                   {/* Icon */}
                   <div className="relative flex-shrink-0 mt-1 z-10">
@@ -628,17 +628,17 @@ export default function DealDetailPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">
+                        <span className="text-sm font-medium text-claude-ink dark:text-coal-100">
                           {activity.subject || activity.activity_type}
                         </span>
                         <Badge color="blue">{activity.activity_type}</Badge>
                       </div>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                      <span className="text-xs text-claude-subtle dark:text-coal-400">
                         {formatDate(activity.activity_date || activity.created_at)}
                       </span>
                     </div>
                     {activity.description && (
-                      <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{activity.description}</p>
+                      <p className="text-sm text-claude-muted dark:text-coal-300 mt-1">{activity.description}</p>
                     )}
                   </div>
                 </div>
@@ -648,16 +648,16 @@ export default function DealDetailPage() {
         </div>
 
         {/* Deal Metadata */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-2">
-          <h4 className="text-md font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">Deal Information</h4>
+        <div className="bg-claude-surface dark:bg-coal-850 rounded-lg shadow-sm border border-claude-border dark:border-coal-700 p-6 space-y-2">
+          <h4 className="text-md font-semibold text-claude-ink dark:text-coal-100 border-b dark:border-coal-700 pb-2">Deal Information</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="font-medium text-gray-700 dark:text-gray-300">Created:</span>
-              <span className="ml-2 text-gray-600 dark:text-gray-400">{formatDate(deal.created_at)}</span>
+              <span className="font-medium text-claude-text dark:text-coal-300">Created:</span>
+              <span className="ml-2 text-claude-muted dark:text-coal-400">{formatDate(deal.created_at)}</span>
             </div>
             <div>
-              <span className="font-medium text-gray-700 dark:text-gray-300">Last Updated:</span>
-              <span className="ml-2 text-gray-600 dark:text-gray-400">{formatDate(deal.updated_at)}</span>
+              <span className="font-medium text-claude-text dark:text-coal-300">Last Updated:</span>
+              <span className="ml-2 text-claude-muted dark:text-coal-400">{formatDate(deal.updated_at)}</span>
             </div>
           </div>
         </div>
@@ -675,7 +675,7 @@ export default function DealDetailPage() {
 
         {/* Right Sidebar - Vehicle and Contact Information - Fixed Width, Full Height */}
         <div className="w-[420px] flex-shrink-0 flex flex-col">
-          <div className="bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 p-4 h-full overflow-y-auto space-y-4">
+          <div className="bg-claude-surface dark:bg-coal-850 shadow-sm border border-claude-border dark:border-coal-700 p-4 h-full overflow-y-auto space-y-4">
             {(() => {
               const displayListing = listing || (lead?.listing as Listing | undefined) || null;
               const displayContact = lead?.contact;
@@ -683,7 +683,7 @@ export default function DealDetailPage() {
               const hasContact = !!displayContact;
               if (!hasListing && !hasContact) {
                 return (
-                  <div className="text-sm text-gray-500 dark:text-gray-400 italic text-center py-8">
+                  <div className="text-sm text-claude-subtle dark:text-coal-400 italic text-center py-8">
                     No linked lead, listing, or contact information.
                   </div>
                 );
@@ -692,7 +692,7 @@ export default function DealDetailPage() {
                 <>
                   {hasListing && (
                     <>
-                      <h4 className="text-md font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">
+                      <h4 className="text-md font-semibold text-claude-ink dark:text-coal-100 border-b dark:border-coal-700 pb-2">
                         Vehicle Information
                       </h4>
                       {displayListing!.images && displayListing!.images.length > 0 && (
@@ -717,7 +717,7 @@ export default function DealDetailPage() {
                   )}
                   {hasContact && (
                     <div className="space-y-2">
-                      <h4 className="text-md font-semibold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-2">
+                      <h4 className="text-md font-semibold text-claude-ink dark:text-coal-100 border-b dark:border-coal-700 pb-2">
                         Contact Information
                       </h4>
                       <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md p-3">

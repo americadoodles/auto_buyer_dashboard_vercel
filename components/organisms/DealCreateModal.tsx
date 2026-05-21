@@ -212,10 +212,10 @@ export const DealCreateModal: React.FC<DealCreateModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Create New Deal{stageName ? ` - ${stageName}` : ''}</h3>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+      <div className="bg-claude-surface dark:bg-coal-850 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-claude-border dark:border-coal-700 sticky top-0 bg-claude-surface dark:bg-coal-850 z-10">
+          <h3 className="text-lg font-semibold text-claude-ink dark:text-coal-100">Create New Deal{stageName ? ` - ${stageName}` : ''}</h3>
+          <button onClick={onClose} className="text-claude-subtle hover:text-claude-text dark:text-coal-400 dark:hover:text-coal-200">
             <Icon name="x" className="w-5 h-5" />
           </button>
         </div>
@@ -226,11 +226,11 @@ export const DealCreateModal: React.FC<DealCreateModalProps> = ({
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-1">
               Select Lead <span className="text-red-500">*</span>
             </label>
             <select
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-md h-10 px-3 mb-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              className="w-full border border-claude-divider dark:border-coal-600 rounded-md h-10 px-3 mb-1 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100"
               value={selectedLeadId || ''}
               onChange={(e) => setSelectedLeadId(e.target.value || undefined)}
               required
@@ -247,7 +247,7 @@ export const DealCreateModal: React.FC<DealCreateModalProps> = ({
                   </option>
                 ))}
             </select>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+            <p className="text-xs text-claude-subtle dark:text-coal-400 mb-2">
               A lead with a vehicle is required so the deal carries listing and contact information.
             </p>
             {selectedLead && (
@@ -302,7 +302,7 @@ export const DealCreateModal: React.FC<DealCreateModalProps> = ({
 
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label className="block text-sm font-medium text-claude-text dark:text-coal-300">
                 Deal Name <span className="text-red-500">*</span>
               </label>
               <Button
@@ -341,9 +341,9 @@ export const DealCreateModal: React.FC<DealCreateModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+            <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-1">Description</label>
             <textarea
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              className="w-full border border-claude-divider dark:border-coal-600 rounded-md px-3 py-2 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100"
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -353,11 +353,11 @@ export const DealCreateModal: React.FC<DealCreateModalProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-1">
                 Stage <span className="text-red-500">*</span>
               </label>
               <select
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-md h-10 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                className="w-full border border-claude-divider dark:border-coal-600 rounded-md h-10 px-3 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100"
                 value={selectedStageId || ''}
                 onChange={(e) => setSelectedStageId(e.target.value ? Number(e.target.value) : undefined)}
                 required
@@ -370,9 +370,9 @@ export const DealCreateModal: React.FC<DealCreateModalProps> = ({
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
+              <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-1">Category</label>
               <select
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-md h-10 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                className="w-full border border-claude-divider dark:border-coal-600 rounded-md h-10 px-3 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100"
                 value={dealCategoryId || ''}
                 onChange={(e) => setDealCategoryId(e.target.value ? Number(e.target.value) : undefined)}
               >
@@ -387,7 +387,7 @@ export const DealCreateModal: React.FC<DealCreateModalProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Deal Value ($)</label>
+              <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-1">Deal Value ($)</label>
               <Input
                 type="number"
                 value={dealValue}
@@ -398,7 +398,7 @@ export const DealCreateModal: React.FC<DealCreateModalProps> = ({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Probability (%)</label>
+              <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-1">Probability (%)</label>
               <Input
                 type="number"
                 value={probability}
@@ -416,7 +416,7 @@ export const DealCreateModal: React.FC<DealCreateModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expected Close Date</label>
+            <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-1">Expected Close Date</label>
             <Input
               type="date"
               value={expectedCloseDate || defaultDateString}
@@ -425,9 +425,9 @@ export const DealCreateModal: React.FC<DealCreateModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+            <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-1">Notes</label>
             <textarea
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              className="w-full border border-claude-divider dark:border-coal-600 rounded-md px-3 py-2 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100"
               rows={3}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -437,7 +437,7 @@ export const DealCreateModal: React.FC<DealCreateModalProps> = ({
 
         </div>
 
-        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-2 sticky bottom-0 bg-white dark:bg-gray-800">
+        <div className="px-6 py-4 border-t border-claude-border dark:border-coal-700 flex justify-end space-x-2 sticky bottom-0 bg-claude-surface dark:bg-coal-850">
           <Button variant="outline" onClick={onClose} disabled={loading}>
             Cancel
           </Button>

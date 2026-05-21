@@ -9,9 +9,9 @@ export interface FormButtonProps extends React.ButtonHTMLAttributes<HTMLButtonEl
 }
 
 const variantClasses = {
-  primary: 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 text-white',
-  secondary: 'bg-gray-600 hover:bg-gray-700 focus:ring-gray-500 text-white',
-  danger: 'bg-red-600 hover:bg-red-700 focus:ring-red-500 text-white'
+  primary: 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 text-coal-100',
+  secondary: 'bg-coal-600 hover:bg-coal-700 focus:ring-gray-500 text-coal-100',
+  danger: 'bg-red-600 hover:bg-red-700 focus:ring-red-500 text-coal-100'
 };
 
 const sizeClasses = {

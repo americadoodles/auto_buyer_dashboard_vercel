@@ -199,13 +199,6 @@ def delete_listing(listing_id: int, deleted_by: str) -> bool:
                     """, (lead_ids_to_delete,))
                     logging.info(f"Deleted lead activities for {len(lead_ids_to_delete)} leads")
                 
-                # Delete lead_vehicles for leads being deleted
-                if lead_ids_to_delete:
-                    cur.execute("""
-                        DELETE FROM lead_vehicles WHERE lead_id = ANY(%s)
-                    """, (lead_ids_to_delete,))
-                    logging.info(f"Deleted lead_vehicles for {len(lead_ids_to_delete)} leads")
-                
                 # Update tasks to unlink from leads being deleted
                 if lead_ids_to_delete:
                     cur.execute("""
@@ -311,22 +304,22 @@ def get_listing_by_id(listing_id: int) -> Optional[ListingOut]:
                         l.mpg,
                         l.overall_rating,
                         l.paid_status,
-                        l.phone_number,
+                        c.phone AS phone_number,
                         l.seller_description,
-                        l.seller_joined_date,
-                        l.seller_name,
+                        c.fb_joined_date AS seller_joined_date,
+                        NULLIF(TRIM(COALESCE(c.first_name, '') || ' ' || COALESCE(c.last_name, '')), '') AS seller_name,
                         l.created_at,
-                        COALESCE(v.year, 0) AS year,
-                        COALESCE(v.make, '') AS make,
-                        COALESCE(v.model, '') AS model,
-                        v.trim,
+                        COALESCE(l.year, 0) AS year,
+                        COALESCE(l.make, '') AS make,
+                        COALESCE(l.model, '') AS model,
+                        l.trim,
                         u.username AS buyer_username,
                         COALESCE(s.score, 0) AS score,
                         s.buy_max,
                         COALESCE(s.reason_codes, ARRAY[]::text[]) AS reason_codes
                     FROM listings l
-                    LEFT JOIN vehicles v ON v.vehicle_key = l.vehicle_key
                     LEFT JOIN users u ON u.id::text = l.buyer_id
+                    LEFT JOIN contacts c ON c.id = l.contact_id
                     LEFT JOIN (
                         SELECT DISTINCT ON (vin) vin, score, buy_max, reason_codes
                         FROM scores

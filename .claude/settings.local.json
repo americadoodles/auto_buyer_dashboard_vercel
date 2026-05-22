@@ -1,7 +1,19 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx tsc *)"
+      "PowerShell(py *)",
+      "PowerShell(winget install *)",
+      "PowerShell(.\\\\.venv\\\\Scripts\\\\python.exe -m pip install -r requirements.txt)",
+      "Bash(find C:\\\\work\\\\OI\\\\auto_buyer_dashboard_vercel *)",
+      "Bash(xargs grep -l \"ListingIn\\\\|phoneNumber.*price\\\\|vin.*source\")",
+      "Bash(.\\\\.venv\\\\Scripts\\\\python.exe *)",
+      "PowerShell(.\\\\.venv\\\\Scripts\\\\python.exe -c \"import ast, pathlib; ast.parse\\(pathlib.Path\\('api/repositories/repositories.py'\\).read_text\\(encoding='utf-8'\\)\\); print\\('OK'\\)\")",
+      "PowerShell(.\\\\.venv\\\\Scripts\\\\python.exe -c \"import ast, pathlib; ast.parse\\(pathlib.Path\\('api/repositories/repositories.py'\\).read_text\\(encoding='utf-8'\\)\\); ast.parse\\(pathlib.Path\\('api/services/fb_marketplace.py'\\).read_text\\(encoding='utf-8'\\)\\); ast.parse\\(pathlib.Path\\('api/schemas/listing.py'\\).read_text\\(encoding='utf-8'\\)\\); print\\('OK'\\)\")",
+      "PowerShell(.\\\\.venv\\\\Scripts\\\\python.exe -c \"import ast, pathlib; [ast.parse\\(pathlib.Path\\(p\\).read_text\\(encoding='utf-8'\\)\\) for p in ['api/repositories/repositories.py', 'api/services/fb_marketplace.py', 'api/schemas/listing.py', 'api/core/db.py']]; print\\('OK'\\)\")",
+      "PowerShell(.\\\\.venv\\\\Scripts\\\\python.exe -c \"import ast, pathlib; [ast.parse\\(pathlib.Path\\(p\\).read_text\\(encoding='utf-8'\\)\\) for p in ['api/repositories/repositories.py', 'api/routes/routes.py']]; print\\('OK'\\)\")",
+      "PowerShell(node -c \"C:\\\\work\\\\OI\\\\OI_facebook_monitor\\\\extension-v2\\\\popup.js\" 2>&1; node -c \"C:\\\\work\\\\OI\\\\OI_facebook_monitor\\\\extension-v2\\\\background.js\" 2>&1; node -c \"C:\\\\work\\\\OI\\\\OI_facebook_monitor\\\\extension-v2\\\\content_bridge.js\" 2>&1; \"ALL OK\")",
+      "PowerShell(.\\\\.venv\\\\Scripts\\\\python.exe -c \"from api.services.fb_marketplace import _as_spec_number; print\\(_as_spec_number\\({'value':'5 Star Rating'}\\), _as_spec_number\\({'value':'27.00'}\\), _as_spec_number\\(None\\), _as_spec_number\\(23\\), _as_spec_number\\({'value': None}\\), _as_spec_number\\('5.5 stars'\\), _as_spec_number\\({'type':'X','value':'no number'}\\)\\)\")",
+      "PowerShell(.\\\\.venv\\\\Scripts\\\\python.exe -c \"import ast, pathlib; [ast.parse\\(pathlib.Path\\(p\\).read_text\\(encoding='utf-8'\\)\\) for p in ['api/services/ai_service.py', 'api/repositories/repositories.py', 'api/core/config.py']]; print\\('OK'\\)\")"
     ]
   }
 }

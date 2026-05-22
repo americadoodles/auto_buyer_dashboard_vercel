@@ -1,11 +1,19 @@
 """
-Script to refactor vehicle data in the vehicles table.
-Fetches all vehicles, creates a string with year, make, model,
-and uses AI to extract corrected year, make, model, and trim.
-Optimized with parallel processing and batch updates.
+[Retired] Script to refactor vehicle data in the vehicles table.
+
+The vehicles table was merged into listings in migration 019, so this script
+no longer has a target to read from. Left in tree for historical reference;
+running it is now a no-op that exits immediately.
 """
 import logging
 import sys
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.warning(
+    "refactor_vehicles.py is retired: the vehicles table was removed in migration 019. "
+    "Rework against the listings table if you need this cleanup pass."
+)
+sys.exit(0)
 import time
 from typing import Optional, Dict, List, Tuple
 from concurrent.futures import ThreadPoolExecutor, as_completed

@@ -1,3 +1,4 @@
+import logging
 from fastapi import APIRouter, HTTPException, Depends, Query
 from typing import List, Optional
 from datetime import datetime
@@ -11,6 +12,7 @@ from ..repositories.chart_repository import get_sourcing_activities_per_agent, g
 from ..core.auth import get_current_user
 from ..schemas.user import UserOut
 from ..services.services import notify as do_notify
+from ..services.fb_marketplace import fb_payload_to_listing_in
 from .activity_heatmap import activity_heatmap_router
 
 # Create routers for each endpoint group
@@ -26,6 +28,41 @@ chart_router = APIRouter(prefix="/chart", tags=["chart"])
 @ingest_router.post("/", response_model=List[ListingOut])  # /api/ingest/
 def ingest(listings: List[ListingIn], current_user: UserOut = Depends(get_current_user)):
     return ingest_listings(listings, buyer_id=str(current_user.id))
+
+
+@ingest_router.post("/facebook", response_model=List[ListingOut])  # /api/ingest/facebook
+def ingest_facebook(payloads: List[dict], current_user: UserOut = Depends(get_current_user)):
+    """Accept raw FB Marketplace payloads and route them through the standard pipeline."""
+    print(f"\n>>> [ingest/facebook] received {len(payloads)} FB payload(s) "
+          f"from buyer_id={current_user.id}", flush=True)
+
+    listings: List[ListingIn] = []
+    for i, raw in enumerate(payloads, start=1):
+        mapped = fb_payload_to_listing_in(raw)
+        print(
+            f">>> [ingest/facebook] [{i}/{len(payloads)}] "
+            f"fb_listing_id={mapped.get('fbListingId')} | "
+            f"{mapped.get('year') or '?'} {mapped.get('make') or '?'} "
+            f"{mapped.get('model') or '?'} {mapped.get('trim') or ''} | "
+            f"price={mapped.get('price')} miles={mapped.get('miles')} | "
+            f"seller={mapped.get('sellerName') or '(none)'} "
+            f"phone={mapped.get('phoneNumber') or '(none)'} | "
+            f"location={mapped.get('location') or '(none)'} | "
+            f"source={mapped.get('source') or '(none)'}",
+            flush=True,
+        )
+        try:
+            listings.append(ListingIn(**mapped))
+        except Exception as e:
+            print(f">>> [ingest/facebook] [{i}/{len(payloads)}] VALIDATION FAILED: {e}", flush=True)
+            raise
+
+    print(f">>> [ingest/facebook] calling ingest_listings with {len(listings)} "
+          f"validated ListingIn objects…", flush=True)
+    result = ingest_listings(listings, buyer_id=str(current_user.id))
+    print(f">>> [ingest/facebook] done — ingest_listings returned {len(result)} "
+          f"ListingOut(s) (out of {len(payloads)} received)\n", flush=True)
+    return result
 
 # Listings routes
 @listings_router.get("", include_in_schema=False, response_model=List[ListingOut])  # /api/listings

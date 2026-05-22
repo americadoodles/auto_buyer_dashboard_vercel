@@ -48,6 +48,9 @@ class Settings(BaseSettings):
 
     # OpenAI settings
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
+    # Hard switch to bypass the AI service regardless of key presence.
+    # Set AI_ENABLED=false in .env to fall back to rule-based scoring everywhere.
+    AI_ENABLED: bool = os.getenv("AI_ENABLED", "true").strip().lower() not in ("0", "false", "no", "off", "")
 
     # Google Cloud Storage settings
     GCP_BUCKET_NAME: str = os.getenv("GCP_BUCKET_NAME", "")

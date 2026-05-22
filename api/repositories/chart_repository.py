@@ -61,13 +61,12 @@ def get_car_categories_performance() -> List[dict]:
         with conn.cursor() as cur:
             # Group by make (brand) only
             cur.execute("""
-                SELECT 
-                    v.make as name,
+                SELECT
+                    l.make as name,
                     COUNT(*) as value
                 FROM listings l
-                JOIN vehicles v ON v.vehicle_key = l.vehicle_key
-                WHERE v.make IS NOT NULL AND v.make != ''
-                GROUP BY v.make
+                WHERE l.make IS NOT NULL AND l.make != ''
+                GROUP BY l.make
                 ORDER BY value DESC
                 LIMIT 20
             """)

@@ -61,10 +61,13 @@ def images_equal(incoming, existing):
 # ============================================================================
 
 def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> List[ListingOut]:
+    print(f">>> [ingest_listings] entry: {len(rows)} row(s), buyer_id={buyer_id}, "
+          f"DB_ENABLED={DB_ENABLED}", flush=True)
     out: list[ListingOut] = []
     if DB_ENABLED:
         with get_db_connection() as conn:
             if not conn:
+                print(f">>> [ingest_listings] NO DB CONNECTION — returning empty", flush=True)
                 return out
             
             cur = conn.cursor()
@@ -119,29 +122,22 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                     if record[0]:
                         existing_sources.add(record[0].lower().strip())
             
-            # Filter rows: skip if VIN exists, or if source exists (when VIN doesn't exist)
-            rows_to_create = []
-            for row_data in rows_with_data:
-                item = row_data["item"]
-                norm = row_data["norm"]
-                vin = row_data["vin"]
-                source = row_data["source"]
-                
-                # First check: if VIN exists, skip
-                if vin and vin in existing_vins:
-                    logging.info(f"Skipping duplicate VIN: {vin}")
-                    continue
-                
-                # Second check: if no VIN, check source URL
-                # Only check source if VIN is None or empty (not if VIN just wasn't found in DB)
-                if not vin and source and source in existing_sources:
-                    logging.info(f"Skipping duplicate source URL (no VIN): {source}")
-                    continue
-                
-                # No duplicate found, add to create list
-                rows_to_create.append(item)
-            
-            logging.info(f"After duplicate check: {len(rows_to_create)} new listings to create out of {len(rows)} incoming")
+            # Pass every incoming row through to the per-row stage; the loop
+            # below decides INSERT (new) vs UPDATE (existing) per row using
+            # the same dedup keys (fb_listing_id > vin > source).
+            rows_to_create = [row_data["item"] for row_data in rows_with_data]
+            existing_vin_count = sum(
+                1 for rd in rows_with_data if rd["vin"] and rd["vin"] in existing_vins
+            )
+            existing_source_count = sum(
+                1 for rd in rows_with_data
+                if not rd["vin"] and rd["source"] and rd["source"] in existing_sources
+            )
+            logging.info(
+                f"Pre-batch dedup peek: {existing_vin_count} VIN matches, "
+                f"{existing_source_count} source matches "
+                f"(out of {len(rows)} incoming — duplicates will be UPDATED, not skipped)"
+            )
             
             # Only process create for rows_to_create from here
             rows = rows_to_create
@@ -162,24 +158,25 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
 
                         vehicle_key = make_vehicle_key(norm)
                         
-                        # Extract vehicle info from title using AI if title is present
+                        # Source-provided values (e.g. FB's vehicle_make_display_name) win
+                        # over AI extraction. AI fills any gaps.
                         title = norm.get("title")
-                        year = None
-                        make = None
-                        model = None
-                        trim = None
+                        year = norm.get("year")
+                        make = norm.get("make")
+                        model = norm.get("model")
+                        trim = norm.get("trim")
                         extracted_bodystyle = None
                         extracted_info = {}
-                        
-                        if title and title.strip():
+
+                        if title and title.strip() and not (year and make and model and trim):
                             try:
                                 extracted_info = extract_vehicle_info_from_title(title.strip())
-                                year = extracted_info.get("year") or year
-                                make = extracted_info.get("make") or make
-                                model = extracted_info.get("model") or model
-                                trim = extracted_info.get("trim") or trim
+                                year = year or extracted_info.get("year")
+                                make = make or extracted_info.get("make")
+                                model = model or extracted_info.get("model")
+                                trim = trim or extracted_info.get("trim")
                                 extracted_bodystyle = extracted_info.get("bodystyle")
-                                logging.info(f"Extracted vehicle info from title: year={year}, make={make}, model={model}, trim={trim}, bodystyle={extracted_bodystyle}")
+                                logging.info(f"Vehicle info: year={year}, make={make}, model={model}, trim={trim}, bodystyle={extracted_bodystyle}")
                             except Exception as e:
                                 logging.error(f"Failed to extract vehicle info from title '{title}': {str(e)}")
                                 # Continue without extracted info - will need to handle missing fields
@@ -196,15 +193,10 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                         # Handle external API data: map status, reasonCodes, buyMax to Decision object
                         decision = create_decision_from_data(norm)
 
-                        # vehicles - only insert/update if make or model is present
-                        if should_insert_vehicle:
-                            cur.execute("""
-                                 insert into vehicles (vehicle_key, vin, year, make, model, trim)
-                                 values (%s,%s,%s,%s,%s,%s)
-                                 on conflict (vehicle_key) do update set vin=excluded.vin, year=excluded.year, make=excluded.make, model=excluded.model, trim=excluded.trim
-                             """, (vehicle_key, vin, year, make, model, trim))
-                        else:
-                            logging.info(f"Skipping vehicle insert/update for vehicle_key={vehicle_key}: make and model are both empty/None")
+                        # year/make/model/trim now live on listings directly (migration 019);
+                        # no separate vehicles row is created.
+                        if not should_insert_vehicle:
+                            logging.info(f"vehicle_key={vehicle_key}: make and model are both empty/None")
                         
                         # Note: Decision data is used for ListingOut response only
                         # Score records are now always created by AI scoring (see below)
@@ -256,7 +248,60 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                         #         logging.warning(f"Failed to extract phone number from seller description: {str(e)}")
                         seller_joined_date = _norm_str(norm.get("sellerJoinedDate"))
                         seller_name = _norm_str(norm.get("sellerName"))
+                        fb_user_id = _norm_str(norm.get("fbUserId"))
                         lpn = _norm_str(norm.get("lpn"))
+
+                        # FB Marketplace fields (migration 023)
+                        fb_listing_id          = _norm_str(norm.get("fbListingId"))
+                        title_value            = _norm_str(norm.get("title"))
+                        marketplace_category_id = _norm_str(norm.get("marketplaceCategoryId"))
+                        currency               = _norm_str(norm.get("currency"))
+                        fb_creation_epoch      = norm.get("fbCreationTime")
+                        fb_creation_time       = (
+                            datetime.datetime.fromtimestamp(fb_creation_epoch, tz=timezone.utc)
+                            if isinstance(fb_creation_epoch, (int, float)) and fb_creation_epoch > 0
+                            else None
+                        )
+                        city                   = _norm_str(norm.get("city"))
+                        state                  = _norm_str(norm.get("state"))
+                        postal_code            = _norm_str(norm.get("postalCode"))
+                        latitude               = norm.get("latitude")
+                        longitude              = norm.get("longitude")
+                        is_live                = norm.get("isLive")
+                        is_sold                = norm.get("isSold")
+                        is_pending             = norm.get("isPending")
+                        seller_type            = _norm_str(norm.get("sellerType"))
+                        fb_seller_rating       = norm.get("fbSellerRating")
+                        fb_seller_rating_count = norm.get("fbSellerRatingCount")
+                        fb_verified            = norm.get("fbVerified")
+
+                        # FB Marketplace fields (migration 024)
+                        custom_title           = _norm_str(norm.get("customTitle"))
+                        dealership_name        = _norm_str(norm.get("dealershipName"))
+                        delivery_types         = norm.get("deliveryTypes") or None
+                        listing_inventory_type = _norm_str(norm.get("listingInventoryType"))
+                        country                = _norm_str(norm.get("country"))
+                        city_display_name      = _norm_str(norm.get("cityDisplayName"))
+                        fb_city_id             = _norm_str(norm.get("fbCityId"))
+                        is_on_marketplace      = norm.get("isOnMarketplace")
+                        is_draft               = norm.get("isDraft")
+                        fb_is_hidden           = norm.get("fbIsHidden")
+                        vehicle_condition_val  = _norm_str(norm.get("vehicleCondition"))
+                        vehicle_title_status   = _norm_str(norm.get("vehicleTitleStatus"))
+                        vehicle_features       = norm.get("vehicleFeatures") or None
+                        vehicle_number_of_owners = norm.get("vehicleNumberOfOwners")
+                        vehicle_is_paid_off    = norm.get("vehicleIsPaidOff")
+                        odometer_unit          = _norm_str(norm.get("odometerUnit"))
+                        horse_power            = norm.get("horsePower")
+                        gas_mileage_city       = norm.get("gasMileageCity")
+                        gas_mileage_highway    = norm.get("gasMileageHighway")
+                        gas_mileage_combined   = norm.get("gasMileageCombined")
+                        co2_emissions          = norm.get("co2Emissions")
+                        safety_rating_overall  = norm.get("safetyRatingOverall")
+                        safety_rating_front    = norm.get("safetyRatingFront")
+                        safety_rating_side     = norm.get("safetyRatingSide")
+                        safety_rating_rollover = norm.get("safetyRatingRollover")
+                        safety_rating_side_barrier = norm.get("safetyRatingSideBarrier")
 
                         # Use buyer_id from authenticated context when provided; fallback to incoming buyer_id
                         buyer_from_id = buyer_id or norm.get("buyer_id") or None
@@ -291,75 +336,292 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                         else:
                             gcp_image_urls = []
 
-                        # Final duplicate check right before insertion (handles race conditions)
-                        # Check if VIN already exists
-                        if vin:
+                        # Match against an existing listing using the same dedup
+                        # priority as before: fb_listing_id > vin > source.
+                        existing_listing_id = None
+                        match_reason = None
+                        if fb_listing_id:
+                            cur.execute(
+                                "SELECT id FROM listings WHERE fb_listing_id = %s LIMIT 1",
+                                (fb_listing_id,),
+                            )
+                            row_match = cur.fetchone()
+                            if row_match:
+                                existing_listing_id = row_match[0]
+                                match_reason = f"fb_listing_id={fb_listing_id}"
+                        if existing_listing_id is None and vin:
                             cur.execute(
                                 "SELECT id FROM listings WHERE UPPER(TRIM(vin)) = %s LIMIT 1",
-                                (vin,)
+                                (vin,),
                             )
-                            existing = cur.fetchone()
-                            if existing:
-                                logging.info(f"Skipping duplicate VIN (final check): {vin} - listing ID: {existing[0]}")
-                                continue
-                        
-                        # If no VIN, check source URL
-                        if not vin:
-                            source_normalized_for_check = norm.get("source", "").strip().lower() if norm.get("source") else None
-                            if source_normalized_for_check and source_normalized_for_check != "unknown":
+                            row_match = cur.fetchone()
+                            if row_match:
+                                existing_listing_id = row_match[0]
+                                match_reason = f"vin={vin}"
+                        if existing_listing_id is None and not vin:
+                            src_norm = norm.get("source", "").strip().lower() if norm.get("source") else None
+                            if src_norm and src_norm != "unknown":
                                 cur.execute(
                                     "SELECT id FROM listings WHERE LOWER(TRIM(source)) = %s AND (vin IS NULL OR vin = '') LIMIT 1",
-                                    (source_normalized_for_check,)
+                                    (src_norm,),
                                 )
-                                existing = cur.fetchone()
-                                if existing:
-                                    logging.info(f"Skipping duplicate source URL (final check): {source_normalized_for_check} - listing ID: {existing[0]}")
-                                    continue
-                        
+                                row_match = cur.fetchone()
+                                if row_match:
+                                    existing_listing_id = row_match[0]
+                                    match_reason = f"source={src_norm}"
+
+                        print(f">>> [ingest_listings] row: fb_listing_id={fb_listing_id}, "
+                              f"vin={vin}, source={(norm.get('source') or '')[:80]} → "
+                              f"existing_listing_id={existing_listing_id} "
+                              f"(match: {match_reason})", flush=True)
+
+                        if existing_listing_id is not None:
+                            # UPDATE: refresh fields on the existing row.
+                            # Identity columns (vin, fb_listing_id, vehicle_key,
+                            # source, buyer_id, created_at) are preserved.
+                            # Most data columns use COALESCE so a null in the
+                            # latest scrape doesn't wipe out a previously
+                            # captured value. Lifecycle flags (is_live, is_sold,
+                            # …) are refreshed unconditionally — latest wins.
+                            # Images are overwritten only when the new scrape
+                            # produced at least one GCS URL.
+                            try:
+                                cur.execute("""
+                                    UPDATE listings SET
+                                        price = %s,
+                                        miles = %s,
+                                        dom = %s,
+                                        payload = %s,
+                                        images = CASE
+                                            WHEN COALESCE(array_length(%s::text[], 1), 0) > 0 THEN %s
+                                            ELSE images
+                                        END,
+                                        -- Vehicle identity
+                                        year                       = COALESCE(%s, year),
+                                        make                       = COALESCE(%s, make),
+                                        model                      = COALESCE(%s, model),
+                                        trim                       = COALESCE(%s, trim),
+                                        title                      = COALESCE(%s, title),
+                                        custom_title               = COALESCE(%s, custom_title),
+                                        marketplace_category_id    = COALESCE(%s, marketplace_category_id),
+                                        currency                   = COALESCE(%s, currency),
+                                        fb_creation_time           = COALESCE(%s, fb_creation_time),
+                                        -- Vehicle attributes
+                                        interior_color             = COALESCE(%s, interior_color),
+                                        exterior_color             = COALESCE(%s, exterior_color),
+                                        transmission               = COALESCE(%s, transmission),
+                                        fuel_type                  = COALESCE(%s, fuel_type),
+                                        drivetrain                 = COALESCE(%s, drivetrain),
+                                        engine_size                = COALESCE(%s, engine_size),
+                                        body_style                 = COALESCE(%s, body_style),
+                                        engine                     = COALESCE(%s, engine),
+                                        mpg                        = COALESCE(%s, mpg),
+                                        clean_title                = COALESCE(%s, clean_title),
+                                        condition                  = COALESCE(%s, condition),
+                                        detailed_ratings           = COALESCE(%s, detailed_ratings),
+                                        overall_rating             = COALESCE(%s, overall_rating),
+                                        paid_status                = COALESCE(%s, paid_status),
+                                        seller_description         = COALESCE(%s, seller_description),
+                                        vehicle_condition          = COALESCE(%s, vehicle_condition),
+                                        vehicle_title_status       = COALESCE(%s, vehicle_title_status),
+                                        vehicle_features           = COALESCE(%s, vehicle_features),
+                                        vehicle_number_of_owners   = COALESCE(%s, vehicle_number_of_owners),
+                                        vehicle_is_paid_off        = COALESCE(%s, vehicle_is_paid_off),
+                                        odometer_unit              = COALESCE(%s, odometer_unit),
+                                        -- Vehicle specifications
+                                        horse_power                = COALESCE(%s, horse_power),
+                                        gas_mileage_city           = COALESCE(%s, gas_mileage_city),
+                                        gas_mileage_highway        = COALESCE(%s, gas_mileage_highway),
+                                        gas_mileage_combined       = COALESCE(%s, gas_mileage_combined),
+                                        co2_emissions              = COALESCE(%s, co2_emissions),
+                                        safety_rating_overall      = COALESCE(%s, safety_rating_overall),
+                                        safety_rating_front        = COALESCE(%s, safety_rating_front),
+                                        safety_rating_side         = COALESCE(%s, safety_rating_side),
+                                        safety_rating_rollover     = COALESCE(%s, safety_rating_rollover),
+                                        safety_rating_side_barrier = COALESCE(%s, safety_rating_side_barrier),
+                                        -- Geo
+                                        location                   = COALESCE(%s, location),
+                                        city                       = COALESCE(%s, city),
+                                        state                      = COALESCE(%s, state),
+                                        postal_code                = COALESCE(%s, postal_code),
+                                        country                    = COALESCE(%s, country),
+                                        city_display_name          = COALESCE(%s, city_display_name),
+                                        fb_city_id                 = COALESCE(%s, fb_city_id),
+                                        latitude                   = COALESCE(%s, latitude),
+                                        longitude                  = COALESCE(%s, longitude),
+                                        -- Seller classification
+                                        seller_type                = COALESCE(%s, seller_type),
+                                        dealership_name            = COALESCE(%s, dealership_name),
+                                        -- Lifecycle / commerce (latest scrape wins, no COALESCE)
+                                        is_live                    = %s,
+                                        is_sold                    = %s,
+                                        is_pending                 = %s,
+                                        is_on_marketplace          = %s,
+                                        is_draft                   = %s,
+                                        fb_is_hidden               = %s,
+                                        delivery_types             = COALESCE(%s, delivery_types),
+                                        listing_inventory_type     = COALESCE(%s, listing_inventory_type),
+                                        updated_at = NOW(),
+                                        updated_by = %s
+                                    WHERE id = %s
+                                """, (
+                                    norm["price"], norm["miles"], norm["dom"],
+                                    json.dumps(payload_data),
+                                    gcp_image_urls, gcp_image_urls,
+                                    # Identity
+                                    year, make, model, trim,
+                                    title_value, custom_title,
+                                    marketplace_category_id, currency, fb_creation_time,
+                                    # Attributes
+                                    interior_color, exterior_color, transmission,
+                                    fuel_type, drivetrain, engine_size, body_style,
+                                    engine_desc, mpg, clean_title, condition_txt,
+                                    json.dumps(detailed_ratings) if detailed_ratings is not None else None,
+                                    overall_rating, paid_status, seller_description,
+                                    vehicle_condition_val, vehicle_title_status, vehicle_features,
+                                    vehicle_number_of_owners, vehicle_is_paid_off, odometer_unit,
+                                    # Specs
+                                    horse_power, gas_mileage_city, gas_mileage_highway,
+                                    gas_mileage_combined, co2_emissions,
+                                    safety_rating_overall, safety_rating_front, safety_rating_side,
+                                    safety_rating_rollover, safety_rating_side_barrier,
+                                    # Geo
+                                    norm.get("location"), city, state, postal_code,
+                                    country, city_display_name, fb_city_id,
+                                    latitude, longitude,
+                                    # Seller classification
+                                    seller_type, dealership_name,
+                                    # Lifecycle
+                                    is_live, is_sold, is_pending,
+                                    is_on_marketplace, is_draft, fb_is_hidden,
+                                    delivery_types, listing_inventory_type,
+                                    buyer_from_id,
+                                    existing_listing_id,
+                                ))
+                                new_id = str(existing_listing_id)
+                                print(f">>> [ingest_listings] UPDATED id={new_id} "
+                                      f"(rowcount={cur.rowcount}, match: {match_reason}, "
+                                      f"price={norm['price']}, miles={norm['miles']}, "
+                                      f"mpg_city={gas_mileage_city}, "
+                                      f"is_live={is_live}, is_sold={is_sold})", flush=True)
+                            except Exception as upd_exc:
+                                print(f">>> [ingest_listings] UPDATE FAILED id={existing_listing_id}: "
+                                      f"{upd_exc}", flush=True)
+                                logging.error(f"Failed to UPDATE listing id={existing_listing_id}: {upd_exc}")
+                                new_id = f"error-{len(out)+1}"
+                            # Skip the INSERT branch below; downstream contact/lead/score
+                            # logic still runs against new_id so seller info on the
+                            # contact row gets refreshed too.
+
                         # Prefer writing to buyer_id column;
                         try:
+                          if existing_listing_id is None:
                             cur.execute("""
                               insert into listings (
                                 vehicle_key, vin, lpn, source, price, miles, dom, location, buyer_id, payload, images,
                                 interior_color, exterior_color, transmission, fuel_type, drivetrain, engine_size, body_style,
-                                clean_title, condition, detailed_ratings, engine, mpg, overall_rating, paid_status, phone_number,
-                                seller_description, seller_joined_date, seller_name
+                                clean_title, condition, detailed_ratings, engine, mpg, overall_rating, paid_status,
+                                seller_description,
+                                year, make, model, trim,
+                                fb_listing_id, title, marketplace_category_id, currency, fb_creation_time,
+                                city, state, postal_code, latitude, longitude,
+                                is_live, is_sold, is_pending, seller_type,
+                                custom_title, dealership_name, delivery_types, listing_inventory_type,
+                                country, city_display_name, fb_city_id,
+                                is_on_marketplace, is_draft, fb_is_hidden,
+                                vehicle_condition, vehicle_title_status, vehicle_features,
+                                vehicle_number_of_owners, vehicle_is_paid_off, odometer_unit,
+                                horse_power, gas_mileage_city, gas_mileage_highway, gas_mileage_combined,
+                                co2_emissions,
+                                safety_rating_overall, safety_rating_front, safety_rating_side,
+                                safety_rating_rollover, safety_rating_side_barrier
                               )
                               values (
                                 %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
                                 %s,%s,%s,%s,%s,%s,%s,
-                                %s,%s,%s,%s,%s,%s,%s,%s,
-                                %s,%s,%s
+                                %s,%s,%s,%s,%s,%s,%s,
+                                %s,
+                                %s,%s,%s,%s,
+                                %s,%s,%s,%s,%s,
+                                %s,%s,%s,%s,%s,
+                                %s,%s,%s,%s,
+                                %s,%s,%s,%s,
+                                %s,%s,%s,
+                                %s,%s,%s,
+                                %s,%s,%s,
+                                %s,%s,%s,
+                                %s,%s,%s,%s,
+                                %s,
+                                %s,%s,%s,
+                                %s,%s
                               ) returning id
                             """, (
                                 vehicle_key, vin, lpn, norm["source"], norm["price"], norm["miles"], norm["dom"],
                                 norm.get("location"), buyer_from_id, json.dumps(payload_data), gcp_image_urls,
                                 interior_color, exterior_color, transmission, fuel_type, drivetrain, engine_size, body_style,
                                 clean_title, condition_txt, json.dumps(detailed_ratings) if detailed_ratings is not None else None,
-                                engine_desc, mpg, overall_rating, paid_status, phone_number,
-                                seller_description, seller_joined_date, seller_name
+                                engine_desc, mpg, overall_rating, paid_status,
+                                seller_description,
+                                year, make, model, trim,
+                                fb_listing_id, title_value, marketplace_category_id, currency, fb_creation_time,
+                                city, state, postal_code, latitude, longitude,
+                                is_live, is_sold, is_pending, seller_type,
+                                custom_title, dealership_name, delivery_types, listing_inventory_type,
+                                country, city_display_name, fb_city_id,
+                                is_on_marketplace, is_draft, fb_is_hidden,
+                                vehicle_condition_val, vehicle_title_status, vehicle_features,
+                                vehicle_number_of_owners, vehicle_is_paid_off, odometer_unit,
+                                horse_power, gas_mileage_city, gas_mileage_highway, gas_mileage_combined,
+                                co2_emissions,
+                                safety_rating_overall, safety_rating_front, safety_rating_side,
+                                safety_rating_rollover, safety_rating_side_barrier,
                             ))
                             new_id = str(cur.fetchone()[0])
+                            print(f">>> [ingest_listings] INSERTED id={new_id} "
+                                  f"vin={vin} fb_listing_id={fb_listing_id} "
+                                  f"price={norm['price']} miles={norm['miles']}", flush=True)
                             logging.debug(f"Successfully inserted listing with ID: {new_id}, VIN: {vin}, source: {norm.get('source')}")
                         except Exception as log_exc:
+                            print(f">>> [ingest_listings] INSERT FAILED: {log_exc}", flush=True)
                             logging.error(f"Failed to insert listing into database: {log_exc}")
                             new_id = f"error-{len(out)+1}"
                         
-                        # Create contact and lead if phoneNumber exists
+                        # Create or link a seller contact when we have either a phone or a FB user id.
                         contact_id = None
-                        if phone_number and phone_number.strip():
+                        phone_for_lookup = phone_number.strip() if phone_number and phone_number.strip() else None
+                        if phone_for_lookup or fb_user_id:
                             try:
-                                # Check if contact with this phone already exists
+                                # Dedupe by phone OR fb_user_id (whichever we have).
+                                # Explicit ::text casts so Postgres can infer the
+                                # parameter type when the value is Python None.
                                 cur.execute("""
-                                    SELECT id FROM contacts 
-                                    WHERE phone = %s OR mobile = %s 
+                                    SELECT id FROM contacts
+                                    WHERE (%s::text IS NOT NULL AND (phone = %s::text OR mobile = %s::text))
+                                       OR (%s::text IS NOT NULL AND fb_user_id = %s::text)
                                     LIMIT 1
-                                """, (phone_number.strip(), phone_number.strip()))
+                                """, (phone_for_lookup, phone_for_lookup, phone_for_lookup,
+                                      fb_user_id, fb_user_id))
                                 existing_contact = cur.fetchone()
-                                
+
                                 if existing_contact:
                                     contact_id = existing_contact[0]
-                                    logging.info(f"Found existing contact {contact_id} with phone {phone_number}")
+                                    logging.info(f"Found existing contact {contact_id} (phone={phone_for_lookup}, fb_user_id={fb_user_id})")
+                                    # Patch missing fb identity fields without overwriting existing values;
+                                    # refresh rating / verified-badge snapshot unconditionally (latest wins).
+                                    cur.execute("""
+                                        UPDATE contacts
+                                        SET fb_user_id             = COALESCE(fb_user_id, %s),
+                                            fb_joined_date         = COALESCE(fb_joined_date, %s),
+                                            fb_seller_rating       = COALESCE(%s, fb_seller_rating),
+                                            fb_seller_rating_count = COALESCE(%s, fb_seller_rating_count),
+                                            fb_verified            = COALESCE(%s, fb_verified),
+                                            updated_at             = NOW()
+                                        WHERE id = %s
+                                    """, (
+                                        fb_user_id, seller_joined_date,
+                                        fb_seller_rating, fb_seller_rating_count, fb_verified,
+                                        contact_id,
+                                    ))
                                 else:
                                     # Parse seller_name for first_name and last_name
                                     first_name = "Seller"
@@ -393,18 +655,30 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                                             cur.execute("""
                                                 INSERT INTO contacts (
                                                     first_name, last_name, phone, company, notes,
+                                                    fb_user_id, fb_joined_date,
+                                                    fb_seller_rating, fb_seller_rating_count, fb_verified,
                                                     is_active, created_by, created_at, updated_at
                                                 ) VALUES (
-                                                    %s, %s, %s, %s, %s, %s, %s, NOW(), NOW()
+                                                    %s, %s, %s, %s, %s,
+                                                    %s, %s,
+                                                    %s, %s, %s,
+                                                    %s, %s, NOW(), NOW()
                                                 ) RETURNING id
                                             """, (
                                                 first_name,
                                                 last_name,
-                                                phone_number.strip(),
-                                                seller_name if seller_name else None,
+                                                phone_for_lookup,
+                                                # company = the actual dealership name when the seller is a dealer.
+                                                # FB's dealership_name is NULL for PRIVATE_SELLER listings, which is correct.
+                                                dealership_name,
                                                 f"Auto-created from listing {new_id}. Source: {norm.get('source', 'Unknown')}",
+                                                fb_user_id,
+                                                seller_joined_date,
+                                                fb_seller_rating,
+                                                fb_seller_rating_count,
+                                                fb_verified,
                                                 True,
-                                                created_by_user
+                                                created_by_user,
                                             ))
                                             
                                             contact_result = cur.fetchone()
@@ -441,7 +715,17 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                             except Exception as contact_lead_error:
                                 logging.error(f"Error creating contact/lead for listing {new_id}: {str(contact_lead_error)}")
                                 # Continue with listing ingestion even if contact/lead creation fails
-                        
+
+                        # Pin the seller contact onto the listing for direct FK access.
+                        if contact_id and str(new_id).isdigit():
+                            try:
+                                cur.execute(
+                                    "UPDATE listings SET contact_id = %s WHERE id = %s",
+                                    (contact_id, int(new_id)),
+                                )
+                            except Exception as link_err:
+                                logging.warning(f"Failed to set listings.contact_id for listing {new_id}: {link_err}")
+
                         # Extract reasonCodes, buyMax, and status for ListingOut
                         reason_codes = norm.get("reasonCodes", [])
                         buy_max = float(norm.get("buyMax", 0)) if norm.get("buyMax") is not None else None
@@ -513,8 +797,10 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                             bodyStyle=body_style, images=gcp_image_urls if gcp_image_urls else None
                         ))
             except Exception as e:
+                print(f">>> [ingest_listings] OUTER EXCEPTION (loop aborted, returning {len(out)} so far): {e}", flush=True)
                 logging.error(f"Database error in ingest_listings: {e}")
                 return out
+        print(f">>> [ingest_listings] exit: returning {len(out)} ListingOut(s)", flush=True)
         return out
 
 
@@ -554,10 +840,10 @@ def list_listings(
                         l.vehicle_key,
                         COALESCE(l.vin, '') AS vin,
                         l.lpn,
-                        COALESCE(v.year, 0) AS year,
-                        COALESCE(v.make, '') AS make,
-                        COALESCE(v.model, '') AS model,
-                        v.trim,
+                        COALESCE(l.year, 0) AS year,
+                        COALESCE(l.make, '') AS make,
+                        COALESCE(l.model, '') AS model,
+                        l.trim,
                         l.miles,
                         l.price,
                         l.dom,
@@ -588,20 +874,20 @@ def list_listings(
                         l.mpg,
                         l.overall_rating,
                         l.paid_status,
-                        l.phone_number,
+                        c.phone AS phone_number,
                         l.seller_description,
-                        l.seller_joined_date,
-                        l.seller_name
+                        c.fb_joined_date AS seller_joined_date,
+                        NULLIF(TRIM(COALESCE(c.first_name, '') || ' ' || COALESCE(c.last_name, '')), '') AS seller_name
                         FROM (
                         SELECT * FROM listings """ + where_clause + """
                         ) l
-                        LEFT JOIN vehicles v ON v.vehicle_key = l.vehicle_key
                         LEFT JOIN (
                         SELECT DISTINCT ON (vin) vin, score, buy_max, reason_codes
                         FROM scores
                         ORDER BY vin, created_at DESC
                         ) s ON s.vin = l.vin
                         LEFT JOIN users u ON u.id::text = l.buyer_id
+                        LEFT JOIN contacts c ON c.id = l.contact_id
                         ORDER BY l.created_at DESC;
 
                     """
@@ -707,14 +993,14 @@ def list_listings_by_buyer(
                 with conn.cursor() as cur:
                     # Build query with optional date filtering
                     base_query = """
-                        SELECT 
-                            l.id, l.vehicle_key, 
+                        SELECT
+                            l.id, l.vehicle_key,
                             COALESCE(l.vin, '') AS vin,
                             l.lpn,
-                            COALESCE(v.year, 0) AS year, 
-                            COALESCE(v.make, '') AS make, 
-                            COALESCE(v.model, '') AS model, 
-                            v.trim,
+                            COALESCE(l.year, 0) AS year,
+                            COALESCE(l.make, '') AS make,
+                            COALESCE(l.model, '') AS model,
+                            l.trim,
                             l.miles, l.price, l.dom, l.source, 
                             l.location, l.buyer_id,
                             COALESCE(l.images, ARRAY[]::text[]) AS images,
@@ -741,18 +1027,18 @@ def list_listings_by_buyer(
                             l.mpg,
                             l.overall_rating,
                             l.paid_status,
-                            l.phone_number,
+                            c.phone AS phone_number,
                             l.seller_description,
-                            l.seller_joined_date,
-                            l.seller_name
+                            c.fb_joined_date AS seller_joined_date,
+                            NULLIF(TRIM(COALESCE(c.first_name, '') || ' ' || COALESCE(c.last_name, '')), '') AS seller_name
                         FROM listings l
-                        LEFT JOIN vehicles v ON v.vehicle_key = l.vehicle_key
                         LEFT JOIN (
                             SELECT DISTINCT ON (vin) vin, score, buy_max, reason_codes
                             FROM scores
                             ORDER BY vin, created_at DESC
                         ) s ON s.vin = l.vin
                         LEFT JOIN users u ON u.id::text = l.buyer_id
+                        LEFT JOIN contacts c ON c.id = l.contact_id
                         WHERE l.buyer_id = %s
                     """
                     
@@ -1050,25 +1336,11 @@ def update_score(vehicle_key: str, vin: str, score: int, buy_max: float, reasons
 # ============================================================================
 
 def upsert_vehicle(vehicle_key: str, vin: str, year: int, make: str, model: str, trim: str | None):
-    if not DB_ENABLED:
-        return
-    with get_db_connection() as conn:
-        if not conn:
-            return
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                insert into vehicles (vehicle_key, vin, year, make, model, trim)
-                values (%s,%s,%s,%s,%s,%s)
-                on conflict (vehicle_key) do update
-                set vin = excluded.vin,
-                    year = excluded.year,
-                    make = excluded.make,
-                    model = excluded.model,
-                    trim = excluded.trim
-                """,
-                (vehicle_key, vin, year, make, model, trim),
-            )
+    # Deprecated: the vehicles table was merged into listings in migration 019.
+    # year/make/model/trim now live on listings rows directly. This function is
+    # kept as a no-op so legacy callers (refactor_vehicles.py) don't crash.
+    logging.warning("upsert_vehicle() is a no-op since migration 019; vehicle_key=%s", vehicle_key)
+    return
 
 
 # ============================================================================

@@ -60,9 +60,13 @@ def images_equal(incoming, existing):
 # LISTINGS REPOSITORY
 # ============================================================================
 
-def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> List[ListingOut]:
+def ingest_listings(
+    rows: List[ListingIn],
+    buyer_id: Optional[str] = None,
+    skip_ai_extraction: bool = False,
+) -> List[ListingOut]:
     print(f">>> [ingest_listings] entry: {len(rows)} row(s), buyer_id={buyer_id}, "
-          f"DB_ENABLED={DB_ENABLED}", flush=True)
+          f"skip_ai_extraction={skip_ai_extraction}, DB_ENABLED={DB_ENABLED}", flush=True)
     out: list[ListingOut] = []
     if DB_ENABLED:
         with get_db_connection() as conn:
@@ -168,7 +172,11 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                         extracted_bodystyle = None
                         extracted_info = {}
 
-                        if title and title.strip() and not (year and make and model and trim):
+                        if (
+                            not skip_ai_extraction
+                            and title and title.strip()
+                            and not (year and make and model and trim)
+                        ):
                             try:
                                 extracted_info = extract_vehicle_info_from_title(title.strip())
                                 year = year or extracted_info.get("year")
@@ -735,58 +743,61 @@ def ingest_listings(rows: List[ListingIn], buyer_id: Optional[str] = None) -> Li
                         score_val = None
                         calculated_buy_max = buy_max
                         calculated_reason_codes = reason_codes
-                        
-                        try:
-                            # Prepare listing data for AI scoring
-                            listing_data = {
-                                "year": year,
-                                "make": make,
-                                "model": model,
-                                "trim": trim,
-                                "vin": vin,
-                                "price": norm["price"],
-                                "mmr": norm.get("mmr"),
-                                "miles": norm["miles"],
-                                "dom": norm["dom"],
-                                "condition": norm.get("condition"),
-                                "overallRating": norm.get("overallRating"),
-                                "detailedRatings": norm.get("detailedRatings"),
-                                "cleanTitle": norm.get("cleanTitle"),
-                                "bodyStyle": body_style or extracted_bodystyle,
-                                "transmission": norm.get("transmission"),
-                                "fuelType": norm.get("fuelType"),
-                                "driveType": norm.get("driveType"),
-                                "engine": norm.get("engine"),
-                                "mpg": norm.get("mpg"),
-                                "exteriorColor": norm.get("exteriorColor"),
-                                "interiorColor": norm.get("interiorColor"),
-                                "location": norm.get("location"),
-                                "source": norm.get("source"),
-                                "sellerName": norm.get("sellerName"),
-                                "phoneNumber": norm.get("phoneNumber"),
-                                "sellerDescription": norm.get("sellerDescription"),
-                                "sellerJoinedDate": norm.get("sellerJoinedDate"),
-                                "paidStatus": norm.get("paidStatus"),
-                                "notes": norm.get("notes")
-                            }
-                            
-                            # Calculate score using AI (no contact info available during ingestion)
-                            # Note: calculate_listing_score automatically resolves adjusted MMR
-                            # from the mmr_data table using the VIN, overriding listing_data['mmr']
-                            score_result = calculate_listing_score(listing_data)
-                            score_val = score_result["score"]
-                            calculated_buy_max = score_result["buyMax"]
-                            calculated_reason_codes = score_result["reasonCodes"]
-                            
-                            # Store score in database
-                            if vin:
-                                insert_score(vehicle_key, vin, score_val, calculated_buy_max, calculated_reason_codes)
-                                update_cached_score(vin, score_val, calculated_buy_max, calculated_reason_codes)
-                            
-                            logging.info(f"Calculated AI score for listing {new_id}: score={score_val}, buyMax={calculated_buy_max}")
-                        except Exception as score_error:
-                            logging.warning(f"Failed to calculate AI score for listing {new_id}: {str(score_error)}")
-                            # Continue with ingestion even if scoring fails
+
+                        if skip_ai_extraction:
+                            logging.info(f"Skipping AI scoring for listing {new_id} (skip_ai_extraction=True)")
+                        else:
+                            try:
+                                # Prepare listing data for AI scoring
+                                listing_data = {
+                                    "year": year,
+                                    "make": make,
+                                    "model": model,
+                                    "trim": trim,
+                                    "vin": vin,
+                                    "price": norm["price"],
+                                    "mmr": norm.get("mmr"),
+                                    "miles": norm["miles"],
+                                    "dom": norm["dom"],
+                                    "condition": norm.get("condition"),
+                                    "overallRating": norm.get("overallRating"),
+                                    "detailedRatings": norm.get("detailedRatings"),
+                                    "cleanTitle": norm.get("cleanTitle"),
+                                    "bodyStyle": body_style or extracted_bodystyle,
+                                    "transmission": norm.get("transmission"),
+                                    "fuelType": norm.get("fuelType"),
+                                    "driveType": norm.get("driveType"),
+                                    "engine": norm.get("engine"),
+                                    "mpg": norm.get("mpg"),
+                                    "exteriorColor": norm.get("exteriorColor"),
+                                    "interiorColor": norm.get("interiorColor"),
+                                    "location": norm.get("location"),
+                                    "source": norm.get("source"),
+                                    "sellerName": norm.get("sellerName"),
+                                    "phoneNumber": norm.get("phoneNumber"),
+                                    "sellerDescription": norm.get("sellerDescription"),
+                                    "sellerJoinedDate": norm.get("sellerJoinedDate"),
+                                    "paidStatus": norm.get("paidStatus"),
+                                    "notes": norm.get("notes")
+                                }
+
+                                # Calculate score using AI (no contact info available during ingestion)
+                                # Note: calculate_listing_score automatically resolves adjusted MMR
+                                # from the mmr_data table using the VIN, overriding listing_data['mmr']
+                                score_result = calculate_listing_score(listing_data)
+                                score_val = score_result["score"]
+                                calculated_buy_max = score_result["buyMax"]
+                                calculated_reason_codes = score_result["reasonCodes"]
+
+                                # Store score in database
+                                if vin:
+                                    insert_score(vehicle_key, vin, score_val, calculated_buy_max, calculated_reason_codes)
+                                    update_cached_score(vin, score_val, calculated_buy_max, calculated_reason_codes)
+
+                                logging.info(f"Calculated AI score for listing {new_id}: score={score_val}, buyMax={calculated_buy_max}")
+                            except Exception as score_error:
+                                logging.warning(f"Failed to calculate AI score for listing {new_id}: {str(score_error)}")
+                                # Continue with ingestion even if scoring fails
                         
                         out.append(ListingOut(
                             id=new_id, vehicle_key=vehicle_key, vin=vin, year=year, make=make, model=model,

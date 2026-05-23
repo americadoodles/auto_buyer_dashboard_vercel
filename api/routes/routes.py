@@ -58,8 +58,8 @@ def ingest_facebook(payloads: List[dict], current_user: UserOut = Depends(get_cu
             raise
 
     print(f">>> [ingest/facebook] calling ingest_listings with {len(listings)} "
-          f"validated ListingIn objects…", flush=True)
-    result = ingest_listings(listings, buyer_id=str(current_user.id))
+          f"validated ListingIn objects (skip_ai_extraction=True)…", flush=True)
+    result = ingest_listings(listings, buyer_id=str(current_user.id), skip_ai_extraction=True)
     print(f">>> [ingest/facebook] done — ingest_listings returned {len(result)} "
           f"ListingOut(s) (out of {len(payloads)} received)\n", flush=True)
     return result

@@ -99,6 +99,8 @@ def _candidate_filters(config: Dict[str, Any]) -> Tuple[str, List[Any]]:
 class DamageAgentRunner:
     """Singleton thread-based runner for the damage detection agent."""
 
+    agent_id = AGENT_ID  # registry key; same public API as CrmAgentRunner
+
     def __init__(self) -> None:
         self._lock = threading.Lock()
         self._thread: Optional[threading.Thread] = None
@@ -440,6 +442,80 @@ class DamageAgentRunner:
             "last_error": state["last_error"],
             "started_at": state["started_at"].isoformat() if state.get("started_at") else None,
             "updated_at": state["updated_at"].isoformat() if state.get("updated_at") else None,
+        }
+
+    def reports(
+        self,
+        status: Optional[str] = None,
+        since_id: Optional[int] = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> Optional[Dict[str, Any]]:
+        """Damage reports normalized to the generic agent-report shape
+        (entity_type='listing', entity_id=listing id, entity_label=vehicle).
+        Returns None when the DB is unavailable.
+        """
+        where: List[str] = []
+        params: List[Any] = []
+        if status:
+            where.append("dr.status = %s")
+            params.append(status)
+        if since_id is not None:
+            where.append("dr.id > %s")
+            params.append(since_id)
+        where_sql = f"WHERE {' AND '.join(where)}" if where else ""
+
+        rows = execute_with_connection(
+            f"""
+            SELECT dr.id, dr.listing_id, dr.status, dr.report, dr.model,
+                   dr.images_analyzed, dr.error, dr.created_at, dr.updated_at,
+                   l.vin, l.year, l.make, l.model AS vehicle_model, l.trim, l.price
+            FROM damage_reports dr
+            JOIN listings l ON l.id = dr.listing_id
+            {where_sql}
+            ORDER BY dr.updated_at DESC, dr.id DESC
+            LIMIT %s OFFSET %s
+            """,
+            (*params, limit, offset),
+            fetch="all",
+            row_factory=dict_row,
+        )
+        if rows is None:
+            return None
+        count_row = execute_with_connection(
+            f"SELECT COUNT(*) FROM damage_reports dr {where_sql}",
+            tuple(params),
+            fetch="one",
+        )
+
+        reports = []
+        for r in rows:
+            r = dict(r)
+            vehicle = " ".join(
+                str(v) for v in (r.get("year"), r.get("make"), r.get("vehicle_model"), r.get("trim")) if v
+            )
+            reports.append({
+                "id": r["id"],
+                "agent_id": self.agent_id,
+                "entity_type": "listing",
+                "entity_id": str(r["listing_id"]),
+                "entity_label": vehicle or f"listing #{r['listing_id']}",
+                "status": r["status"],
+                "report": r["report"],
+                "model": r["model"],
+                "error": r["error"],
+                "created_at": r["created_at"].isoformat() if r.get("created_at") else None,
+                "updated_at": r["updated_at"].isoformat() if r.get("updated_at") else None,
+                # damage-specific extras
+                "images_analyzed": r.get("images_analyzed"),
+                "vin": r.get("vin"),
+                "price": float(r["price"]) if r.get("price") is not None else None,
+            })
+        return {
+            "reports": reports,
+            "total": int(count_row[0]) if count_row else 0,
+            "limit": limit,
+            "offset": offset,
         }
 
 

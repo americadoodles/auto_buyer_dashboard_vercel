@@ -288,6 +288,7 @@ def apply_schema_if_needed() -> None:
                     "migrations/027_repair_listings_id_default.sql",
                     "migrations/028_damage_detection_agent.sql",
                     "migrations/029_damage_agent_run_config.sql",
+                    "migrations/030_crm_agents.sql",
                 ]
                 for mig_file in _migration_files:
                     mig_sql = _read_migration_file(mig_file)

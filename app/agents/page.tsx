@@ -6,6 +6,7 @@ import { LayoutGrid, LayoutDashboard, Settings2 } from 'lucide-react';
 import { useAgents } from '../../lib/agents/useAgents';
 import { AgentFleetView } from './_components/AgentFleetView';
 import { AiPipelineView } from './_components/AiPipelineView';
+import { DamageAgentPanel } from './_components/DamageAgentPanel';
 
 type Tab = 'fleet' | 'pipeline';
 
@@ -39,6 +40,9 @@ export default function AgentsPage() {
           </Link>
         </div>
       </div>
+
+      {/* Damage Detection Agent — live control panel */}
+      <DamageAgentPanel />
 
       {/* Tabs */}
       <div className="inline-flex gap-1 bg-claude-surface dark:bg-coal-850 border border-claude-border dark:border-coal-700 rounded-xl p-1 mb-5">

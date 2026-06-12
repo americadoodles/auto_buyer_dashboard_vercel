@@ -52,6 +52,18 @@ class Settings(BaseSettings):
     # Set AI_ENABLED=false in .env to fall back to rule-based scoring everywhere.
     AI_ENABLED: bool = os.getenv("AI_ENABLED", "true").strip().lower() not in ("0", "false", "no", "off", "")
 
+    # Vision model for the damage-detection agent. gpt-4o is markedly better at
+    # spotting/localizing damage than gpt-4o-mini, and image tokens cost about
+    # the same on both (mini inflates image token counts) — only the text
+    # portion is pricier. Override per environment if needed.
+    DAMAGE_VISION_MODEL: str = os.getenv("DAMAGE_VISION_MODEL", "gpt-4o")
+    # "high" sends full-resolution image tiles — small dents/scratches are
+    # often invisible at "auto"/"low". Set to "auto" to cut image token cost.
+    DAMAGE_VISION_DETAIL: str = os.getenv("DAMAGE_VISION_DETAIL", "high")
+    # Max photos analyzed per listing. Too low silently drops exterior shots
+    # on image-heavy listings (FB listings often lead with interior photos).
+    DAMAGE_MAX_IMAGES: int = int(os.getenv("DAMAGE_MAX_IMAGES", "12"))
+
     # Google Cloud Storage settings
     GCP_BUCKET_NAME: str = os.getenv("GCP_BUCKET_NAME", "")
     GCP_PROJECT_ID: str = os.getenv("GCP_PROJECT_ID", "")

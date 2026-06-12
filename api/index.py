@@ -28,6 +28,9 @@ from .routes.communications import communication_router
 # AI Recommender Routes
 from .routes.ai_recommender import ai_recommender_router
 
+# AI Agents
+from .routes.agents_control import agents_control_router
+
 # ---- run-on-cold-start: ensure schema once ----
 import logging
 from .core.db import DB_ENABLED, apply_schema_if_needed
@@ -81,6 +84,9 @@ app.include_router(communication_router, prefix="/api")
 
 # AI Recommender Routes
 app.include_router(ai_recommender_router, prefix="/api")
+
+# AI Agents
+app.include_router(agents_control_router, prefix="/api")
 
 @app.get("/api/healthz")
 def healthz():

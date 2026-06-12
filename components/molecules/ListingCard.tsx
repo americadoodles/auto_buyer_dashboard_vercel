@@ -3,13 +3,14 @@
 import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Listing } from '../../lib/types/listing';
-import { formatCurrency, formatNumber } from '../../lib/utils/formatters';
+import { formatCurrency, formatNumber, formatDateTime } from '../../lib/utils/formatters';
 import { getMarketplaceInfo, getTrustIndicators } from '../../lib/utils/marketplace';
 import { Badge } from '../atoms/Badge';
 import { AiRecommenderApi, RecommendResponse } from '../../lib/services/aiRecommenderApi';
-import { 
-  Gauge, 
-  Clock, 
+import {
+  Gauge,
+  Clock,
+  CalendarDays,
   ExternalLink, 
   Heart, 
   MoreVertical,
@@ -386,6 +387,19 @@ export const ListingCard: React.FC<ListingCardProps> = ({
             )}
           </div>
         </div>
+
+        {/* Bottom line: ingestion date at the right */}
+        {listing.created_at && (
+          <div className="flex justify-end pt-1 flex-shrink-0">
+            <div
+              className="flex items-center gap-1 text-[11px] text-claude-subtle dark:text-coal-500 whitespace-nowrap"
+              title={`Ingested: ${formatDateTime(listing.created_at)}`}
+            >
+              <CalendarDays className="h-3 w-3 flex-shrink-0" />
+              {formatDateTime(listing.created_at)}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* AI Recommendation Modal */}

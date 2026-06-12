@@ -6,6 +6,8 @@ import { LayoutGrid, LayoutDashboard, Settings2 } from 'lucide-react';
 import { useAgents } from '../../lib/agents/useAgents';
 import { AgentFleetView } from './_components/AgentFleetView';
 import { AiPipelineView } from './_components/AiPipelineView';
+import { AgentControlPanel } from './_components/AgentControlPanel';
+import { AGENT_DEFS } from './_components/agentDefs';
 
 type Tab = 'fleet' | 'pipeline';
 
@@ -38,6 +40,13 @@ export default function AgentsPage() {
             <Settings2 className="w-3.5 h-3.5" /> Agent Builder
           </Link>
         </div>
+      </div>
+
+      {/* Live agent control panels (first panel expanded by default) */}
+      <div className="space-y-3 mb-5">
+        {AGENT_DEFS.map((def, i) => (
+          <AgentControlPanel key={def.id} def={def} defaultOpen={i === 0} />
+        ))}
       </div>
 
       {/* Tabs */}

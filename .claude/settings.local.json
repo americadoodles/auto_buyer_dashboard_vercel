@@ -16,7 +16,20 @@
       "PowerShell(.\\\\.venv\\\\Scripts\\\\python.exe -c \"import ast, pathlib; [ast.parse\\(pathlib.Path\\(p\\).read_text\\(encoding='utf-8'\\)\\) for p in ['api/services/ai_service.py', 'api/repositories/repositories.py', 'api/core/config.py']]; print\\('OK'\\)\")",
       "Bash(curl -sS -X POST \"https://auto-buyer-api-ymc7phgeoq-uc.a.run.app/api/ingest/facebook\" -H \"Content-Type: application/json\" -H \"Authorization: Bearer invalid\" -d '[]' -i)",
       "PowerShell(Remove-Item *)",
-      "Bash(python -m py_compile api/core/db.py)"
+      "Bash(python -m py_compile api/core/db.py)",
+      "Bash(Get-ChildItem -Path \"C:\\\\workstation\\\\OI\\\\auto_buyer_dashboard_vercel\" -Force)",
+      "Bash(Select-Object Name)",
+      "PowerShell(npx tsc --noEmit 2>&1 | Select-Object -First 30)",
+      "PowerShell(python -m py_compile api\\\\services\\\\damage_detection_service.py api\\\\services\\\\damage_agent_runner.py api\\\\routes\\\\damage_agent.py api\\\\index.py api\\\\core\\\\db.py; if \\($?\\) { 'PY_COMPILE_OK' })",
+      "PowerShell(python -c \"from api.index import app; routes = [r.path for r in app.routes if 'damage' in r.path]; print\\('APP_IMPORT_OK'\\); print\\('\\\\n'.join\\(routes\\)\\)\")",
+      "PowerShell(Get-ChildItem -Directory | Where-Object { Test-Path \\(Join-Path $_.FullName 'Scripts\\\\python.exe'\\) } | Select-Object -ExpandProperty Name; \\(Get-Content package.json | ConvertFrom-Json\\).scripts)",
+      "PowerShell(.\\\\.venv\\\\Scripts\\\\python.exe -c \"from api.index import app; routes = sorted\\([r.path for r in app.routes if 'damage' in r.path]\\); print\\('APP_IMPORT_OK'\\); [print\\(p\\) for p in routes]\")",
+      "Bash(./.venv/Scripts/python.exe *)",
+      "PowerShell(npx tsc --noEmit 2>&1 | Select-Object -First 20)",
+      "Bash(curl -s -o /tmp/cv6.jpg \"https://storage.googleapis.com/auto-buyer-dashboard/listings/facebook/460cea86-fda0-4b7f-804f-c05829df24b3.jpg\")",
+      "Bash(curl -s -o /tmp/cv7.jpg \"https://storage.googleapis.com/auto-buyer-dashboard/listings/facebook/09e91d28-6e7e-4cbd-9888-233d89e72002.jpg\")",
+      "Read(//tmp/**)",
+      "PowerShell(Set-Content *)"
     ]
   }
 }

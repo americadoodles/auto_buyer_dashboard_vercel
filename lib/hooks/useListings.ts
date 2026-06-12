@@ -41,7 +41,8 @@ export const useListings = () => {
   const { user } = useAuth();
   const { showSuccess, showError, showWarning } = useToast();
   const [data, setData] = useState<Listing[]>([]);
-  const [sort, setSort] = useState<SortConfig>({ key: 'score', dir: 'desc' });
+  // Default: newest listings first (ISO created_at sorts correctly as string)
+  const [sort, setSort] = useState<SortConfig>({ key: 'created_at', dir: 'desc' });
   const [loading, setLoading] = useState<boolean>(false);
   const [backendOk, setBackendOk] = useState<boolean | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -82,6 +83,14 @@ export const useListings = () => {
         bv = b[sort.key as keyof Listing];
       }
       
+      // Nullish values always sink to the bottom regardless of direction
+      // (otherwise they'd compare as the string "undefined").
+      const aNull = av === null || av === undefined || av === '';
+      const bNull = bv === null || bv === undefined || bv === '';
+      if (aNull && bNull) return 0;
+      if (aNull) return 1;
+      if (bNull) return -1;
+
       if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
       return String(av).localeCompare(String(bv)) * dir;
     });

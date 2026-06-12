@@ -33,7 +33,9 @@
       "Bash(npm run *)",
       "Bash(python -c \"import ast; [ast.parse\\(open\\(p, encoding='utf-8'\\).read\\(\\)\\) for p in ['api/services/ws_extension_manager.py', 'api/services/fb_scraper_runner.py', 'api/routes/extension_ws.py', 'api/routes/fb_scraper.py']]; print\\('all parse ok'\\)\")",
       "Bash(node --check c:/work/OI/OI_facebook_monitor/extension-v2/background.js)",
-      "Bash(node --check c:/work/OI/OI_facebook_monitor/extension-v2/popup.js)"
+      "Bash(node --check c:/work/OI/OI_facebook_monitor/extension-v2/popup.js)",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('api/routes/extension_ws.py', encoding='utf-8'\\).read\\(\\)\\); print\\('ok'\\)\")",
+      "Bash(python -c \"import ast; [ast.parse\\(open\\(p, encoding='utf-8'\\).read\\(\\)\\) for p in ['api/services/fb_scraper_runner.py','api/routes/fb_scraper.py','api/routes/extension_ws.py']]; print\\('python ok'\\)\")"
     ]
   }
 }

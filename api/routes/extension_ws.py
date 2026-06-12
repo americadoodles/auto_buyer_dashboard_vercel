@@ -100,7 +100,12 @@ async def fb_scraper_extension_ws(
 
             if mtype == "register":
                 conn.extension_version = payload.get("extension_version")
-                conn.fb_logged_in = bool(payload.get("fb_logged_in"))
+                # fb_logged_in is tri-state: true / false / null(unknown).
+                # bool(None) collapses None to False, which makes the dashboard
+                # show "Sign in to Facebook" even when the extension hasn't
+                # probed FB session state at all — preserve None instead.
+                raw_fb = payload.get("fb_logged_in")
+                conn.fb_logged_in = bool(raw_fb) if isinstance(raw_fb, bool) else None
                 names = payload.get("captured_template_names") or []
                 if isinstance(names, list):
                     conn.captured_template_names = [str(n) for n in names]
@@ -136,6 +141,18 @@ async def fb_scraper_extension_ws(
                 )
             elif mtype == "scrape.error":
                 fb_scraper_agent.on_error(user.id, message=str(payload.get("message") or "")[:1000])
+            elif mtype == "location.typeahead.result":
+                request_id = payload.get("request_id")
+                if isinstance(request_id, str):
+                    candidates = payload.get("candidates") or []
+                    fb_scraper_agent.on_rpc_result(request_id, candidates)
+            elif mtype == "rpc.error":
+                request_id = payload.get("request_id")
+                if isinstance(request_id, str):
+                    fb_scraper_agent.on_rpc_error(
+                        request_id,
+                        str(payload.get("message") or "extension reported an error")[:500],
+                    )
             else:
                 logger.debug("Unhandled message type %s from user %s", mtype, user.id)
     except WebSocketDisconnect:

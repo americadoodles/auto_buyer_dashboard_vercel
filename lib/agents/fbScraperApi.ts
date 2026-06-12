@@ -17,6 +17,12 @@ export interface FbScraperFilters {
   endTime?: number | string;
   maxListings?: number | string;
   exact?: boolean;
+  // Populated when the user picks a candidate from the typeahead. The
+  // extension uses these to set buyLocation in the FB GraphQL variables;
+  // without them, FB falls back to a default region.
+  latitude?: number;
+  longitude?: number;
+  selectedLocation?: LocationCandidate;
 }
 
 export interface ExtensionConnectionInfo {
@@ -30,6 +36,15 @@ export interface ExtensionConnectionInfo {
 
 export interface FbScraperStatus extends AgentStatus {
   connection?: ExtensionConnectionInfo;
+}
+
+export interface LocationCandidate {
+  single_line_address: string;
+  subtitle: string;
+  multi_line_address: string[];
+  latitude: number | null;
+  longitude: number | null;
+  page_id: string | null;
 }
 
 export const fbScraperApi = {
@@ -46,4 +61,13 @@ export const fbScraperApi = {
     ApiService.request<FbScraperStatus>('/agents/fb-scraper/refresh_templates', {
       method: 'POST',
     }),
+  locationTypeahead: (query: string) =>
+    ApiService.request<{ candidates: LocationCandidate[] }>(
+      '/agents/fb-scraper/location/typeahead',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query }),
+      },
+    ),
 };

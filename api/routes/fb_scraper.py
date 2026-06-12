@@ -36,6 +36,10 @@ class FbScraperStartRequest(BaseModel):
     )
 
 
+class LocationTypeaheadRequest(BaseModel):
+    query: str = Field(min_length=1, max_length=200)
+
+
 def _map_control_error(e: AgentControlError):
     raise HTTPException(status_code=409, detail=str(e))
 
@@ -79,6 +83,24 @@ async def fb_scraper_refresh_templates(current_user: UserOut = Depends(get_curre
 @fb_scraper_router.get("/status")
 def fb_scraper_status(current_user: UserOut = Depends(get_current_user)):
     return fb_scraper_agent.status(current_user.id)
+
+
+@fb_scraper_router.post("/location/typeahead")
+async def fb_scraper_location_typeahead(
+    req: LocationTypeaheadRequest,
+    current_user: UserOut = Depends(get_current_user),
+):
+    """Live location typeahead via WS to the user's extension."""
+    try:
+        candidates = await fb_scraper_agent.query_location_typeahead(
+            current_user.id, req.query
+        )
+        return {"candidates": candidates}
+    except AgentControlError as e:
+        _map_control_error(e)
+    except Exception:
+        logger.exception("fb-scraper typeahead failed for user %s", current_user.id)
+        raise HTTPException(status_code=500, detail="typeahead failed")
 
 
 @fb_scraper_router.get("/reports")

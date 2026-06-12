@@ -17,9 +17,11 @@ runner is just a thin DB+WS bridge.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
-from typing import Any, Dict, Optional
+import uuid
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from psycopg.rows import dict_row
@@ -28,6 +30,10 @@ from ..core.db_helpers import execute_with_connection
 from .ws_extension_manager import extension_manager
 
 logger = logging.getLogger(__name__)
+
+# How long to wait for an extension to reply to an RPC-style WS message
+# (e.g. location typeahead). 6s is comfortably above one FB GraphQL round-trip.
+_RPC_TIMEOUT_SECONDS = 6.0
 
 AGENT_ID = "fb-scraper"
 
@@ -63,6 +69,12 @@ class FbScraperRunner:
     """Per-user remote control of a Chrome extension."""
 
     agent_id = AGENT_ID
+
+    def __init__(self) -> None:
+        # Pending RPC-style requests (location typeahead etc.) keyed by
+        # request_id → asyncio.Future. The Future is resolved when the
+        # matching result message arrives over the WebSocket.
+        self._pending_rpc: Dict[str, asyncio.Future] = {}
 
     # ------------------------------------------------------------------ #
     # Persistence
@@ -173,6 +185,36 @@ class FbScraperRunner:
         logger.info("[%s] scrape.stop dispatched for user %s", AGENT_ID, user_id)
         return self.status(user_id)
 
+    async def query_location_typeahead(self, user_id: UUID, query: str) -> List[Dict[str, Any]]:
+        """RPC: ask the extension to run FB's location typeahead and return parsed candidates."""
+        conn = extension_manager.get(user_id)
+        if conn is None:
+            raise AgentControlError("No extension connected.")
+        if not conn.captured_template_names:
+            raise AgentControlError(
+                "No FB Marketplace templates captured yet. Browse one FB "
+                "Marketplace listing in the extension's tab, then try again."
+            )
+
+        request_id = uuid.uuid4().hex
+        loop = asyncio.get_running_loop()
+        future: asyncio.Future = loop.create_future()
+        self._pending_rpc[request_id] = future
+        try:
+            await conn.send({
+                "type": "location.typeahead.query",
+                "payload": {"request_id": request_id, "query": query},
+            })
+            try:
+                candidates = await asyncio.wait_for(future, timeout=_RPC_TIMEOUT_SECONDS)
+            except asyncio.TimeoutError:
+                raise AgentControlError("Typeahead timed out — extension didn't respond.")
+            if not isinstance(candidates, list):
+                return []
+            return candidates
+        finally:
+            self._pending_rpc.pop(request_id, None)
+
     async def refresh_templates(self, user_id: UUID) -> Dict[str, Any]:
         """Ask the extension to re-read captured templates from chrome.storage."""
         conn = extension_manager.get(user_id)
@@ -260,6 +302,20 @@ class FbScraperRunner:
 
     def on_error(self, user_id: UUID, message: str) -> None:
         self._write_state(user_id, status=S_ERROR, last_error=message)
+
+    def on_rpc_result(self, request_id: str, result: Any) -> None:
+        """Resolve a pending RPC future with the result from the extension."""
+        future = self._pending_rpc.get(request_id)
+        if future is None or future.done():
+            return
+        future.set_result(result)
+
+    def on_rpc_error(self, request_id: str, message: str) -> None:
+        """Reject a pending RPC future with an error from the extension."""
+        future = self._pending_rpc.get(request_id)
+        if future is None or future.done():
+            return
+        future.set_exception(AgentControlError(message))
 
 
 # Module-level singleton

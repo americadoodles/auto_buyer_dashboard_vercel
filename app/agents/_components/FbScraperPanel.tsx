@@ -12,7 +12,7 @@ import {
   Play, Square, RefreshCcw, AlertTriangle, ShoppingCart,
   ChevronDown, ChevronRight, Plug, PlugZap,
 } from 'lucide-react';
-import { fbScraperApi, type FbScraperFilters, type FbScraperStatus } from '../../../lib/agents/fbScraperApi';
+import { fbScraperApi, type FbScraperFilters, type FbScraperStatus, type LocationCandidate } from '../../../lib/agents/fbScraperApi';
 import type { AgentDef } from './agentDefs';
 
 const POLL_ACTIVE_MS = 2_500;
@@ -51,16 +51,38 @@ function storeFilters(f: FbScraperFilters): void {
   try { window.localStorage.setItem(FILTERS_LS_KEY, JSON.stringify(f)); } catch {}
 }
 
+const SELECTED_LOC_LS_KEY = 'fb-scraper:selectedLocation';
+
+function loadStoredSelectedLocation(): LocationCandidate | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(SELECTED_LOC_LS_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function storeSelectedLocation(c: LocationCandidate | null): void {
+  if (typeof window === 'undefined') return;
+  try {
+    if (c) window.localStorage.setItem(SELECTED_LOC_LS_KEY, JSON.stringify(c));
+    else window.localStorage.removeItem(SELECTED_LOC_LS_KEY);
+  } catch {}
+}
+
 export function FbScraperPanel({ def, defaultOpen = false }: { def: AgentDef; defaultOpen?: boolean }) {
   const [status, setStatus] = useState<FbScraperStatus | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(defaultOpen);
   const [filters, setFilters] = useState<FbScraperFilters>(() => loadStoredFilters());
+  const [selectedLocation, setSelectedLocation] = useState<LocationCandidate | null>(
+    () => loadStoredSelectedLocation()
+  );
   const mountedRef = useRef(true);
 
   // Persist on every change (cheap; values are small).
   useEffect(() => { storeFilters(filters); }, [filters]);
+  useEffect(() => { storeSelectedLocation(selectedLocation); }, [selectedLocation]);
 
   const refreshStatus = useCallback(async () => {
     try {
@@ -97,7 +119,12 @@ export function FbScraperPanel({ def, defaultOpen = false }: { def: AgentDef; de
 
   const running = status?.status === 'running';
   const connected = status?.connection?.connected === true;
-  const fbLoggedIn = status?.connection?.fb_logged_in === true;
+  // fb_logged_in is tri-state: true / false / null(unknown). The extension
+  // currently reports `null` because the service worker doesn't probe FB
+  // session state. Treat unknown as "don't warn" — only explicit `false`
+  // (which we'd get if/when we add a probe) shows the warning banner.
+  const fbLoggedInRaw = status?.connection?.fb_logged_in;
+  const fbLoggedInKnownFalse = fbLoggedInRaw === false;
   const templatesReady = (status?.connection?.captured_template_names?.length ?? 0) > 0;
   const canStart = !busy && !running && connected;
 
@@ -118,7 +145,19 @@ export function FbScraperPanel({ def, defaultOpen = false }: { def: AgentDef; de
       }
     }, []);
 
-  const onSearch = () => handleAction('search', () => fbScraperApi.start(filters));
+  const onSearch = () => {
+    const payload: FbScraperFilters & {
+      selectedLocation?: LocationCandidate;
+      latitude?: number;
+      longitude?: number;
+    } = { ...filters };
+    if (selectedLocation) {
+      payload.selectedLocation = selectedLocation;
+      if (selectedLocation.latitude != null) payload.latitude = selectedLocation.latitude;
+      if (selectedLocation.longitude != null) payload.longitude = selectedLocation.longitude;
+    }
+    return handleAction('search', () => fbScraperApi.start(payload));
+  };
   const onStop = () => handleAction('stop', fbScraperApi.stop);
   const onRefreshTemplates = () => handleAction('refresh templates', fbScraperApi.refreshTemplates);
 
@@ -192,7 +231,7 @@ export function FbScraperPanel({ def, defaultOpen = false }: { def: AgentDef; de
           <strong>Note:</strong> the extension popup must remain open while a scrape is running — the search loop lives in popup.js. Closing the popup stops the scrape.
         </div>
       )}
-      {connected && fbLoggedIn === false && (
+      {connected && fbLoggedInKnownFalse && (
         <div className="mt-3 flex items-start gap-2 rounded-md border border-amber-300/50 bg-amber-500/10 px-3 py-2 text-[12px] text-amber-700 dark:text-amber-400">
           <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
           <span>Sign in to Facebook in the extension's browser so it can scrape Marketplace.</span>
@@ -222,14 +261,16 @@ export function FbScraperPanel({ def, defaultOpen = false }: { def: AgentDef; de
           {/* Filters — mirror popup.html exactly */}
           <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2.5">
             <Field label="Location" full>
-              <input
-                type="text"
+              <LocationTypeahead
                 value={String(filters.location ?? '')}
-                onChange={(e) => setField('location', e.target.value)}
-                placeholder="Type city, neighborhood, or ZIP…"
-                disabled={running}
-                className={inputClass}
-                autoComplete="off"
+                onValueChange={(v) => setField('location', v)}
+                selected={selectedLocation}
+                onSelect={(c) => {
+                  setSelectedLocation(c);
+                  setField('location', c.single_line_address);
+                }}
+                onClear={() => setSelectedLocation(null)}
+                disabled={running || !connected}
               />
             </Field>
 
@@ -313,7 +354,7 @@ export function FbScraperPanel({ def, defaultOpen = false }: { def: AgentDef; de
             <div className="mt-3 text-[11px] text-claude-subtle dark:text-coal-400 flex items-center gap-3 flex-wrap">
               <span>extension v{status?.connection?.extension_version ?? '?'}</span>
               <span>·</span>
-              <span>FB login: {fbLoggedIn ? 'yes' : 'no'}</span>
+              <span>FB login: {fbLoggedInRaw === true ? 'yes' : fbLoggedInRaw === false ? 'no' : 'unknown'}</span>
               <span>·</span>
               <span>templates: {status?.connection?.captured_template_names?.length ?? 0}</span>
             </div>
@@ -342,6 +383,110 @@ const Field: React.FC<{ label: string; full?: boolean; children: React.ReactNode
 const Pair: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div className="md:col-span-2 grid grid-cols-2 gap-2.5">{children}</div>
 );
+
+const LocationTypeahead: React.FC<{
+  value: string;
+  onValueChange: (v: string) => void;
+  selected: LocationCandidate | null;
+  onSelect: (c: LocationCandidate) => void;
+  onClear: () => void;
+  disabled?: boolean;
+}> = ({ value, onValueChange, selected, onSelect, onClear, disabled }) => {
+  const [candidates, setCandidates] = useState<LocationCandidate[]>([]);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const seqRef = useRef(0);
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+
+  // Close dropdown on outside click.
+  useEffect(() => {
+    const onDocClick = (e: MouseEvent) => {
+      if (!wrapRef.current) return;
+      if (!wrapRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, []);
+
+  const runQuery = useCallback(async (q: string) => {
+    const seq = ++seqRef.current;
+    setLoading(true); setErr(null);
+    try {
+      const { candidates } = await fbScraperApi.locationTypeahead(q);
+      if (seq !== seqRef.current) return; // stale
+      setCandidates(candidates || []);
+    } catch (e) {
+      if (seq !== seqRef.current) return;
+      setErr(e instanceof Error ? e.message : String(e));
+      setCandidates([]);
+    } finally {
+      if (seq === seqRef.current) setLoading(false);
+    }
+  }, []);
+
+  const onChange = (raw: string) => {
+    onValueChange(raw);
+    if (selected && raw !== selected.single_line_address) onClear();
+    setOpen(true);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    const q = raw.trim();
+    if (q.length < 2) {
+      setCandidates([]); setErr(null); setLoading(false);
+      return;
+    }
+    debounceRef.current = setTimeout(() => { void runQuery(q); }, 250);
+  };
+
+  return (
+    <div ref={wrapRef} className="relative">
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onFocus={() => { if (candidates.length || err || loading) setOpen(true); }}
+        placeholder="Type city, neighborhood, or ZIP…"
+        disabled={disabled}
+        className={inputClass}
+        autoComplete="off"
+      />
+      {selected && (
+        <div className="mt-1 text-[11px] text-claude-subtle dark:text-coal-400 truncate">
+          {selected.subtitle || (selected.latitude != null && selected.longitude != null
+            ? `${selected.latitude.toFixed(4)}, ${selected.longitude.toFixed(4)}`
+            : '')}
+        </div>
+      )}
+      {open && !disabled && (loading || err || candidates.length > 0) && (
+        <div className="absolute z-20 left-0 right-0 mt-1 rounded-md border border-claude-border dark:border-coal-700 bg-claude-surface dark:bg-coal-850 shadow-md max-h-64 overflow-auto">
+          {loading && (
+            <div className="px-2.5 py-1.5 text-[11px] text-claude-subtle dark:text-coal-400">Searching…</div>
+          )}
+          {!loading && err && (
+            <div className="px-2.5 py-1.5 text-[11px] text-red-500">{err}</div>
+          )}
+          {!loading && !err && candidates.length === 0 && (
+            <div className="px-2.5 py-1.5 text-[11px] text-claude-subtle dark:text-coal-400">No matches</div>
+          )}
+          {!loading && !err && candidates.map((c, i) => (
+            <button
+              type="button"
+              key={`${c.single_line_address}-${i}`}
+              onClick={() => { onSelect(c); setOpen(false); }}
+              className="w-full text-left px-2.5 py-1.5 text-[12px] hover:bg-claude-sand dark:hover:bg-coal-800 border-b border-claude-border/60 dark:border-coal-700/60 last:border-b-0"
+            >
+              <div className="text-claude-ink dark:text-coal-100">{c.single_line_address}</div>
+              {c.subtitle && (
+                <div className="text-[11px] text-claude-subtle dark:text-coal-400 truncate">{c.subtitle}</div>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const NumberInput: React.FC<{
   value: number | string | undefined;

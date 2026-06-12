@@ -240,7 +240,7 @@ def get_deal_pipeline():
 // Real-time CRM updates
 const crmSocket = new WebSocket('ws://localhost:8001/ws/crm');
 
-crmSocket.onmessage = (event) => {
+crmSocket.onmessage = (event) => {  wss://crm.opulent
   const data = JSON.parse(event.data);
   if (data.type === 'lead_created') {
     updateLeadList(data.lead);

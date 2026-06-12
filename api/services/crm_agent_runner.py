@@ -407,6 +407,7 @@ class CrmAgentRunner(ABC):
         self,
         status: Optional[str] = None,
         since_id: Optional[int] = None,
+        entity_id: Optional[str] = None,
         limit: int = 50,
         offset: int = 0,
     ) -> Optional[Dict[str, Any]]:
@@ -416,6 +417,9 @@ class CrmAgentRunner(ABC):
         if status:
             where.append("status = %s")
             params.append(status)
+        if entity_id is not None:
+            where.append("entity_id = %s")
+            params.append(entity_id)
         if since_id is not None:
             where.append("id > %s")
             params.append(since_id)

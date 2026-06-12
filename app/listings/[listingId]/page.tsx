@@ -26,12 +26,16 @@ import { ArrowLeft, Plus, Upload, X, Save, Edit2, Check, ExternalLink, Bell, Sen
 import { useToast } from '../../../hooks/useToast';
 import { formatDateTime } from 'lib/utils/formatters';
 import { invalidateListingsCache } from '../../../lib/hooks/useListings';
+import { useListingDamage } from '../../../lib/hooks/useListingDamage';
 
 export default function ListingDetailPage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
   const listingId = params.listingId as string;
+  // AI damage report (if the damage-detection agent analyzed this listing) —
+  // drives the red damage markers drawn over the image carousel.
+  const { damages: detectedDamages } = useListingDamage(listingId);
   const { showSuccess, showError } = useToast();
   
   const [loading, setLoading] = useState(true);
@@ -2079,7 +2083,7 @@ export default function ListingDetailPage() {
             
             {images.length > 0 ? (
               <div className="space-y-4">
-                <ImageCarousel images={images} />
+                <ImageCarousel images={images} damages={detectedDamages} />
                 <div className="grid grid-cols-4 gap-2 mt-4">
                   {images.map((image, index) => (
                     <div key={index} className="relative group">

@@ -26,7 +26,8 @@ export const AGENT_DEFS: AgentDef[] = [
     icon: <ScanSearch className="w-4 h-4 text-claude-accent" />,
     summarize: (r) => {
       const p = rep(r);
-      return `${p.damage_count ?? 0} damage(s) · ${p.overall_condition ?? '—'} · ${r.images_analyzed ?? 0} img`;
+      const possible = p.possible_damage_count ? ` (+${p.possible_damage_count} possible)` : '';
+      return `${p.damage_count ?? 0} damage(s)${possible} · ${p.overall_condition ?? '—'} · ${r.images_analyzed ?? 0} img`;
     },
   },
   {

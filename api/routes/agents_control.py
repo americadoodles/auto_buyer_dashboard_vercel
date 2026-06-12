@@ -114,6 +114,7 @@ def agent_reports(
     agent_id: str,
     status: Optional[str] = Query(default=None, pattern="^(pending|processing|completed|failed|skipped)$"),
     since_id: Optional[int] = Query(default=None, ge=0, description="Only reports with id > since_id (incremental polling)"),
+    entity_id: Optional[str] = Query(default=None, max_length=64, description="Filter to one entity (listing id / lead uuid / ...)"),
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
     current_user=Depends(get_current_user),
@@ -121,7 +122,8 @@ def agent_reports(
     """Agent reports in the generic shape, newest first."""
     runner = _runner_or_404(agent_id)
     try:
-        page = runner.reports(status=status, since_id=since_id, limit=limit, offset=offset)
+        page = runner.reports(status=status, since_id=since_id, entity_id=entity_id,
+                              limit=limit, offset=offset)
     except Exception:
         logger.exception("Reports read failed for agent %s", agent_id)
         raise HTTPException(status_code=500, detail="Failed to read agent reports")

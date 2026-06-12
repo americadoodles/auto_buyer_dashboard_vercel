@@ -73,8 +73,30 @@ export interface StartOptions {
 export interface ReportsQuery {
   sinceId?: number;
   status?: AgentReportStatus;
+  entityId?: string; // filter to one entity (listing id / lead uuid / ...)
   limit?: number;
   offset?: number;
+}
+
+/** Normalized image coordinate (fraction of width/height, 0..1). */
+export interface DamagePoint {
+  x: number;
+  y: number;
+}
+
+/** One damage item from a damage-detection report (subset used by overlays). */
+export interface DamageAreaItem {
+  part: string;
+  damage_type: string;
+  severity: 'minor' | 'moderate' | 'severe';
+  description: string | null;
+  image_index: number | null;
+  area_points: DamagePoint[] | null;
+  confidence: number;
+  /** "definite" = verified physical damage; "possible" = might be an artifact
+   *  (glare/reflection/shadow) — rendered differently. Older reports omit it. */
+  certainty?: 'definite' | 'possible';
+  uncertainty_reason?: string | null;
 }
 
 /** API client bound to one agent id. */
@@ -99,6 +121,7 @@ export function agentApi(agentId: string) {
       const qs = new URLSearchParams();
       if (q.sinceId !== undefined) qs.set('since_id', String(q.sinceId));
       if (q.status) qs.set('status', q.status);
+      if (q.entityId !== undefined) qs.set('entity_id', q.entityId);
       qs.set('limit', String(q.limit ?? 50));
       qs.set('offset', String(q.offset ?? 0));
       return ApiService.request<AgentReportsPage>(`${base}/reports?${qs.toString()}`);

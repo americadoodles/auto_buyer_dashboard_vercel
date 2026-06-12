@@ -170,7 +170,7 @@ class DamageAgentRunner:
         extra_sql, extra_params = _candidate_filters(config)
         row = execute_with_connection(
             f"""
-            SELECT l.id, l.year, l.make, l.model, l.trim, l.images
+            SELECT l.id, l.year, l.make, l.model, l.trim, l.images, l.vin, l.lpn
             FROM listings l
             WHERE l.id > %s
               AND l.images IS NOT NULL AND array_length(l.images, 1) > 0
@@ -320,9 +320,12 @@ class DamageAgentRunner:
         commercial vehicles are analyzed — other vehicle classes are
         classified by the vision model and recorded as 'skipped'.
 
-        `restart=True` resets the cursor and counters and rescans all pending
-        listings from the beginning; otherwise continues after the persisted
-        cursor (already completed/skipped listings are never re-analyzed).
+        Every start scans from the beginning: listings with a completed or
+        skipped report are excluded, and previously FAILED listings are
+        retried. The cursor only lives within a run (resume picks up where
+        pause/stop left off). `restart=True` additionally DELETES all previous
+        damage reports so everything in range is re-analyzed from scratch
+        (e.g. after a model or prompt upgrade).
         """
         if not settings.AI_ENABLED or not settings.OPENAI_API_KEY:
             raise AgentControlError("AI is not configured (OPENAI_API_KEY missing)")
@@ -333,17 +336,22 @@ class DamageAgentRunner:
             if self._worker_alive():
                 raise AgentControlError("Agent is already running — stop or pause it first")
 
-            state = self._read_state()
-            start_after = 0 if restart else int(state.get("cursor_listing_id") or 0)
+            if restart:
+                # Full fresh re-analysis (model/prompt may have changed).
+                execute_with_connection("DELETE FROM damage_reports")
+
+            start_after = 0
             total = self._count_pending(start_after, config)
             if total == 0:
                 raise AgentControlError(
-                    "No pending listings with images match the current filters"
+                    "Nothing to analyze: every listing in this range already has "
+                    "a report (use Restart to re-analyze) or no listing matches "
+                    "the filters"
                 )
 
             self._write_state(
                 status=S_RUNNING,
-                cursor_listing_id=start_after or None,
+                cursor_listing_id=None,  # fresh run — cursor advances per item
                 total=total,
                 processed=0,
                 succeeded=0,
@@ -448,6 +456,7 @@ class DamageAgentRunner:
         self,
         status: Optional[str] = None,
         since_id: Optional[int] = None,
+        entity_id: Optional[str] = None,
         limit: int = 50,
         offset: int = 0,
     ) -> Optional[Dict[str, Any]]:
@@ -460,6 +469,12 @@ class DamageAgentRunner:
         if status:
             where.append("dr.status = %s")
             params.append(status)
+        if entity_id is not None:
+            try:
+                params.append(int(entity_id))  # listings use integer ids
+            except ValueError:
+                return {"reports": [], "total": 0, "limit": limit, "offset": offset}
+            where.append("dr.listing_id = %s")
         if since_id is not None:
             where.append("dr.id > %s")
             params.append(since_id)

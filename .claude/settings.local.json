@@ -29,7 +29,11 @@
       "Bash(curl -s -o /tmp/cv6.jpg \"https://storage.googleapis.com/auto-buyer-dashboard/listings/facebook/460cea86-fda0-4b7f-804f-c05829df24b3.jpg\")",
       "Bash(curl -s -o /tmp/cv7.jpg \"https://storage.googleapis.com/auto-buyer-dashboard/listings/facebook/09e91d28-6e7e-4cbd-9888-233d89e72002.jpg\")",
       "Read(//tmp/**)",
-      "PowerShell(Set-Content *)"
+      "PowerShell(Set-Content *)",
+      "Bash(npm run *)",
+      "Bash(python -c \"import ast; [ast.parse\\(open\\(p, encoding='utf-8'\\).read\\(\\)\\) for p in ['api/services/ws_extension_manager.py', 'api/services/fb_scraper_runner.py', 'api/routes/extension_ws.py', 'api/routes/fb_scraper.py']]; print\\('all parse ok'\\)\")",
+      "Bash(node --check c:/work/OI/OI_facebook_monitor/extension-v2/background.js)",
+      "Bash(node --check c:/work/OI/OI_facebook_monitor/extension-v2/popup.js)"
     ]
   }
 }

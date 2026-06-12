@@ -24,6 +24,7 @@ from psycopg.rows import dict_row
 from ..core.config import settings
 from ..core.db_helpers import execute_with_connection
 from .damage_detection_service import analyze_listing_images
+from .extraction_writeback import apply_extractions
 
 logger = logging.getLogger(__name__)
 
@@ -243,6 +244,17 @@ class DamageAgentRunner:
                     # keep the classification but mark 'skipped' so it is never
                     # re-analyzed and never shows up as a damage report.
                     in_scope = report.get("in_scope", True)
+                    if in_scope:
+                        # Fill empty VIN/LPN/contact fields from photo-extracted
+                        # identifiers (fill-only-when-empty; failures never
+                        # fail the listing — analysis already succeeded).
+                        try:
+                            writeback = apply_extractions(listing_id, report.get("extracted") or {})
+                            if writeback:
+                                report["writeback"] = writeback
+                        except Exception:
+                            logger.exception("[%s] write-back failed for listing %s",
+                                             AGENT_ID, listing_id)
                     self._upsert_report(
                         listing_id,
                         "completed" if in_scope else "skipped",

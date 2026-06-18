@@ -173,25 +173,45 @@ def apply_schema_if_needed() -> None:
             return
 
         with conn.cursor() as cur:
+            # Each step below is independently guarded: a failure in any one of
+            # them must NEVER prevent the versioned migration files (further down)
+            # from running, and a missing critical table must surface LOUDLY at
+            # boot rather than as a mysterious 503 the first time a query hits the
+            # absent relation. The pool runs in autocommit mode, so a failed
+            # statement leaves the connection usable for the steps that follow.
+            def _step(label: str, fn) -> None:
+                try:
+                    fn()
+                except Exception as step_err:
+                    logger.warning(
+                        "Schema step '%s' failed (continuing): %s",
+                        label, step_err, exc_info=True,
+                    )
+
             try:
-                logger.info("Applying schema...")
-                _exec_sql_script(cur, schema_content)
-                logger.info("Base schema applied.")
+                def _base_schema():
+                    logger.info("Applying schema...")
+                    _exec_sql_script(cur, schema_content)
+                    logger.info("Base schema applied.")
+                _step("base schema", _base_schema)
 
                 # Apply CRM schema if available
                 if crm_schema_content:
-                    logger.info("Applying CRM schema...")
-                    full_crm_script = f"BEGIN;\n{crm_schema_content}\nCOMMIT;"
-                    _exec_sql_script(cur, full_crm_script)
-                    logger.info("CRM schema applied.")
+                    def _crm_schema():
+                        logger.info("Applying CRM schema...")
+                        _exec_sql_script(cur, f"BEGIN;\n{crm_schema_content}\nCOMMIT;")
+                        logger.info("CRM schema applied.")
+                    _step("CRM schema", _crm_schema)
 
                 # ----- listings table columns -----
-                if _table_exists(cur, "public.listings"):
+                def _listings_cols():
+                    if not _table_exists(cur, "public.listings"):
+                        logger.warning("Skipping ALTERs for listings: table does not exist yet")
+                        return
                     # ADD COLUMN IF NOT EXISTS is valid on PG >= 9.6
                     cur.execute("ALTER TABLE public.listings ADD COLUMN IF NOT EXISTS location text")
                     cur.execute("ALTER TABLE public.listings ADD COLUMN IF NOT EXISTS buyer_id text")
                     cur.execute("ALTER TABLE public.listings ADD COLUMN IF NOT EXISTS images text[]")
-
                     # Backfill buyer_id from legacy 'buyer' if present
                     cur.execute("""
                         DO $$
@@ -209,52 +229,40 @@ def apply_schema_if_needed() -> None:
                             END IF;
                         END $$;
                     """)
+                _step("listings columns", _listings_cols)
 
-                else:
-                    logger.warning("Skipping ALTERs for listings: table does not exist yet")
-
-                # ----- users.username column -----
-                if _table_exists(cur, "public.users"):
+                # ----- users.username / last_login columns -----
+                def _users_cols():
+                    if not _table_exists(cur, "public.users"):
+                        logger.warning("Skipping ALTER users: table does not exist yet")
+                        return
                     cur.execute("ALTER TABLE public.users ADD COLUMN IF NOT EXISTS username text")
-                    # Add last_login column if it doesn't exist
                     cur.execute("ALTER TABLE public.users ADD COLUMN IF NOT EXISTS last_login timestamptz")
-                    # Create index for last_login if it doesn't exist
-                    cur.execute("""
-                        CREATE INDEX IF NOT EXISTS idx_users_last_login ON public.users(last_login)
-                    """)
-                    # Update existing users to have their created_at as last_login (best approximation)
-                    cur.execute("""
-                        UPDATE public.users 
-                        SET last_login = created_at 
-                        WHERE last_login IS NULL
-                    """)
-                else:
-                    logger.warning("Skipping ALTER users: table does not exist yet")
+                    cur.execute("CREATE INDEX IF NOT EXISTS idx_users_last_login ON public.users(last_login)")
+                    # Best-effort approximation for existing rows.
+                    cur.execute("UPDATE public.users SET last_login = created_at WHERE last_login IS NULL")
+                _step("users columns", _users_cols)
 
                 # ----- user_signup_requests.username column -----
-                if _table_exists(cur, "public.user_signup_requests"):
+                def _signup_cols():
+                    if not _table_exists(cur, "public.user_signup_requests"):
+                        logger.warning("Skipping ALTER user_signup_requests: table does not exist yet")
+                        return
                     cur.execute("ALTER TABLE public.user_signup_requests ADD COLUMN IF NOT EXISTS username text")
-                else:
-                    logger.warning("Skipping ALTER user_signup_requests: table does not exist yet")
+                _step("user_signup_requests columns", _signup_cols)
 
-                # =============================================
-                # Ensure created_at on ALL tables (for existing DBs)
-                # =============================================
-                _ensure_created_at_columns = [
-                    "vehicles",
-                    "roles",
-                    "user_signup_requests",
-                    "task_activity",
-                ]
-                for tbl in _ensure_created_at_columns:
-                    if _table_exists(cur, f"public.{tbl}"):
-                        cur.execute(
-                            f"ALTER TABLE public.{tbl} "
-                            f"ADD COLUMN IF NOT EXISTS created_at timestamptz DEFAULT now()"
-                        )
-                        logger.info("Ensured created_at on %s", tbl)
-                    else:
-                        logger.warning("Skipping created_at for %s: table does not exist yet", tbl)
+                # ----- ensure created_at on assorted legacy tables -----
+                def _ensure_created_at():
+                    for tbl in ("vehicles", "roles", "user_signup_requests", "task_activity"):
+                        if _table_exists(cur, f"public.{tbl}"):
+                            cur.execute(
+                                f"ALTER TABLE public.{tbl} "
+                                f"ADD COLUMN IF NOT EXISTS created_at timestamptz DEFAULT now()"
+                            )
+                            logger.info("Ensured created_at on %s", tbl)
+                        else:
+                            logger.warning("Skipping created_at for %s: table does not exist yet", tbl)
+                _step("created_at backfill", _ensure_created_at)
 
                 # =============================================
                 # Apply all migration files (idempotent, safe)
@@ -303,14 +311,37 @@ def apply_schema_if_needed() -> None:
                                 "Migration %s failed (may already be applied): %s",
                                 mig_file,
                                 mig_err,
+                                exc_info=True,
                             )
 
                 # Seed default roles
-                seed_default_roles(conn)
+                _step("seed default roles", lambda: seed_default_roles(conn))
 
-                logger.info("Schema ensured OK.")
+                # =============================================
+                # Post-condition: the tables the app depends on MUST exist now.
+                # If a migration silently failed to apply, fail LOUDLY here instead
+                # of letting the app 503 later when a query hits the missing table.
+                # =============================================
+                _critical_tables = ("users", "listings", "damage_reports", "agent_state")
+                missing = [t for t in _critical_tables if not _table_exists(cur, f"public.{t}")]
+                if missing:
+                    msg = (
+                        "Schema verification FAILED — critical tables missing after "
+                        f"migrations: {', '.join(missing)}. See earlier "
+                        "'Migration ... failed' / 'Schema step ... failed' warnings "
+                        "for the root cause."
+                    )
+                    logger.error(msg)
+                    # Crash boot in local/dev so it is caught immediately; in deployed
+                    # environments stay up (avoid an outage) but emit ERROR to alert on.
+                    if getattr(settings, "ENVIRONMENT", "local") == "local":
+                        raise RuntimeError(msg)
+                else:
+                    logger.info("Schema ensured OK (critical tables present).")
             except Exception as e:
                 logger.error("Schema application failed: %s", e, exc_info=True)
-                # decide whether to re-raise; keeping logged-only to avoid crashing boot
-                # raise
+                # Re-raise in local/dev to surface problems immediately; in deployed
+                # environments stay up so a transient issue doesn't take prod down.
+                if getattr(settings, "ENVIRONMENT", "local") == "local":
+                    raise
 

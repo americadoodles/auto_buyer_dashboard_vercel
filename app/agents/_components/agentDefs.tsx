@@ -3,7 +3,7 @@
 
 import React from 'react';
 import {
-  ScanSearch, Target, ShieldAlert, MessageSquareText, ListTodo,
+  ScanSearch, Target, ShieldAlert, MessageSquareText, ListTodo, ShoppingCart,
 } from 'lucide-react';
 import type { AgentReport } from '../../../lib/agents/agentControl';
 
@@ -14,6 +14,10 @@ export interface AgentDef {
   icon: React.ReactNode;
   /** One-line summary of a completed report (console + recent-reports list). */
   summarize: (r: AgentReport) => string;
+  /** Optional custom panel component. If omitted, the generic AgentControlPanel
+   *  is used. Agents with a non-standard run config (e.g. fb-scraper's rich
+   *  filter form) supply their own. */
+  Panel?: React.ComponentType<{ def: AgentDef; defaultOpen?: boolean }>;
 }
 
 const rep = (r: AgentReport) => (r.report ?? {}) as Record<string, any>;
@@ -69,5 +73,17 @@ export const AGENT_DEFS: AgentDef[] = [
       const p = rep(r);
       return `${p.task_count ?? 0} task(s) proposed`;
     },
+  },
+  {
+    id: 'fb-scraper',
+    title: 'FB Marketplace Scraper Agent',
+    description: 'Drives a connected Chrome extension to scrape FB Marketplace via captured GraphQL templates',
+    icon: <ShoppingCart className="w-4 h-4 text-claude-accent" />,
+    summarize: (r) => {
+      const p = rep(r);
+      return `${p.processed ?? 0} listing(s) scraped`;
+    },
+    // Panel is wired in app/agents/_components/FbScraperPanel.tsx to avoid a
+    // circular import (agentDefs is a pure data module).
   },
 ];

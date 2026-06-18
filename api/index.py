@@ -30,6 +30,8 @@ from .routes.ai_recommender import ai_recommender_router
 
 # AI Agents
 from .routes.agents_control import agents_control_router
+from .routes.fb_scraper import fb_scraper_router
+from .routes.extension_ws import extension_ws_router
 
 # ---- run-on-cold-start: ensure schema once ----
 import logging
@@ -86,7 +88,13 @@ app.include_router(communication_router, prefix="/api")
 app.include_router(ai_recommender_router, prefix="/api")
 
 # AI Agents
+# fb-scraper routes mounted first so /api/agents/fb-scraper/* wins over the
+# generic /api/agents/{agent_id}/* handlers (which assume global singleton state).
+app.include_router(fb_scraper_router, prefix="/api")
 app.include_router(agents_control_router, prefix="/api")
+
+# Chrome-extension WebSocket (no /api prefix — extension targets /ws/...)
+app.include_router(extension_ws_router)
 
 @app.get("/api/healthz")
 def healthz():

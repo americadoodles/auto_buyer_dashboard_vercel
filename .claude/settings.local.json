@@ -29,7 +29,14 @@
       "Bash(curl -s -o /tmp/cv6.jpg \"https://storage.googleapis.com/auto-buyer-dashboard/listings/facebook/460cea86-fda0-4b7f-804f-c05829df24b3.jpg\")",
       "Bash(curl -s -o /tmp/cv7.jpg \"https://storage.googleapis.com/auto-buyer-dashboard/listings/facebook/09e91d28-6e7e-4cbd-9888-233d89e72002.jpg\")",
       "Read(//tmp/**)",
-      "PowerShell(Set-Content *)"
+      "PowerShell(Set-Content *)",
+      "Bash(npx tsc *)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(git checkout *)",
+      "Bash(.venv/Scripts/python.exe -m py_compile api/services/damage_detection_service.py)",
+      "Bash(.venv/Scripts/python.exe -c \"import api.services.damage_detection_service as s; assert 'professional vehicle damage inspection report' in s._synthesize.__code__.co_consts.__str__\\(\\) or True; print\\('import OK'\\)\")",
+      "Bash(npx next *)",
+      "Bash(npx eslint *)"
     ]
   }
 }

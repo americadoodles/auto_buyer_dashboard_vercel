@@ -19,6 +19,7 @@ import {
 import { ContactEditModal } from '../../../components/organisms/ContactEditModal';
 import { LeadCreateModal } from '../../../components/organisms/LeadCreateModal';
 import { ImageCarousel } from '../../../components/organisms/ImageCarousel';
+import { DamageReportPanel } from '../../../components/molecules/DamageReportPanel';
 import { leadsApi } from '../../../lib/services/leadsApi';
 import { Lead } from '../../../lib/types/lead';
 import { ListingActivity, Contact } from '../../../lib/types/listing';
@@ -34,8 +35,9 @@ export default function ListingDetailPage() {
   const searchParams = useSearchParams();
   const listingId = params.listingId as string;
   // AI damage report (if the damage-detection agent analyzed this listing) —
-  // drives the red damage markers drawn over the image carousel.
-  const { damages: detectedDamages } = useListingDamage(listingId);
+  // drives the red damage markers drawn over the image carousel and the
+  // per-image damage breakdown shown beneath it.
+  const { damages: detectedDamages, report: damageReport } = useListingDamage(listingId);
   const { showSuccess, showError } = useToast();
   
   const [loading, setLoading] = useState(true);
@@ -2084,6 +2086,12 @@ export default function ListingDetailPage() {
             {images.length > 0 ? (
               <div className="space-y-4">
                 <ImageCarousel images={images} damages={detectedDamages} />
+                <DamageReportPanel
+                  report={damageReport}
+                  images={images}
+                  vehicleLabel={listing ? `${listing.year ?? ''} ${listing.make ?? ''} ${listing.model ?? ''}`.trim() : undefined}
+                  vin={listing?.vin}
+                />
                 <div className="grid grid-cols-4 gap-2 mt-4">
                   {images.map((image, index) => (
                     <div key={index} className="relative group">

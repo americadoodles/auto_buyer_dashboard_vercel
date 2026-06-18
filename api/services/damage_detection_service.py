@@ -706,8 +706,11 @@ If confirmed or possible, refine the outline to cover the damage's FULL extent."
 # --------------------------------------------------------------------------- #
 
 _SYNTH_SYSTEM = (
-    "You are a vehicle condition report writer for a used-car dealership. "
-    "Always respond with a single valid JSON object and nothing else."
+    "You are a certified vehicle damage inspector writing a formal, professional "
+    "inspection report for a used-car dealership. Write objectively in the third "
+    "person, use clear industry-standard terminology, and base every statement "
+    "ONLY on the findings provided — never invent damage, mileage, pricing, or "
+    "parts not listed. Always respond with a single valid JSON object and nothing else."
 )
 
 
@@ -724,23 +727,36 @@ def _synthesize(
         + (f" [POSSIBLE — {d.get('uncertainty_reason') or 'uncertain'}]" if d.get("certainty") == "possible" else "")
         for d in damages
     ] or ["(no confirmed damage)"]
-    prompt = f"""Write the final assessment for this vehicle listing.
+    severe = sum(1 for d in damages if d.get("severity") == "severe" and d.get("certainty") != "possible")
+    moderate = sum(1 for d in damages if d.get("severity") == "moderate" and d.get("certainty") != "possible")
+    minor = sum(1 for d in damages if d.get("severity") == "minor" and d.get("certainty") != "possible")
+    prompt = f"""Write a professional vehicle damage inspection report.
 
-Vehicle seen: {vehicle.get('vehicle_identified') or 'unknown'} (match vs listing: {vehicle['vehicle_match']})
-Photo coverage: {views}
+Vehicle assessed: {vehicle.get('vehicle_identified') or 'unknown'} (match vs listing: {vehicle['vehicle_match']})
+Photos reviewed: {views or 'none'}
 Missing exterior views: {', '.join(missing_views) or 'none'}
-Confirmed damage:
+Confirmed damage severity counts: {severe} severe, {moderate} moderate, {minor} minor.
+Itemized findings:
 {chr(10).join(dmg_lines)}
+
+Compose the report as the "summary" string using these labeled sections, each
+separated by a blank line (plain text, no markdown symbols or backticks):
+
+Overview: one sentence identifying the vehicle assessed and the basis of the inspection (photo review).
+Condition Assessment: the overall condition and what drives it.
+Damage Findings: a concise professional account of the confirmed damage by area and severity; if none, state that no visible damage was identified. Clearly flag any items noted as POSSIBLE as requiring physical verification.
+Coverage & Limitations: note missing views, image-quality limits, and that this is a photo-based assessment.
+Recommendation: a brief, professional next step (e.g., proceed, obtain additional photos, or arrange a physical inspection).
 
 Respond with EXACTLY:
 {{
   "overall_condition": "excellent" | "good" | "fair" | "poor" | "damaged",
-  "summary": "2-3 factual sentences: vehicle, confirmed damage, coverage limits"
+  "summary": "the full multi-section professional report described above"
 }}
 Never rate better than "fair" when exterior views are missing."""
 
     try:
-        raw = _json_vision_call(client, _SYNTH_SYSTEM, prompt, None, max_tokens=250)
+        raw = _json_vision_call(client, _SYNTH_SYSTEM, prompt, None, max_tokens=900)
     except ValueError:
         raw = {}
     condition = str(raw.get("overall_condition", "")).lower()

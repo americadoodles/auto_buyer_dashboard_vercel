@@ -20,8 +20,8 @@ const SEVERITY_OPACITY: Record<string, number> = {
   severe: 0.95,
 };
 
-interface Circle {
-  cx: number;       // viewBox units (0..100)
+interface Marker {
+  cx: number;       // ellipse center, viewBox units (0..100)
   cy: number;
   rx: number;
   ry: number;
@@ -31,7 +31,7 @@ interface Circle {
 }
 
 /** Fit an ellipse around a normalized point outline (centroid + half-extent). */
-function fitCircle(d: DamageAreaItem): Circle | null {
+function fitMarker(d: DamageAreaItem): Marker | null {
   const pts = d.area_points;
   if (!pts || pts.length < 3) return null;
   const xs = pts.map((p) => p.x * 100);
@@ -50,11 +50,12 @@ function fitCircle(d: DamageAreaItem): Circle | null {
     possible && d.uncertainty_reason ? `uncertain: ${d.uncertainty_reason}` : null,
     d.description ?? '',
   ].filter(Boolean).join(' · ');
+  const cx = (minX + maxX) / 2;
+  const cy = (minY + maxY) / 2;
+  const rx = Math.max(MIN_R, (maxX - minX) / 2 + PAD);
+  const ry = Math.max(MIN_R, (maxY - minY) / 2 + PAD);
   return {
-    cx: (minX + maxX) / 2,
-    cy: (minY + maxY) / 2,
-    rx: Math.max(MIN_R, (maxX - minX) / 2 + PAD),
-    ry: Math.max(MIN_R, (maxY - minY) / 2 + PAD),
+    cx, cy, rx, ry,
     title,
     opacity: SEVERITY_OPACITY[d.severity] ?? 0.75,
     possible,
@@ -64,56 +65,40 @@ function fitCircle(d: DamageAreaItem): Circle | null {
 export interface DamageOverlayProps {
   /** Damages for the CURRENT image only (already filtered by image_index). */
   damages: DamageAreaItem[];
-  /** Also trace the raw outline polygon, not just the fitted circle. */
+  /** Retained for API compatibility; markers are outlines only (no fill). */
   showOutline?: boolean;
   className?: string;
 }
 
-export const DamageOverlay: React.FC<DamageOverlayProps> = ({
-  damages,
-  showOutline = false,
-  className,
-}) => {
-  const circles = damages
-    .map((d) => ({ d, c: fitCircle(d) }))
-    .filter((e): e is { d: DamageAreaItem; c: Circle } => e.c !== null);
-  if (circles.length === 0) return null;
+export const DamageOverlay: React.FC<DamageOverlayProps> = ({ damages, className }) => {
+  const markers = damages
+    .map(fitMarker)
+    .filter((m): m is Marker => m !== null);
+  if (markers.length === 0) return null;
 
   return (
     <svg
       viewBox="0 0 100 100"
       preserveAspectRatio="none"
       className={`absolute inset-0 w-full h-full pointer-events-none ${className ?? ''}`}
-      aria-label={`${circles.length} damage marker(s)`}
+      aria-label={`${markers.length} damage marker(s)`}
       role="img"
     >
-      {circles.map(({ d, c }, i) => {
-        const color = c.possible ? '#F59E0B' : '#EF4444'; // amber = possible, red = confirmed
+      {markers.map((m, i) => {
+        const color = m.possible ? '#F59E0B' : '#EF4444'; // amber = possible, red = confirmed
+        const dash = m.possible ? '6 4' : undefined;
+        // vectorEffect keeps the ring at a constant on-screen width regardless
+        // of zoom; fill="none" so the damage area underneath stays visible.
         return (
           <g key={i} className="pointer-events-auto">
-            <title>{c.title}</title>
-            {/* soft halo so the marker reads on any paint color */}
+            <title>{m.title}</title>
             <ellipse
-              cx={c.cx} cy={c.cy} rx={c.rx} ry={c.ry}
-              fill={color} fillOpacity={0.12}
-            />
-            {/* vectorEffect keeps the ring 2px on screen regardless of zoom */}
-            <ellipse
-              cx={c.cx} cy={c.cy} rx={c.rx} ry={c.ry}
-              fill="none" stroke={color} strokeOpacity={c.opacity}
+              cx={m.cx} cy={m.cy} rx={m.rx} ry={m.ry}
+              fill="none" stroke={color} strokeOpacity={m.opacity}
               vectorEffect="non-scaling-stroke"
               style={{ strokeWidth: 2 }}
-              strokeDasharray={c.possible ? '6 4' : undefined}
+              strokeDasharray={dash}
             />
-            {showOutline && d.area_points && (
-              <polygon
-                points={d.area_points.map((p) => `${p.x * 100},${p.y * 100}`).join(' ')}
-                fill="none" stroke={color} strokeOpacity={0.5}
-                style={{ strokeWidth: 1 }}
-                vectorEffect="non-scaling-stroke"
-                strokeDasharray="3 2"
-              />
-            )}
           </g>
         );
       })}

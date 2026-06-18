@@ -18,6 +18,10 @@ logger = logging.getLogger(__name__)
 
 DB_ENABLED: bool = bool(settings.DATABASE_URL and _psycopg_available)
 
+# Tables the app cannot function without. Verified after migrations run so a
+# silently-failed migration surfaces loudly instead of as a later runtime 503.
+CRITICAL_TABLES: tuple[str, ...] = ("users", "listings", "damage_reports", "agent_state")
+
 
 def _ensure_pool_initialized() -> bool:
     if not DB_ENABLED:
@@ -322,8 +326,7 @@ def apply_schema_if_needed() -> None:
                 # If a migration silently failed to apply, fail LOUDLY here instead
                 # of letting the app 503 later when a query hits the missing table.
                 # =============================================
-                _critical_tables = ("users", "listings", "damage_reports", "agent_state")
-                missing = [t for t in _critical_tables if not _table_exists(cur, f"public.{t}")]
+                missing = [t for t in CRITICAL_TABLES if not _table_exists(cur, f"public.{t}")]
                 if missing:
                     msg = (
                         "Schema verification FAILED — critical tables missing after "
@@ -344,4 +347,57 @@ def apply_schema_if_needed() -> None:
                 # environments stay up so a transient issue doesn't take prod down.
                 if getattr(settings, "ENVIRONMENT", "local") == "local":
                     raise
+
+
+def missing_critical_tables() -> list[str]:
+    """Return any CRITICAL_TABLES that do not exist on the configured DB.
+
+    Returns the full list when the DB is unreachable (treat as "all missing"),
+    so callers can distinguish "all good" (empty list) from any problem.
+    """
+    if not DB_ENABLED or not _ensure_pool_initialized():
+        return list(CRITICAL_TABLES)
+    with db_pool.get_connection() as conn:
+        if not conn:
+            return list(CRITICAL_TABLES)
+        with conn.cursor() as cur:
+            missing: list[str] = []
+            for table in CRITICAL_TABLES:
+                cur.execute("SELECT to_regclass(%s)", (f"public.{table}",))
+                if cur.fetchone()[0] is None:
+                    missing.append(table)
+            return missing
+
+
+def main() -> int:
+    """CLI entrypoint: apply schema + all migrations to the configured DB,
+    then verify the critical tables exist.
+
+    Run against any environment by exporting that environment's DATABASE_URL:
+
+        export DATABASE_URL='postgresql://user:pass@host:5432/db?sslmode=require'
+        python -m api.core.db
+
+    Exit code 0 when every critical table is present, 1 otherwise. Reuses the
+    exact same migration list and logic the app runs on cold start — no
+    duplicated SQL.
+    """
+    logging.basicConfig(level=logging.INFO)
+    if not DB_ENABLED:
+        logger.error("DB not enabled: set DATABASE_URL (and install psycopg).")
+        return 1
+
+    initialize_pool()
+    apply_schema_if_needed()
+
+    missing = missing_critical_tables()
+    if missing:
+        logger.error("FAILED — critical tables still missing: %s", ", ".join(missing))
+        return 1
+    logger.info("OK — all critical tables present: %s", ", ".join(CRITICAL_TABLES))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
 

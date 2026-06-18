@@ -32,21 +32,13 @@ from .routes.ai_recommender import ai_recommender_router
 from .routes.agents_control import agents_control_router
 from .routes.fb_scraper import fb_scraper_router
 from .routes.extension_ws import extension_ws_router
-
-# ---- run-on-cold-start: ensure schema once ----
-import logging
-from .core.db import DB_ENABLED, apply_schema_if_needed
-
-if DB_ENABLED:
-    try:
-        logging.basicConfig(level=logging.INFO)
-        logging.info("Cold start: ensuring DB schema…")
-        apply_schema_if_needed()
-        logging.info("Schema ready.")
-    except Exception:
-        logging.exception("Schema bootstrap failed at import")
-
-# -----------------------------------------------
+# DB schema/migrations are applied at startup in two complementary places:
+#   * the container CMD runs `python -m api.core.db` BEFORE uvicorn (Cloud Run /
+#     any Docker deploy) — blocking, so a failed migration aborts the revision;
+#   * the FastAPI lifespan handler (api/core/lifespan.py) applies them too, which
+#     covers local dev started with `uvicorn api.index:app` (no Docker CMD).
+# Both are idempotent, so the (at most) double-apply on a container cold start is
+# a cheap set of IF [NOT] EXISTS no-ops.
 
 app = FastAPI(title=settings.APP_TITLE, lifespan=lifespan, redirect_slashes=False)
 

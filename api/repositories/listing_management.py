@@ -3,7 +3,7 @@ import json
 import logging
 from typing import List, Optional, Dict, Any
 from uuid import UUID
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from ..core.db import DB_ENABLED
 from ..core.db_helpers import get_db_connection
 from ..lib.db.query_builder import QueryBuilder
@@ -38,9 +38,21 @@ def update_listing(listing_id: int, update_data: ListingUpdate, updated_by: str)
                 
                 # Build dynamic update query using QueryBuilder
                 try:
+                    update_dict = update_data.model_dump(exclude_unset=True)
+                    # DOM is a derived display value (now() - listed_at). When a
+                    # user edits the DOM number, translate it into the underlying
+                    # listed_at timestamp so it resumes aging from the edited
+                    # point rather than being written as a frozen count.
+                    if "dom" in update_dict:
+                        dom_val = update_dict.pop("dom")
+                        if dom_val is not None:
+                            try:
+                                update_dict["listed_at"] = datetime.now(timezone.utc) - timedelta(days=max(0, int(dom_val)))
+                            except (TypeError, ValueError):
+                                pass  # ignore an unparsable DOM rather than fail the whole update
                     query, params = QueryBuilder.build_update_query(
                         table_name="listings",
-                        update_data=update_data.model_dump(exclude_unset=True),
+                        update_data=update_dict,
                         where_clause="id = %s",
                         where_params=[listing_id],
                         auto_timestamp=True,
@@ -281,7 +293,8 @@ def get_listing_by_id(listing_id: int) -> Optional[ListingOut]:
                         l.id, l.vehicle_key,
                         COALESCE(l.vin, '') AS vin,
                         l.lpn,
-                        l.price, l.miles, l.dom,
+                        l.price, l.miles,
+                        GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (now() - COALESCE(l.listed_at, l.created_at))) / 86400))::int AS dom,
                         l.location,
                         l.buyer_id,
                         COALESCE(l.images, ARRAY[]::text[]) AS images,

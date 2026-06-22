@@ -227,7 +227,9 @@ def get_lead(lead_id: UUID) -> Optional[LeadOut]:
                         -- Created by user fields
                         u_created.id, u_created.email, u_created.username, u_created.role_id, r_created.name, u_created.is_confirmed,
                         -- Listing fields (basic for now)
-                        lst.id, lst.vehicle_key, lst.vin, lst.price, lst.miles, lst.dom, lst.source, lst.location,
+                        lst.id, lst.vehicle_key, lst.vin, lst.price, lst.miles,
+                        GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (now() - COALESCE(lst.listed_at, lst.created_at))) / 86400))::int AS dom,
+                        lst.source, lst.location,
                         lst.year, lst.make, lst.model, lst.trim, lst.images
                     FROM leads l
                     LEFT JOIN contacts c ON l.contact_id = c.id
@@ -374,7 +376,9 @@ def list_leads(skip: int = 0, limit: int = 100, status_id: Optional[int] = None,
                         -- Created by user fields
                         u_created.id, u_created.email, u_created.username, u_created.role_id, r_created.name, u_created.is_confirmed,
                         -- Listing fields
-                        lst.id, lst.vehicle_key, lst.vin, lst.price, lst.miles, lst.dom, lst.source, lst.location,
+                        lst.id, lst.vehicle_key, lst.vin, lst.price, lst.miles,
+                        GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (now() - COALESCE(lst.listed_at, lst.created_at))) / 86400))::int AS dom,
+                        lst.source, lst.location,
                         lst.year, lst.make, lst.model, lst.trim, lst.images
                     FROM leads l
                     LEFT JOIN contacts c ON l.contact_id = c.id

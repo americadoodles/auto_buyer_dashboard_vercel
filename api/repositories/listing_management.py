@@ -39,15 +39,16 @@ def update_listing(listing_id: int, update_data: ListingUpdate, updated_by: str)
                 # Build dynamic update query using QueryBuilder
                 try:
                     update_dict = update_data.model_dump(exclude_unset=True)
-                    # DOM is a derived display value (now() - listed_at). When a
+                    # DOM is a derived display value (now() - listing date). When a
                     # user edits the DOM number, translate it into the underlying
-                    # listed_at timestamp so it resumes aging from the edited
-                    # point rather than being written as a frozen count.
+                    # listing-date timestamp (fb_creation_time) so it resumes aging
+                    # from the edited point rather than being written as a frozen
+                    # count. fb_creation_time is the same column DOM is computed from.
                     if "dom" in update_dict:
                         dom_val = update_dict.pop("dom")
                         if dom_val is not None:
                             try:
-                                update_dict["listed_at"] = datetime.now(timezone.utc) - timedelta(days=max(0, int(dom_val)))
+                                update_dict["fb_creation_time"] = datetime.now(timezone.utc) - timedelta(days=max(0, int(dom_val)))
                             except (TypeError, ValueError):
                                 pass  # ignore an unparsable DOM rather than fail the whole update
                     query, params = QueryBuilder.build_update_query(
@@ -294,7 +295,7 @@ def get_listing_by_id(listing_id: int) -> Optional[ListingOut]:
                         COALESCE(l.vin, '') AS vin,
                         l.lpn,
                         l.price, l.miles,
-                        GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (now() - COALESCE(l.listed_at, l.created_at))) / 86400))::int AS dom,
+                        GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (now() - COALESCE(l.fb_creation_time, l.created_at))) / 86400))::int AS dom,
                         l.location,
                         l.buyer_id,
                         COALESCE(l.images, ARRAY[]::text[]) AS images,

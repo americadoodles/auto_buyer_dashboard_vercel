@@ -593,32 +593,6 @@ def ingest_listings(
                             print(f">>> [ingest_listings] INSERT FAILED: {log_exc}", flush=True)
                             logging.error(f"Failed to insert listing into database: {log_exc}")
                             new_id = f"error-{len(out)+1}"
-                        
-                        # Stamp the marketplace listing-start timestamp ONCE so
-                        # Days-on-Market ages on its own (computed as now() -
-                        # listed_at at read time). Prefer FB's real creation time,
-                        # else reconstruct from the scraped DOM snapshot, else now().
-                        # COALESCE on the existing value means re-ingest never
-                        # moves an already-established listed_at.
-                        if new_id and not str(new_id).startswith("error"):
-                            try:
-                                cur.execute(
-                                    """
-                                    UPDATE listings
-                                    SET listed_at = COALESCE(
-                                            listed_at,
-                                            %s,
-                                            now() - make_interval(days => GREATEST(%s, 0))
-                                        )
-                                    WHERE id = %s
-                                    """,
-                                    (fb_creation_time, int(norm.get("dom") or 0), new_id),
-                                )
-                            except Exception as listed_at_exc:
-                                logging.warning(
-                                    "Failed to set listed_at for listing id=%s: %s",
-                                    new_id, listed_at_exc,
-                                )
 
                         # Create or link a seller contact when we have either a phone or a FB user id.
                         contact_id = None
@@ -883,7 +857,7 @@ def list_listings(
                         l.trim,
                         l.miles,
                         l.price,
-                        GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (now() - COALESCE(l.listed_at, l.created_at))) / 86400))::int AS dom,
+                        GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (now() - COALESCE(l.fb_creation_time, l.created_at))) / 86400))::int AS dom,
                         l.source,
                         l.location,
                         l.buyer_id,
@@ -1041,7 +1015,7 @@ def list_listings_by_buyer(
                             COALESCE(l.model, '') AS model,
                             l.trim,
                             l.miles, l.price,
-                            GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (now() - COALESCE(l.listed_at, l.created_at))) / 86400))::int AS dom,
+                            GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (now() - COALESCE(l.fb_creation_time, l.created_at))) / 86400))::int AS dom,
                             l.source,
                             l.location, l.buyer_id,
                             COALESCE(l.images, ARRAY[]::text[]) AS images,

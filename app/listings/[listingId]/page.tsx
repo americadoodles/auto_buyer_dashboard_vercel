@@ -786,11 +786,12 @@ export default function ListingDetailPage() {
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <span 
+                    <span
                       onClick={() => startEditing('lpn', listing.lpn || '')}
                       className="text-sm text-claude-ink dark:text-coal-100 uppercase cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      title={listing.lpnState ? `Plate state: ${listing.lpnState}` : undefined}
                     >
-                      {listing.lpn || '—'}
+                      {[listing.lpnState, listing.lpn].filter(Boolean).join(' ') || '—'}
                     </span>
                     <button
                       onClick={() => startEditing('lpn', listing.lpn || '')}
@@ -802,7 +803,7 @@ export default function ListingDetailPage() {
                   </div>
                 )}
               </div>
-              
+
               <div className="flex items-center w-full group">
                 <span className="text-sm font-semibold text-claude-ink dark:text-coal-200 w-32 flex-shrink-0">Location:</span>
                 {editingField === 'location' ? (

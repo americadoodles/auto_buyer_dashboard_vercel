@@ -594,6 +594,32 @@ def ingest_listings(
                             logging.error(f"Failed to insert listing into database: {log_exc}")
                             new_id = f"error-{len(out)+1}"
                         
+                        # Stamp the marketplace listing-start timestamp ONCE so
+                        # Days-on-Market ages on its own (computed as now() -
+                        # listed_at at read time). Prefer FB's real creation time,
+                        # else reconstruct from the scraped DOM snapshot, else now().
+                        # COALESCE on the existing value means re-ingest never
+                        # moves an already-established listed_at.
+                        if new_id and not str(new_id).startswith("error"):
+                            try:
+                                cur.execute(
+                                    """
+                                    UPDATE listings
+                                    SET listed_at = COALESCE(
+                                            listed_at,
+                                            %s,
+                                            now() - make_interval(days => GREATEST(%s, 0))
+                                        )
+                                    WHERE id = %s
+                                    """,
+                                    (fb_creation_time, int(norm.get("dom") or 0), new_id),
+                                )
+                            except Exception as listed_at_exc:
+                                logging.warning(
+                                    "Failed to set listed_at for listing id=%s: %s",
+                                    new_id, listed_at_exc,
+                                )
+
                         # Create or link a seller contact when we have either a phone or a FB user id.
                         contact_id = None
                         phone_for_lookup = phone_number.strip() if phone_number and phone_number.strip() else None
@@ -857,7 +883,7 @@ def list_listings(
                         l.trim,
                         l.miles,
                         l.price,
-                        l.dom,
+                        GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (now() - COALESCE(l.listed_at, l.created_at))) / 86400))::int AS dom,
                         l.source,
                         l.location,
                         l.buyer_id,
@@ -888,7 +914,8 @@ def list_listings(
                         c.phone AS phone_number,
                         l.seller_description,
                         c.fb_joined_date AS seller_joined_date,
-                        NULLIF(TRIM(COALESCE(c.first_name, '') || ' ' || COALESCE(c.last_name, '')), '') AS seller_name
+                        NULLIF(TRIM(COALESCE(c.first_name, '') || ' ' || COALESCE(c.last_name, '')), '') AS seller_name,
+                        l.lpn_state
                         FROM (
                         SELECT * FROM listings """ + where_clause + """
                         ) l
@@ -913,7 +940,7 @@ def list_listings(
                     results = cur.fetchall()
                     logging.info(f"Query returned {len(results)} raw results")
                     out: list[ListingOut] = []
-                    for rid, vehicle_key, vin, lpn, year, make, model, trim, miles, price, dom, source, location, buyer_id, images, buyer_username, score, buy_max, reason_codes, created_at, payload, notes, interior_color, exterior_color, transmission, fuel_type, drivetrain, body_style, updated_at, updated_by, mmr, clean_title, condition, detailed_ratings, engine, mpg, overall_rating, paid_status, phone_number, seller_description, seller_joined_date, seller_name in results:
+                    for rid, vehicle_key, vin, lpn, year, make, model, trim, miles, price, dom, source, location, buyer_id, images, buyer_username, score, buy_max, reason_codes, created_at, payload, notes, interior_color, exterior_color, transmission, fuel_type, drivetrain, body_style, updated_at, updated_by, mmr, clean_title, condition, detailed_ratings, engine, mpg, overall_rating, paid_status, phone_number, seller_description, seller_joined_date, seller_name, lpn_state in results:
                         # Extract decision data from payload if available
                         decision = None
                         status = ""
@@ -938,6 +965,7 @@ def list_listings(
                             vehicle_key=vehicle_key,
                             vin=vin or "",
                             lpn=lpn,
+                            lpnState=lpn_state,
                             price=float(price),
                             miles=int(miles),
                             dom=int(dom),
@@ -1012,7 +1040,9 @@ def list_listings_by_buyer(
                             COALESCE(l.make, '') AS make,
                             COALESCE(l.model, '') AS model,
                             l.trim,
-                            l.miles, l.price, l.dom, l.source, 
+                            l.miles, l.price,
+                            GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (now() - COALESCE(l.listed_at, l.created_at))) / 86400))::int AS dom,
+                            l.source,
                             l.location, l.buyer_id,
                             COALESCE(l.images, ARRAY[]::text[]) AS images,
                             u.username AS buyer_username,
@@ -1041,7 +1071,8 @@ def list_listings_by_buyer(
                             c.phone AS phone_number,
                             l.seller_description,
                             c.fb_joined_date AS seller_joined_date,
-                            NULLIF(TRIM(COALESCE(c.first_name, '') || ' ' || COALESCE(c.last_name, '')), '') AS seller_name
+                            NULLIF(TRIM(COALESCE(c.first_name, '') || ' ' || COALESCE(c.last_name, '')), '') AS seller_name,
+                            l.lpn_state
                         FROM listings l
                         LEFT JOIN (
                             SELECT DISTINCT ON (vin) vin, score, buy_max, reason_codes
@@ -1085,7 +1116,7 @@ def list_listings_by_buyer(
                         exterior_color, transmission, fuel_type, drivetrain,
                         body_style, updated_at, updated_by, mmr, clean_title, condition,
                         detailed_ratings, engine, mpg, overall_rating, paid_status, phone_number,
-                        seller_description, seller_joined_date, seller_name
+                        seller_description, seller_joined_date, seller_name, lpn_state
                     ) in results:
                         
                         # Extract decision data from payload if available
@@ -1112,6 +1143,7 @@ def list_listings_by_buyer(
                             vehicle_key=vehicle_key,
                             vin=vin or "",
                             lpn=lpn,
+                            lpnState=lpn_state,
                             price=float(price),
                             miles=int(miles),
                             dom=int(dom),

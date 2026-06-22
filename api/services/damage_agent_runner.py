@@ -171,7 +171,7 @@ class DamageAgentRunner:
         extra_sql, extra_params = _candidate_filters(config)
         row = execute_with_connection(
             f"""
-            SELECT l.id, l.year, l.make, l.model, l.trim, l.images, l.vin, l.lpn
+            SELECT l.id, l.year, l.make, l.model, l.trim, l.images, l.vin, l.lpn, l.lpn_state
             FROM listings l
             WHERE l.id > %s
               AND l.images IS NOT NULL AND array_length(l.images, 1) > 0

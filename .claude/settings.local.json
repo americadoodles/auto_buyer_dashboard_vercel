@@ -39,7 +39,12 @@
       "Bash(git ls-tree *)",
       "Bash(python -m py_compile scripts/apply_damage_migrations.py)",
       "Bash(python -m py_compile api/index.py api/core/db.py)",
-      "Bash(python -m py_compile api/index.py api/core/db.py api/core/lifespan.py)"
+      "Bash(python -m py_compile api/index.py api/core/db.py api/core/lifespan.py)",
+      "PowerShell(Set-ExecutionPolicy *)",
+      "PowerShell(& c:\\\\workstation\\\\OI\\\\auto_buyer_dashboard_vercel\\\\.venv\\\\Scripts\\\\python.exe -m py_compile api/services/damage_detection_service.py api/services/extraction_writeback.py api/services/damage_agent_runner.py api/repositories/repositories.py api/repositories/listing_management.py api/schemas/listing.py api/core/db.py; if \\($?\\) { \"OK - all modules compiled\" })",
+      "PowerShell(& c:\\\\workstation\\\\OI\\\\auto_buyer_dashboard_vercel\\\\.venv\\\\Scripts\\\\python.exe -m py_compile api/schemas/listing.py api/repositories/listing_management.py; if \\($?\\) { \"OK - compiled\" })",
+      "PowerShell(& c:\\\\workstation\\\\OI\\\\auto_buyer_dashboard_vercel\\\\.venv\\\\Scripts\\\\python.exe -m py_compile api/repositories/repositories.py api/repositories/listing_management.py api/core/db.py api/schemas/listing.py; if \\($?\\) { \"OK - compiled\" })",
+      "PowerShell(& c:\\\\workstation\\\\OI\\\\auto_buyer_dashboard_vercel\\\\.venv\\\\Scripts\\\\python.exe -m py_compile api/repositories/repositories.py api/repositories/listing_management.py api/repositories/crm_leads.py api/services/crm_agents.py api/services/export_service.py api/core/db.py; if \\($?\\) { \"OK - all compiled\" })"
     ]
   }
 }

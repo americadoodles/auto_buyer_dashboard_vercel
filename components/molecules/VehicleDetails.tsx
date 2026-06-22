@@ -66,6 +66,11 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ listing }) => {
     }, PANEL_ANIMATION_MS);
   };
 
+  // Log the license plate to the browser console for debugging/inspection.
+  useEffect(() => {
+    console.log('[VehicleDetails] LPN:', listing?.lpn ?? '(none)', '| State:', listing?.lpnState ?? '(none)');
+  }, [listing?.lpn, listing?.lpnState]);
+
   // Handle Escape key to close panel
   useEffect(() => {
     if (!isPanelOpen) return;
@@ -128,12 +133,14 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ listing }) => {
             {/* Panel Content */}
             <div className="px-6 py-4">
               <div className="grid grid-cols-1 gap-x-8 gap-y-2">
-        {/* LPN */}
-        {listing.lpn && (
+        {/* LPN — shown as a single combined "state + number" value (e.g. "CA ABC1234") */}
+        {(listing.lpn || listing.lpnState) && (
           <div className="flex items-center w-full group">
             <span className="text-sm font-semibold text-black dark:text-coal-300 w-32 flex-shrink-0">LPN:</span>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-black dark:text-coal-300">{listing.lpn}</span>
+              <span className="text-sm text-black dark:text-coal-300 uppercase">
+                {[listing.lpnState, listing.lpn].filter(Boolean).join(' ')}
+              </span>
             </div>
           </div>
         )}

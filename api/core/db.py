@@ -216,6 +216,14 @@ def apply_schema_if_needed() -> None:
                     cur.execute("ALTER TABLE public.listings ADD COLUMN IF NOT EXISTS location text")
                     cur.execute("ALTER TABLE public.listings ADD COLUMN IF NOT EXISTS buyer_id text")
                     cur.execute("ALTER TABLE public.listings ADD COLUMN IF NOT EXISTS images text[]")
+                    # listed_at powers dynamic Days-on-Market (DOM = now() - listed_at,
+                    # computed at read time). Create it here in the GUARANTEED early
+                    # step so the read queries can never hit a missing column even if
+                    # the versioned migration (032) hasn't run. The accurate backfill
+                    # lives in migration 032, which runs AFTER fb_creation_time exists;
+                    # until then reads fall back to created_at via COALESCE.
+                    cur.execute("ALTER TABLE public.listings ADD COLUMN IF NOT EXISTS listed_at timestamptz")
+                    cur.execute("CREATE INDEX IF NOT EXISTS idx_listings_listed_at ON public.listings(listed_at)")
                     # Backfill buyer_id from legacy 'buyer' if present
                     cur.execute("""
                         DO $$

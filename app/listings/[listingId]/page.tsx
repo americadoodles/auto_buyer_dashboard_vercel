@@ -79,7 +79,6 @@ export default function ListingDetailPage() {
         setFormData({
           vin: listingData.vin || '',
           lpn: listingData.lpn || '',
-          lpn_state: listingData.lpnState || '',
           notes: listingData.notes || '',
           condition_rating: undefined, // condition_rating removed from Listing type
           interior_color: listingData.interiorColor || '',
@@ -177,10 +176,6 @@ export default function ListingDetailPage() {
           break;
         case 'lpn':
           value = value.toUpperCase();
-          break;
-        case 'lpn_state':
-          // Normalize to an uppercase 2-letter jurisdiction code
-          value = value ? value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2) || undefined : undefined;
           break;
         case 'detailed_ratings':
           // Convert comma-separated string to array
@@ -791,62 +786,15 @@ export default function ListingDetailPage() {
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <span 
-                      onClick={() => startEditing('lpn', listing.lpn || '')}
-                      className="text-sm text-claude-ink dark:text-coal-100 uppercase cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                    >
-                      {listing.lpn || '—'}
-                    </span>
-                    <button
-                      onClick={() => startEditing('lpn', listing.lpn || '')}
-                      className="p-1 text-claude-subtle hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
-                      title="Edit"
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex items-center w-full group">
-                <span className="text-sm font-semibold text-claude-ink dark:text-coal-200 w-32 flex-shrink-0">LPN State:</span>
-                {editingField === 'lpn_state' ? (
-                  <div className="flex items-center gap-2 flex-1">
-                    <Input
-                      value={editValue}
-                      onChange={(e) => setEditValue(e.target.value)}
-                      maxLength={2}
-                      placeholder="e.g. CA"
-                      className="uppercase border-blue-300 dark:border-blue-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-300 dark:focus:ring-blue-700 text-claude-ink dark:text-coal-100 flex-1 w-full min-w-0 h-8 py-0.5 px-2 text-sm"
-                      autoFocus
-                    />
-                    <button
-                      onClick={() => saveField('lpn_state')}
-                      disabled={savingField === 'lpn_state'}
-                      className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
-                      title="Save"
-                    >
-                      <Check className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={cancelEditing}
-                      disabled={savingField === 'lpn_state'}
-                      className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
-                      title="Cancel"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
                     <span
-                      onClick={() => startEditing('lpn_state', listing.lpnState || '')}
+                      onClick={() => startEditing('lpn', listing.lpn || '')}
                       className="text-sm text-claude-ink dark:text-coal-100 uppercase cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      title={listing.lpnState ? `Plate state: ${listing.lpnState}` : undefined}
                     >
-                      {listing.lpnState || '—'}
+                      {[listing.lpnState, listing.lpn].filter(Boolean).join(' ') || '—'}
                     </span>
                     <button
-                      onClick={() => startEditing('lpn_state', listing.lpnState || '')}
+                      onClick={() => startEditing('lpn', listing.lpn || '')}
                       className="p-1 text-claude-subtle hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all opacity-0 group-hover:opacity-100"
                       title="Edit"
                     >

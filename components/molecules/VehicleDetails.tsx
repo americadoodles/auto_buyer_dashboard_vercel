@@ -133,27 +133,14 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ listing }) => {
             {/* Panel Content */}
             <div className="px-6 py-4">
               <div className="grid grid-cols-1 gap-x-8 gap-y-2">
-        {/* LPN */}
-        {listing.lpn && (
+        {/* LPN — shown as a single combined "state + number" value (e.g. "CA ABC1234") */}
+        {(listing.lpn || listing.lpnState) && (
           <div className="flex items-center w-full group">
             <span className="text-sm font-semibold text-black dark:text-coal-300 w-32 flex-shrink-0">LPN:</span>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-black dark:text-coal-300">{listing.lpn}</span>
-              {listing.lpnState && (
-                <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-claude-sand text-claude-ink dark:bg-coal-700 dark:text-coal-200">
-                  {listing.lpnState}
-                </span>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* LPN State (shown standalone only when the plate number itself is absent) */}
-        {!listing.lpn && listing.lpnState && (
-          <div className="flex items-center w-full group">
-            <span className="text-sm font-semibold text-black dark:text-coal-300 w-32 flex-shrink-0">LPN State:</span>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-black dark:text-coal-300">{listing.lpnState}</span>
+              <span className="text-sm text-black dark:text-coal-300 uppercase">
+                {[listing.lpnState, listing.lpn].filter(Boolean).join(' ')}
+              </span>
             </div>
           </div>
         )}

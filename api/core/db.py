@@ -311,7 +311,6 @@ def apply_schema_if_needed() -> None:
                     "migrations/029_damage_agent_run_config.sql",
                     "migrations/030_crm_agents.sql",
                     "migrations/031_fb_scraper_agent.sql",
-                    "migrations/032_add_listed_at_to_listings.sql",
                 ]
                 for mig_file in _migration_files:
                     mig_sql = _read_migration_file(mig_file)

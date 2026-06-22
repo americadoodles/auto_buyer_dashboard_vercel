@@ -78,7 +78,7 @@ class LeadScoringAgent(CrmAgentRunner):
                    c.fb_seller_rating, c.fb_verified,
                    li.year, li.make, li.model, li.price, li.miles,
                    li.vehicle_condition,
-                   GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (now() - COALESCE(li.listed_at, li.created_at))) / 86400))::int AS dom,
+                   GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (now() - COALESCE(li.fb_creation_time, li.created_at))) / 86400))::int AS dom,
                    (SELECT COUNT(*) FROM communications cm
                      WHERE cm.to_lead_id = l.id) AS communications_count
             {self._BASE_FROM}

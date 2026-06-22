@@ -316,7 +316,8 @@ def get_listing_by_id(listing_id: int) -> Optional[ListingOut]:
                         u.username AS buyer_username,
                         COALESCE(s.score, 0) AS score,
                         s.buy_max,
-                        COALESCE(s.reason_codes, ARRAY[]::text[]) AS reason_codes
+                        COALESCE(s.reason_codes, ARRAY[]::text[]) AS reason_codes,
+                        l.lpn_state
                     FROM listings l
                     LEFT JOIN users u ON u.id::text = l.buyer_id
                     LEFT JOIN contacts c ON c.id = l.contact_id
@@ -358,6 +359,7 @@ def get_listing_by_id(listing_id: int) -> Optional[ListingOut]:
                         vehicle_key=result[1],
                         vin=result[2] or "",
                         lpn=result[3],
+                        lpnState=result[42],
                         price=float(result[4]),
                         miles=int(result[5]),
                         dom=int(result[6]),

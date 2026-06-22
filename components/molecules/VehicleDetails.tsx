@@ -66,6 +66,11 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ listing }) => {
     }, PANEL_ANIMATION_MS);
   };
 
+  // Log the license plate to the browser console for debugging/inspection.
+  useEffect(() => {
+    console.log('[VehicleDetails] LPN:', listing?.lpn ?? '(none)', '| State:', listing?.lpnState ?? '(none)');
+  }, [listing?.lpn, listing?.lpnState]);
+
   // Handle Escape key to close panel
   useEffect(() => {
     if (!isPanelOpen) return;
@@ -134,6 +139,21 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ listing }) => {
             <span className="text-sm font-semibold text-black dark:text-coal-300 w-32 flex-shrink-0">LPN:</span>
             <div className="flex items-center gap-2">
               <span className="text-sm text-black dark:text-coal-300">{listing.lpn}</span>
+              {listing.lpnState && (
+                <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-claude-sand text-claude-ink dark:bg-coal-700 dark:text-coal-200">
+                  {listing.lpnState}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* LPN State (shown standalone only when the plate number itself is absent) */}
+        {!listing.lpn && listing.lpnState && (
+          <div className="flex items-center w-full group">
+            <span className="text-sm font-semibold text-black dark:text-coal-300 w-32 flex-shrink-0">LPN State:</span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-black dark:text-coal-300">{listing.lpnState}</span>
             </div>
           </div>
         )}

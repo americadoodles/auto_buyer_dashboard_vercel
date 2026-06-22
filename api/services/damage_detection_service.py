@@ -373,7 +373,12 @@ STEP 5 — Only report damage when there is CLEAR VISUAL EVIDENCE of
 
 STEP 6 — EXTRACT IDENTIFICATION visible in THIS photo, if any:
    vin (windshield plate, door-jamb sticker, documents — transcribe EXACTLY),
-   license_plate, phone_numbers, contact_text. Never guess characters.
+   license_plate, license_plate_state, phone_numbers, contact_text.
+   For license_plate_state, report the issuing US state / Canadian province as
+   its 2-letter code (e.g. "CA", "TX", "ON") ONLY when it is clearly legible on
+   the plate (state name banner, slogan, or distinctive plate design). Use null
+   if no plate is visible or the jurisdiction cannot be read. Never guess
+   characters or the state.
 
 For each damage provide area_points: 3-8 points outlining the damaged area as
 fractions of the image (x: 0.0 left to 1.0 right, y: 0.0 top to 1.0 bottom).
@@ -410,6 +415,7 @@ Return JSON with EXACTLY this shape:
   "extracted": {{
     "vin": "1G1YY26E785100001" or null,
     "license_plate": "ABC1234" or null,
+    "license_plate_state": "CA" or null,
     "phone_numbers": ["555-123-4567"],
     "contact_text": "call Mike" or null
   }}
@@ -452,6 +458,7 @@ If no damage is visible, return an empty damaged_parts array."""
         "extracted": {
             "vin": (str(ext["vin"]).strip() if ext.get("vin") else None),
             "license_plate": (str(ext["license_plate"]).strip() if ext.get("license_plate") else None),
+            "license_plate_state": _normalize_plate_state(ext.get("license_plate_state")),
             "phone_numbers": [str(p).strip() for p in (ext.get("phone_numbers") or []) if p][:3],
             "contact_text": (str(ext["contact_text"]).strip() if ext.get("contact_text") else None),
         },
@@ -471,12 +478,62 @@ def _clean_id(value: Optional[str]) -> Optional[str]:
     return cleaned or None
 
 
+# US states + DC + territories + Canadian provinces, keyed by 2-letter code,
+# plus full-name aliases so a model that writes "California" still normalizes.
+_US_CA_STATES = {
+    "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "ID",
+    "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS",
+    "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK",
+    "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV",
+    "WI", "WY", "DC", "PR", "GU", "VI", "AS", "MP",          # US + territories
+    "AB", "BC", "MB", "NB", "NL", "NS", "NT", "NU", "ON",    # Canadian
+    "PE", "QC", "SK", "YT",
+}
+_STATE_NAME_TO_CODE = {
+    "alabama": "AL", "alaska": "AK", "arizona": "AZ", "arkansas": "AR",
+    "california": "CA", "colorado": "CO", "connecticut": "CT", "delaware": "DE",
+    "florida": "FL", "georgia": "GA", "hawaii": "HI", "idaho": "ID",
+    "illinois": "IL", "indiana": "IN", "iowa": "IA", "kansas": "KS",
+    "kentucky": "KY", "louisiana": "LA", "maine": "ME", "maryland": "MD",
+    "massachusetts": "MA", "michigan": "MI", "minnesota": "MN", "mississippi": "MS",
+    "missouri": "MO", "montana": "MT", "nebraska": "NE", "nevada": "NV",
+    "new hampshire": "NH", "new jersey": "NJ", "new mexico": "NM", "new york": "NY",
+    "north carolina": "NC", "north dakota": "ND", "ohio": "OH", "oklahoma": "OK",
+    "oregon": "OR", "pennsylvania": "PA", "rhode island": "RI",
+    "south carolina": "SC", "south dakota": "SD", "tennessee": "TN", "texas": "TX",
+    "utah": "UT", "vermont": "VT", "virginia": "VA", "washington": "WA",
+    "west virginia": "WV", "wisconsin": "WI", "wyoming": "WY",
+    "district of columbia": "DC", "puerto rico": "PR",
+    "alberta": "AB", "british columbia": "BC", "manitoba": "MB",
+    "new brunswick": "NB", "newfoundland and labrador": "NL", "nova scotia": "NS",
+    "northwest territories": "NT", "nunavut": "NU", "ontario": "ON",
+    "prince edward island": "PE", "quebec": "QC", "saskatchewan": "SK",
+    "yukon": "YT",
+}
+
+
+def _normalize_plate_state(value: Optional[str]) -> Optional[str]:
+    """Normalize an extracted plate jurisdiction to a 2-letter US/CA code.
+
+    Accepts a code ("ca", "TX") or a full name ("California"); returns the
+    canonical uppercase code, or None when unrecognized — an unverifiable
+    jurisdiction is dropped rather than stored as noise.
+    """
+    if not value:
+        return None
+    raw = str(value).strip()
+    code = re.sub(r"[^A-Za-z]", "", raw).upper()
+    if len(code) == 2 and code in _US_CA_STATES:
+        return code
+    return _STATE_NAME_TO_CODE.get(raw.lower())
+
+
 def _aggregate_extractions(
     inspections: List[Dict[str, Any]], listing: Dict[str, Any],
 ) -> Dict[str, Any]:
     """Merge per-photo extractions and cross-check against the listing record."""
     vins: List[str] = []
-    plates: List[str] = []
+    plates: List[tuple] = []   # (plate, state) pairs — state kept with its plate
     phones: List[str] = []
     contacts: List[str] = []
     for i in inspections:
@@ -484,7 +541,7 @@ def _aggregate_extractions(
         if e.get("vin"):
             vins.append(str(e["vin"]))
         if e.get("license_plate"):
-            plates.append(str(e["license_plate"]))
+            plates.append((str(e["license_plate"]), e.get("license_plate_state")))
         for p in e.get("phone_numbers") or []:
             if p not in phones:
                 phones.append(p)
@@ -494,17 +551,28 @@ def _aggregate_extractions(
     # Prefer the first fully valid VIN; keep an invalid transcription as raw.
     vin = next((v for v in (_clean_id(x) for x in vins) if v and _VIN_RE.match(v)), None)
     vin_raw = vins[0] if vins and not vin else None
-    plate = _clean_id(plates[0]) if plates else None
+    # Pick the first detected plate; carry the issuing state read from that
+    # same photo (or the first photo that did read a state, if it didn't).
+    plate = _clean_id(plates[0][0]) if plates else None
+    plate_state = None
+    if plate:
+        plate_state = _normalize_plate_state(plates[0][1]) or next(
+            (s for _p, s in plates if _normalize_plate_state(s)), None
+        )
+        plate_state = _normalize_plate_state(plate_state)
 
     listing_vin = _clean_id(listing.get("vin"))
     listing_lpn = _clean_id(listing.get("lpn"))
+    listing_lpn_state = _normalize_plate_state(listing.get("lpn_state"))
 
     return {
         "vin": vin,
         "vin_raw": vin_raw,                       # readable but failed validation
         "vin_matches_listing": (vin == listing_vin) if vin and listing_vin else None,
         "license_plate": plate,
+        "license_plate_state": plate_state,
         "plate_matches_listing": (plate == listing_lpn) if plate and listing_lpn else None,
+        "plate_state_matches_listing": (plate_state == listing_lpn_state) if plate_state and listing_lpn_state else None,
         "phone_numbers": phones[:5],
         "contact_text": contacts[:3],
     }
@@ -813,6 +881,7 @@ def analyze_listing_images(listing: Dict[str, Any]) -> Dict[str, Any]:
                     "visible_parts": [], "damages": [], "clean_panels": [],
                     "quality_issues": [], "needs_human_review": True,
                     "extracted": {"vin": None, "license_plate": None,
+                                  "license_plate_state": None,
                                   "phone_numbers": [], "contact_text": None},
                     "error": str(e)[:200]}
 

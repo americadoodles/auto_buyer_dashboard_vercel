@@ -36,6 +36,15 @@ def _clean_id(value: Optional[str]) -> Optional[str]:
     return cleaned or None
 
 
+def _clean_state(value: Optional[str]) -> Optional[str]:
+    """A plate state is already normalized to a 2-letter code upstream; keep
+    only a well-formed code so OCR noise never reaches the listings table."""
+    if not value:
+        return None
+    code = re.sub(r"[^A-Za-z]", "", str(value)).upper()
+    return code if len(code) == 2 else None
+
+
 def _plausible_phone(value: str) -> bool:
     digits = re.sub(r"\D", "", value)
     return 10 <= len(digits) <= 15
@@ -52,14 +61,15 @@ def apply_extractions(listing_id: int, extracted: Dict[str, Any]) -> Optional[Di
     if vin and not _VIN_RE.match(vin):
         vin = None  # defense in depth — upstream validates too
     plate = _clean_id(extracted.get("license_plate"))
+    plate_state = _clean_state(extracted.get("license_plate_state"))
     phones = [p for p in (extracted.get("phone_numbers") or []) if _plausible_phone(str(p))]
     contact_text = next(iter(extracted.get("contact_text") or []), None)
 
-    if not (vin or plate or phones):
+    if not (vin or plate or plate_state or phones):
         return None
 
     row = execute_with_connection(
-        "SELECT vin, lpn, contact_id FROM listings WHERE id = %s",
+        "SELECT vin, lpn, lpn_state, contact_id FROM listings WHERE id = %s",
         (listing_id,),
         fetch="one",
         row_factory=dict_row,
@@ -93,6 +103,16 @@ def apply_extractions(listing_id: int, extracted: Dict[str, Any]) -> Optional[Di
             actions.append(f"listings.lpn filled: {plate}")
         elif existing != plate:
             conflicts.append(f"plate mismatch: photos show {plate}, listing has {existing}")
+
+    # ---- listings.lpn_state ----
+    if plate_state:
+        existing = _clean_state(row.get("lpn_state"))
+        if not existing:
+            listing_sets.append("lpn_state = %s")
+            listing_params.append(plate_state)
+            actions.append(f"listings.lpn_state filled: {plate_state}")
+        elif existing != plate_state:
+            conflicts.append(f"plate state mismatch: photos show {plate_state}, listing has {existing}")
 
     if listing_sets:
         execute_with_connection(

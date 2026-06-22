@@ -278,6 +278,7 @@ def apply_schema_if_needed() -> None:
                     "009_add_mmr_to_listings.sql",
                     "010_add_listing_fields.sql",
                     "011_add_lpn_to_listings.sql",
+                    "012_add_lpn_state_to_listings.sql",
                     "013_create_accu_trade_data.sql",
                     "014_create_mmr_data.sql",
                     "015_create_condition_reports.sql",

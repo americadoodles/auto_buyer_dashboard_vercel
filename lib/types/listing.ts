@@ -9,6 +9,7 @@ export type Listing = {
   vehicle_key: string;
   vin?: string;
   lpn?: string;
+  lpnState?: string;
   price: number;
   miles: number;
   dom: number;
@@ -63,6 +64,7 @@ export type BackendStatus = boolean | null;
 export type ListingUpdate = {
   vin?: string;
   lpn?: string;
+  lpn_state?: string;
   notes?: string;
   condition_rating?: number;
   interior_color?: string;

@@ -888,7 +888,8 @@ def list_listings(
                         c.phone AS phone_number,
                         l.seller_description,
                         c.fb_joined_date AS seller_joined_date,
-                        NULLIF(TRIM(COALESCE(c.first_name, '') || ' ' || COALESCE(c.last_name, '')), '') AS seller_name
+                        NULLIF(TRIM(COALESCE(c.first_name, '') || ' ' || COALESCE(c.last_name, '')), '') AS seller_name,
+                        l.lpn_state
                         FROM (
                         SELECT * FROM listings """ + where_clause + """
                         ) l
@@ -913,7 +914,7 @@ def list_listings(
                     results = cur.fetchall()
                     logging.info(f"Query returned {len(results)} raw results")
                     out: list[ListingOut] = []
-                    for rid, vehicle_key, vin, lpn, year, make, model, trim, miles, price, dom, source, location, buyer_id, images, buyer_username, score, buy_max, reason_codes, created_at, payload, notes, interior_color, exterior_color, transmission, fuel_type, drivetrain, body_style, updated_at, updated_by, mmr, clean_title, condition, detailed_ratings, engine, mpg, overall_rating, paid_status, phone_number, seller_description, seller_joined_date, seller_name in results:
+                    for rid, vehicle_key, vin, lpn, year, make, model, trim, miles, price, dom, source, location, buyer_id, images, buyer_username, score, buy_max, reason_codes, created_at, payload, notes, interior_color, exterior_color, transmission, fuel_type, drivetrain, body_style, updated_at, updated_by, mmr, clean_title, condition, detailed_ratings, engine, mpg, overall_rating, paid_status, phone_number, seller_description, seller_joined_date, seller_name, lpn_state in results:
                         # Extract decision data from payload if available
                         decision = None
                         status = ""
@@ -938,6 +939,7 @@ def list_listings(
                             vehicle_key=vehicle_key,
                             vin=vin or "",
                             lpn=lpn,
+                            lpnState=lpn_state,
                             price=float(price),
                             miles=int(miles),
                             dom=int(dom),
@@ -1041,7 +1043,8 @@ def list_listings_by_buyer(
                             c.phone AS phone_number,
                             l.seller_description,
                             c.fb_joined_date AS seller_joined_date,
-                            NULLIF(TRIM(COALESCE(c.first_name, '') || ' ' || COALESCE(c.last_name, '')), '') AS seller_name
+                            NULLIF(TRIM(COALESCE(c.first_name, '') || ' ' || COALESCE(c.last_name, '')), '') AS seller_name,
+                            l.lpn_state
                         FROM listings l
                         LEFT JOIN (
                             SELECT DISTINCT ON (vin) vin, score, buy_max, reason_codes
@@ -1085,7 +1088,7 @@ def list_listings_by_buyer(
                         exterior_color, transmission, fuel_type, drivetrain,
                         body_style, updated_at, updated_by, mmr, clean_title, condition,
                         detailed_ratings, engine, mpg, overall_rating, paid_status, phone_number,
-                        seller_description, seller_joined_date, seller_name
+                        seller_description, seller_joined_date, seller_name, lpn_state
                     ) in results:
                         
                         # Extract decision data from payload if available
@@ -1112,6 +1115,7 @@ def list_listings_by_buyer(
                             vehicle_key=vehicle_key,
                             vin=vin or "",
                             lpn=lpn,
+                            lpnState=lpn_state,
                             price=float(price),
                             miles=int(miles),
                             dom=int(dom),

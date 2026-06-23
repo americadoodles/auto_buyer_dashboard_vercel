@@ -31,6 +31,7 @@ from .routes.ai_recommender import ai_recommender_router
 # AI Agents
 from .routes.agents_control import agents_control_router
 from .routes.fb_scraper import fb_scraper_router
+from .routes.fb_messenger import fb_messenger_router
 from .routes.extension_ws import extension_ws_router
 # DB schema/migrations are applied at startup in two complementary places:
 #   * the container CMD runs `python -m api.core.db` BEFORE uvicorn (Cloud Run /
@@ -80,9 +81,11 @@ app.include_router(communication_router, prefix="/api")
 app.include_router(ai_recommender_router, prefix="/api")
 
 # AI Agents
-# fb-scraper routes mounted first so /api/agents/fb-scraper/* wins over the
-# generic /api/agents/{agent_id}/* handlers (which assume global singleton state).
+# fb-scraper / fb-messenger routes mounted first so /api/agents/fb-scraper/*
+# and /api/agents/fb-messenger/* win over the generic /api/agents/{agent_id}/*
+# handlers (which assume global singleton state).
 app.include_router(fb_scraper_router, prefix="/api")
+app.include_router(fb_messenger_router, prefix="/api")
 app.include_router(agents_control_router, prefix="/api")
 
 # Chrome-extension WebSocket (no /api prefix — extension targets /ws/...)

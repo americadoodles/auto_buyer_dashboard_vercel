@@ -3,7 +3,7 @@
 
 import React from 'react';
 import {
-  ScanSearch, Target, ShieldAlert, MessageSquareText, ListTodo, ShoppingCart,
+  ScanSearch, Target, ShieldAlert, MessageSquareText, ListTodo, ShoppingCart, MessageCircle,
 } from 'lucide-react';
 import type { AgentReport } from '../../../lib/agents/agentControl';
 
@@ -84,6 +84,18 @@ export const AGENT_DEFS: AgentDef[] = [
       return `${p.processed ?? 0} listing(s) scraped`;
     },
     // Panel is wired in app/agents/_components/FbScraperPanel.tsx to avoid a
+    // circular import (agentDefs is a pure data module).
+  },
+  {
+    id: 'fb-messenger',
+    title: 'FB Messenger Agent',
+    description: 'Reads and replies to Facebook Marketplace seller messages in real time via the connected Chrome extension',
+    icon: <MessageCircle className="w-4 h-4 text-claude-accent" />,
+    summarize: (r) => {
+      const p = rep(r);
+      return `${p.message_count ?? 0} message(s)`;
+    },
+    // Panel is wired in app/agents/_components/FbMessengerPanel.tsx to avoid a
     // circular import (agentDefs is a pure data module).
   },
 ];

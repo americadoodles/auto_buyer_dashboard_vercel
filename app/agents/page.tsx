@@ -8,6 +8,7 @@ import { AgentFleetView } from './_components/AgentFleetView';
 import { AiPipelineView } from './_components/AiPipelineView';
 import { AgentControlPanel } from './_components/AgentControlPanel';
 import { FbScraperPanel } from './_components/FbScraperPanel';
+import { FbMessengerPanel } from './_components/FbMessengerPanel';
 import { AGENT_DEFS } from './_components/agentDefs';
 
 type Tab = 'fleet' | 'pipeline';
@@ -44,13 +45,16 @@ export default function AgentsPage() {
       </div>
 
       {/* Live agent control panels (first panel expanded by default).
-          fb-scraper gets a custom panel with the rich filter form; other
-          agents use the generic control panel. */}
+          fb-scraper and fb-messenger get custom panels (rich filter form /
+          seller conversation view); other agents use the generic control panel. */}
       <div className="space-y-3 mb-5">
         {AGENT_DEFS.map((def, i) => {
           const defaultOpen = i === 0;
           if (def.id === 'fb-scraper') {
             return <FbScraperPanel key={def.id} def={def} defaultOpen={defaultOpen} />;
+          }
+          if (def.id === 'fb-messenger') {
+            return <FbMessengerPanel key={def.id} def={def} defaultOpen={defaultOpen} />;
           }
           return <AgentControlPanel key={def.id} def={def} defaultOpen={defaultOpen} />;
         })}

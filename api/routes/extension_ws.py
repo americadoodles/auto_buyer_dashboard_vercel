@@ -8,6 +8,11 @@ scrape.stop, templates.refresh) to a specific user's extension via the
 ws_extension_manager singleton. The extension reports back status updates
 which flow into fb_scraper_state via the fb_scraper runner's event hooks.
 
+The same connection also carries the FB Messenger Agent's protocol
+(messenger.start / messenger.stop / messenger.send / messenger.thread /
+messenger.message / messenger.send.result) — one extension, one socket,
+multiple agents. See fb_messenger_runner.py for the event-hook side.
+
 Auth: JWT passed as `?token=...` query parameter (browser WebSocket clients
 can't set custom request headers on the upgrade, so query-string is the
 practical choice; the URL is over wss in production).
@@ -82,6 +87,7 @@ async def fb_scraper_extension_ws(
     # Late import: avoids a circular dependency between this route and the
     # runner module (the runner imports the manager too).
     from ..services.fb_scraper_runner import fb_scraper_agent
+    from ..services.fb_messenger_runner import fb_messenger_agent
 
     conn = await extension_manager.register(user.id, websocket)
     ping_task = asyncio.create_task(_ping_loop(conn))
@@ -153,6 +159,41 @@ async def fb_scraper_extension_ws(
                         request_id,
                         str(payload.get("message") or "extension reported an error")[:500],
                     )
+            elif mtype == "messenger.thread":
+                fb_thread_id = payload.get("fb_thread_id")
+                seller_name = payload.get("seller_name")
+                if isinstance(fb_thread_id, str) and isinstance(seller_name, str):
+                    fb_messenger_agent.on_thread_update(
+                        user.id,
+                        fb_thread_id=fb_thread_id,
+                        seller_name=seller_name,
+                        seller_profile_url=payload.get("seller_profile_url"),
+                        fb_seller_user_id=payload.get("fb_seller_user_id"),
+                        listing_id=payload.get("listing_id"),
+                    )
+            elif mtype == "messenger.message":
+                fb_thread_id = payload.get("fb_thread_id")
+                body = payload.get("body")
+                if isinstance(fb_thread_id, str) and isinstance(body, str):
+                    fb_messenger_agent.on_message_received(
+                        user.id,
+                        fb_thread_id=fb_thread_id,
+                        body=body,
+                        fb_message_id=payload.get("fb_message_id"),
+                        sent_at=payload.get("sent_at"),
+                        seller_name=payload.get("seller_name"),
+                    )
+            elif mtype == "messenger.send.result":
+                request_id = payload.get("request_id")
+                if isinstance(request_id, str):
+                    fb_messenger_agent.on_send_result(
+                        request_id,
+                        ok=bool(payload.get("ok")),
+                        fb_message_id=payload.get("fb_message_id"),
+                        error=payload.get("error"),
+                    )
+            elif mtype == "messenger.error":
+                fb_messenger_agent.on_error(user.id, message=str(payload.get("message") or "")[:1000])
             else:
                 logger.debug("Unhandled message type %s from user %s", mtype, user.id)
     except WebSocketDisconnect:

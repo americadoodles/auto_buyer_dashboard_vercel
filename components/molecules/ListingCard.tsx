@@ -6,6 +6,7 @@ import { Listing } from '../../lib/types/listing';
 import { formatCurrency, formatNumber, formatDateTime } from '../../lib/utils/formatters';
 import { getMarketplaceInfo, getTrustIndicators } from '../../lib/utils/marketplace';
 import { Badge } from '../atoms/Badge';
+import { RubricBadge } from './RubricBadge';
 import { AiRecommenderApi, RecommendResponse } from '../../lib/services/aiRecommenderApi';
 import {
   Gauge,
@@ -262,6 +263,9 @@ export const ListingCard: React.FC<ListingCardProps> = ({
                 Score: {listing.score}
               </Badge>
             )}
+
+            {/* Buy/No-Buy Rubric Badge */}
+            <RubricBadge verdict={listing.rubricVerdict} points={listing.rubricPoints} />
 
             {/* Trust/Fraud Indicators */}
             {trustIndicators.indicators.length > 0 && (

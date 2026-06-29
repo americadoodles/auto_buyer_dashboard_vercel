@@ -51,6 +51,9 @@ export type Listing = {
   score?: number;
   mmr?: number | null;
   contact_id?: string | null;
+  // Buy/no-buy rubric result from the lead-scoring agent (distinct from `score`).
+  rubricVerdict?: string | null;
+  rubricPoints?: number | null;
 };
 
 export type SortConfig = {

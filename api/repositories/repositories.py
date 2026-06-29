@@ -9,11 +9,63 @@ from ..core.db_helpers import get_db_connection
 from ..schemas.listing import ListingIn, ListingOut
 from ..schemas.listing import Decision
 from ..services.ai_service import extract_vehicle_info_from_title, calculate_listing_score, extract_phone_number_from_text
+from ..services import lead_scoring_rules
 from ..utils.gcp_storage import upload_images_to_gcp
 
 # In-memory fallback for listings
 _BY_ID: dict[str, ListingOut] = {}
 _IDS_BY_VIN: dict[str, list[str]] = {}
+
+# Columns the buy/no-buy rubric needs, joined to seller (contact) + latest
+# completed damage report. Kept in one place so list + detail score identically.
+_RUBRIC_SELECT_SQL = """
+    SELECT li.id::text AS id, li.mmr, li.price, li.clean_title,
+           li.vehicle_title_status, li.trim, li.miles, li.year,
+           li.vehicle_number_of_owners, li.vehicle_features,
+           li.vehicle_condition, li.condition, li.body_style, li.drivetrain,
+           li.vehicle_is_paid_off,
+           c.fb_joined_date, c.fb_verified, c.fb_seller_rating_count,
+           dr.report->>'overall_condition' AS damage_overall_condition,
+           (dr.report->'total_estimated_repair_cost_usd'->>'low')::numeric
+             AS damage_repair_cost_usd
+    FROM listings li
+    LEFT JOIN contacts c ON c.id = li.contact_id
+    LEFT JOIN LATERAL (
+        SELECT dr.report AS report
+        FROM damage_reports dr
+        WHERE dr.listing_id = li.id AND dr.status = 'completed'
+        ORDER BY dr.updated_at DESC
+        LIMIT 1
+    ) dr ON true
+    WHERE li.id = ANY(%s)
+"""
+
+
+def compute_listing_verdicts(cur, ids: list) -> dict:
+    """Score the given listing ids with the deterministic buy/no-buy rubric.
+
+    Returns {listing_id_str: (verdict, total_points)}. Computed live (the rubric
+    is a cheap pure function) so every listing has a verdict, not just ones the
+    batch agent has run. Best-effort: a failure never breaks the listing fetch.
+    """
+    if not ids:
+        return {}
+    try:
+        int_ids = [int(i) for i in ids]
+    except (TypeError, ValueError):
+        return {}
+    try:
+        cur.execute(_RUBRIC_SELECT_SQL, (int_ids,))
+        columns = [d[0] for d in cur.description]
+        out: dict = {}
+        for record in cur.fetchall():
+            row = dict(zip(columns, record))
+            result = lead_scoring_rules.evaluate_listing(row)
+            out[row["id"]] = (result["verdict"], result["total_points"])
+        return out
+    except Exception as e:
+        logging.error(f"compute_listing_verdicts failed: {e}")
+        return {}
 
 # ============================================================================
 # HELPER FUNCTIONS
@@ -914,6 +966,7 @@ def list_listings(
                     results = cur.fetchall()
                     logging.info(f"Query returned {len(results)} raw results")
                     out: list[ListingOut] = []
+                    rubric_map = compute_listing_verdicts(cur, [str(row[0]) for row in results])
                     for rid, vehicle_key, vin, lpn, year, make, model, trim, miles, price, dom, source, location, buyer_id, images, buyer_username, score, buy_max, reason_codes, created_at, payload, notes, interior_color, exterior_color, transmission, fuel_type, drivetrain, body_style, updated_at, updated_by, mmr, clean_title, condition, detailed_ratings, engine, mpg, overall_rating, paid_status, phone_number, seller_description, seller_joined_date, seller_name, lpn_state in results:
                         # Extract decision data from payload if available
                         decision = None
@@ -979,7 +1032,9 @@ def list_listings(
                             updated_at=updated_at,
                             updated_by=updated_by,
                             score=int(score) if score is not None else None,
-                            mmr=float(mmr) if mmr is not None else None
+                            mmr=float(mmr) if mmr is not None else None,
+                            rubricVerdict=(rubric_map.get(str(rid)) or (None, None))[0],
+                            rubricPoints=(rubric_map.get(str(rid)) or (None, None))[1]
                         ))
                     logging.info(f"Returning {len(out)} processed listings")
                     return out

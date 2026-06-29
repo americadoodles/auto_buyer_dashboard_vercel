@@ -37,11 +37,12 @@ export const AGENT_DEFS: AgentDef[] = [
   {
     id: 'lead-scoring',
     title: 'Lead Scoring Agent',
-    description: 'Scores unconverted CRM leads 0–100 with reasoning and next action',
+    description: 'Scores scraped vehicles (listings) against a fixed-point buy/no-buy rubric (deterministic, not AI). Date filter selects vehicles by listing date.',
     icon: <Target className="w-4 h-4 text-claude-accent" />,
     summarize: (r) => {
       const p = rep(r);
-      return `score ${p.score ?? '—'} · ${p.tier ?? '—'}`;
+      const pts = typeof p.total_points === 'number' ? `${p.total_points >= 0 ? '+' : ''}${p.total_points}` : '—';
+      return `${pts} pts · ${p.verdict ?? '—'}`;
     },
   },
   {

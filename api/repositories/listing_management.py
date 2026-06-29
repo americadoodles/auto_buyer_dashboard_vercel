@@ -11,7 +11,7 @@ from ..schemas.listing import (
     ListingUpdate, 
     ListingActivityOut, ListingOut, Decision
 )
-from ..repositories.repositories import create_decision_from_data
+from ..repositories.repositories import create_decision_from_data, compute_listing_verdicts
 
 # ==============================================
 # LISTING UPDATE FUNCTIONS
@@ -347,6 +347,12 @@ def get_listing_by_id(listing_id: int) -> Optional[ListingOut]:
                 result = cur.fetchone()
                 
                 if result:
+                    # Buy/no-buy rubric verdict, computed live with the same rules
+                    # the listings grid uses.
+                    rubric_verdict, rubric_points = compute_listing_verdicts(
+                        cur, [str(result[0])]
+                    ).get(str(result[0]), (None, None))
+
                     # Extract decision data from payload if available
                     decision = None
                     status = ""
@@ -413,7 +419,9 @@ def get_listing_by_id(listing_id: int) -> Optional[ListingOut]:
                         updated_at=result[19],
                         updated_by=result[20],
                         score=int(result[39]) if result[39] is not None else None,
-                        mmr=float(result[21]) if result[21] is not None else None
+                        mmr=float(result[21]) if result[21] is not None else None,
+                        rubricVerdict=rubric_verdict,
+                        rubricPoints=rubric_points
                     )
                 
         except Exception as e:

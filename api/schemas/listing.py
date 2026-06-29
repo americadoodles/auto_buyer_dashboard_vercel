@@ -144,6 +144,10 @@ class ListingOut(BaseModel):
     updated_by: Optional[str] = None
     score: Optional[int] = None
     mmr: Optional[float] = None
+    # Buy/no-buy rubric result from the lead-scoring agent (agent_reports),
+    # distinct from the AI `score` above. Null until the rubric has run.
+    rubricVerdict: Optional[str] = None
+    rubricPoints: Optional[int] = None
 
 class ListingScoreIn(BaseModel):
     vehicle_key: str

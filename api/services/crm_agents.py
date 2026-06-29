@@ -1,6 +1,8 @@
 # CRM Agents — concrete agent implementations on top of CrmAgentRunner.
 #
-#   lead-scoring     : scores unconverted leads 0-100 with reasoning
+#   lead-scoring     : scores unconverted leads against a fixed-point buy/
+#                      no-buy rubric (deterministic rules, no AI — see
+#                      lead_scoring_rules.py)
 #   deal-risk        : flags open deals at risk of stalling / being lost
 #   followup-drafter : drafts a follow-up for contacts ghosting our last
 #                      outbound message (> FOLLOWUP_QUIET_DAYS)
@@ -10,13 +12,13 @@
 # to CRM tables.
 
 from typing import Any, Dict, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 
 from psycopg.rows import dict_row
 
 from ..core.db_helpers import execute_with_connection
-from . import crm_agent_service
+from . import crm_agent_service, lead_scoring_rules
 from .crm_agent_runner import CrmAgentRunner, AgentSkipItem, _date_filter, _exclusion
 
 logger = logging.getLogger(__name__)
@@ -37,22 +39,41 @@ def _contact_name(row: Dict[str, Any]) -> str:
 # --------------------------------------------------------------------------- #
 
 class LeadScoringAgent(CrmAgentRunner):
+    """Scores VEHICLES (listings) against the fixed-point buy/no-buy rubric.
+
+    Iterates the `listings` table directly so every scraped vehicle is a
+    candidate — including ones not yet attached to a lead. Seller signals come
+    from the listing's linked contact (li.contact_id) when one exists; when it
+    doesn't, those factors simply fall through to the rubric's missing_factors.
+    The date filter applies to the listing's own created_at, so picking a date
+    selects vehicles, not leads.
+    """
+
     agent_id = "lead-scoring"
+    report_model = "rule-engine-v1"  # deterministic rubric, not an LLM call
 
     _BASE_FROM = """
-        FROM leads l
-        LEFT JOIN contacts c       ON c.id  = l.contact_id
-        LEFT JOIN listings li      ON li.id = l.listing_id
-        LEFT JOIN lead_statuses ls ON ls.id = l.status_id
-        LEFT JOIN lead_sources src ON src.id = l.source_id
+        FROM listings li
+        LEFT JOIN contacts c ON c.id = li.contact_id
+        LEFT JOIN LATERAL (
+            SELECT dr.report AS report
+            FROM damage_reports dr
+            WHERE dr.listing_id = li.id AND dr.status = 'completed'
+            ORDER BY dr.updated_at DESC
+            LIMIT 1
+        ) dr ON true
     """
-    _BASE_WHERE = "l.converted_at IS NULL"  # converted leads need no score
+    _BASE_WHERE = "NOT COALESCE(li.is_sold, false)"  # already-bought vehicles need no score
+
+    def _require_ai(self) -> None:
+        """Rubric scoring is a deterministic rule engine — no LLM, no API key needed."""
+        return None
 
     def _pending_where(self, config: Dict[str, Any]):
-        date_sql, date_params = _date_filter("l", config)
+        date_sql, date_params = _date_filter("li", config)
         where = (
             f"{self._BASE_WHERE} AND "
-            + _exclusion(self.agent_id, "'lead'", "l.id::text")
+            + _exclusion(self.agent_id, "'listing'", "li.id::text")
             + date_sql
         )
         return where, date_params
@@ -60,7 +81,7 @@ class LeadScoringAgent(CrmAgentRunner):
     def _count_pending(self, config: Dict[str, Any], run_started_at: datetime) -> int:
         where, date_params = self._pending_where(config)
         row = execute_with_connection(
-            f"SELECT COUNT(*) FROM leads l WHERE {where}",
+            f"SELECT COUNT(*) FROM listings li WHERE {where}",
             (self.agent_id, run_started_at, *date_params),
             fetch="one",
         )
@@ -70,20 +91,23 @@ class LeadScoringAgent(CrmAgentRunner):
         where, date_params = self._pending_where(config)
         row = execute_with_connection(
             f"""
-            SELECT l.id::text AS lead_id, l.vehicle_interest, l.budget_range,
-                   l.notes, l.lead_score AS current_score,
-                   l.created_at AS lead_created_at, l.qualified_at,
-                   ls.name AS status, src.name AS source,
-                   c.first_name, c.last_name, c.email, c.phone, c.mobile,
-                   c.fb_seller_rating, c.fb_verified,
-                   li.year, li.make, li.model, li.price, li.miles,
-                   li.vehicle_condition,
+            SELECT li.id::text AS listing_id,
+                   li.year, li.make, li.model, li.trim, li.price, li.miles, li.mmr,
+                   li.clean_title, li.vehicle_title_status, li.vehicle_condition,
+                   li.condition AS listing_condition,
+                   li.vehicle_number_of_owners, li.vehicle_features,
+                   li.vehicle_is_paid_off, li.body_style, li.drivetrain,
+                   li.created_at AS listing_created_at,
                    GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (now() - COALESCE(li.fb_creation_time, li.created_at))) / 86400))::int AS dom,
-                   (SELECT COUNT(*) FROM communications cm
-                     WHERE cm.to_lead_id = l.id) AS communications_count
+                   c.first_name, c.last_name, c.email, c.phone, c.mobile,
+                   c.fb_seller_rating, c.fb_seller_rating_count, c.fb_verified,
+                   c.fb_joined_date,
+                   dr.report->>'overall_condition' AS damage_overall_condition,
+                   (dr.report->'total_estimated_repair_cost_usd'->>'low')::numeric
+                     AS damage_repair_cost_usd
             {self._BASE_FROM}
             WHERE {where}
-            ORDER BY l.created_at ASC, l.id ASC
+            ORDER BY li.created_at ASC, li.id ASC
             LIMIT 1
             """,
             (self.agent_id, run_started_at, *date_params),
@@ -94,40 +118,31 @@ class LeadScoringAgent(CrmAgentRunner):
             return None
         r = dict(row)
         vehicle = " ".join(str(v) for v in (r.get("year"), r.get("make"), r.get("model")) if v)
-        label = f"{_contact_name(r)} · {vehicle or r.get('vehicle_interest') or 'no vehicle info'}"
+        seller = _contact_name(r) if (r.get("first_name") or r.get("last_name")) else None
+        label = vehicle or f"vehicle #{r['listing_id']}"
+        if seller:
+            label = f"{label} · {seller}"
+        # Build the rubric context via the shared builder so the batch agent and
+        # the live listings display always score on identical inputs.
+        ctx = lead_scoring_rules.build_listing_context(
+            {**r, "condition": r.get("listing_condition")}
+        )
+        ctx["vehicle"] = vehicle or None
         return {
-            "entity_type": "lead",
-            "entity_id": r["lead_id"],
+            "entity_type": "listing",
+            "entity_id": r["listing_id"],
             "entity_label": label,
-            "context": {
-                "contact": _contact_name(r),
-                "contact_email": r.get("email"),
-                "contact_phone": r.get("phone") or r.get("mobile"),
-                "fb_seller_rating": r.get("fb_seller_rating"),
-                "fb_verified": r.get("fb_verified"),
-                "vehicle_interest": r.get("vehicle_interest"),
-                "linked_listing": vehicle or None,
-                "listing_price": r.get("price"),
-                "listing_miles": r.get("miles"),
-                "listing_condition": r.get("vehicle_condition"),
-                "listing_days_on_market": r.get("dom"),
-                "budget_range": r.get("budget_range"),
-                "lead_status": r.get("status"),
-                "lead_source": r.get("source"),
-                "current_lead_score": r.get("current_score"),
-                "qualified": bool(r.get("qualified_at")),
-                "lead_created_at": str(r.get("lead_created_at") or ""),
-                "communications_count": r.get("communications_count"),
-                "notes": (r.get("notes") or "")[:500] or None,
-            },
+            "context": ctx,
         }
 
     def _process(self, item: Dict[str, Any]) -> Dict[str, Any]:
         ctx = item["context"]
-        # Nothing to score: no contact, no vehicle, no notes — skip, don't guess.
-        if not any(ctx.get(k) for k in ("vehicle_interest", "linked_listing", "notes", "budget_range")):
-            raise AgentSkipItem("lead has no scoreable data (no vehicle, budget or notes)")
-        return crm_agent_service.score_lead(ctx)
+        # Nothing to score: no usable vehicle data at all — skip, don't guess.
+        if not any(ctx.get(k) for k in (
+            "vehicle", "mmr", "price", "miles", "trim", "vehicle_title_status",
+        )):
+            raise AgentSkipItem("listing has no scoreable vehicle data")
+        return lead_scoring_rules.evaluate(ctx)
 
 
 # --------------------------------------------------------------------------- #

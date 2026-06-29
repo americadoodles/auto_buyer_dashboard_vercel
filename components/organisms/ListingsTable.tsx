@@ -6,6 +6,7 @@ import { Listing } from '../../lib/types/listing';
 import { ListingsTableContent } from '../molecules/ListingsTableContent';
 import { Pagination } from '../molecules/Pagination';
 import { Badge } from '../atoms/Badge';
+import { RubricBadge } from '../molecules/RubricBadge';
 import { formatCurrency, formatNumber } from '../../lib/utils/formatters';
 import { Gauge, Clock, Bell, Send, Workflow, Edit } from 'lucide-react';
 
@@ -102,6 +103,7 @@ export const ListingsTable: React.FC<ListingsTableProps> = ({
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-claude-divider rounded"
                 />
                 <Badge variant="default">{listing.score}</Badge>
+                <RubricBadge verdict={listing.rubricVerdict} points={listing.rubricPoints} />
                 {listing.status && (
                   <Badge variant={listing.status === 'approved' ? 'success' : listing.status === 'rejected' ? 'destructive' : 'default'}>
                     {listing.status}

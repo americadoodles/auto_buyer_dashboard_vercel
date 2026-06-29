@@ -105,6 +105,9 @@ class CrmAgentRunner(ABC):
     """Base controllable runner; subclasses define queries + AI processing."""
 
     agent_id: str = ""  # override in subclasses
+    # Stamped on completed reports. Override in subclasses that don't call an
+    # LLM (e.g. a deterministic rule engine) to record what actually ran.
+    report_model: str = crm_agent_service.CRM_MODEL
 
     def __init__(self) -> None:
         self._lock = threading.Lock()
@@ -239,12 +242,12 @@ class CrmAgentRunner(ABC):
                 try:
                     report = self._process(item)
                     self._upsert_report(item, "completed", report=report,
-                                        model=crm_agent_service.CRM_MODEL)
+                                        model=self.report_model)
                     self._bump_counters(succeeded=True)
                 except AgentSkipItem as skip:
                     self._upsert_report(item, "skipped",
                                         report={"skip_reason": str(skip)},
-                                        model=crm_agent_service.CRM_MODEL)
+                                        model=self.report_model)
                     self._bump_counters(succeeded=False, skipped=True)
                 except Exception as e:
                     err = str(e)[:1000]

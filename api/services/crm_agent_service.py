@@ -19,7 +19,6 @@ logger = logging.getLogger(__name__)
 
 CRM_MODEL = "gpt-4o-mini"
 
-LEAD_TIERS = {"hot", "warm", "cold"}
 RISK_LEVELS = {"low", "medium", "high", "critical"}
 TASK_PRIORITIES = {"low", "medium", "high", "urgent"}
 FOLLOWUP_CHANNELS = {"sms", "email"}
@@ -86,54 +85,12 @@ def _fmt_context(ctx: Dict[str, Any]) -> str:
 
 
 # --------------------------------------------------------------------------- #
-# 1. Lead Scoring
+# 1. Deal Risk
 # --------------------------------------------------------------------------- #
-
-def score_lead(ctx: Dict[str, Any]) -> Dict[str, Any]:
-    """Score a CRM lead 0-100 with tier, reasons and a recommended next action."""
-    prompt = f"""You are scoring a vehicle-purchase lead for an auto buying team
-(we BUY vehicles from private sellers; the contact is the seller).
-
-Lead data:
-{_fmt_context(ctx)}
-
-Score the lead 0-100 considering: completeness of contact info, linked listing
-quality (price vs market, mileage, year), budget alignment, seller engagement
-signals (notes, status, communications), recency, and source quality.
-
-Respond with EXACTLY this JSON shape:
-{{
-  "score": 0-100,
-  "tier": "hot" | "warm" | "cold",
-  "reasons": ["1-6 short factual reasons that most influenced the score"],
-  "missing_info": ["important fields that are absent, if any"],
-  "recommended_action": "single concrete next step",
-  "summary": "1-2 sentence assessment"
-}}
-Base the score ONLY on the data provided — never invent facts."""
-
-    raw = _json_completion(
-        "You are an expert automotive CRM lead-scoring analyst. "
-        "Always respond with a single valid JSON object and nothing else.",
-        prompt,
-    )
-    tier = str(raw.get("tier", "")).lower()
-    score = _clamp_int(raw.get("score"), 0, 100, 50)
-    if tier not in LEAD_TIERS:
-        tier = "hot" if score >= 75 else "warm" if score >= 45 else "cold"
-    return {
-        "score": score,
-        "tier": tier,
-        "reasons": _str_list(raw.get("reasons")),
-        "missing_info": _str_list(raw.get("missing_info")),
-        "recommended_action": (str(raw["recommended_action"]).strip() if raw.get("recommended_action") else None),
-        "summary": (str(raw["summary"]).strip() if raw.get("summary") else None),
-    }
-
-
-# --------------------------------------------------------------------------- #
-# 2. Deal Risk
-# --------------------------------------------------------------------------- #
+#
+# (Lead Scoring used to live here as an LLM prompt. It's now a deterministic
+# rubric — see lead_scoring_rules.py — since every point value and hard
+# "deal killer" block must be exact and auditable.)
 
 def assess_deal_risk(ctx: Dict[str, Any]) -> Dict[str, Any]:
     """Assess an open deal's risk of stalling or being lost."""
@@ -177,7 +134,7 @@ Respond with EXACTLY this JSON shape:
 
 
 # --------------------------------------------------------------------------- #
-# 3. Follow-up Drafter
+# 2. Follow-up Drafter
 # --------------------------------------------------------------------------- #
 
 def draft_followup(ctx: Dict[str, Any]) -> Dict[str, Any]:
@@ -226,7 +183,7 @@ Respond with EXACTLY this JSON shape:
 
 
 # --------------------------------------------------------------------------- #
-# 4. Task Generator
+# 3. Task Generator
 # --------------------------------------------------------------------------- #
 
 def generate_tasks(ctx: Dict[str, Any]) -> Dict[str, Any]:

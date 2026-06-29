@@ -7,6 +7,7 @@ import { Button } from '../../../components/atoms/Button';
 import { Input } from '../../../components/atoms/Input';
 import { Icon } from '../../../components/atoms/Icon';
 import { Badge } from '../../../components/atoms/Badge';
+import { RubricBadge } from '../../../components/molecules/RubricBadge';
 import { Listing, ListingUpdate } from '../../../lib/types/listing';
 import { 
   updateListing,
@@ -578,6 +579,7 @@ export default function ListingDetailPage() {
                   Score: {listing.score}
                 </Badge>
               )}
+              <RubricBadge verdict={listing.rubricVerdict} points={listing.rubricPoints} size="md" />
               {listing.buyMax && (
                 <Badge color="green" className="bg-emerald-500 dark:bg-emerald-600 text-coal-100 font-semibold shadow-sm">
                   Buy Max: ${listing.buyMax.toLocaleString()}

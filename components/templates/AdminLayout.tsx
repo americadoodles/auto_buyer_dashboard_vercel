@@ -2,10 +2,12 @@
 
 import React from 'react';
 import { AdminNavPanel } from '../organisms/AdminNavPanel';
+import { Header } from '../organisms/Header';
 import { useAuth } from '../../app/auth/useAuth';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { LogOut } from 'lucide-react';
+import { TwilioProvider } from '../../lib/contexts/TwilioContext';
+import { IncomingCallNotification } from '../organisms/IncomingCallNotification';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -16,8 +18,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && (!user || user.role !== 'admin')) {
-      router.replace('/');
+    if (!loading && !user) {
+      router.replace('/auth');
     }
   }, [user, loading, router]);
 
@@ -29,34 +31,23 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     );
   }
 
-  if (!user || user.role !== 'admin') {
+  if (!user) {
     return null;
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <AdminNavPanel />
-      <div className="flex-1 overflow-auto">
-        {/* Header with logout button */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-medium text-gray-900">Admin Panel</h2>
-              <p className="text-sm text-gray-600">Welcome, {user.email}</p>
-            </div>
-            <button
-              onClick={logout}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Logout
-            </button>
+    <TwilioProvider>
+      <div className="flex h-screen bg-claude-cream dark:bg-coal-900 overflow-hidden">
+        <AdminNavPanel />
+        <div className="flex-1 overflow-hidden min-w-0 h-full flex flex-col">
+          <Header />
+          <div className="flex-1 overflow-y-auto bg-claude-cream dark:bg-coal-900">
+            {children}
           </div>
         </div>
-        
-        {/* Page content */}
-        {children}
       </div>
-    </div>
+      {/* Global incoming call notification overlay */}
+      <IncomingCallNotification />
+    </TwilioProvider>
   );
 };

@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .core.config import settings
 from .core.lifespan import lifespan
 
-from .routes.routes import ingest_router, listings_router, score_router, notify_router, trends_router, kpi_router
+from .routes.routes import ingest_router, listings_router, notify_router, trends_router, kpi_router, chart_router
 
 from .routes.users import user_router
 from .routes.roles import role_router
@@ -12,6 +12,10 @@ from .routes.slack import slack_router
 from .routes.user_activity import user_activity_router
 from .routes.activity_heatmap import activity_heatmap_router
 from .routes.listing_management import listing_management_router
+from .routes.accu_trade import accu_trade_router
+from .routes.mmr import mmr_router
+from .routes.condition_report import condition_report_router
+from .routes.settings_database import settings_database_router
 
 # CRM Routes
 from .routes.crm_leads import lead_router
@@ -19,21 +23,22 @@ from .routes.crm_contacts import contact_router
 from .routes.crm_deals import deal_router
 from .routes.crm_tasks import task_router
 from .routes.crm_dashboard import dashboard_router
+from .routes.communications import communication_router
 
-# ---- run-on-cold-start: ensure schema once ----
-import logging
-from .core.db import DB_ENABLED, apply_schema_if_needed
+# AI Recommender Routes
+from .routes.ai_recommender import ai_recommender_router
 
-if DB_ENABLED:
-    try:
-        logging.basicConfig(level=logging.INFO)
-        logging.info("Cold start: ensuring DB schema…")
-        apply_schema_if_needed()
-        logging.info("Schema ready.")
-    except Exception:
-        logging.exception("Schema bootstrap failed at import")
-
-# -----------------------------------------------
+# AI Agents
+from .routes.agents_control import agents_control_router
+from .routes.fb_scraper import fb_scraper_router
+from .routes.extension_ws import extension_ws_router
+# DB schema/migrations are applied at startup in two complementary places:
+#   * the container CMD runs `python -m api.core.db` BEFORE uvicorn (Cloud Run /
+#     any Docker deploy) — blocking, so a failed migration aborts the revision;
+#   * the FastAPI lifespan handler (api/core/lifespan.py) applies them too, which
+#     covers local dev started with `uvicorn api.index:app` (no Docker CMD).
+# Both are idempotent, so the (at most) double-apply on a container cold start is
+# a cheap set of IF [NOT] EXISTS no-ops.
 
 app = FastAPI(title=settings.APP_TITLE, lifespan=lifespan, redirect_slashes=False)
 
@@ -47,10 +52,10 @@ app.add_middleware(
 
 app.include_router(ingest_router,  prefix="/api")
 app.include_router(listings_router,  prefix="/api")
-app.include_router(score_router,  prefix="/api")
 app.include_router(notify_router,  prefix="/api")
 app.include_router(trends_router,  prefix="/api")
 app.include_router(kpi_router,  prefix="/api")
+app.include_router(chart_router,  prefix="/api")
 app.include_router(user_router, prefix="/api")
 app.include_router(role_router, prefix="/api")
 app.include_router(export_router, prefix="/api")
@@ -58,6 +63,10 @@ app.include_router(slack_router, prefix="/api")
 app.include_router(user_activity_router, prefix="/api")
 app.include_router(activity_heatmap_router, prefix="/api")
 app.include_router(listing_management_router, prefix="/api")
+app.include_router(accu_trade_router, prefix="/api")
+app.include_router(mmr_router, prefix="/api")
+app.include_router(condition_report_router, prefix="/api")
+app.include_router(settings_database_router, prefix="/api")
 
 # CRM Routes
 app.include_router(lead_router, prefix="/api")
@@ -65,6 +74,19 @@ app.include_router(contact_router, prefix="/api")
 app.include_router(deal_router, prefix="/api")
 app.include_router(task_router, prefix="/api")
 app.include_router(dashboard_router, prefix="/api")
+app.include_router(communication_router, prefix="/api")
+
+# AI Recommender Routes
+app.include_router(ai_recommender_router, prefix="/api")
+
+# AI Agents
+# fb-scraper routes mounted first so /api/agents/fb-scraper/* wins over the
+# generic /api/agents/{agent_id}/* handlers (which assume global singleton state).
+app.include_router(fb_scraper_router, prefix="/api")
+app.include_router(agents_control_router, prefix="/api")
+
+# Chrome-extension WebSocket (no /api prefix — extension targets /ws/...)
+app.include_router(extension_ws_router)
 
 @app.get("/api/healthz")
 def healthz():
@@ -95,13 +117,12 @@ def schema_status():
         with conn.cursor() as cur:
             cur.execute("""
               select
-                to_regclass('public.vehicles') as vehicles,
                 to_regclass('public.listings') as listings,
                 to_regclass('public.scores') as scores,
                 to_regclass('public.v_latest_scores') as v_latest_scores
             """)
             v = cur.fetchone()
-        return dict(zip(["vehicles","listings","scores","v_latest_scores"], v))
+        return dict(zip(["listings","scores","v_latest_scores"], v))
 
 # Check roles status for debugging
 @app.get("/api/_roles_status")
@@ -154,11 +175,7 @@ def listings_status():
                 # Check if listings table exists and has data
                 cur.execute("SELECT COUNT(*) FROM listings")
                 listings_count = cur.fetchone()[0]
-                
-                # Check if vehicles table exists
-                cur.execute("SELECT COUNT(*) FROM vehicles")
-                vehicles_count = cur.fetchone()[0]
-                
+
                 # Check if scores table exists
                 cur.execute("SELECT COUNT(*) FROM scores")
                 scores_count = cur.fetchone()[0]
@@ -175,7 +192,6 @@ def listings_status():
                 return {
                     "ok": True,
                     "listings_count": listings_count,
-                    "vehicles_count": vehicles_count,
                     "scores_count": scores_count,
                     "listings_columns": listings_columns
                 }

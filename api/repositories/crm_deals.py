@@ -36,23 +36,32 @@ def create_deal(deal_data: DealCreate, created_by: UUID) -> DealOut:
             with conn.cursor() as cur:
                 cur.execute("""
                     INSERT INTO deals (
-                        name, description, contact_id, assigned_to, deal_stage_id,
+                        name, description, contact_id, lead_id, assigned_to, deal_stage_id,
                         deal_category_id, expected_close_date, actual_close_date,
-                        deal_value, probability, notes, is_won, is_lost, created_by, created_at, updated_at
+                        deal_value, probability, notes, is_won, is_lost, is_hidden, created_by, created_at, updated_at
                     ) VALUES (
-                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                     ) RETURNING id, created_at, updated_at
                 """, (
-                    deal_data.title, deal_data.description, deal_data.contact_id,
+                    deal_data.title, deal_data.description, deal_data.contact_id, deal_data.lead_id,
                     deal_data.assigned_to, deal_data.deal_stage_id, deal_data.deal_category_id,
                     deal_data.expected_close_date, deal_data.actual_close_date,
                     deal_data.deal_value, deal_data.probability, deal_data.notes,
-                    deal_data.is_won or False, deal_data.is_lost or False, created_by, datetime.now(), datetime.now()
+                    deal_data.is_won or False, deal_data.is_lost or False, deal_data.is_hidden or False,
+                    created_by, datetime.now(), datetime.now()
                 ))
                 
                 result = cur.fetchone()
                 if result:
                     deal_id, created_at, updated_at = result
+                    
+                    # Emit DealCreated event
+                    try:
+                        from ..services.event_bus import publish_deal_created
+                        publish_deal_created(deal_id, deal_data.contact_id, deal_data.assigned_to, deal_data.deal_stage_id, created_by)
+                    except Exception as event_error:
+                        logging.warning(f"Failed to emit DealCreated event: {str(event_error)}")
+                    
                     return DealOut(
                         id=deal_id,
                         **deal_data.model_dump(),
@@ -79,21 +88,97 @@ def get_deal(deal_id: UUID) -> Optional[DealOut]:
         try:
             with conn.cursor() as cur:
                 cur.execute("""
-                    SELECT id, name, description, contact_id, assigned_to, deal_stage_id,
-                           deal_category_id, expected_close_date, actual_close_date,
-                           deal_value, probability, notes, is_won, is_lost, created_by, created_at, updated_at
-                    FROM deals WHERE id = %s
+                    SELECT
+                        d.id, d.name, d.description, d.contact_id, d.lead_id, d.assigned_to, d.deal_stage_id,
+                        d.deal_category_id, d.expected_close_date, d.actual_close_date,
+                        d.deal_value, d.probability, d.vehicle_requirements, d.financing_requirements,
+                        d.trade_in_info, d.notes, d.is_won, d.is_lost, d.lost_reason,
+                        d.created_by, d.created_at, d.updated_at, d.is_hidden,
+                        -- Contact fields
+                        c.id as contact_obj_id, c.first_name, c.last_name,
+                        -- Assigned to user fields
+                        u.id as user_obj_id, u.username, u.email as user_email,
+                        -- Deal category fields
+                        dc.id as category_obj_id, dc.name as category_name, dc.description as category_description, dc.created_at as category_created_at
+                    FROM deals d
+                    LEFT JOIN contacts c ON d.contact_id = c.id
+                    LEFT JOIN users u ON d.assigned_to = u.id
+                    LEFT JOIN deal_categories dc ON d.deal_category_id = dc.id
+                    WHERE d.id = %s
                 """, (deal_id,))
-                
+
                 result = cur.fetchone()
                 if result:
-                    return DealOut(
-                        id=result[0], title=result[1], description=result[2], contact_id=result[3],
-                        assigned_to=result[4], deal_stage_id=result[5], deal_category_id=result[6],
-                        expected_close_date=result[7], actual_close_date=result[8],
-                        deal_value=result[9], probability=result[10], notes=result[11],
-                        is_won=result[12], is_lost=result[13], created_by=result[14], created_at=result[15], updated_at=result[16]
-                    )
+                    from ..schemas.crm import ContactBasic, UserBasic, DealCategoryOut
+
+                    deal_data = {
+                        "id": result[0],
+                        "title": result[1] or "",
+                        "description": result[2],
+                        "contact_id": result[3],
+                        "lead_id": result[4],
+                        "assigned_to": result[5],
+                        "deal_stage_id": result[6],
+                        "deal_category_id": result[7],
+                        "expected_close_date": result[8],
+                        "actual_close_date": result[9],
+                        "deal_value": result[10],
+                        "probability": result[11] or 0,
+                        "vehicle_requirements": result[12],
+                        "financing_requirements": result[13],
+                        "trade_in_info": result[14],
+                        "notes": result[15],
+                        "is_active": True,
+                        "is_won": result[16] or False,
+                        "is_lost": result[17] or False,
+                        "lost_reason": result[18],
+                        "created_by": result[19],
+                        "created_at": result[20],
+                        "updated_at": result[21],
+                        "is_hidden": result[22] or False
+                    }
+
+                    # Add nested objects if they exist
+                    if result[23]:  # contact_obj_id
+                        deal_data["contact"] = ContactBasic(
+                            id=result[23],
+                            first_name=result[24] or "",
+                            last_name=result[25] or ""
+                        )
+
+                    # Set assigned_to as UserBasic object if user exists, otherwise keep UUID
+                    if result[26] and result[27]:  # user_obj_id and username exist
+                        try:
+                            # Get raw values from database
+                            user_id_raw = result[26]
+                            user_username_raw = result[27]
+
+                            # Convert to proper types
+                            if not isinstance(user_id_raw, UUID):
+                                user_id_raw = UUID(str(user_id_raw))
+                            if not isinstance(user_username_raw, str):
+                                user_username_raw = str(user_username_raw)
+
+                            # Create UserBasic with explicit parameters
+                            user_basic = UserBasic(id=user_id_raw, username=user_username_raw)
+
+                            deal_data["assigned_to"] = user_basic
+                        except (ValueError, TypeError, AttributeError) as e:
+                            logging.error(f"Failed to create UserBasic object: {e}, using UUID instead")
+                            deal_data["assigned_to"] = result[5]
+                    # If no user object, assigned_to is already set to UUID (result[5]) above
+
+                    # Add deal_category if it exists
+                    if result[29]:  # category_obj_id
+                        deal_data["deal_category"] = DealCategoryOut(
+                            id=result[29],
+                            name=result[30] or "",
+                            description=result[31],
+                            is_active=True,
+                            created_at=result[32] if result[32] else datetime.now()
+                        )
+
+                    return DealOut(**deal_data)
                 return None
                 
         except Exception as e:
@@ -111,6 +196,10 @@ def update_deal(deal_id: UUID, deal_update: DealUpdate) -> Optional[DealOut]:
         
         try:
             with conn.cursor() as cur:
+                # Get current deal to check for stage changes
+                current_deal = get_deal(deal_id)
+                old_stage_id = current_deal.deal_stage_id if current_deal else None
+                
                 # Build dynamic update query
                 update_fields = []
                 values = []
@@ -124,7 +213,7 @@ def update_deal(deal_id: UUID, deal_update: DealUpdate) -> Optional[DealOut]:
                         values.append(value)
                 
                 if not update_fields:
-                    return get_deal(deal_id)
+                    return current_deal
                 
                 update_fields.append("updated_at = %s")
                 values.append(datetime.now())
@@ -133,20 +222,33 @@ def update_deal(deal_id: UUID, deal_update: DealUpdate) -> Optional[DealOut]:
                 cur.execute(f"""
                     UPDATE deals SET {', '.join(update_fields)}
                     WHERE id = %s
-                    RETURNING id, name, description, contact_id, assigned_to, deal_stage_id,
+                    RETURNING id, name, description, contact_id, lead_id, assigned_to, deal_stage_id,
                              deal_category_id, expected_close_date, actual_close_date,
-                             deal_value, probability, notes, is_won, is_lost, created_by, created_at, updated_at
+                             deal_value, probability, notes, is_won, is_lost, is_hidden, created_by, created_at, updated_at
                 """, values)
-                
+
                 result = cur.fetchone()
                 if result:
-                    return DealOut(
+                    updated_deal = DealOut(
                         id=result[0], title=result[1], description=result[2], contact_id=result[3],
-                        assigned_to=result[4], deal_stage_id=result[5], deal_category_id=result[6],
-                        expected_close_date=result[7], actual_close_date=result[8],
-                        deal_value=result[9], probability=result[10], notes=result[11],
-                        is_won=result[12], is_lost=result[13], created_by=result[14], created_at=result[15], updated_at=result[16]
+                        lead_id=result[4], assigned_to=result[5], deal_stage_id=result[6], deal_category_id=result[7],
+                        expected_close_date=result[8], actual_close_date=result[9],
+                        deal_value=result[10], probability=result[11], notes=result[12],
+                        is_won=result[13], is_lost=result[14], is_hidden=result[15] or False,
+                        created_by=result[16], created_at=result[17], updated_at=result[18]
                     )
+                    
+                    # Emit DealStageChanged event if stage changed
+                    new_stage_id = updated_deal.deal_stage_id
+                    if old_stage_id != new_stage_id:
+                        try:
+                            from ..services.event_bus import publish_deal_stage_changed
+                            changed_by = updated_deal.created_by  # Use created_by as changed_by
+                            publish_deal_stage_changed(deal_id, old_stage_id, new_stage_id, changed_by)
+                        except Exception as event_error:
+                            logging.warning(f"Failed to emit DealStageChanged event: {str(event_error)}")
+                    
+                    return updated_deal
                 return None
                 
         except Exception as e:
@@ -173,8 +275,9 @@ def delete_deal(deal_id: UUID) -> bool:
 
 def list_deals(skip: int = 0, limit: int = 100, stage_id: Optional[int] = None,
                category_id: Optional[int] = None, assigned_to: Optional[UUID] = None,
-               contact_id: Optional[UUID] = None, search: Optional[str] = None, 
-               is_won: Optional[bool] = None, is_lost: Optional[bool] = None) -> List[DealOut]:
+               contact_id: Optional[UUID] = None, search: Optional[str] = None,
+               is_won: Optional[bool] = None, is_lost: Optional[bool] = None,
+               include_hidden: bool = False) -> List[DealOut]:
     """List deals with optional filtering"""
     if not DB_ENABLED:
         return []
@@ -214,28 +317,108 @@ def list_deals(skip: int = 0, limit: int = 100, stage_id: Optional[int] = None,
                     where_conditions.append("(name ILIKE %s OR description ILIKE %s)")
                     search_param = f"%{search}%"
                     params.extend([search_param, search_param])
-                
+
+                if not include_hidden:
+                    where_conditions.append("COALESCE(is_hidden, false) = false")
+
                 where_clause = "WHERE " + " AND ".join(where_conditions) if where_conditions else ""
                 
                 cur.execute(f"""
-                    SELECT id, name, description, contact_id, assigned_to, deal_stage_id,
-                           deal_category_id, expected_close_date, actual_close_date,
-                           deal_value, probability, notes, is_won, is_lost, created_by, created_at, updated_at
-                    FROM deals {where_clause}
-                    ORDER BY created_at DESC
+                    SELECT
+                        d.id, d.name, d.description, d.contact_id, d.lead_id, d.assigned_to, d.deal_stage_id,
+                        d.deal_category_id, d.expected_close_date, d.actual_close_date,
+                        d.deal_value, d.probability, d.notes, d.is_won, d.is_lost, d.created_by, d.created_at, d.updated_at,
+                        d.is_hidden,
+                        -- Contact fields
+                        c.id as contact_obj_id, c.first_name, c.last_name,
+                        -- Assigned to user fields
+                        u.id as user_obj_id, u.username, u.email as user_email,
+                        -- Deal category fields
+                        dc.id as category_obj_id, dc.name as category_name, dc.description as category_description, dc.created_at as category_created_at
+                    FROM deals d
+                    LEFT JOIN contacts c ON d.contact_id = c.id
+                    LEFT JOIN users u ON d.assigned_to = u.id
+                    LEFT JOIN deal_categories dc ON d.deal_category_id = dc.id
+                    {where_clause}
+                    ORDER BY d.created_at DESC
                     LIMIT %s OFFSET %s
                 """, params + [limit, skip])
-                
+
                 results = cur.fetchall()
                 deals = []
                 for result in results:
-                    deals.append(DealOut(
-                        id=result[0], title=result[1], description=result[2], contact_id=result[3],
-                        assigned_to=result[4], deal_stage_id=result[5], deal_category_id=result[6],
-                        expected_close_date=result[7], actual_close_date=result[8],
-                        deal_value=result[9], probability=result[10], notes=result[11],
-                        is_won=result[12], is_lost=result[13], created_by=result[14], created_at=result[15], updated_at=result[16]
-                    ))
+                    from ..schemas.crm import ContactBasic, UserBasic, DealCategoryOut
+
+                    deal_data = {
+                        "id": result[0],
+                        "title": result[1] or "",
+                        "description": result[2],
+                        "contact_id": result[3],
+                        "lead_id": result[4],
+                        "assigned_to": result[5],
+                        "deal_stage_id": result[6],
+                        "deal_category_id": result[7],
+                        "expected_close_date": result[8],
+                        "actual_close_date": result[9],
+                        "deal_value": result[10],
+                        "probability": result[11] or 0,
+                        "notes": result[12],
+                        "is_won": result[13] or False,
+                        "is_lost": result[14] or False,
+                        "created_by": result[15],
+                        "created_at": result[16],
+                        "updated_at": result[17],
+                        "is_hidden": result[18] or False,
+                        "is_active": True
+                    }
+
+                    # Add nested objects if they exist
+                    if result[19]:  # contact_obj_id
+                        deal_data["contact"] = ContactBasic(
+                            id=result[19],
+                            first_name=result[20] or "",
+                            last_name=result[21] or ""
+                        )
+                    # Set assigned_to as UserBasic object if user exists, otherwise keep UUID
+                    if result[22] and result[23]:  # user_obj_id and username exist
+                        try:
+                            # Get raw values from database
+                            user_id_raw = result[22]
+                            user_username_raw = result[23]
+                            
+                            # EXPLICIT DEBUG LOGGING
+                            logging.info(f"DEBUG: Creating UserBasic - user_id_raw type: {type(user_id_raw)}, value: {user_id_raw}")
+                            logging.info(f"DEBUG: Creating UserBasic - user_username_raw type: {type(user_username_raw)}, value: {user_username_raw}")
+                            
+                            # Convert to proper types
+                            if not isinstance(user_id_raw, UUID):
+                                user_id_raw = UUID(str(user_id_raw))
+                            if not isinstance(user_username_raw, str):
+                                user_username_raw = str(user_username_raw)
+                            
+                            # Create UserBasic with explicit parameters
+                            user_basic = UserBasic(id=user_id_raw, username=user_username_raw)
+                            
+                            logging.info(f"DEBUG: Created UserBasic - id type: {type(user_basic.id)}, username type: {type(user_basic.username)}")
+                            logging.info(f"DEBUG: Created UserBasic - id value: {user_basic.id}, username value: {user_basic.username}")
+                            
+                            deal_data["assigned_to"] = user_basic
+                        except (ValueError, TypeError, AttributeError) as e:
+                            logging.error(f"Failed to create UserBasic object: {e}, using UUID instead")
+                            deal_data["assigned_to"] = result[5]
+                    # If no user object, assigned_to is already set to UUID (result[5]) above
+                    
+                    # Add deal_category if it exists
+                    if result[25]:  # category_obj_id
+                        deal_data["deal_category"] = DealCategoryOut(
+                            id=result[25],
+                            name=result[26] or "",
+                            description=result[27],
+                            is_active=True,
+                            created_at=result[28] if result[28] else datetime.now()
+                        )
+                    
+                    deals.append(DealOut(**deal_data))
                 
                 return deals
                 
@@ -592,7 +775,7 @@ def get_deal_pipeline() -> List[DealPipeline]:
                         COALESCE(SUM(d.deal_value), 0) as total_value,
                         COALESCE(AVG(d.probability), 0) as avg_probability
                     FROM deal_stages ds
-                    LEFT JOIN deals d ON ds.id = d.deal_stage_id AND d.is_won = false AND d.is_lost = false
+                    LEFT JOIN deals d ON ds.id = d.deal_stage_id AND d.is_won = false AND d.is_lost = false AND COALESCE(d.is_hidden, false) = false
                     WHERE ds.is_active = true
                     GROUP BY ds.id, ds.name, ds.color_code, ds.sort_order
                     ORDER BY ds.sort_order
@@ -602,8 +785,12 @@ def get_deal_pipeline() -> List[DealPipeline]:
                 pipeline = []
                 for result in results:
                     pipeline.append(DealPipeline(
-                        stage_id=result[0], stage_name=result[1], color_code=result[2],
-                        deal_count=result[3], total_value=float(result[4]), avg_probability=float(result[5])
+                        stage_id=result[0],
+                        stage_name=result[1],
+                        color_code=result[2] or "#6B7280",  # Default gray if no color
+                        deal_count=result[3] or 0,
+                        total_value=Decimal(str(result[4] or 0)),
+                        avg_probability=float(result[5] or 0)
                     ))
                 
                 return pipeline

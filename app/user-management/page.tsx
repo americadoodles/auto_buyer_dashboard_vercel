@@ -1,0 +1,27 @@
+
+import CurrentUsersTable from "components/organisms/CurrentUsersTable";
+import { ExportButton } from "components/molecules/ExportButton";
+
+export default function AdminUserManagementPage() {
+  return (
+    <div className="p-6 bg-claude-cream dark:bg-coal-900 min-h-screen">
+      <div className="mb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-claude-ink dark:text-coal-100">Current Users</h1>
+            <p className="text-claude-muted dark:text-coal-300 mt-2">
+              View and manage all registered users in your application.
+            </p>
+          </div>
+          <ExportButton
+            exportType="users"
+            userRole="admin"
+            variant="outline"
+            size="sm"
+          />
+        </div>
+      </div>
+      <CurrentUsersTable />
+    </div>
+  );
+}

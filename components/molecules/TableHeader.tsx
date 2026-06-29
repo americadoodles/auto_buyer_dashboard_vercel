@@ -34,16 +34,16 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
   // If columns prop is provided, use generic table header
   if (columns) {
     return (
-      <thead className="bg-gray-50">
+      <thead className="bg-claude-cream dark:bg-coal-700/50">
         <tr>
           {columns.map((column) => (
             <th
               key={column.key}
-              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              className="px-2 py-2 text-left text-xs font-medium text-claude-subtle dark:text-coal-400 uppercase tracking-wider"
             >
               {column.sortable ? (
                 <button
-                  className="flex items-center space-x-1 hover:text-gray-700"
+                  className="flex items-center space-x-1 hover:text-claude-text dark:hover:text-coal-200"
                   onClick={() => onColumnSort?.(column.key)}
                 >
                   <span>{column.label}</span>
@@ -64,13 +64,19 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
   
   return (
     <div 
-      className={`grid ${LISTINGS_TABLE_GRID_CLASS} bg-slate-50 px-4 py-2 text-xs font-medium uppercase tracking-wide text-slate-600`}
-      style={LISTINGS_TABLE_GRID_STYLE}
+      className={`grid ${LISTINGS_TABLE_GRID_CLASS} gap-2 bg-slate-50 px-4 py-2 text-xs font-medium uppercase tracking-wide text-slate-600`}
+      style={{
+        ...LISTINGS_TABLE_GRID_STYLE,
+        gridTemplateRows: 'auto',
+        gridAutoRows: 'auto'
+      }}
     >
       {listingsColumns.map(col => {
+        const colSpanStyle = { gridColumn: `span ${col.colSpan} / span ${col.colSpan}` };
+        
         if (col.key === 'select') {
           return (
-            <div key={col.key} className={`col-span-${col.colSpan} flex items-center justify-center`}>
+            <div key={col.key} style={colSpanStyle} className="flex items-center justify-center">
               <input
                 type="checkbox"
                 checked={isAllSelected}
@@ -78,28 +84,33 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                   if (input) input.indeterminate = isIndeterminate;
                 }}
                 onChange={(e) => onSelectAll?.(e.target.checked)}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-claude-divider rounded"
                 title={isAllSelected ? "Deselect all" : "Select all"}
               />
             </div>
           );
         }
         
+        const isActionColumn = ['notify', 'slack', 'workflow', 'edit'].includes(col.key);
+        const priority = col.priority as string;
+        const visibilityClass = priority === 'low' ? 'invisible lg:visible' : 
+                                priority === 'medium' ? 'invisible md:visible' : '';
+        
         return (
-          <button
-            key={col.key}
-            className={`col-span-${col.colSpan} flex items-center gap-1 hover:text-slate-800 transition-colors ${
-              col.priority === 'low' ? 'hidden lg:flex' : 
-              col.priority === 'medium' ? 'hidden md:flex' : 'flex'
-            }`}
-            onClick={() => !['notify', 'slack', 'workflow', 'edit', 'contacts'].includes(col.key) && onSort?.(col.key as keyof Listing | 'decision_status' | 'decision_reasons')}
-            disabled={['notify', 'slack', 'workflow', 'edit', 'contacts'].includes(col.key)}
-          >
-            <span className="truncate">{col.label}</span>
-            {!['notify', 'slack', 'workflow', 'edit', 'contacts'].includes(col.key) && (
-              <ArrowUpDown className="h-3 w-3 flex-shrink-0" />
-            )}
-          </button>
+          <div key={col.key} style={colSpanStyle} className={`flex items-center ${visibilityClass}`}>
+            <button
+              className={`w-full flex items-center gap-1 hover:text-slate-800 transition-colors ${
+                isActionColumn ? 'justify-center' : ''
+              }`}
+              onClick={() => !isActionColumn && onSort?.(col.key as keyof Listing | 'decision_status' | 'decision_reasons')}
+              disabled={isActionColumn}
+            >
+              <span className="truncate">{col.label}</span>
+              {!isActionColumn && (
+                <ArrowUpDown className="h-3 w-3 flex-shrink-0" />
+              )}
+            </button>
+          </div>
         );
       })}
     </div>

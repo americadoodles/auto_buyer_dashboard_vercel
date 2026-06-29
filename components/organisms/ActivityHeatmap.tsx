@@ -70,15 +70,15 @@ const ActivityHeatmap = forwardRef<HTMLElement, ActivityHeatmapProps>(
         throw new Error(error);
       } else {
         return (
-          <div className={`bg-white rounded-lg shadow-sm border border-gray-200 ${className}`}>
-            <div className="px-6 py-4 border-b border-gray-200">
+          <div className={`bg-claude-surface dark:bg-coal-850 rounded-lg shadow-sm border border-claude-border dark:border-coal-700 ${className}`}>
+            <div className="px-6 py-4 border-b border-claude-border dark:border-coal-700">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                  <CalendarIcon className="w-5 h-5 text-red-600" />
+                <div className="w-10 h-10 bg-red-100 dark:bg-red-900/20 rounded-lg flex items-center justify-center">
+                  <CalendarIcon className="w-5 h-5 text-red-600 dark:text-red-400" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-                  <p className="text-sm text-red-600">{errorMessage}</p>
+                  <h2 className="text-lg font-semibold text-claude-ink dark:text-coal-100">{title}</h2>
+                  <p className="text-sm text-red-600 dark:text-red-400">{errorMessage}</p>
                 </div>
               </div>
             </div>
@@ -90,15 +90,15 @@ const ActivityHeatmap = forwardRef<HTMLElement, ActivityHeatmapProps>(
     // Loading state
     if (loading || !data.length) {
       return (
-        <div className={`bg-white rounded-lg shadow-sm border border-gray-200 ${className}`}>
-          <div className="px-6 py-4 border-b border-gray-200">
+        <div className={`bg-claude-surface dark:bg-coal-850 rounded-lg shadow-sm border border-claude-border dark:border-coal-700 ${className}`}>
+          <div className="px-6 py-4 border-b border-claude-border dark:border-coal-700">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                <CalendarIcon className="w-5 h-5 text-green-600" />
+              <div className="w-10 h-10 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
+                <CalendarIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-                <p className="text-sm text-gray-600">{subtitle}</p>
+                <h2 className="text-lg font-semibold text-claude-ink dark:text-coal-100">{title}</h2>
+                <p className="text-sm text-claude-muted dark:text-coal-400">{subtitle}</p>
               </div>
             </div>
           </div>
@@ -110,32 +110,18 @@ const ActivityHeatmap = forwardRef<HTMLElement, ActivityHeatmapProps>(
     }
 
     return (
-      <div className={`bg-white rounded-lg shadow-sm border border-gray-200 ${className}`}>
+      <div className={`bg-claude-surface dark:bg-coal-850 rounded-lg shadow-sm border border-claude-border dark:border-coal-700 ${className}`}>
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200">
+        <div className="px-6 py-4 border-b border-claude-border dark:border-coal-700">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                <CalendarIcon className="w-5 h-5 text-green-600" />
+              <div className="w-10 h-10 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
+                <CalendarIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-                <p className="text-sm text-gray-600">{subtitle}</p>
+                <h2 className="text-lg font-semibold text-claude-ink dark:text-coal-100">{title}</h2>
+                <p className="text-sm text-claude-muted dark:text-coal-400">{subtitle}</p>
               </div>
-            </div>
-            <div className="flex items-center space-x-4 text-sm text-gray-500">
-              <span>Less</span>
-              <div className="flex space-x-1">
-                {gitHubTheme.light?.map((color, level) => (
-                  <div
-                    key={level}
-                    className="w-3 h-3 rounded-sm border border-gray-200"
-                    style={{ backgroundColor: color }}
-                    title={`Level ${level}`}
-                  />
-                ))}
-              </div>
-              <span>More</span>
             </div>
           </div>
         </div>
@@ -172,23 +158,23 @@ const ActivityHeatmap = forwardRef<HTMLElement, ActivityHeatmapProps>(
 
           {/* Summary stats */}
           <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <div className="text-2xl font-bold text-gray-900">
+            <div className="p-4 bg-claude-cream dark:bg-coal-700/50 rounded-lg">
+              <div className="text-2xl font-bold text-claude-ink dark:text-coal-100">
                 {totalActivities}
               </div>
-              <div className="text-sm text-gray-500">Total Activities</div>
+              <div className="text-sm text-claude-subtle dark:text-coal-400">Total Activities</div>
             </div>
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <div className="text-2xl font-bold text-gray-900">
+            <div className="p-4 bg-claude-cream dark:bg-coal-700/50 rounded-lg">
+              <div className="text-2xl font-bold text-claude-ink dark:text-coal-100">
                 {averagePerWeek}
               </div>
-              <div className="text-sm text-gray-500">Avg per Week</div>
+              <div className="text-sm text-claude-subtle dark:text-coal-400">Avg per Week</div>
             </div>
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <div className="text-2xl font-bold text-gray-900">
+            <div className="p-4 bg-claude-cream dark:bg-coal-700/50 rounded-lg">
+              <div className="text-2xl font-bold text-claude-ink dark:text-coal-100">
                 {activeDays}
               </div>
-              <div className="text-sm text-gray-500">Active Days</div>
+              <div className="text-sm text-claude-subtle dark:text-coal-400">Active Days</div>
             </div>
           </div>
         </div>

@@ -5,7 +5,7 @@ from uuid import UUID
 from ..schemas.crm import (
     DealCreate, DealUpdate, DealOut, DealActivityCreate, DealActivityOut,
     DealStageCreate, DealStageOut, DealCategoryCreate, DealCategoryOut,
-    DealPipeline, SalesPerformanceMetrics
+    DealPipeline, SalesPerformanceMetrics, DealAIDraftRequest, DealAIDraftResponse
 )
 from ..schemas.user import UserOut
 from ..core.auth import get_current_user, require_admin
@@ -16,6 +16,7 @@ from ..repositories.crm_deals import (
     create_deal_category, get_deal_categories, update_deal_category, delete_deal_category,
     get_deal_pipeline, get_sales_performance_metrics
 )
+from ..services.ai_service import generate_deal_draft
 import logging
 
 deal_router = APIRouter(prefix="/crm/deals", tags=["crm-deals"])
@@ -24,7 +25,8 @@ deal_router = APIRouter(prefix="/crm/deals", tags=["crm-deals"])
 # DEAL MANAGEMENT ENDPOINTS
 # ==============================================
 
-@deal_router.post("/", response_model=DealOut)
+@deal_router.post("", response_model=DealOut, include_in_schema=False)  # /api/crm/deals
+@deal_router.post("/", response_model=DealOut)  # /api/crm/deals/
 def create_new_deal(
     deal: DealCreate,
     current_user: UserOut = Depends(get_current_user)
@@ -48,6 +50,7 @@ def get_all_deals(
     search: Optional[str] = Query(None),
     is_won: Optional[bool] = Query(None),
     is_lost: Optional[bool] = Query(None),
+    include_hidden: bool = Query(False),
     current_user: UserOut = Depends(get_current_user)
 ):
     """Get all deals with optional filtering"""
@@ -55,7 +58,8 @@ def get_all_deals(
         return list_deals(skip=skip, limit=limit, stage_id=stage_id,
                          category_id=category_id, assigned_to=assigned_to,
                          contact_id=contact_id, search=search,
-                         is_won=is_won, is_lost=is_lost)
+                         is_won=is_won, is_lost=is_lost,
+                         include_hidden=include_hidden)
     except Exception as e:
         logging.error(f"Error fetching deals: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to fetch deals")
@@ -287,4 +291,23 @@ def get_deal_activities_list(
     except Exception as e:
         logging.error(f"Error fetching deal activities: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to fetch deal activities")
+
+# ==============================================
+# AI DRAFT GENERATION ENDPOINT
+# ==============================================
+
+@deal_router.post("/ai-draft", response_model=DealAIDraftResponse)
+def generate_ai_draft(
+    request: DealAIDraftRequest,
+    current_user: UserOut = Depends(get_current_user)
+):
+    """Generate AI-powered draft for deal creation"""
+    try:
+        return generate_deal_draft(request)
+    except ValueError as e:
+        logging.error(f"Error generating AI draft: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        logging.error(f"Error generating AI draft: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate AI draft: {str(e)}")
 

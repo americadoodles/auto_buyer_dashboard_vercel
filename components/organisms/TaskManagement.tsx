@@ -1,14 +1,17 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card } from '../molecules/Card';
-import { TableHeader } from '../molecules/TableHeader';
-import { TableRow } from '../molecules/TableRow';
 import { Badge } from '../atoms/Badge';
 import { Button } from '../atoms/Button';
 import { Input } from '../atoms/Input';
 import { Icon } from '../atoms/Icon';
-import { Pagination } from '../molecules/Pagination';
+import { KanbanBoard } from './KanbanBoard';
+import { useTaskStatuses, useTaskPriorities } from '../../lib/hooks/useTasks';
+import { tasksApi } from '../../lib/services/tasksApi';
+import { useAuth } from '../../app/auth/useAuth';
+import { ApiService } from '../../lib/services/api';
+import { User } from '../../lib/types/user';
 
 interface Task {
   id: string;
@@ -28,6 +31,10 @@ interface Task {
     id: string;
     username: string;
   };
+  owner?: {
+    id: string;
+    username: string;
+  } | null;
   due_date: string;
   completed_at: string | null;
   related_lead: {
@@ -62,9 +69,10 @@ interface TaskManagementProps {
   onPriorityFilter?: (priorityId: number | undefined) => void;
   onStatusFilter?: (statusId: number | undefined) => void;
   onAssignedToFilter?: (assignedTo: string | undefined) => void;
-  priorities?: Array<{ id: number; name: string; color_code?: string }>;
-  statuses?: Array<{ id: number; name: string; color_code?: string }>;
+  priorities?: Array<{ id: number; name: string; color_code?: string, sort_order?: number }>;
+  statuses?: Array<{ id: number; name: string; color_code?: string, sort_order?: number }>;
   loading?: boolean;
+  onTasksUpdated?: () => void;
 }
 
 export const TaskManagement: React.FC<TaskManagementProps> = ({
@@ -81,15 +89,86 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
   onPriorityFilter,
   onStatusFilter,
   onAssignedToFilter,
-  priorities,
-  statuses,
-  loading
+  priorities: prioritiesProp,
+  statuses: statusesProp,
+  loading,
+  onTasksUpdated
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [assignedFilter, setAssignedFilter] = useState('all');
   const [showOverdue, setShowOverdue] = useState(false);
+  const [users, setUsers] = useState<User[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  
+  // Get current user for role-based filtering
+  const { user } = useAuth();
+  const isAdmin = user?.role?.toLowerCase() === 'admin';
+  
+  // Fetch task statuses and priorities from database
+  const { statuses: dbStatuses, loading: statusesLoading } = useTaskStatuses();
+  const { priorities: dbPriorities, loading: prioritiesLoading } = useTaskPriorities();
+  // Fetch users for the assigned to filter
+  useEffect(() => {
+    const fetchUsers = async () => {
+      if (isAdmin) {
+        // Only admins can fetch all users
+        setUsersLoading(true);
+        try {
+          const usersData = await ApiService.getUsers().catch(() => []);
+          setUsers(usersData);
+        } catch (error) {
+          console.error('Error fetching users:', error);
+          setUsers([]);
+        } finally {
+          setUsersLoading(false);
+        }
+      } else {
+        // For buyers, just show themselves
+        if (user) {
+          setUsers([user]);
+        }
+      }
+    };
+    
+    fetchUsers();
+  }, [isAdmin, user]);
+  
+  // Filter tasks based on user role
+  // Admin: show all tasks
+  // Buyer: show only tasks where buyer is the owner
+  const roleFilteredTasks = useMemo(() => {
+    if (isAdmin) {
+      return tasks;
+    }
+    
+    // For buyers, filter tasks where they are the owner
+    const buyerId = user?.id;
+    if (!buyerId) return [];
+    
+    return tasks.filter(task => task.owner?.id === buyerId);
+  }, [tasks, isAdmin, user?.id]);
+
+  // Use database statuses/priorities if available, otherwise fall back to prop
+  const statuses = dbStatuses.length > 0 ? dbStatuses : (statusesProp || []);
+  const priorities = dbPriorities.length > 0 ? dbPriorities : (prioritiesProp || []);
+
+  // Helper function to convert hex color to Tailwind classes
+  const getTailwindColors = (hexColor: string) => {
+    // Map common colors to Tailwind classes with dark mode variants
+    const colorMap: Record<string, { bg: string; border: string }> = {
+      '#3B82F6': { bg: 'bg-blue-50 dark:bg-blue-900/20', border: 'border-blue-200 dark:border-blue-800' },
+      '#10B981': { bg: 'bg-green-50 dark:bg-green-900/20', border: 'border-green-200 dark:border-green-800' },
+      '#F59E0B': { bg: 'bg-yellow-50 dark:bg-yellow-900/20', border: 'border-yellow-200 dark:border-yellow-800' },
+      '#8B5CF6': { bg: 'bg-purple-50 dark:bg-purple-900/20', border: 'border-purple-200 dark:border-purple-800' },
+      '#EF4444': { bg: 'bg-red-50 dark:bg-red-900/20', border: 'border-red-200 dark:border-red-800' },
+      '#6B7280': { bg: 'bg-claude-cream dark:bg-coal-900/20', border: 'border-claude-border dark:border-coal-700' },
+      '#059669': { bg: 'bg-emerald-50 dark:bg-emerald-900/20', border: 'border-emerald-200 dark:border-emerald-800' },
+    };
+    
+    return colorMap[hexColor] || { bg: 'bg-claude-cream dark:bg-coal-900/20', border: 'border-claude-border dark:border-coal-700' };
+  };
 
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
@@ -143,6 +222,7 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
   };
 
   const formatDate = (dateString: string) => {
+    if (!dateString) return 'No due date';
     const date = new Date(dateString);
     const now = new Date();
     const diffTime = date.getTime() - now.getTime();
@@ -156,289 +236,394 @@ export const TaskManagement: React.FC<TaskManagementProps> = ({
   };
 
   const isOverdue = (dueDate: string) => {
-    const date = new Date(dueDate);
-    const now = new Date();
-    return date < now && !tasks.find(task => task.due_date === dueDate)?.completed_at;
+    if (!dueDate) return false;
+    try {
+      const date = new Date(dueDate);
+      const now = new Date();
+      // Compare dates at start of day (ignore time)
+      const dueDateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const todayOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      return dueDateOnly < todayOnly;
+    } catch (error) {
+      console.error('Error parsing due date:', dueDate, error);
+      return false;
+    }
   };
 
-  const overdueTasks = tasks.filter(task => isOverdue(task.due_date));
-  const dueTodayTasks = tasks.filter(task => {
+  const overdueTasks = roleFilteredTasks.filter(task => isOverdue(task.due_date));
+  const dueTodayTasks = roleFilteredTasks.filter(task => {
+    if (!task.due_date) return false;
     const date = new Date(task.due_date);
     const today = new Date();
     return date.toDateString() === today.toDateString() && !task.completed_at;
   });
 
+  // Define the Kanban stages from database
+  const kanbanStages = useMemo(() => {
+    // Use database statuses from useTaskStatuses hook
+    return dbStatuses
+      .filter(status => status.is_active !== false) // Only include active statuses
+      .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)) // Sort by sort_order
+      .map(status => {
+        const color = status.color_code || '#6B7280'; // Default gray if no color
+        const tailwindColors = getTailwindColors(color);
+        return {
+          id: status.id,
+          name: status.name,
+          color: color,
+          bgColor: tailwindColors.bg,
+          borderColor: tailwindColors.border
+        };
+      });
+  }, [dbStatuses]);
+
+  // Filter tasks based on search and filters
+  const filteredTasks = useMemo(() => {
+    let filtered = roleFilteredTasks;
+
+    // Search filter
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(task =>
+        task.title.toLowerCase().includes(searchLower) ||
+        task.description?.toLowerCase().includes(searchLower) ||
+        task.assigned_to?.username.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Status filter
+    if (statusFilter !== 'all') {
+      const statusId = parseInt(statusFilter, 10);
+      filtered = filtered.filter(task => task.status.id === statusId);
+    }
+
+    // Priority filter
+    if (priorityFilter !== 'all') {
+      const priorityId = parseInt(priorityFilter, 10);
+      filtered = filtered.filter(task => task.priority.id === priorityId);
+    }
+
+    // Assigned filter (filter by owner)
+    if (assignedFilter !== 'all') {
+      // Filter by selected user ID (including "Me" which uses user.id)
+      filtered = filtered.filter(task => task.owner?.id === assignedFilter);
+    }
+
+    // Overdue filter
+    if (showOverdue) {
+      filtered = filtered.filter(task => isOverdue(task.due_date));
+    }
+
+    return filtered;
+  }, [roleFilteredTasks, searchTerm, statusFilter, priorityFilter, assignedFilter, showOverdue, user?.id]);
+
+  // Group tasks by status
+  const tasksByStatus = useMemo(() => {
+    const grouped: Record<string, Task[]> = {};
+    kanbanStages.forEach(stage => {
+      grouped[stage.name] = [];
+    });
+
+    filteredTasks.forEach(task => {
+      const statusName = task.status?.name || '';
+      const matchedStage = kanbanStages.find(s => 
+        s.name.toLowerCase() === statusName.toLowerCase()
+      );
+      if (matchedStage) {
+        grouped[matchedStage.name].push(task);
+      }
+    });
+
+    return grouped;
+  }, [filteredTasks, kanbanStages]);
+
+  // Calculate status totals
+  const getStatusStats = (statusName: string) => {
+    const statusTasks = tasksByStatus[statusName] || [];
+    return { count: statusTasks.length };
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center mb-2 flex-shrink-0">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Task Management</h1>
-          <p className="text-gray-600 mt-1">
-            Manage your tasks and activities ({totalTasks} total)
-          </p>
+          <h1 className="text-3xl font-bold text-claude-ink dark:text-coal-100">Task Management</h1>
         </div>
         <div className="flex space-x-2">
           <Button variant="outline" onClick={onExportTasks}>
             <Icon name="download" className="w-4 h-4 mr-2" />
             Export
           </Button>
-          <Button onClick={onCreateTask}>
-            <Icon name="plus" className="w-4 h-4 mr-2" />
-            New Task
-          </Button>
         </div>
       </div>
 
       {/* Task Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="p-4">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <Icon name="check-circle" className="w-4 h-4 text-blue-600" />
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-2 flex-shrink-0">
+        <Card className="px-4 py-2">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+                  <Icon name="check-circle" className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                </div>
               </div>
+              <p className="text-sm font-medium text-claude-subtle dark:text-coal-400 whitespace-nowrap">Total Tasks</p>
             </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-500">Total Tasks</p>
-              <p className="text-2xl font-semibold text-gray-900">{totalTasks}</p>
-            </div>
+            <p className="text-2xl font-semibold text-claude-ink dark:text-coal-100">{roleFilteredTasks.length}</p>
           </div>
         </Card>
-        <Card className="p-4">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                <Icon name="alert-circle" className="w-4 h-4 text-red-600" />
+        <Card className="px-4 py-2">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+                  <Icon name="alert-circle" className="w-4 h-4 text-red-600 dark:text-red-400" />
+                </div>
               </div>
+              <p className="text-sm font-medium text-claude-subtle dark:text-coal-400 whitespace-nowrap">Overdue</p>
             </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-500">Overdue</p>
-              <p className="text-2xl font-semibold text-gray-900">{overdueTasks.length}</p>
-            </div>
+            <p className="text-2xl font-semibold text-claude-ink dark:text-coal-100">{overdueTasks.length}</p>
           </div>
         </Card>
-        <Card className="p-4">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                <Icon name="clock" className="w-4 h-4 text-yellow-600" />
+        <Card className="px-4 py-2">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
+                  <Icon name="clock" className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+                </div>
               </div>
+              <p className="text-sm font-medium text-claude-subtle dark:text-coal-400 whitespace-nowrap">Due Today</p>
             </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-500">Due Today</p>
-              <p className="text-2xl font-semibold text-gray-900">{dueTodayTasks.length}</p>
-            </div>
+            <p className="text-2xl font-semibold text-claude-ink dark:text-coal-100">{dueTodayTasks.length}</p>
           </div>
         </Card>
-        <Card className="p-4">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                <Icon name="check" className="w-4 h-4 text-green-600" />
+        <Card className="px-4 py-2">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                  <Icon name="check" className="w-4 h-4 text-green-600 dark:text-green-400" />
+                </div>
               </div>
+              <p className="text-sm font-medium text-claude-subtle dark:text-coal-400 whitespace-nowrap">Completed</p>
             </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-500">Completed</p>
-              <p className="text-2xl font-semibold text-gray-900">
-                {tasks.filter(task => task.status.name === 'Completed').length}
-              </p>
-            </div>
+            <p className="text-2xl font-semibold text-claude-ink dark:text-coal-100">
+              {roleFilteredTasks.filter(task => task.status.name.toLowerCase() === 'completed').length}
+            </p>
           </div>
         </Card>
       </div>
 
-      {/* Filters */}
-      <Card className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Search
-            </label>
-            <Input
-              type="text"
-              placeholder="Search tasks..."
-              value={searchTerm}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="w-full"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Status
-            </label>
-            <select
-              value={statusFilter}
-              onChange={(e) => handleStatusFilterChange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={loading}
-            >
-              <option value="all">All Status</option>
-              {statuses ? (
-                statuses.map((status) => (
+      {/* Filters and Kanban Layout */}
+      <div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0">
+        {/* Filters - Left Side */}
+        <Card className="p-4 lg:w-72 flex-shrink-0">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-2">
+                Search
+              </label>
+              <Input
+                type="text"
+                placeholder="Search tasks..."
+                value={searchTerm}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="w-full"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-2">
+                Status
+              </label>
+              <select
+                value={statusFilter}
+                onChange={(e) => handleStatusFilterChange(e.target.value)}
+                className="w-full px-3 py-2 border border-claude-divider dark:border-coal-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100"
+                disabled={loading || statusesLoading}
+              >
+                <option value="all">All Status</option>
+                {statuses.map((status) => (
                   <option key={status.id} value={status.id.toString()}>
                     {status.name}
                   </option>
-                ))
-              ) : (
-                <>
-                  <option value="not_started">Not Started</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
-                </>
-              )}
-            </select>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-2">
+                Priority
+              </label>
+              <select
+                value={priorityFilter}
+                onChange={(e) => handlePriorityFilterChange(e.target.value)}
+                className="w-full px-3 py-2 border border-claude-divider dark:border-coal-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100"
+                disabled={loading || prioritiesLoading}
+              >
+                <option value="all">All Priorities</option>
+                {[...priorities]
+                  .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+                  .map((priority) => (
+                    <option key={priority.id} value={priority.id.toString()}>
+                      {priority.name}
+                    </option>
+                  ))}
+              </select>
+            </div>
+            {isAdmin && (
+              <div>
+                <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-2">
+                  Assigned To
+                </label>
+                <select
+                  value={assignedFilter}
+                  onChange={(e) => handleAssignedToFilterChange(e.target.value)}
+                  className="w-full px-3 py-2 border border-claude-divider dark:border-coal-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100"
+                  disabled={loading || usersLoading}
+                >
+                  <option value="all">All Users</option>
+                  {user && (
+                    <option key={user.id} value={user.id}>Me ({user.username})</option>
+                  )}
+                  {users
+                    .filter(userOption => userOption.id !== user?.id) // Don't show current user twice
+                    .map((userOption) => (
+                      <option key={userOption.id} value={userOption.id}>
+                        {userOption.username}
+                      </option>
+                    ))}
+                </select>
+              </div>
+            )}
+            <div>
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showOverdue}
+                  onChange={(e) => setShowOverdue(e.target.checked)}
+                  className="rounded border-claude-divider dark:border-coal-600 text-blue-600 dark:text-blue-500 focus:ring-blue-500 dark:focus:ring-blue-400 cursor-pointer bg-claude-surface dark:bg-coal-700"
+                />
+                <span className="ml-2 text-sm text-claude-text dark:text-coal-300">Show Overdue Only</span>
+              </label>
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Priority
-            </label>
-            <select
-              value={priorityFilter}
-              onChange={(e) => handlePriorityFilterChange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={loading}
-            >
-              <option value="all">All Priorities</option>
-              {priorities ? (
-                priorities.map((priority) => (
-                  <option key={priority.id} value={priority.id.toString()}>
-                    {priority.name}
-                  </option>
-                ))
-              ) : (
-                <>
-                  <option value="urgent">Urgent</option>
-                  <option value="high">High</option>
-                  <option value="medium">Medium</option>
-                  <option value="low">Low</option>
-                </>
-              )}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Assigned To
-            </label>
-            <select
-              value={assignedFilter}
-              onChange={(e) => handleAssignedToFilterChange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={loading}
-            >
-              <option value="all">All Users</option>
-              <option value="me">Me</option>
-              <option value="john">John Doe</option>
-              <option value="jane">Jane Smith</option>
-            </select>
-          </div>
-          <div className="flex items-end">
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                checked={showOverdue}
-                onChange={(e) => setShowOverdue(e.target.checked)}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <span className="ml-2 text-sm text-gray-700">Show Overdue Only</span>
-            </label>
-          </div>
-        </div>
-      </Card>
+        </Card>
 
-      {/* Task List */}
-      <Card className="p-6">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <TableHeader
-              columns={[
-                { key: 'title', label: 'Task', sortable: true },
-                { key: 'priority', label: 'Priority', sortable: true },
-                { key: 'status', label: 'Status', sortable: true },
-                { key: 'assigned', label: 'Assigned To', sortable: true },
-                { key: 'due_date', label: 'Due Date', sortable: true },
-                { key: 'related', label: 'Related To', sortable: false },
-                { key: 'actions', label: 'Actions', sortable: false }
-              ]}
-            />
-            <tbody className="bg-white divide-y divide-gray-200">
-              {tasks.map((task) => (
-                <TableRow key={task.id} onClick={() => onTaskClick(task.id)} className="cursor-pointer hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{task.title}</div>
-                      {task.description && (
-                        <div className="text-sm text-gray-500 truncate max-w-xs">{task.description}</div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge color={getPriorityColor(task.priority.name)}>
-                      {task.priority.name}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge color={getStatusColor(task.status.name)}>
-                      {task.status.name}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {task.assigned_to.username}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className={`text-sm ${isOverdue(task.due_date) ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
-                      {formatDate(task.due_date)}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {task.related_lead && (
-                      <div>Lead: {task.related_lead.first_name} {task.related_lead.last_name}</div>
-                    )}
-                    {task.related_contact && (
-                      <div>Contact: {task.related_contact.first_name} {task.related_contact.last_name}</div>
-                    )}
-                    {task.related_deal && (
-                      <div>Deal: {task.related_deal.name}</div>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
-                      {task.status.name !== 'Completed' && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onCompleteTask(task.id);
-                          }}
-                        >
-                          <Icon name="check" className="w-4 h-4" />
-                        </Button>
-                      )}
-                      <Button variant="ghost" size="sm">
-                        <Icon name="eye" className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Icon name="edit" className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </td>
-                </TableRow>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        {/* Kanban Board - Right Side */}
+        <div className="flex-1 min-w-0 min-h-0 flex flex-col">
+          <div className="flex-1 min-h-0">
+            <KanbanBoard
+            items={filteredTasks}
+            stages={kanbanStages}
+            itemsByStage={tasksByStatus}
+            getStageStats={getStatusStats}
+            formatDate={formatDate}
+            getStageColor={(statusName) => {
+              const status = statuses.find(s => s.name.toLowerCase() === statusName.toLowerCase());
+              return getStatusColor(status?.name || statusName);
+            }}
+            onItemClick={onTaskClick}
+            onItemUpdated={onTasksUpdated}
+            onItemMove={async (taskId, newStatusId, newStatusName) => {
+              const statusId = typeof newStatusId === 'number' ? newStatusId : parseInt(newStatusId.toString(), 10);
+              const isCompleted = newStatusName.toLowerCase() === 'completed';
+              
+              // Find the current task to check if it was previously completed
+              const currentTask = filteredTasks.find(t => t.id === taskId);
+              const wasCompleted = currentTask?.status?.name?.toLowerCase() === 'completed';
+              
+              // If moving to Completed, set completed_at. If moving away from Completed, clear it.
+              const updateData: any = {
+                status_id: statusId
+              };
+              
+              if (isCompleted && !wasCompleted) {
+                // Moving to Completed - set completed_at to now
+                updateData.completed_at = new Date().toISOString();
+              } else if (!isCompleted && wasCompleted) {
+                // Moving away from Completed - clear completed_at
+                updateData.completed_at = null;
+              }
+              
+              await tasksApi.updateTask(taskId, updateData);
+            }}
+            stagesFromDb={statuses}
+            itemType="task"
+            onCreateItem={(stageName, stageId) => {
+              // Handled by KanbanBoard's create button
+            }}
+            renderCard={(task, stage, onItemClick) => (
+          <>
+            {/* Task Header */}
+            <div className="mb-1">
+              <h4 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onItemClick(task);
+                }}
+                className="text-lg font-semibold text-claude-ink dark:text-coal-100 mb-1 line-clamp-2 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 hover:underline transition-colors"
+              >
+                {task.title}
+              </h4>
+            </div>
 
-        {/* Pagination */}
-        <div className="mt-6">
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={onPageChange}
+            {/* Priority */}
+            <div className="mb-1">
+              <Badge color={getPriorityColor(task.priority.name)}>
+                {task.priority.name}
+              </Badge>
+            </div>
+
+            {/* Due Date */}
+            <div className="mb-1">
+              <div className={`flex items-center space-x-1 text-xs ${isOverdue(task.due_date) ? 'text-red-600 dark:text-red-400 font-medium' : 'text-claude-subtle dark:text-coal-400'}`}>
+                <Icon name="calendar" className="w-3 h-3" />
+                <span>{formatDate(task.due_date)}</span>
+              </div>
+            </div>
+
+            {/* Owner and Assigned To */}
+            {(task.owner || (task.assigned_to && task.assigned_to.username !== 'Unassigned')) && (
+              <div className="mb-1 flex gap-2">
+                {task.owner && (
+                  <div className="flex-1 flex items-center space-x-1 text-xs text-claude-text dark:text-coal-300 bg-blue-100 dark:bg-blue-900/30 rounded-lg px-2 py-1">
+                    <Icon name="user" className="w-3 h-3" />
+                    <span className="truncate">Owner: {task.owner.username}</span>
+                  </div>
+                )}
+                {/* {task.assigned_to && task.assigned_to.username !== 'Unassigned' && (
+                  <div className="flex-1 flex items-center space-x-1 text-xs text-claude-text dark:text-coal-300 bg-yellow-200 dark:bg-yellow-900/30 rounded-lg px-2 py-1">
+                    <Icon name="user" className="w-3 h-3" />
+                    <span className="truncate">Assigned: {task.assigned_to.username}</span>
+                  </div>
+                )} */}
+              </div>
+            )}
+
+            {/* Related To */}
+            {(task.related_lead || task.related_contact || task.related_deal) && (
+              <div className="mb-1">
+                <div className="text-xs text-claude-subtle dark:text-coal-400 space-y-1">
+                  {task.related_lead && (
+                    <div>Lead: {task.related_lead.first_name} {task.related_lead.last_name}</div>
+                  )}
+                  {task.related_contact && (
+                    <div>Contact: {task.related_contact.first_name} {task.related_contact.last_name}</div>
+                  )}
+                  {task.related_deal && (
+                    <div>Deal: {task.related_deal.name}</div>
+                  )}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+            emptyStateText="No tasks in this status"
           />
+          </div>
         </div>
-      </Card>
+      </div>
     </div>
   );
 };

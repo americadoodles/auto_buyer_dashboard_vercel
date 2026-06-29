@@ -75,9 +75,9 @@ export default function TestTokenPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-claude-cream">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Please log in to test token expiration</h1>
+          <h1 className="text-2xl font-bold text-claude-ink mb-4">Please log in to test token expiration</h1>
           <a href="/auth" className="text-blue-600 hover:text-blue-800">Go to Login</a>
         </div>
       </div>
@@ -85,43 +85,43 @@ export default function TestTokenPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-claude-cream py-8">
       <div className="max-w-4xl mx-auto px-4">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Token Expiration Test</h1>
+        <h1 className="text-3xl font-bold text-claude-ink mb-8">Token Expiration Test</h1>
         
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="bg-claude-surface rounded-lg shadow p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">Current User</h2>
-          <p className="text-gray-600">Logged in as: {user.email}</p>
-          <p className="text-gray-600">Role: {user.role || 'N/A'}</p>
+          <p className="text-claude-muted">Logged in as: {user.email}</p>
+          <p className="text-claude-muted">Role: {user.role || '-'}</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="bg-claude-surface rounded-lg shadow p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">Token Test Controls</h2>
           <div className="space-y-4">
             <div className="flex space-x-4">
               <button
                 onClick={createShortLivedToken}
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                className="px-4 py-2 bg-red-600 text-coal-100 rounded hover:bg-red-700"
               >
                 Create 6-Second Token
               </button>
               <button
                 onClick={createNormalToken}
-                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                className="px-4 py-2 bg-green-600 text-coal-100 rounded hover:bg-green-700"
               >
                 Create 60-Minute Token
               </button>
               <button
                 onClick={clearToken}
-                className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+                className="px-4 py-2 bg-coal-600 text-coal-100 rounded hover:bg-coal-700"
               >
                 Clear Token
               </button>
             </div>
             
             {testToken && (
-              <div className="mt-4 p-4 bg-gray-100 rounded">
-                <p className="text-sm text-gray-600 mb-2">Token Status: 
+              <div className="mt-4 p-4 bg-claude-sand rounded">
+                <p className="text-sm text-claude-muted mb-2">Token Status: 
                   <span className={`ml-2 px-2 py-1 rounded text-xs font-semibold ${
                     tokenStatus === 'VALID' ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'
                   }`}>
@@ -129,11 +129,11 @@ export default function TestTokenPage() {
                   </span>
                 </p>
                 {timeLeft > 0 && (
-                  <p className="text-sm text-gray-600">Time remaining: {timeLeft} seconds</p>
+                  <p className="text-sm text-claude-muted">Time remaining: {timeLeft} seconds</p>
                 )}
                 <button
                   onClick={testApiCall}
-                  className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  className="mt-2 px-4 py-2 bg-blue-600 text-coal-100 rounded hover:bg-blue-700"
                 >
                   Test API Call
                 </button>
@@ -142,9 +142,9 @@ export default function TestTokenPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="bg-claude-surface rounded-lg shadow p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">How to Test</h2>
-          <ol className="list-decimal list-inside space-y-2 text-gray-600">
+          <ol className="list-decimal list-inside space-y-2 text-claude-muted">
             <li>Click "Create 6-Second Token" to create a token that expires in 6 seconds</li>
             <li>Watch the countdown timer - when it reaches 0, the token will be marked as EXPIRED</li>
             <li>Try making an API call with an expired token - you should be automatically logged out</li>
@@ -153,9 +153,9 @@ export default function TestTokenPage() {
           </ol>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-claude-surface rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold mb-4">Auto-Logout Features</h2>
-          <ul className="list-disc list-inside space-y-2 text-gray-600">
+          <ul className="list-disc list-inside space-y-2 text-claude-muted">
             <li>Token expiration is checked before every API request</li>
             <li>If a token is expired, the user is automatically logged out</li>
             <li>Expired tokens trigger a redirect to the login page</li>
@@ -166,7 +166,7 @@ export default function TestTokenPage() {
         <div className="mt-6">
           <button
             onClick={logout}
-            className="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            className="px-6 py-2 bg-red-600 text-coal-100 rounded hover:bg-red-700"
           >
             Logout
           </button>

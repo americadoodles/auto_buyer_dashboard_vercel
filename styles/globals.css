@@ -1,1 +1,263 @@
-@tailwind base; @tailwind components; @tailwind utilities; body { @apply bg-slate-50 text-slate-900; }
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ──────────────────────────────────────────────────────────────
+   Claude-inspired theme tokens
+   Surface/text/accent variables — consumed by both Tailwind
+   utilities (via arbitrary values when needed) and raw CSS.
+   ────────────────────────────────────────────────────────────── */
+:root {
+  --c-bg:        #FAF9F5;   /* page */
+  --c-surface:   #FFFFFF;   /* card */
+  --c-sand:      #F4F0E8;   /* muted */
+  --c-border:    #E8E2D5;
+  --c-divider:   #D8D0BE;
+  --c-ink:       #1F1E1D;
+  --c-text:      #2B2A28;
+  --c-muted:     #6B6760;
+  --c-subtle:    #9A958A;
+  --c-accent:    #CC785C;
+  --c-accent-hover: #B7654B;
+  --c-accent-soft: #F4E4DC;
+  --c-success:   #6B8E5A;
+  --c-warning:   #C9A961;
+  --c-danger:    #C5634C;
+  --c-info:      #5E7BA8;
+}
+
+.dark {
+  --c-bg:        #1F1E1D;
+  --c-surface:   #2D2A24;
+  --c-sand:      #26241F;
+  --c-border:    #3A362E;
+  --c-divider:   #4A4539;
+  --c-ink:       #F0EAD9;
+  --c-text:      #D9D2C0;
+  --c-muted:     #8A8170;
+  --c-subtle:    #6B6760;
+  --c-accent:    #E08A6E;
+  --c-accent-hover: #CC785C;
+  --c-accent-soft: #3A2A22;
+  --c-success:   #8AB078;
+  --c-warning:   #D9B670;
+  --c-danger:    #D97A60;
+  --c-info:      #8AA3CC;
+}
+
+body {
+  background: var(--c-bg);
+  color: var(--c-text);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Claude-style surface + agent-center utilities
+   ────────────────────────────────────────────────────────────── */
+.claude-surface       { background: var(--c-surface); border: 1px solid var(--c-border); }
+.claude-surface-sand  { background: var(--c-sand);    border: 1px solid var(--c-border); }
+.claude-divider       { border-color: var(--c-border) !important; }
+.claude-text          { color: var(--c-text); }
+.claude-muted         { color: var(--c-muted); }
+.claude-subtle        { color: var(--c-subtle); }
+.claude-accent        { color: var(--c-accent); }
+.claude-accent-bg     { background: var(--c-accent); color: #FFFFFF; }
+.claude-accent-bg:hover{ background: var(--c-accent-hover); }
+
+/* Domain chips used in the Agent Command Center */
+.chip            { display:inline-flex; align-items:center; gap:4px; font-size:11px; padding:2px 8px; border-radius:9999px; font-weight:500; line-height:1.4; white-space:nowrap; }
+.chip-crm        { background: rgba(94,123,168,.14); color: var(--c-info);    border:1px solid rgba(94,123,168,.30); }
+.chip-marketplace{ background: rgba(107,142,90,.14); color: var(--c-success); border:1px solid rgba(107,142,90,.30); }
+.chip-admin      { background: rgba(201,169,97,.16); color: #8E6F32;          border:1px solid rgba(201,169,97,.35); }
+.dark .chip-admin{ color: var(--c-warning); }
+
+/* Status dot animations */
+@keyframes claude-pulse-success { 0%,100% { box-shadow: 0 0 0 0 rgba(107,142,90,.55) } 70% { box-shadow: 0 0 0 7px rgba(107,142,90,0) } }
+@keyframes claude-pulse-danger  { 0%,100% { box-shadow: 0 0 0 0 rgba(197,99,76,.55) }  70% { box-shadow: 0 0 0 7px rgba(197,99,76,0)  } }
+@keyframes claude-blink         { 0%,100% { opacity: 1 } 50% { opacity: .25 } }
+@keyframes claude-bounce        { 0%,80%,100% { transform: translateY(0); opacity: .35 } 40% { transform: translateY(-5px); opacity: 1 } }
+@keyframes claude-fadein        { from { opacity: 0; transform: translateY(-6px) } to { opacity: 1; transform: translateY(0) } }
+@keyframes claude-slidein       { from { opacity: 0; transform: translateX(12px) } to { opacity: 1; transform: translateX(0) } }
+@keyframes claude-logroll       { from { opacity: 0; transform: translateX(-6px) } to { opacity: 1; transform: translateX(0) } }
+
+.status-dot           { width:8px; height:8px; border-radius:9999px; flex-shrink:0; display:inline-block; }
+.status-dot.running   { background: var(--c-success); animation: claude-pulse-success 2.2s ease-in-out infinite; }
+.status-dot.error     { background: var(--c-danger);  animation: claude-pulse-danger  1.5s ease-in-out infinite, claude-blink 1.3s step-end infinite; }
+.status-dot.paused    { background: var(--c-warning); }
+.status-dot.idle      { background: var(--c-subtle); opacity: .6; }
+
+.think-dot            { width:5px; height:5px; border-radius:9999px; background: var(--c-info); display:inline-block; }
+.think-dot.b1         { animation: claude-bounce 1.4s ease-in-out 0s    infinite; }
+.think-dot.b2         { animation: claude-bounce 1.4s ease-in-out .22s  infinite; }
+.think-dot.b3         { animation: claude-bounce 1.4s ease-in-out .44s  infinite; }
+
+.fade-in              { animation: claude-fadein .22s ease-out both; }
+.slide-in             { animation: claude-slidein .25s ease-out both; }
+.log-roll             { animation: claude-logroll .28s ease-out both; }
+
+/* Hide scrollbars but keep scrolling functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+
+/* Visible scrollbar for Kanban stages */
+.kanban-scrollbar {
+  scrollbar-width: thin;  /* Firefox */
+  scrollbar-color: #cbd5e1 #f1f5f9;  /* Firefox: thumb and track */
+}
+
+.kanban-scrollbar::-webkit-scrollbar {
+  width: 8px;  /* Chrome, Safari and Opera */
+}
+
+.kanban-scrollbar::-webkit-scrollbar-track {
+  background: #f1f5f9;  /* Chrome, Safari and Opera */
+  border-radius: 4px;
+}
+
+.kanban-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;  /* Chrome, Safari and Opera */
+  border-radius: 4px;
+}
+
+.kanban-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;  /* Chrome, Safari and Opera */
+}
+
+/* Visible scrollbar for gallery thumbnails */
+.gallery-scrollbar {
+  scrollbar-width: thin;  /* Firefox */
+  scrollbar-color: #4B5563 #1F2937;  /* Firefox: thumb and track */
+}
+
+.gallery-scrollbar::-webkit-scrollbar {
+  height: 8px;  /* Chrome, Safari and Opera - horizontal scrollbar */
+}
+
+.gallery-scrollbar::-webkit-scrollbar-track {
+  background: #1F2937;  /* Chrome, Safari and Opera */
+  border-radius: 4px;
+}
+
+.gallery-scrollbar::-webkit-scrollbar-thumb {
+  background: #4B5563;  /* Chrome, Safari and Opera */
+  border-radius: 4px;
+}
+
+.gallery-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #6B7280;  /* Chrome, Safari and Opera */
+}
+
+/* Condition Report Tires Panel Styles - matching Angular layout */
+.appraisal-panel-content header {
+  display: flex;
+  align-items: center;
+  /* gap: 8px; */
+}
+
+.appraisal-panel-content header .title {
+  min-width: 140px;
+}
+
+.appraisal-panel-content header .tire {
+  flex: 0 0 40px;
+  text-align: center;
+}
+
+.appraisal-panel-content header .placeholder {
+  flex: 1;
+}
+
+.appraisal-panel-content .row {
+  display: flex;
+  align-items: center;
+  /* gap: 8px; */
+}
+
+.appraisal-panel-content .row .title {
+  min-width: 140px;
+}
+
+.appraisal-panel-content .row .circle-container {
+  flex: 0 0 40px;
+  display: flex;
+  justify-content: center;
+}
+
+.appraisal-panel-content .row .price {
+  margin-left: auto;
+  text-align: right;
+}
+
+.appraisal-panel-content .wheels {
+  display: block;
+}
+
+/* SVG Element Styles for Condition Report */
+/* Scoped to condition report components only to avoid affecting charts and icons */
+.appraisal-damage-panel svg path,
+.appraisal-damage-panel svg rect,
+.appraisal-damage-panel svg circle,
+.appraisal-damage-panel svg polygon,
+.damage-graphic svg path,
+.damage-graphic svg rect,
+.damage-graphic svg circle,
+.damage-graphic svg polygon {
+  fill: #f7f9fa;
+  stroke: #fff;
+}
+
+.appraisal-damage-panel .ExtSVGElem,
+.damage-graphic .ExtSVGElem {
+  fill: #f7f9fa;
+  stroke: #fff;
+}
+
+.appraisal-damage-panel .enabled,
+.damage-graphic .enabled {
+  fill: #07a86833;
+  stroke: none;
+  stroke-width: 2px;
+}
+
+.appraisal-damage-panel .enabled.selected,
+.damage-graphic .enabled.selected {
+  stroke: #fff !important;
+  fill: #bc3e12 !important;
+}
+
+.appraisal-damage-panel .enabled.minor.selected,
+.damage-graphic .enabled.minor.selected {
+  fill: #edb62480 !important;
+}
+
+.appraisal-damage-panel .minor,
+.damage-graphic .minor {
+  fill: #edb62480 !important;
+}
+
+.appraisal-damage-panel .minor.active,
+.damage-graphic .minor.active {
+  stroke: #edb624;
+  stroke-width: 2px;
+}
+
+.circle-container .circle {
+  background-color: #e9ecf0;
+  border-radius: 50%;
+  height: 12px;
+  margin: auto;
+  width: 12px;
+}
+
+.circle-container .circle.bad {
+  background-color: #bc3e12;
+}
+.circle-container .circle.good {
+  /* fill: #008064; */
+  background-color: #008064;
+}

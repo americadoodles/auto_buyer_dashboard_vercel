@@ -24,7 +24,7 @@ def get_dashboard_stats(
         return get_crm_stats()
     except Exception as e:
         logging.error(f"Error fetching CRM stats: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to fetch CRM statistics")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch CRM statistics: {str(e)}")
 
 @dashboard_router.get("/lead-metrics", response_model=LeadConversionMetrics)
 def get_lead_conversion_metrics_endpoint(
@@ -35,7 +35,7 @@ def get_lead_conversion_metrics_endpoint(
         return get_lead_conversion_metrics()
     except Exception as e:
         logging.error(f"Error fetching lead conversion metrics: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to fetch lead conversion metrics")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch lead conversion metrics: {str(e)}")
 
 @dashboard_router.get("/sales-metrics", response_model=SalesPerformanceMetrics)
 def get_sales_performance_metrics_endpoint(
@@ -45,8 +45,8 @@ def get_sales_performance_metrics_endpoint(
     try:
         return get_sales_performance_metrics()
     except Exception as e:
-        logging.error(f"Error fetching sales performance metrics: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to fetch sales performance metrics")
+        logging.error(f"Error fetching sales performance metrics: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to fetch sales performance metrics: {str(e)}")
 
 @dashboard_router.get("/recent-activities")
 def get_recent_activities_endpoint(
@@ -57,7 +57,7 @@ def get_recent_activities_endpoint(
         return get_recent_activities()
     except Exception as e:
         logging.error(f"Error fetching recent activities: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to fetch recent activities")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch recent activities: {str(e)}")
 
 @dashboard_router.get("/upcoming-tasks")
 def get_upcoming_tasks_endpoint(
@@ -68,7 +68,7 @@ def get_upcoming_tasks_endpoint(
         return get_upcoming_tasks(current_user.id)
     except Exception as e:
         logging.error(f"Error fetching upcoming tasks: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to fetch upcoming tasks")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch upcoming tasks: {str(e)}")
 
 @dashboard_router.get("/deal-forecast")
 def get_deal_forecast_endpoint(
@@ -79,4 +79,4 @@ def get_deal_forecast_endpoint(
         return get_deal_forecast()
     except Exception as e:
         logging.error(f"Error fetching deal forecast: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to fetch deal forecast")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch deal forecast: {str(e)}")

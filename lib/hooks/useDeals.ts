@@ -12,6 +12,7 @@ interface UseDealsParams {
   search?: string;
   is_won?: boolean;
   is_lost?: boolean;
+  include_hidden?: boolean;
 }
 
 export const useDeals = (params?: UseDealsParams) => {
@@ -25,6 +26,8 @@ export const useDeals = (params?: UseDealsParams) => {
       setError(null);
       const data = await dealsApi.getDeals(params);
       setDeals(data);
+      console.log('useDeals deals', data);
+      console.log('useDeals params', params);
     } catch (err) {
       console.error('Error fetching deals:', err);
       setError('Failed to fetch deals');
@@ -35,7 +38,7 @@ export const useDeals = (params?: UseDealsParams) => {
 
   useEffect(() => {
     fetchDeals();
-  }, [params?.skip, params?.limit, params?.stage_id, params?.category_id, params?.assigned_to, params?.contact_id, params?.search, params?.is_won, params?.is_lost]);
+  }, [params?.skip, params?.limit, params?.stage_id, params?.category_id, params?.assigned_to, params?.contact_id, params?.search, params?.is_won, params?.is_lost, params?.include_hidden]);
 
   const refreshDeals = () => {
     fetchDeals();

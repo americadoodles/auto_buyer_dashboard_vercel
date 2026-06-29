@@ -1,6 +1,6 @@
  
 import { Listing } from '../types/listing';
-import { User, UserSignupRequest, UserLoginRequest, UserConfirmRequest, UserRemoveRequest, TokenResponse, UserUpdateRequest, UserUpdatePasswordRequest } from '../types/user';
+import { User, UserSignupRequest, UserLoginRequest, UserConfirmRequest, UserRemoveRequest, TokenResponse, UserUpdateRequest, UserUpdatePasswordRequest, UserResetPasswordRequest } from '../types/user';
 import { Role, RoleCreate, RoleEdit } from '../types/role';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? '/api';
@@ -244,7 +244,7 @@ export class ApiService {
     return this.handleResponse<User>(response);
   }
 
-  static async updateUserPassword(userId: string, request: UserUpdatePasswordRequest): Promise<any> {
+  static async updateUserPassword(userId: string, request: UserResetPasswordRequest): Promise<any> {
     const response = await fetch(`${BACKEND_URL}/users/${userId}/password`, {
       method: 'PUT',
       headers: this.authHeaders({ 'Content-Type': 'application/json' }),
@@ -331,6 +331,20 @@ export class ApiService {
       });
       throw error;
     }
+  }
+
+  static async scoreAllListings(): Promise<{
+    total: number;
+    scored: number;
+    skipped: number;
+    failed: number;
+    results: Array<{ listing_id: string; status: string; score?: number; buyMax?: number; reasonCodes?: string[]; error?: string }>;
+  }> {
+    const response = await fetch(`${BACKEND_URL}/listings/score-all`, {
+      method: 'POST',
+      headers: this.authHeaders(),
+    });
+    return this.handleResponse(response);
   }
 
   static async scoreListings(listings: Listing[]): Promise<Array<{
@@ -507,4 +521,124 @@ export class ApiService {
       message?: string;
     }>(response);
   }
+
+  static async getChartDistribution(type: 'sourcing-activities' | 'car-categories' | 'states-regions' | 'lead-source-performance'): Promise<{
+    data: Array<{ name: string; value: number }>;
+    success: boolean;
+    message?: string;
+  }> {
+    const response = await fetch(`${BACKEND_URL}/chart/${type}`, {
+      headers: this.authHeaders(),
+    });
+
+    return this.handleResponse<{
+      data: Array<{ name: string; value: number }>;
+      success: boolean;
+      message?: string;
+    }>(response);
+  }
+
+  static async getChartTimeSeries(
+    type: 'lead-to-purchase-funnel',
+    startDate?: string,
+    endDate?: string
+  ): Promise<{
+    data: Array<{ date: string; value: number }>;
+    success: boolean;
+    message?: string;
+  }> {
+    const params = new URLSearchParams();
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+    
+    const url = `${BACKEND_URL}/chart/${type}${params.toString() ? `?${params.toString()}` : ''}`;
+    const response = await fetch(url, {
+      headers: this.authHeaders(),
+    });
+
+    return this.handleResponse<{
+      data: Array<{ date: string; value: number }>;
+      success: boolean;
+      message?: string;
+    }>(response);
+  }
+
+  static async checkAccuTradeDataExists(vin: string): Promise<{ exists: boolean }> {
+    const response = await fetch(`${BACKEND_URL}/accu-trade/vin/${encodeURIComponent(vin)}/exists`, {
+      headers: this.authHeaders()
+    });
+    return this.handleResponse<{ exists: boolean }>(response);
+  }
+
+  static async checkMMRDataExists(vin: string): Promise<{ exists: boolean }> {
+    const response = await fetch(`${BACKEND_URL}/mmr/vin/${encodeURIComponent(vin)}/exists`, {
+      headers: this.authHeaders()
+    });
+    return this.handleResponse<{ exists: boolean }>(response);
+  }
+
+  static async getAccuTradeData(vin: string): Promise<any> {
+    const response = await fetch(`${BACKEND_URL}/accu-trade/vin/${encodeURIComponent(vin)}`, {
+      headers: this.authHeaders()
+    });
+    return this.handleResponse<any>(response);
+  }
+
+  static async getMMRData(vin: string): Promise<any> {
+    const response = await fetch(`${BACKEND_URL}/mmr/vin/${encodeURIComponent(vin)}`, {
+      headers: this.authHeaders()
+    });
+    return this.handleResponse<any>(response);
+  }
+
+  static async getConditionReport(vin: string): Promise<any> {
+    const response = await fetch(`${BACKEND_URL}/accu-trade-report/vin/${encodeURIComponent(vin)}`, {
+      headers: this.authHeaders()
+    });
+    return this.handleResponse<any>(response);
+  }
+
+  static async checkConditionReportExists(vin: string): Promise<{ exists: boolean }> {
+    const response = await fetch(`${BACKEND_URL}/accu-trade-report/vin/${encodeURIComponent(vin)}/exists`, {
+      headers: this.authHeaders()
+    });
+    return this.handleResponse<{ exists: boolean }>(response);
+  }
+
+  static async downloadDatabaseBackup(): Promise<Blob> {
+    const response = await fetch(`${BACKEND_URL}/settings/database/backup`, {
+      headers: this.authHeaders(),
+    });
+
+    if (!response.ok) {
+      let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.detail || errorData.message || errorMessage;
+      } catch {
+        // Fallback to status text when JSON parsing fails.
+      }
+      throw new ApiError(errorMessage, response.status);
+    }
+
+    return response.blob();
+  }
+
+  static async restoreDatabaseBackup(file: File): Promise<{ message: string; restored?: Record<string, number>; errors?: string[] }> {
+    const formData = new FormData();
+    formData.append('backup_file', file);
+
+    const response = await fetch(`${BACKEND_URL}/settings/database/restore`, {
+      method: 'POST',
+      headers: this.authHeaders(),
+      body: formData,
+    });
+
+    return this.handleResponse<{ message: string; restored?: Record<string, number>; errors?: string[] }>(response);
+  }
 }
+
+// Helper function to make API calls using unified ApiService
+export const apiCall = async <T>(endpoint: string, options: RequestInit = {}): Promise<T> => {
+  return ApiService.request<T>(endpoint, options);
+};

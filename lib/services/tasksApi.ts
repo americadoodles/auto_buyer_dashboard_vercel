@@ -1,56 +1,9 @@
 // Tasks API Service
-import { ApiService } from './api';
+import { apiCall } from './api';
+import { Task, TaskPriority, TaskStatus, TaskDashboard } from '../types/task';
 
-// Types for Task data
-export interface Task {
-  id: string;
-  title: string;
-  description?: string;
-  assigned_to?: string;
-  priority_id?: number;
-  status_id?: number;
-  due_date?: string;
-  completed_at?: string;
-  related_lead_id?: string;
-  related_contact_id?: string;
-  related_deal_id?: string;
-  is_recurring?: boolean;
-  recurrence_pattern?: string;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface TaskPriority {
-  id: number;
-  name: string;
-  description?: string;
-  color_code: string;
-  sort_order: number;
-  created_at: string;
-}
-
-export interface TaskStatus {
-  id: number;
-  name: string;
-  description?: string;
-  color_code: string;
-  is_active: boolean;
-  sort_order: number;
-  created_at: string;
-}
-
-export interface TaskDashboard {
-  id: string;
-  title: string;
-  due_date?: string;
-  priority_name: string;
-  priority_color: string;
-  status_name: string;
-  status_color: string;
-  assigned_to_name: string;
-  created_at: string;
-}
+// Re-export types for convenience
+export type { Task, TaskPriority, TaskStatus, TaskDashboard };
 
 // Helper function to build query parameters
 const buildQueryParams = (params: Record<string, any>): string => {
@@ -61,66 +14,6 @@ const buildQueryParams = (params: Record<string, any>): string => {
     }
   });
   return queryParams.toString();
-};
-
-// Helper function to get auth headers
-const getAuthHeaders = (): HeadersInit => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('auth.token') : null;
-  const headers: Record<string, string> = {};
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  return headers;
-};
-
-// Helper function to handle API responses
-const handleResponse = async <T>(response: Response): Promise<T> => {
-  if (!response.ok) {
-    let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-    try {
-      const errorData = await response.json();
-      console.error('API Error Response:', errorData);
-      
-      // Handle different error response formats
-      if (typeof errorData === 'string') {
-        errorMessage = errorData;
-      } else if (errorData && typeof errorData === 'object') {
-        // Handle FastAPI validation errors where detail is an array
-        if (errorData.detail && Array.isArray(errorData.detail)) {
-          errorMessage = errorData.detail.map((err: any) => {
-            if (typeof err === 'string') return err;
-            if (err.msg) return err.msg;
-            if (err.message) return err.message;
-            return JSON.stringify(err);
-          }).join(', ');
-        } else {
-          errorMessage = errorData.detail || errorData.message || errorData.error || JSON.stringify(errorData);
-        }
-      }
-    } catch (parseError) {
-      console.error('Failed to parse error response:', parseError);
-      // If we can't parse the error response, use the default message
-    }
-    throw new Error(errorMessage);
-  }
-  
-  try {
-    return await response.json();
-  } catch (error) {
-    console.error('Failed to parse JSON response:', error);
-    throw new Error('Invalid response format from server');
-  }
-};
-
-// Helper function to make API calls
-const apiCall = async <T>(endpoint: string, options: RequestInit = {}): Promise<T> => {
-  // Always use the Next.js proxy path in development
-  const baseUrl = process.env.NODE_ENV === 'development' ? '/api' : (process.env.NEXT_PUBLIC_BACKEND_URL ?? '/api');
-  const response = await fetch(`${baseUrl}${endpoint}`, {
-    headers: getAuthHeaders(),
-    ...options
-  });
-  return handleResponse<T>(response);
 };
 
 // Tasks API functions
@@ -230,5 +123,38 @@ export const tasksApi = {
 
   async deleteTaskStatus(id: number): Promise<void> {
     await apiCall(`/crm/tasks/statuses/${id}`, { method: 'DELETE' });
+  },
+
+  // AI Draft generation
+  async generateAIDraft(params: {
+    deal_id?: string;
+    contact_id?: string;
+    vehicle_info?: {
+      year?: number;
+      make?: string;
+      model?: string;
+      trim?: string;
+      vin?: string;
+    };
+    contact_info?: {
+      first_name?: string;
+      last_name?: string;
+      company?: string;
+      email?: string;
+      phone?: string;
+    };
+    additional_context?: string;
+  }): Promise<{
+    title: string;
+    description: string;
+  }> {
+    return apiCall<{
+      title: string;
+      description: string;
+    }>('/crm/tasks/ai-draft', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params)
+    });
   }
 };

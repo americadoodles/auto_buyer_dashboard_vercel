@@ -8,45 +8,49 @@ export type Listing = {
   id: string;
   vehicle_key: string;
   vin?: string;
+  lpn?: string;
+  lpnState?: string;
+  price: number;
+  miles: number;
+  dom: number;
   year: number;
   make: string;
   model: string;
-  trim?: string;
-  miles: number;
-  price: number;
-  score: number;
-  dom: number;
-  source: string;
+  location?: string;
   radius: number;
+  images?: string[];
+  transmission?: string;
+  exteriorColor?: string;
+  interiorColor?: string;
+  fuelType?: string;
+  overallRating?: string;
+  detailedRatings?: string[] | null;
+  condition?: string | null;
+  mpg?: string;
+  cleanTitle?: boolean;
+  paidStatus?: string | null;
+  sellerDescription?: string | null;
+  sellerName?: string | null;
+  sellerJoinedDate?: string | null;
+  phoneNumber?: string;
+  engine?: string;
+  driveType?: string;
+  bodyStyle?: string;
+  source?: string;
+  status?: string;
   reasonCodes: string[];
   buyMax: number;
-  status?: string;
-  location: string;
-  buyer_id: string;
+  trim?: string | null;
+  buyer_id?: string;
   buyer_username?: string;
-  created_at?: string;
   decision?: Decision;
-  // New editable fields
-  notes?: string;
-  condition_rating?: number;
-  interior_color?: string;
-  exterior_color?: string;
-  transmission?: string;
-  fuel_type?: string;
-  drivetrain?: string;
-  engine_size?: string;
-  body_style?: string;
+  created_at?: string;
+  notes?: string | null;
   updated_at?: string;
-  updated_by?: string;
-  images?: string[];
-  // Contact information
-  primary_contact_id?: string;
-  primary_contact_first_name?: string;
-  primary_contact_last_name?: string;
-  primary_contact_email?: string;
-  primary_contact_phone?: string;
-  primary_contact_company?: string;
-  contacts_count?: number;
+  updated_by?: string | null;
+  score?: number;
+  mmr?: number | null;
+  contact_id?: string | null;
 };
 
 export type SortConfig = {
@@ -59,6 +63,8 @@ export type BackendStatus = boolean | null;
 // New types for listing management
 export type ListingUpdate = {
   vin?: string;
+  lpn?: string;
+  lpn_state?: string;
   notes?: string;
   condition_rating?: number;
   interior_color?: string;
@@ -70,15 +76,24 @@ export type ListingUpdate = {
   body_style?: string;
   price?: number;
   miles?: number;
+  dom?: number;
   location?: string;
   images?: string[];
-};
-
-export type ListingContactLink = {
-  contact_id: string;
-  relationship_type: 'seller' | 'dealer' | 'contact' | 'other';
-  is_primary: boolean;
-  notes?: string;
+  mmr?: number;
+  overall_rating?: string;
+  condition?: string;
+  mpg?: string;
+  clean_title?: boolean;
+  paid_status?: string;
+  seller_name?: string;
+  phone_number?: string;
+  seller_description?: string;
+  seller_joined_date?: string;
+  detailed_ratings?: string[];
+  status?: string;
+  score?: number;
+  buy_max?: number;
+  radius?: number;
 };
 
 export type ListingActivity = {

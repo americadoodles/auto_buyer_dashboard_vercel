@@ -22,7 +22,6 @@ export { AdminNavPanel } from './organisms/AdminNavPanel';
 export { AdminUserManagement } from './organisms/AdminUserManagement';
 export { BuyerPerformanceKpi } from './organisms/BuyerPerformanceKpi';
 export { default as CurrentUsersTable } from './organisms/CurrentUsersTable';
-export { Header } from './organisms/Header';
 export { KpiGrid } from './organisms/KpiGrid';
 export { ListingsTable } from './organisms/ListingsTable';
 export { LoginForm } from './organisms/LoginForm';

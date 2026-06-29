@@ -116,14 +116,14 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+      <div className="bg-claude-surface rounded-lg p-6 w-full max-w-md mx-4">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">
             Export {exportType === 'listings' ? 'Listings' : 'Users'} to CSV
           </h2>
           <button
             onClick={handleClose}
-            className="text-gray-500 hover:text-gray-700"
+            className="text-claude-subtle hover:text-claude-text"
           >
             ✕
           </button>
@@ -131,7 +131,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-claude-text mb-2">
               Export Type
             </label>
             <div className="space-y-2">
@@ -183,7 +183,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           {selectedExportType === 'range' && (
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-claude-text mb-1">
                   Start Date
                 </label>
                 <Input
@@ -194,7 +194,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-claude-text mb-1">
                   End Date
                 </label>
                 <Input
@@ -208,7 +208,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           )}
 
           {exportType === 'listings' && (
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-claude-muted">
               <p>
                 {selectedExportType === 'selected' 
                   ? `You will export ${selectedListings?.size || 0} selected listings.`
@@ -247,7 +247,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           </div>
 
           {showPreview && preview && (
-            <div className="mt-4 p-3 bg-gray-50 rounded">
+            <div className="mt-4 p-3 bg-claude-cream rounded">
               <h3 className="font-medium mb-2">Preview ({preview.record_count} records)</h3>
               <pre className="text-xs overflow-auto max-h-32 whitespace-pre-wrap">
                 {preview.preview_data}

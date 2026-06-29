@@ -1,15 +1,17 @@
 # Listing Management Repository
+import json
 import logging
 from typing import List, Optional, Dict, Any
 from uuid import UUID
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from ..core.db import DB_ENABLED
 from ..core.db_helpers import get_db_connection
+from ..lib.db.query_builder import QueryBuilder
 from ..schemas.listing import (
-    ListingUpdate, ListingContactLink, ListingContactUnlink, 
-    ListingActivityOut, ListingOut
+    ListingUpdate, 
+    ListingActivityOut, ListingOut, Decision
 )
-from ..schemas.crm import ContactOut
+from ..repositories.repositories import create_decision_from_data
 
 # ==============================================
 # LISTING UPDATE FUNCTIONS
@@ -26,36 +28,47 @@ def update_listing(listing_id: int, update_data: ListingUpdate, updated_by: str)
             
         try:
             with conn.cursor() as cur:
-                # Build dynamic update query
-                update_fields = []
-                update_values = []
+                # First, check if the listing exists
+                cur.execute("SELECT id FROM listings WHERE id = %s", (listing_id,))
+                listing_exists = cur.fetchone()
                 
-                for field, value in update_data.model_dump(exclude_unset=True).items():
-                    if value is not None:
-                        update_fields.append(f"{field} = %s")
-                        update_values.append(value)
-                
-                if not update_fields:
-                    logging.warning(f"No fields to update for listing {listing_id}")
+                if not listing_exists:
+                    logging.error(f"Listing {listing_id} not found in database")
                     return None
                 
-                # Add updated_by and updated_at
-                update_fields.append("updated_by = %s")
-                update_fields.append("updated_at = now()")
-                update_values.append(updated_by)
-                update_values.append(listing_id)
-                
-                query = f"""
-                    UPDATE listings 
-                    SET {', '.join(update_fields)}
-                    WHERE id = %s
-                    RETURNING *
-                """
+                # Build dynamic update query using QueryBuilder
+                try:
+                    update_dict = update_data.model_dump(exclude_unset=True)
+                    # DOM is a derived display value (now() - listing date). When a
+                    # user edits the DOM number, translate it into the underlying
+                    # listing-date timestamp (fb_creation_time) so it resumes aging
+                    # from the edited point rather than being written as a frozen
+                    # count. fb_creation_time is the same column DOM is computed from.
+                    if "dom" in update_dict:
+                        dom_val = update_dict.pop("dom")
+                        if dom_val is not None:
+                            try:
+                                update_dict["fb_creation_time"] = datetime.now(timezone.utc) - timedelta(days=max(0, int(dom_val)))
+                            except (TypeError, ValueError):
+                                pass  # ignore an unparsable DOM rather than fail the whole update
+                    query, params = QueryBuilder.build_update_query(
+                        table_name="listings",
+                        update_data=update_dict,
+                        where_clause="id = %s",
+                        where_params=[listing_id],
+                        auto_timestamp=True,
+                        updated_by_field="updated_by",
+                        updated_by_value=updated_by
+                    )
+                    query += " RETURNING *"
+                except ValueError as e:
+                    logging.warning(f"No fields to update for listing {listing_id}: {str(e)}")
+                    return None
                 
                 logging.info(f"Executing query: {query}")
-                logging.info(f"With values: {update_values}")
+                logging.info(f"With values: {params}")
                 
-                cur.execute(query, update_values)
+                cur.execute(query, params)
                 result = cur.fetchone()
                 
                 if result:
@@ -63,42 +76,39 @@ def update_listing(listing_id: int, update_data: ListingUpdate, updated_by: str)
                     
                     # Log the activity (don't fail if logging fails)
                     try:
+                        # Fetch username from users table
+                        username = updated_by  # Default to UUID if username not found
+                        try:
+                            cur.execute(
+                                "SELECT username FROM users WHERE id::text = %s",
+                                (updated_by,)
+                            )
+                            user_result = cur.fetchone()
+                            if user_result and user_result[0]:
+                                username = user_result[0]
+                        except Exception as username_error:
+                            logging.warning(f"Failed to fetch username for user {updated_by}: {str(username_error)}")
+                        
                         log_listing_activity(
                             listing_id=listing_id,
                             activity_type="edit",
                             created_by=updated_by,
-                            description=f"Listing updated by {updated_by}"
+                            description=f"Listing updated by {username}"
                         )
                     except Exception as log_error:
                         logging.warning(f"Failed to log activity for listing {listing_id}: {str(log_error)}")
                     
-                    # Return a properly mapped response
-                    return ListingOut(
-                        id=str(result[0]),  # id
-                        vehicle_key=result[1] if result[1] else "",  # vehicle_key
-                        vin=result[2],  # vin
-                        year=2021,  # Default year (not in listings table)
-                        make="Tesla",  # Default make (not in listings table)
-                        model="Model 3",  # Default model (not in listings table)
-                        miles=result[5] if result[5] else 0,  # miles
-                        price=float(result[4]) if result[4] else 0.0,  # price
-                        dom=result[6] if result[6] else 0,  # dom
-                        source=result[3],  # source
-                        location=result[7],  # location
-                        buyer_id=result[8],  # buyer_id
-                        created_at=result[10],  # created_at
-                        notes=result[14] if len(result) > 14 else None,  # notes
-                        condition_rating=result[15] if len(result) > 15 else None,  # condition_rating
-                        interior_color=result[16] if len(result) > 16 else None,  # interior_color
-                        exterior_color=result[17] if len(result) > 17 else None,  # exterior_color
-                        transmission=result[18] if len(result) > 18 else None,  # transmission
-                        fuel_type=result[19] if len(result) > 19 else None,  # fuel_type
-                        drivetrain=result[20] if len(result) > 20 else None,  # drivetrain
-                        engine_size=result[21] if len(result) > 21 else None,  # engine_size
-                        body_style=result[22] if len(result) > 22 else None,  # body_style
-                        updated_at=result[12] if len(result) > 12 else None,  # updated_at
-                        updated_by=result[13] if len(result) > 13 else None  # updated_by
-                    )
+                    # Fetch the complete listing data after update using get_listing_by_id
+                    # This ensures we return all fields from ListingOut schema
+                    listing = get_listing_by_id(listing_id)
+                    if listing:
+                        return listing
+                    
+                    # If get_listing_by_id fails, log error and return None
+                    # This should not happen in normal operation, but if it does,
+                    # we want to fail rather than return incomplete data
+                    logging.error(f"get_listing_by_id returned None after successful update for listing {listing_id}")
+                    return None
                 else:
                     logging.warning(f"No result returned for listing {listing_id}")
                     return None
@@ -106,11 +116,167 @@ def update_listing(listing_id: int, update_data: ListingUpdate, updated_by: str)
         except Exception as e:
             logging.error(f"Error updating listing {listing_id}: {str(e)}")
             logging.error(f"Update data: {update_data}")
-            logging.error(f"Update fields: {update_fields}")
-            logging.error(f"Update values: {update_values}")
             return None
     
     return None
+
+def get_contact_for_listing(listing_id: int) -> Optional[Dict[str, Any]]:
+    """Get contact information for a listing through leads"""
+    if not DB_ENABLED:
+        return None
+    
+    with get_db_connection() as conn:
+        if not conn:
+            return None
+        
+        try:
+            with conn.cursor() as cur:
+                # Get contact through lead
+                query = """
+                    SELECT 
+                        c.id, c.first_name, c.last_name, c.email, c.phone, c.mobile,
+                        c.company, c.job_title, c.address, c.social_profiles, c.preferences, c.notes
+                    FROM leads l
+                    INNER JOIN contacts c ON l.contact_id = c.id
+                    WHERE l.listing_id = %s
+                    LIMIT 1
+                """
+                
+                cur.execute(query, (listing_id,))
+                result = cur.fetchone()
+                
+                if result:
+                    return {
+                        "id": str(result[0]),
+                        "first_name": result[1],
+                        "last_name": result[2],
+                        "email": result[3],
+                        "phone": result[4],
+                        "mobile": result[5],
+                        "company": result[6],
+                        "job_title": result[7],
+                        "address": result[8],
+                        "social_profiles": result[9],
+                        "preferences": result[10],
+                        "notes": result[11]
+                    }
+                
+                return None
+        except Exception as e:
+            logging.error(f"Error getting contact for listing {listing_id}: {str(e)}")
+            return None
+
+def delete_listing(listing_id: int, deleted_by: str) -> bool:
+    """Delete a listing by ID, including related leads and contacts"""
+    if not DB_ENABLED:
+        return False
+    
+    with get_db_connection() as conn:
+        if not conn:
+            return False
+            
+        try:
+            with conn.cursor() as cur:
+                # First, check if the listing exists
+                cur.execute("SELECT id FROM listings WHERE id = %s", (listing_id,))
+                listing_exists = cur.fetchone()
+                
+                if not listing_exists:
+                    logging.error(f"Listing {listing_id} not found in database")
+                    return False
+                
+                # Find all leads associated with this listing and their contacts
+                cur.execute("""
+                    SELECT l.id as lead_id, l.contact_id 
+                    FROM leads l 
+                    WHERE l.listing_id = %s
+                """, (listing_id,))
+                leads_with_contacts = cur.fetchall()
+                
+                contact_ids_to_delete = []
+                lead_ids_to_delete = []
+                
+                for row in leads_with_contacts:
+                    lead_id = row[0]
+                    contact_id = row[1]
+                    lead_ids_to_delete.append(lead_id)
+                    if contact_id:
+                        contact_ids_to_delete.append(contact_id)
+                
+                logging.info(f"Found {len(lead_ids_to_delete)} leads and {len(contact_ids_to_delete)} contacts to delete for listing {listing_id}")
+                
+                # Delete lead activities for leads being deleted (cascade may handle this, but be explicit)
+                if lead_ids_to_delete:
+                    cur.execute("""
+                        DELETE FROM lead_activities WHERE lead_id = ANY(%s)
+                    """, (lead_ids_to_delete,))
+                    logging.info(f"Deleted lead activities for {len(lead_ids_to_delete)} leads")
+                
+                # Update tasks to unlink from leads being deleted
+                if lead_ids_to_delete:
+                    cur.execute("""
+                        UPDATE tasks SET related_lead_id = NULL WHERE related_lead_id = ANY(%s)
+                    """, (lead_ids_to_delete,))
+                
+                # Update deals to unlink from leads being deleted
+                if lead_ids_to_delete:
+                    cur.execute("""
+                        UPDATE deals SET lead_id = NULL WHERE lead_id = ANY(%s)
+                    """, (lead_ids_to_delete,))
+                
+                # Delete leads associated with this listing
+                if lead_ids_to_delete:
+                    cur.execute("""
+                        DELETE FROM leads WHERE id = ANY(%s)
+                    """, (lead_ids_to_delete,))
+                    logging.info(f"Deleted {len(lead_ids_to_delete)} leads for listing {listing_id}")
+                
+                # Delete contacts that were associated with the leads
+                # First, remove contact references from other tables
+                if contact_ids_to_delete:
+                    # Update deals to unlink contacts
+                    cur.execute("""
+                        UPDATE deals SET contact_id = NULL WHERE contact_id = ANY(%s)
+                    """, (contact_ids_to_delete,))
+                    
+                    # Update tasks to unlink contacts
+                    cur.execute("""
+                        UPDATE tasks SET related_contact_id = NULL WHERE related_contact_id = ANY(%s)
+                    """, (contact_ids_to_delete,))
+                    
+                    # Delete contact activities (cascade may handle this)
+                    cur.execute("""
+                        DELETE FROM contact_activities WHERE contact_id = ANY(%s)
+                    """, (contact_ids_to_delete,))
+                    
+                    # Delete the contacts
+                    cur.execute("""
+                        DELETE FROM contacts WHERE id = ANY(%s)
+                    """, (contact_ids_to_delete,))
+                    logging.info(f"Deleted {len(contact_ids_to_delete)} contacts for listing {listing_id}")
+                
+                # Delete related listing activities
+                cur.execute("DELETE FROM listing_activities WHERE listing_id = %s", (listing_id,))
+                
+                # Finally, delete the listing
+                cur.execute("DELETE FROM listings WHERE id = %s RETURNING id", (listing_id,))
+                result = cur.fetchone()
+                
+                if result:
+                    conn.commit()
+                    logging.info(f"Successfully deleted listing {listing_id} by user {deleted_by}")
+                    return True
+                else:
+                    logging.warning(f"No result returned when deleting listing {listing_id}")
+                    return False
+                
+        except Exception as e:
+            logging.error(f"Error deleting listing {listing_id}: {str(e)}")
+            import traceback
+            logging.error(f"Traceback: {traceback.format_exc()}")
+            return False
+    
+    return False
 
 def get_listing_by_id(listing_id: int) -> Optional[ListingOut]:
     """Get a listing by ID with full details including contacts"""
@@ -125,34 +291,55 @@ def get_listing_by_id(listing_id: int) -> Optional[ListingOut]:
             with conn.cursor() as cur:
                 query = """
                     SELECT 
-                        l.id, l.vehicle_key, l.vin, l.price, l.miles, l.dom, l.source, 
-                        l.location, l.buyer_id, l.payload, l.created_at,
-                        l.notes, l.condition_rating, l.interior_color, l.exterior_color,
-                        l.transmission, l.fuel_type, l.drivetrain, l.engine_size, l.body_style,
-                        l.updated_at, l.updated_by,
-                        COALESCE(l.images, ARRAY[]::text[]) as images,
-                        v.year, v.make, v.model, v.trim,
-                        u.username as buyer_username,
-                        s.score, s.buy_max, s.reason_codes,
-                        -- Primary contact information
-                        pc.id as primary_contact_id,
-                        pc.first_name as primary_contact_first_name,
-                        pc.last_name as primary_contact_last_name,
-                        pc.email as primary_contact_email,
-                        pc.phone as primary_contact_phone,
-                        pc.company as primary_contact_company,
-                        -- All contacts count
-                        (SELECT COUNT(*) FROM listing_contacts lc WHERE lc.listing_id = l.id) as contacts_count
+                        l.id, l.vehicle_key,
+                        COALESCE(l.vin, '') AS vin,
+                        l.lpn,
+                        l.price, l.miles,
+                        GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (now() - COALESCE(l.fb_creation_time, l.created_at))) / 86400))::int AS dom,
+                        l.location,
+                        l.buyer_id,
+                        COALESCE(l.images, ARRAY[]::text[]) AS images,
+                        l.transmission,
+                        l.interior_color,
+                        l.exterior_color,
+                        l.fuel_type,
+                        l.drivetrain,
+                        l.body_style,
+                        l.source,
+                        l.payload,
+                        l.notes,
+                        l.updated_at,
+                        l.updated_by,
+                        l.mmr,
+                        l.clean_title,
+                        l.condition,
+                        l.detailed_ratings,
+                        l.engine,
+                        l.mpg,
+                        l.overall_rating,
+                        l.paid_status,
+                        c.phone AS phone_number,
+                        l.seller_description,
+                        c.fb_joined_date AS seller_joined_date,
+                        NULLIF(TRIM(COALESCE(c.first_name, '') || ' ' || COALESCE(c.last_name, '')), '') AS seller_name,
+                        l.created_at,
+                        COALESCE(l.year, 0) AS year,
+                        COALESCE(l.make, '') AS make,
+                        COALESCE(l.model, '') AS model,
+                        l.trim,
+                        u.username AS buyer_username,
+                        COALESCE(s.score, 0) AS score,
+                        s.buy_max,
+                        COALESCE(s.reason_codes, ARRAY[]::text[]) AS reason_codes,
+                        l.lpn_state
                     FROM listings l
-                    LEFT JOIN vehicles v ON v.vehicle_key = l.vehicle_key
                     LEFT JOIN users u ON u.id::text = l.buyer_id
+                    LEFT JOIN contacts c ON c.id = l.contact_id
                     LEFT JOIN (
                         SELECT DISTINCT ON (vin) vin, score, buy_max, reason_codes
                         FROM scores
                         ORDER BY vin, created_at DESC
                     ) s ON s.vin = l.vin
-                    LEFT JOIN listing_contacts lc_primary ON lc_primary.listing_id = l.id AND lc_primary.is_primary = true
-                    LEFT JOIN contacts pc ON pc.id = lc_primary.contact_id
                     WHERE l.id = %s
                 """
                 
@@ -160,44 +347,73 @@ def get_listing_by_id(listing_id: int) -> Optional[ListingOut]:
                 result = cur.fetchone()
                 
                 if result:
+                    # Extract decision data from payload if available
+                    decision = None
+                    status = ""
+                    payload = result[17]  # payload is at index 17 (shifted by 1 due to lpn)
+                    if payload:
+                        payload_data = json.loads(payload) if isinstance(payload, str) else payload
+                        decision = create_decision_from_data(payload_data)
+                        status = payload_data.get("status", "")
+                    
+                    # Parse detailed_ratings JSONB if it's a string
+                    detailed_ratings_list = None
+                    detailed_ratings = result[24]  # detailed_ratings is at index 24 (shifted by 1 due to lpn)
+                    if detailed_ratings:
+                        if isinstance(detailed_ratings, str):
+                            try:
+                                detailed_ratings_list = json.loads(detailed_ratings)
+                            except:
+                                detailed_ratings_list = None
+                        else:
+                            detailed_ratings_list = detailed_ratings
+                    
                     return ListingOut(
                         id=str(result[0]),
                         vehicle_key=result[1],
-                        vin=result[2],
-                        price=result[3],
-                        miles=result[4],
-                        dom=result[5],
-                        source=result[6],
+                        vin=result[2] or "",
+                        lpn=result[3],
+                        lpnState=result[42],
+                        price=float(result[4]),
+                        miles=int(result[5]),
+                        dom=int(result[6]),
+                        year=int(result[34]),
+                        make=result[35],
+                        model=result[36],
                         location=result[7],
+                        radius=25,  # Default value since radius column doesn't exist in listings table
+                        images=result[9] or [],
+                        transmission=result[10],
+                        exteriorColor=result[12],
+                        interiorColor=result[11],
+                        fuelType=result[13],
+                        overallRating=result[27],
+                        detailedRatings=detailed_ratings_list,
+                        condition=result[23],
+                        mpg=result[26],
+                        cleanTitle=result[22],
+                        paidStatus=result[28],
+                        sellerDescription=result[30],
+                        sellerName=result[32],
+                        sellerJoinedDate=result[31],
+                        phoneNumber=result[29],
+                        engine=result[25],
+                        driveType=result[14],
+                        bodyStyle=result[15],
+                        source=result[16],
+                        status=status,
+                        reasonCodes=result[41] or [],
+                        buyMax=float(result[40]) if result[40] is not None else None,
+                        trim=result[37],
                         buyer_id=result[8],
-                        created_at=result[10],
-                        notes=result[11],
-                        condition_rating=result[12],
-                        interior_color=result[13],
-                        exterior_color=result[14],
-                        transmission=result[15],
-                        fuel_type=result[16],
-                        drivetrain=result[17],
-                        engine_size=result[18],
-                        body_style=result[19],
-                        updated_at=result[20],
-                        updated_by=result[21],
-                        images=result[22] or [],
-                        year=result[23],
-                        make=result[24],
-                        model=result[25],
-                        trim=result[26],
-                        buyer_username=result[27],
-                        score=result[28],
-                        buyMax=result[29],
-                        reasonCodes=result[30] or [],
-                        primary_contact_id=result[31],
-                        primary_contact_first_name=result[32],
-                        primary_contact_last_name=result[33],
-                        primary_contact_email=result[34],
-                        primary_contact_phone=result[35],
-                        primary_contact_company=result[36],
-                        contacts_count=result[37] or 0
+                        buyer_username=result[38],
+                        decision=decision,
+                        created_at=result[33],
+                        notes=result[18],
+                        updated_at=result[19],
+                        updated_by=result[20],
+                        score=int(result[39]) if result[39] is not None else None,
+                        mmr=float(result[21]) if result[21] is not None else None
                     )
                 
         except Exception as e:
@@ -206,146 +422,6 @@ def get_listing_by_id(listing_id: int) -> Optional[ListingOut]:
             return None
     
     return None
-
-# ==============================================
-# CONTACT LINKING FUNCTIONS
-# ==============================================
-
-def link_contact_to_listing(listing_id: int, contact_link: ListingContactLink, created_by: str) -> bool:
-    """Link a contact to a listing"""
-    if not DB_ENABLED:
-        return False
-    
-    with get_db_connection() as conn:
-        if not conn:
-            return False
-            
-        try:
-            with conn.cursor() as cur:
-                # If setting as primary, unset other primary contacts for this listing
-                if contact_link.is_primary:
-                    cur.execute("""
-                        UPDATE listing_contacts 
-                        SET is_primary = false 
-                        WHERE listing_id = %s
-                    """, (listing_id,))
-                
-                # Insert the new contact link
-                cur.execute("""
-                    INSERT INTO listing_contacts (listing_id, contact_id, relationship_type, is_primary, notes, created_by)
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                    ON CONFLICT (listing_id, contact_id, relationship_type) 
-                    DO UPDATE SET is_primary = EXCLUDED.is_primary, notes = EXCLUDED.notes
-                """, (
-                    listing_id, 
-                    contact_link.contact_id, 
-                    contact_link.relationship_type,
-                    contact_link.is_primary,
-                    contact_link.notes,
-                    created_by
-                ))
-                
-                # Log the activity
-                log_listing_activity(
-                    listing_id=listing_id,
-                    activity_type="contact_added",
-                    created_by=created_by,
-                    description=f"Contact linked to listing"
-                )
-                
-                return True
-                
-        except Exception as e:
-            logging.error(f"Error linking contact to listing {listing_id}: {str(e)}")
-            return False
-    
-    return False
-
-def unlink_contact_from_listing(listing_id: int, contact_id: UUID, created_by: str) -> bool:
-    """Unlink a contact from a listing"""
-    if not DB_ENABLED:
-        return False
-    
-    with get_db_connection() as conn:
-        if not conn:
-            return False
-            
-        try:
-            with conn.cursor() as cur:
-                cur.execute("""
-                    DELETE FROM listing_contacts 
-                    WHERE listing_id = %s AND contact_id = %s
-                """, (listing_id, contact_id))
-                
-                # Log the activity
-                log_listing_activity(
-                    listing_id=listing_id,
-                    activity_type="contact_removed",
-                    created_by=created_by,
-                    description=f"Contact unlinked from listing"
-                )
-                
-                return True
-                
-        except Exception as e:
-            logging.error(f"Error unlinking contact from listing {listing_id}: {str(e)}")
-            return False
-    
-    return False
-
-def get_listing_contacts(listing_id: int) -> List[ContactOut]:
-    """Get all contacts linked to a listing"""
-    if not DB_ENABLED:
-        return []
-    
-    with get_db_connection() as conn:
-        if not conn:
-            return []
-            
-        try:
-            with conn.cursor() as cur:
-                query = """
-                    SELECT c.*, lc.relationship_type, lc.is_primary, lc.notes as link_notes
-                    FROM contacts c
-                    JOIN listing_contacts lc ON lc.contact_id = c.id
-                    WHERE lc.listing_id = %s
-                    ORDER BY lc.is_primary DESC, c.first_name, c.last_name
-                """
-                
-                cur.execute(query, (listing_id,))
-                results = cur.fetchall()
-                
-                contacts = []
-                for result in results:
-                    contact = ContactOut(
-                        id=result[0],
-                        first_name=result[1],
-                        last_name=result[2],
-                        email=result[3],
-                        phone=result[4],
-                        mobile=result[5],
-                        company=result[6],
-                        job_title=result[7],
-                        contact_type_id=result[8],
-                        assigned_to=result[9],
-                        address=result[10],
-                        social_profiles=result[11],
-                        preferences=result[12],
-                        notes=result[13],
-                        is_active=result[14],
-                        created_by=result[15],
-                        created_at=result[16],
-                        updated_at=result[17]
-                    )
-                    contacts.append(contact)
-                
-                return contacts
-                
-        except Exception as e:
-            logging.error(f"Error getting contacts for listing {listing_id}: {str(e)}")
-            return []
-    
-    return []
 
 # ==============================================
 # ACTIVITY LOGGING FUNCTIONS

@@ -1,73 +1,13 @@
 // Leads API Service
-import { ApiService } from './api';
-
-// Types for Lead data
-export interface Lead {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone: string;
-  company: string;
-  job_title?: string;
-  lead_source_id?: number;
-  lead_status_id?: number;
-  assigned_to?: string;
-  vehicle_interest?: string;
-  budget_range?: string;
-  location?: string;
-  notes?: string;
-  lead_score: number;
-  is_qualified: boolean;
-  qualified_at?: string;
-  converted_at?: string;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface LeadStatus {
-  id: number;
-  name: string;
-  description?: string;
-  color_code: string;
-  is_active: boolean;
-  sort_order: number;
-  created_at: string;
-}
-
-export interface LeadSource {
-  id: number;
-  name: string;
-  description?: string;
-  is_active: boolean;
-  created_at: string;
-}
-
-export interface LeadActivity {
-  id: string;
-  lead_id: string;
-  activity_type: string;
-  subject: string;
-  description: string;
-  activity_date: string;
-  created_by: string;
-  created_at: string;
-}
-
-export interface LeadSummary {
-  status_name: string;
-  lead_count: number;
-  avg_score: number;
-}
-
-export interface LeadConversionMetrics {
-  total_leads: number;
-  qualified_leads: number;
-  converted_leads: number;
-  conversion_rate: number;
-  qualification_rate: number;
-}
+import { apiCall } from './api';
+import type {
+  Lead,
+  LeadStatus,
+  LeadSource,
+  LeadActivity,
+  LeadSummary,
+  LeadConversionMetrics
+} from '../types/lead';
 
 // Helper function to build query parameters
 const buildQueryParams = (params: Record<string, any>): string => {
@@ -80,11 +20,6 @@ const buildQueryParams = (params: Record<string, any>): string => {
   return queryParams.toString();
 };
 
-// Helper function to make API calls using unified ApiService
-const apiCall = async <T>(endpoint: string, options: RequestInit = {}): Promise<T> => {
-  return ApiService.request<T>(endpoint, options);
-};
-
 // Leads API functions
 export const leadsApi = {
   // Lead management
@@ -92,6 +27,7 @@ export const leadsApi = {
     skip?: number;
     limit?: number;
     status_id?: number;
+    source_id?: number;
     assigned_to?: string;
     search?: string;
   }): Promise<Lead[]> {

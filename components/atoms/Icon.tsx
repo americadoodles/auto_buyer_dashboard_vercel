@@ -1,3 +1,4 @@
+import React from 'react';
 import { 
   LucideIcon,
   Download,
@@ -9,15 +10,44 @@ import {
   Eye,
   Edit,
   Phone,
+  PhoneOff,
+  Mic,
+  MicOff,
   Mail,
   CheckCircle,
   Clock,
   TrendingUp,
   AlertCircle,
+  AlertTriangle,
   Check,
   Settings,
-  X
+  X,
+  Trash2,
+  User,
+  Calendar,
+  Briefcase,
+  XCircle,
+  DollarSign,
+  Car,
+  FileText,
+  MapPin,
+  Sparkles,
+  Loader2,
+  MessageSquare,
+  MessageCircle,
+  Send,
+  Search,
+  Info,
+  Smartphone,
+  Building2,
+  Table,
 } from 'lucide-react';
+
+// Import image icons
+import AccuTradeIcon from '../../assets/images/icons/AccuTrade.png';
+import AutoCheckIcon from '../../assets/images/icons/AutoCheck.png';
+import CarfaxIcon from '../../assets/images/icons/Carfax.png';
+import MMRIcon from '../../assets/images/icons/MMR.png';
 
 interface IconProps {
   icon?: LucideIcon;
@@ -36,14 +66,51 @@ const iconMap: Record<string, LucideIcon> = {
   'eye': Eye,
   'edit': Edit,
   'phone': Phone,
+  'phone-off': PhoneOff,
+  'mic': Mic,
+  'mic-off': MicOff,
   'mail': Mail,
   'check-circle': CheckCircle,
   'clock': Clock,
   'trending-up': TrendingUp,
   'alert-circle': AlertCircle,
+  'alert-triangle': AlertTriangle,
   'check': Check,
   'settings': Settings,
-  'x': X
+  'x': X,
+  'trash-2': Trash2,
+  'user': User,
+  'calendar': Calendar,
+  'briefcase': Briefcase,
+  'x-circle': XCircle,
+  'dollar-sign': DollarSign,
+  'car': Car,
+  'file-text': FileText,
+  'map-pin': MapPin,
+  'sparkles': Sparkles,
+  'loader': Loader2,
+  'loader-2': Loader2,
+  'message-square': MessageSquare,
+  'message-circle': MessageCircle,
+  'send': Send,
+  'search': Search,
+  'info': Info,
+  'smartphone': Smartphone,
+  'building-2': Building2,
+  'table': Table,
+};
+
+// Helper function to get image source from StaticImageData or string
+const getImageSrc = (img: string | { src?: string; [key: string]: any }): string => {
+  if (typeof img === 'string') return img;
+  return img.src || (img as any).default || '';
+};
+
+const imageIconMap: Record<string, string> = {
+  'accutrade': getImageSrc(AccuTradeIcon),
+  'autocheck': getImageSrc(AutoCheckIcon),
+  'carfax': getImageSrc(CarfaxIcon),
+  'mmr': getImageSrc(MMRIcon),
 };
 
 export const Icon: React.FC<IconProps> = ({ 
@@ -52,6 +119,22 @@ export const Icon: React.FC<IconProps> = ({
   className = '', 
   size = 24 
 }) => {
+  // Check if it's an image icon first
+  if (name) {
+    const imageIconSrc = imageIconMap[name.toLowerCase()];
+    if (imageIconSrc) {
+      return (
+        <img
+          src={imageIconSrc}
+          alt={name}
+          className={className}
+          style={{ width: size, height: size }}
+        />
+      );
+    }
+  }
+
+  // Otherwise, try Lucide icon
   const IconToRender = name ? iconMap[name] : IconComponent;
   
   if (!IconToRender) {

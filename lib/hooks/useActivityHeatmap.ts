@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '../../app/auth/useAuth';
 
 interface ActivityData {
   date: string;
@@ -14,6 +15,7 @@ interface ActivityHeatmapResponse {
 }
 
 export const useActivityHeatmap = () => {
+  const { user } = useAuth();
   const [data, setData] = useState<ActivityHeatmapResponse>({
     data: [],
     total_activities: 0,
@@ -25,13 +27,28 @@ export const useActivityHeatmap = () => {
 
   useEffect(() => {
     const fetchActivityHeatmap = async () => {
+      // Don't fetch if user is not loaded yet
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
         setError(null);
         
         const baseUrl = (process.env.NEXT_PUBLIC_BACKEND_URL ?? '/api').replace(/\/+$/, '');
+        const isAdmin = user?.role?.toLowerCase() === 'admin';
         
-        const response = await fetch(`${baseUrl}/activity_heatmap`, {
+        // Build URL with buyer_id parameter for non-admin users
+        let url = `${baseUrl}/activity_heatmap`;
+        if (!isAdmin && user?.id) {
+          // For buyers, the backend will automatically filter by their user ID
+          // but we can explicitly pass it for clarity
+          url += `?buyer_id=${user.id}`;
+        }
+        
+        const response = await fetch(url, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('auth.token')}`,
           },
@@ -47,7 +64,7 @@ export const useActivityHeatmap = () => {
         console.error('Error fetching activity heatmap:', err);
         setError(err.message || 'Failed to fetch activity heatmap data');
         
-        // Generate mock data for development
+        // Generate mock data as fallback for development
         const mockData = generateMockData();
         setData(mockData);
       } finally {
@@ -56,7 +73,7 @@ export const useActivityHeatmap = () => {
     };
 
     fetchActivityHeatmap();
-  }, []);
+  }, [user]);
 
   return { data, loading, error };
 };

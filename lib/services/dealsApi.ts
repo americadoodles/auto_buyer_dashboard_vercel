@@ -1,12 +1,15 @@
 // Deals API Service
-import { ApiService } from './api';
+import { apiCall } from './api';
 
 // Types for Deal data
 export interface Deal {
+  deal_category: any;
+  contact: any;
   id: string;
   title: string;
   description?: string;
   contact_id?: string;
+  lead_id?: string;
   assigned_to?: string;
   deal_stage_id?: number;
   deal_category_id?: number;
@@ -18,6 +21,7 @@ export interface Deal {
   is_active: boolean;
   is_won?: boolean;
   is_lost?: boolean;
+  is_hidden?: boolean;
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -83,64 +87,6 @@ const buildQueryParams = (params: Record<string, any>): string => {
   return queryParams.toString();
 };
 
-// Helper function to get auth headers
-const getAuthHeaders = (): HeadersInit => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('auth.token') : null;
-  const headers: Record<string, string> = {};
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  return headers;
-};
-
-// Helper function to handle API responses
-const handleResponse = async <T>(response: Response): Promise<T> => {
-  if (!response.ok) {
-    let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-    try {
-      const errorData = await response.json();
-      console.error('API Error Response:', errorData);
-      
-      // Handle different error response formats
-      if (typeof errorData === 'string') {
-        errorMessage = errorData;
-      } else if (errorData && typeof errorData === 'object') {
-        // Handle FastAPI validation errors where detail is an array
-        if (errorData.detail && Array.isArray(errorData.detail)) {
-          errorMessage = errorData.detail.map((err: any) => {
-            if (typeof err === 'string') return err;
-            if (err.msg) return err.msg;
-            if (err.message) return err.message;
-            return JSON.stringify(err);
-          }).join(', ');
-        } else {
-          errorMessage = errorData.detail || errorData.message || errorData.error || JSON.stringify(errorData);
-        }
-      }
-    } catch (parseError) {
-      console.error('Failed to parse error response:', parseError);
-      // If we can't parse the error response, use the default message
-    }
-    throw new Error(errorMessage);
-  }
-  
-  try {
-    return await response.json();
-  } catch (error) {
-    console.error('Failed to parse JSON response:', error);
-    throw new Error('Invalid response format from server');
-  }
-};
-
-// Helper function to make API calls
-const apiCall = async <T>(endpoint: string, options: RequestInit = {}): Promise<T> => {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL ?? '/api'}${endpoint}`, {
-    headers: getAuthHeaders(),
-    ...options
-  });
-  return handleResponse<T>(response);
-};
-
 // Deals API functions
 export const dealsApi = {
   // Deal management
@@ -154,6 +100,7 @@ export const dealsApi = {
     search?: string;
     is_won?: boolean;
     is_lost?: boolean;
+    include_hidden?: boolean;
   }): Promise<Deal[]> {
     const queryString = params ? buildQueryParams(params) : '';
     const endpoint = `/crm/deals${queryString ? '?' + queryString : ''}`;
@@ -165,7 +112,7 @@ export const dealsApi = {
   },
 
   async createDeal(deal: Partial<Deal>): Promise<Deal> {
-    return apiCall<Deal>('/crm/deals', {
+    return apiCall<Deal>('/crm/deals/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(deal)
@@ -254,5 +201,42 @@ export const dealsApi = {
 
   async getSalesMetrics(): Promise<SalesPerformanceMetrics> {
     return apiCall<SalesPerformanceMetrics>('/crm/deals/metrics');
+  },
+
+  // AI Draft generation
+  async generateAIDraft(params: {
+    lead_id?: string;
+    contact_id?: string;
+    vehicle_info?: {
+      year?: number;
+      make?: string;
+      model?: string;
+      trim?: string;
+      vin?: string;
+    };
+    contact_info?: {
+      first_name?: string;
+      last_name?: string;
+      company?: string;
+      email?: string;
+      phone?: string;
+    };
+    additional_context?: string;
+  }): Promise<{
+    name: string;
+    description: string;
+    notes: string;
+    expected_close_date: string;
+  }> {
+    return apiCall<{
+      name: string;
+      description: string;
+      notes: string;
+      expected_close_date: string;
+    }>('/crm/deals/ai-draft', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params)
+    });
   }
 };

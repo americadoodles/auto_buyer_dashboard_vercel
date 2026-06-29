@@ -54,10 +54,10 @@ class SlackWorkflowService:
             "estimated_price_offer": str(listing.price),
             "urgency_level": str(self._determine_urgency(listing.dom, listing.score)),
             "main_contact": str(listing.buyer_username or "Unknown Buyer"),
-            "vin": str(listing.vin or "N/A"),
+            "vin": str(listing.vin or "-"),
             "clear_carfax": "Unknown",
             "clean_autocheck": "Unknown",
-            "mmr_price": str(listing.buyMax) if listing.buyMax else "N/A",
+            "mmr_price": str(listing.buyMax) if listing.buyMax else "-",
             "distance": str(listing.location or "Unknown"),
             "vehicle_key": str(listing.vehicle_key),
             "listing_id": str(listing.id),
@@ -87,7 +87,7 @@ class SlackWorkflowService:
                     "fields": [
                         {
                             "title": "Vehicle Information",
-                            "value": f"**{self._format_vehicle_info(listing)}**\nVIN: {listing.vin or 'N/A'}\nMileage: {listing.miles:,} miles\nPrice: ${listing.price:,.2f}",
+                            "value": f"**{self._format_vehicle_info(listing)}**\nVIN: {listing.vin or '-'}\nMileage: {listing.miles:,} miles\nPrice: ${listing.price:,.2f}",
                             "short": False
                         },
                         {
@@ -112,10 +112,10 @@ class SlackWorkflowService:
             "estimated_price_offer": str(listing.price),
             "urgency_level": str(self._determine_urgency(listing.dom, listing.score)),
             "main_contact": str(listing.buyer_username or "Unknown Buyer"),
-            "vin": str(listing.vin or "N/A"),
+            "vin": str(listing.vin or "-"),
             "clear_carfax": "Unknown",
             "clean_autocheck": "Unknown",
-            "mmr_price": str(listing.buyMax) if listing.buyMax else "N/A",
+            "mmr_price": str(listing.buyMax) if listing.buyMax else "-",
             "distance": str(listing.location or "Unknown"),
             "vehicle_key": str(listing.vehicle_key),
             "listing_id": str(listing.id),

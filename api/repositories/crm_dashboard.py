@@ -19,7 +19,7 @@ def get_crm_stats() -> CRMStats:
     """Get comprehensive CRM statistics for dashboard"""
     if not DB_ENABLED:
         return CRMStats(
-            total_leads=0, qualified_leads=0, total_contacts=0,
+            total_leads=0, total_contacts=0,
             active_deals=0, won_deals=0, lost_deals=0,
             total_revenue=Decimal('0'), pending_tasks=0, overdue_tasks=0
         )
@@ -31,53 +31,98 @@ def get_crm_stats() -> CRMStats:
         try:
             with conn.cursor() as cur:
                 # Get lead statistics
-                cur.execute("SELECT COUNT(*) FROM leads")
-                total_leads = cur.fetchone()[0]
-                
-                cur.execute("SELECT COUNT(*) FROM leads WHERE is_qualified = true")
-                qualified_leads = cur.fetchone()[0]
+                try:
+                    cur.execute("SELECT COUNT(*) FROM leads")
+                    total_leads = cur.fetchone()[0] or 0
+                except Exception as e:
+                    logging.warning(f"Error counting leads: {str(e)}")
+                    total_leads = 0
                 
                 # Get contact statistics
-                cur.execute("SELECT COUNT(*) FROM contacts WHERE is_active = true")
-                total_contacts = cur.fetchone()[0]
+                try:
+                    cur.execute("SELECT COUNT(*) FROM contacts WHERE is_active = true")
+                    total_contacts = cur.fetchone()[0] or 0
+                except Exception as e:
+                    logging.warning(f"Error counting contacts: {str(e)}")
+                    total_contacts = 0
                 
                 # Get deal statistics
-                cur.execute("""
-                    SELECT COUNT(*) FROM deals 
-                    WHERE is_won = false AND is_lost = false
-                """)
-                active_deals = cur.fetchone()[0]
-                
-                cur.execute("SELECT COUNT(*) FROM deals WHERE is_won = true")
-                won_deals = cur.fetchone()[0]
-                
-                cur.execute("SELECT COUNT(*) FROM deals WHERE is_lost = true")
-                lost_deals = cur.fetchone()[0]
+                try:
+                    cur.execute("""
+                        SELECT COUNT(*) FROM deals 
+                        WHERE is_won = false AND is_lost = false
+                    """)
+                    active_deals = cur.fetchone()[0] or 0
+                    
+                    cur.execute("SELECT COUNT(*) FROM deals WHERE is_won = true")
+                    won_deals = cur.fetchone()[0] or 0
+                    
+                    cur.execute("SELECT COUNT(*) FROM deals WHERE is_lost = true")
+                    lost_deals = cur.fetchone()[0] or 0
+                except Exception as e:
+                    logging.warning(f"Error counting deals: {str(e)}")
+                    active_deals = 0
+                    won_deals = 0
+                    lost_deals = 0
                 
                 # Get revenue statistics
-                cur.execute("""
-                    SELECT COALESCE(SUM(deal_value), 0) FROM deals 
-                    WHERE is_won = true AND deal_value IS NOT NULL
-                """)
-                total_revenue = cur.fetchone()[0] or Decimal('0')
+                try:
+                    cur.execute("""
+                        SELECT COALESCE(SUM(deal_value), 0) FROM deals 
+                        WHERE is_won = true AND deal_value IS NOT NULL
+                    """)
+                    revenue_result = cur.fetchone()[0]
+                    total_revenue = Decimal(str(revenue_result)) if revenue_result else Decimal('0')
+                except Exception as e:
+                    logging.warning(f"Error calculating revenue: {str(e)}")
+                    total_revenue = Decimal('0')
                 
                 # Get task statistics
-                cur.execute("""
-                    SELECT COUNT(*) FROM tasks t
-                    LEFT JOIN task_statuses ts ON t.status_id = ts.id
-                    WHERE ts.name != 'Completed' OR ts.name IS NULL
-                """)
-                pending_tasks = cur.fetchone()[0]
-                
-                cur.execute("""
-                    SELECT COUNT(*) FROM tasks 
-                    WHERE due_date < NOW() AND completed_at IS NULL
-                """)
-                overdue_tasks = cur.fetchone()[0]
+                pending_tasks = 0
+                overdue_tasks = 0
+                try:
+                    # First, find the "Done" status_id
+                    done_status_id = None
+                    try:
+                        cur.execute("""
+                            SELECT id FROM task_statuses 
+                            WHERE LOWER(name) = LOWER('Done') 
+                            LIMIT 1
+                        """)
+                        done_status_result = cur.fetchone()
+                        done_status_id = done_status_result[0] if done_status_result else None
+                    except Exception as e:
+                        logging.warning(f"Error finding Done status: {str(e)}")
+                    
+                    if done_status_id:
+                        cur.execute("""
+                            SELECT COUNT(*) FROM tasks 
+                            WHERE status_id != %s OR status_id IS NULL
+                        """, (done_status_id,))
+                    else:
+                        # If no "Done" status exists, count all tasks
+                        cur.execute("SELECT COUNT(*) FROM tasks")
+                    pending_tasks = cur.fetchone()[0] or 0
+                    
+                    if done_status_id:
+                        cur.execute("""
+                            SELECT COUNT(*) FROM tasks 
+                            WHERE due_at < NOW() 
+                            AND (status_id != %s OR status_id IS NULL)
+                        """, (done_status_id,))
+                    else:
+                        cur.execute("""
+                            SELECT COUNT(*) FROM tasks 
+                            WHERE due_at < NOW()
+                        """)
+                    overdue_tasks = cur.fetchone()[0] or 0
+                except Exception as e:
+                    logging.warning(f"Error counting tasks: {str(e)}")
+                    pending_tasks = 0
+                    overdue_tasks = 0
                 
                 return CRMStats(
                     total_leads=total_leads,
-                    qualified_leads=qualified_leads,
                     total_contacts=total_contacts,
                     active_deals=active_deals,
                     won_deals=won_deals,
@@ -95,73 +140,54 @@ def get_lead_conversion_metrics() -> LeadConversionMetrics:
     """Get lead conversion metrics"""
     if not DB_ENABLED:
         return LeadConversionMetrics(
-            leads_created=0, leads_contacted=0, leads_qualified=0,
-            leads_converted=0, conversion_rate=0.0
+            total_leads=0, converted_leads=0,
+            conversion_rate=0.0, avg_score=0.0
         )
-    
+
     with get_db_connection() as conn:
         if not conn:
             raise Exception("Database connection failed")
-        
+
         try:
             with conn.cursor() as cur:
-                # Get lead counts by status
-                cur.execute("SELECT COUNT(*) FROM leads")
-                leads_created = cur.fetchone()[0]
-                
-                cur.execute("""
-                    SELECT COUNT(*) FROM leads l
-                    LEFT JOIN lead_statuses ls ON l.lead_status_id = ls.id
-                    WHERE ls.name = 'Contacted' OR l.lead_status_id IS NOT NULL
-                """)
-                leads_contacted = cur.fetchone()[0]
-                
-                cur.execute("SELECT COUNT(*) FROM leads WHERE is_qualified = true")
-                leads_qualified = cur.fetchone()[0]
-                
-                cur.execute("""
-                    SELECT COUNT(*) FROM leads l
-                    LEFT JOIN lead_statuses ls ON l.lead_status_id = ls.id
-                    WHERE ls.name = 'Converted' OR l.converted_at IS NOT NULL
-                """)
-                leads_converted = cur.fetchone()[0]
-                
+                # Get lead counts
+                total_leads = 0
+                converted_leads = 0
+                try:
+                    cur.execute("SELECT COUNT(*) FROM leads")
+                    total_leads = cur.fetchone()[0] or 0
+
+                    cur.execute("""
+                        SELECT COUNT(*) FROM leads
+                        WHERE converted_at IS NOT NULL
+                    """)
+                    converted_leads = cur.fetchone()[0] or 0
+                except Exception as e:
+                    logging.warning(f"Error counting leads: {str(e)}")
+
                 # Calculate conversion rate
-                conversion_rate = (leads_converted / leads_created * 100) if leads_created > 0 else 0.0
-                
-                # Calculate average times (simplified)
-                cur.execute("""
-                    SELECT AVG(EXTRACT(EPOCH FROM (updated_at - created_at))/3600) as avg_hours
-                    FROM leads 
-                    WHERE lead_status_id IS NOT NULL
-                """)
-                avg_time_to_contact = cur.fetchone()[0]
-                
-                cur.execute("""
-                    SELECT AVG(EXTRACT(EPOCH FROM (qualified_at - created_at))/3600) as avg_hours
-                    FROM leads 
-                    WHERE qualified_at IS NOT NULL
-                """)
-                avg_time_to_qualify = cur.fetchone()[0]
-                
-                cur.execute("""
-                    SELECT AVG(EXTRACT(EPOCH FROM (converted_at - created_at))/3600) as avg_hours
-                    FROM leads 
-                    WHERE converted_at IS NOT NULL
-                """)
-                avg_time_to_convert = cur.fetchone()[0]
-                
+                conversion_rate = (converted_leads / total_leads * 100) if total_leads > 0 else 0.0
+
+                # Calculate average lead score
+                avg_score = 0.0
+                try:
+                    cur.execute("""
+                        SELECT AVG(lead_score) as avg_score
+                        FROM leads
+                        WHERE lead_score IS NOT NULL
+                    """)
+                    result = cur.fetchone()
+                    avg_score = float(result[0]) if result and result[0] is not None else 0.0
+                except Exception as e:
+                    logging.warning(f"Error calculating avg lead score: {str(e)}")
+
                 return LeadConversionMetrics(
-                    leads_created=leads_created,
-                    leads_contacted=leads_contacted,
-                    leads_qualified=leads_qualified,
-                    leads_converted=leads_converted,
+                    total_leads=total_leads,
+                    converted_leads=converted_leads,
                     conversion_rate=conversion_rate,
-                    avg_time_to_contact=avg_time_to_contact,
-                    avg_time_to_qualify=avg_time_to_qualify,
-                    avg_time_to_convert=avg_time_to_convert
+                    avg_score=avg_score
                 )
-                
+
         except Exception as e:
             logging.error(f"Error fetching lead conversion metrics: {str(e)}")
             raise
@@ -174,58 +200,80 @@ def get_sales_performance_metrics() -> SalesPerformanceMetrics:
             win_rate=0.0, total_revenue=Decimal('0'), avg_deal_size=Decimal('0'),
             revenue_by_stage={}
         )
-    
+
     with get_db_connection() as conn:
         if not conn:
             raise Exception("Database connection failed")
-        
+
         try:
             with conn.cursor() as cur:
                 # Get deal counts
-                cur.execute("SELECT COUNT(*) FROM deals")
-                deals_created = cur.fetchone()[0]
-                
-                cur.execute("SELECT COUNT(*) FROM deals WHERE is_won = true")
-                deals_won = cur.fetchone()[0]
-                
-                cur.execute("SELECT COUNT(*) FROM deals WHERE is_lost = true")
-                deals_lost = cur.fetchone()[0]
-                
+                deals_created = 0
+                deals_won = 0
+                deals_lost = 0
+                try:
+                    cur.execute("SELECT COUNT(*) FROM deals")
+                    deals_created = cur.fetchone()[0] or 0
+
+                    cur.execute("SELECT COUNT(*) FROM deals WHERE is_won = true")
+                    deals_won = cur.fetchone()[0] or 0
+
+                    cur.execute("SELECT COUNT(*) FROM deals WHERE is_lost = true")
+                    deals_lost = cur.fetchone()[0] or 0
+                except Exception as e:
+                    logging.warning(f"Error counting deals: {str(e)}")
+
                 # Calculate win rate
                 total_closed = deals_won + deals_lost
                 win_rate = (deals_won / total_closed * 100) if total_closed > 0 else 0.0
-                
+
                 # Get revenue metrics
-                cur.execute("""
-                    SELECT COALESCE(SUM(deal_value), 0) FROM deals 
-                    WHERE is_won = true AND deal_value IS NOT NULL
-                """)
-                total_revenue = cur.fetchone()[0] or Decimal('0')
-                
-                cur.execute("""
-                    SELECT COALESCE(AVG(deal_value), 0) FROM deals 
-                    WHERE is_won = true AND deal_value IS NOT NULL
-                """)
-                avg_deal_size = cur.fetchone()[0] or Decimal('0')
-                
+                total_revenue = Decimal('0')
+                avg_deal_size = Decimal('0')
+                try:
+                    cur.execute("""
+                        SELECT COALESCE(SUM(deal_value), 0) FROM deals
+                        WHERE is_won = true AND deal_value IS NOT NULL
+                    """)
+                    result = cur.fetchone()[0]
+                    total_revenue = Decimal(str(result)) if result else Decimal('0')
+
+                    cur.execute("""
+                        SELECT COALESCE(AVG(deal_value), 0) FROM deals
+                        WHERE is_won = true AND deal_value IS NOT NULL
+                    """)
+                    result = cur.fetchone()[0]
+                    avg_deal_size = Decimal(str(result)) if result else Decimal('0')
+                except Exception as e:
+                    logging.warning(f"Error calculating revenue metrics: {str(e)}")
+
                 # Calculate average sales cycle
-                cur.execute("""
-                    SELECT AVG(EXTRACT(EPOCH FROM (actual_close_date - created_at))/86400) as avg_days
-                    FROM deals 
-                    WHERE is_won = true AND actual_close_date IS NOT NULL
-                """)
-                avg_sales_cycle = cur.fetchone()[0]
-                
+                avg_sales_cycle = None
+                try:
+                    cur.execute("""
+                        SELECT AVG(EXTRACT(EPOCH FROM (actual_close_date - created_at))/86400) as avg_days
+                        FROM deals
+                        WHERE is_won = true AND actual_close_date IS NOT NULL
+                    """)
+                    result = cur.fetchone()
+                    avg_sales_cycle = float(result[0]) if result and result[0] is not None else None
+                except Exception as e:
+                    logging.warning(f"Error calculating avg sales cycle: {str(e)}")
+
                 # Get revenue by stage
-                cur.execute("""
-                    SELECT ds.name, COALESCE(SUM(d.deal_value), 0) as revenue
-                    FROM deal_stages ds
-                    LEFT JOIN deals d ON ds.id = d.deal_stage_id AND d.is_won = true
-                    GROUP BY ds.id, ds.name
-                    ORDER BY ds.sort_order
-                """)
-                revenue_by_stage = {row[0]: Decimal(str(row[1])) for row in cur.fetchall()}
-                
+                revenue_by_stage = {}
+                try:
+                    cur.execute("""
+                        SELECT ds.name, COALESCE(SUM(d.deal_value), 0) as revenue
+                        FROM deal_stages ds
+                        LEFT JOIN deals d ON ds.id = d.deal_stage_id AND d.is_won = true
+                        GROUP BY ds.id, ds.name
+                        ORDER BY ds.sort_order
+                    """)
+                    revenue_by_stage = {row[0]: Decimal(str(row[1])) for row in cur.fetchall()}
+                except Exception as e:
+                    logging.warning(f"Error fetching revenue by stage: {str(e)}")
+
                 return SalesPerformanceMetrics(
                     deals_created=deals_created,
                     deals_won=deals_won,
@@ -236,7 +284,7 @@ def get_sales_performance_metrics() -> SalesPerformanceMetrics:
                     avg_sales_cycle=avg_sales_cycle,
                     revenue_by_stage=revenue_by_stage
                 )
-                
+
         except Exception as e:
             logging.error(f"Error fetching sales performance metrics: {str(e)}")
             raise
@@ -345,21 +393,47 @@ def get_upcoming_tasks(user_id: UUID) -> List[TaskDashboard]:
         
         try:
             with conn.cursor() as cur:
+                # Find the "Done" status_id
                 cur.execute("""
-                    SELECT t.id, t.title, t.due_date, tp.name as priority_name,
-                           tp.color_code as priority_color, ts.name as status_name,
-                           ts.color_code as status_color, u.username as assigned_to_name,
-                           t.created_at
-                    FROM tasks t
-                    LEFT JOIN task_priorities tp ON t.priority_id = tp.id
-                    LEFT JOIN task_statuses ts ON t.status_id = ts.id
-                    LEFT JOIN users u ON t.assigned_to = u.id
-                    WHERE t.assigned_to = %s 
-                    AND (t.due_date IS NULL OR t.due_date >= NOW())
-                    AND (ts.name != 'Completed' OR ts.name IS NULL)
-                    ORDER BY t.due_date ASC NULLS LAST, t.created_at DESC
-                    LIMIT 10
-                """, (user_id,))
+                    SELECT id FROM task_statuses 
+                    WHERE LOWER(name) = LOWER('Done') 
+                    LIMIT 1
+                """)
+                done_status_result = cur.fetchone()
+                done_status_id = done_status_result[0] if done_status_result else None
+                
+                # Build query based on whether Done status exists
+                if done_status_id:
+                    cur.execute("""
+                        SELECT t.id, t.title, t.due_at, tp.name as priority_name,
+                               tp.color_code as priority_color, ts.name as status_name,
+                               ts.color_code as status_color, u.username as assigned_to_name,
+                               t.created_at
+                        FROM tasks t
+                        LEFT JOIN users u ON t.owner_user_id = u.id
+                        LEFT JOIN task_priorities tp ON t.priority_id = tp.id
+                        LEFT JOIN task_statuses ts ON t.status_id = ts.id
+                        WHERE t.owner_user_id = %s 
+                        AND (t.due_at IS NULL OR t.due_at >= NOW())
+                        AND (t.status_id != %s OR t.status_id IS NULL)
+                        ORDER BY t.due_at ASC NULLS LAST, t.created_at DESC
+                        LIMIT 10
+                    """, (user_id, done_status_id))
+                else:
+                    cur.execute("""
+                        SELECT t.id, t.title, t.due_at, tp.name as priority_name,
+                               tp.color_code as priority_color, ts.name as status_name,
+                               ts.color_code as status_color, u.username as assigned_to_name,
+                               t.created_at
+                        FROM tasks t
+                        LEFT JOIN users u ON t.owner_user_id = u.id
+                        LEFT JOIN task_priorities tp ON t.priority_id = tp.id
+                        LEFT JOIN task_statuses ts ON t.status_id = ts.id
+                        WHERE t.owner_user_id = %s 
+                        AND (t.due_at IS NULL OR t.due_at >= NOW())
+                        ORDER BY t.due_at ASC NULLS LAST, t.created_at DESC
+                        LIMIT 10
+                    """, (user_id,))
                 
                 results = cur.fetchall()
                 tasks = []

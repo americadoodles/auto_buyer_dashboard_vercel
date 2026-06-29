@@ -50,7 +50,7 @@ export const TableRow: React.FC<TableRowProps> = ({
   if (children) {
     return (
       <tr 
-        className={`${className || ''} ${onClick ? 'cursor-pointer hover:bg-gray-50' : ''}`}
+        className={`${className || ''} ${onClick ? 'cursor-pointer hover:bg-claude-cream dark:hover:bg-coal-700/50' : ''}`}
         onClick={onClick}
       >
         {children}
@@ -70,66 +70,81 @@ export const TableRow: React.FC<TableRowProps> = ({
     return LISTINGS_TABLE_COLUMNS.find(col => col.key === key);
   };
   
+  // Helper function to get column span style
+  const getColSpanStyle = (key: string) => {
+    const config = getColumnConfig(key);
+    return { gridColumn: `span ${config?.colSpan || 1} / span ${config?.colSpan || 1}` };
+  };
+  
   return (
     <div 
-      className={`grid ${LISTINGS_TABLE_GRID_CLASS} items-center border-t px-4 py-3 text-sm hover:bg-slate-50 transition-colors`}
-      style={LISTINGS_TABLE_GRID_STYLE}
+      className={`grid ${LISTINGS_TABLE_GRID_CLASS} gap-2 items-center border-t px-4 py-3 text-sm hover:bg-slate-50 transition-colors`}
+      style={{
+        ...LISTINGS_TABLE_GRID_STYLE,
+        gridTemplateRows: 'auto',
+        gridAutoRows: 'auto'
+      }}
     >
       {/* Select checkbox */}
-      <div className={`col-span-${getColumnConfig('select')?.colSpan} flex items-center justify-center`}>
+      <div style={getColSpanStyle('select')} className="flex items-center justify-center">
         <input
           type="checkbox"
           checked={isSelected}
           onChange={(e) => onSelect?.(listing.id, e.target.checked)}
-          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-claude-divider rounded"
         />
       </div>
       
       {/* Score */}
-      <div className={`col-span-${getColumnConfig('score')?.colSpan} flex items-center`}>
+      <div style={getColSpanStyle('score')} className="flex items-center">
         <Badge variant="default">{listing.score}</Badge>
       </div>
       
       {/* VIN - Wider column */}
-      <div className={`col-span-${getColumnConfig('vin')?.colSpan} truncate text-xs text-slate-600 font-mono`}>
+      <div style={getColSpanStyle('vin')} className="truncate text-xs text-slate-600 font-mono">
         <span title={listing.vin}>{listing.vin}</span>
       </div>
       
+      {/* LPN */}
+      <div style={getColSpanStyle('lpn')} className="truncate text-xs text-slate-600 font-mono">
+        <span title={listing.lpn}>{listing.lpn || '—'}</span>
+      </div>
+      
       {/* Year */}
-      <div className={`col-span-${getColumnConfig('year')?.colSpan} hidden md:flex items-center`}>
+      <div style={getColSpanStyle('year')} className="invisible md:visible flex items-center">
         {listing.year}
       </div>
       
       {/* Make */}
-      <div className={`col-span-${getColumnConfig('make')?.colSpan} hidden md:flex items-center`}>
+      <div style={getColSpanStyle('make')} className="invisible md:visible flex items-center">
         {listing.make}
       </div>
       
       {/* Model - Wider column */}
-      <div className={`col-span-${getColumnConfig('model')?.colSpan} truncate`}>
+      <div style={getColSpanStyle('model')} className="truncate">
         <span title={listing.model}>{listing.model}</span>
       </div>
       
       {/* Miles */}
-      <div className={`col-span-${getColumnConfig('miles')?.colSpan} hidden md:flex items-center gap-1`}>
+      <div style={getColSpanStyle('miles')} className="invisible md:visible flex items-center gap-1">
         <Gauge className="h-3 w-3 flex-shrink-0" />
         <span className="truncate">{formatNumber(listing.miles)}</span>
       </div>
       
       {/* Price */}
-      <div className={`col-span-${getColumnConfig('price')?.colSpan} flex items-center gap-1 font-medium`}>
+      <div style={getColSpanStyle('price')} className="flex items-center gap-1 font-medium">
         <DollarSign className="h-3 w-3 flex-shrink-0" />
         <span className="truncate">{formatCurrency(listing.price)}</span>
       </div>
       
       {/* DOM */}
-      <div className={`col-span-${getColumnConfig('dom')?.colSpan} hidden md:flex items-center gap-1`}>
+      <div style={getColSpanStyle('dom')} className="invisible md:visible flex items-center gap-1">
         <Clock className="h-3 w-3 flex-shrink-0" />
         <span>{listing.dom}d</span>
       </div>
       
       {/* Source - Hidden on smaller screens */}
-      <div className={`col-span-${getColumnConfig('source')?.colSpan} hidden lg:flex truncate min-w-0`}>
+      <div style={getColSpanStyle('source')} className="invisible lg:visible flex truncate min-w-0">
         {parsedSource ? (
           <div className="flex items-center gap-2 min-w-0">
             <span
@@ -160,29 +175,29 @@ export const TableRow: React.FC<TableRowProps> = ({
       </div>
       
       {/* Location - Wider column, hidden on mobile */}
-      <div className={`col-span-${getColumnConfig('location')?.colSpan} hidden md:flex truncate text-xs text-slate-600`}>
+      <div style={getColSpanStyle('location')} className="invisible md:visible flex truncate text-xs text-slate-600">
         <span title={listing.location}>{listing.location}</span>
       </div>
       
       {/* Buyer - Hidden on smaller screens */}
-      <div className={`col-span-${getColumnConfig('buyer_username')?.colSpan} hidden lg:flex truncate text-xs text-slate-600`}>
+      <div style={getColSpanStyle('buyer_username')} className="invisible lg:visible flex truncate text-xs text-slate-600">
         <span title={listing.buyer_username || listing.buyer_id}>
           {listing.buyer_username || listing.buyer_id}
         </span>
       </div>
       
       {/* Radius - Hidden on smaller screens */}
-      <div className={`col-span-${getColumnConfig('radius')?.colSpan} hidden lg:flex items-center`}>
+      <div style={getColSpanStyle('radius')} className="invisible lg:visible flex items-center">
         {listing.radius} mi
       </div>
       
       {/* Buy Max */}
-      <div className={`col-span-${getColumnConfig('buyMax')?.colSpan} hidden md:flex items-center font-medium`}>
+      <div style={getColSpanStyle('buyMax')} className="invisible md:visible flex items-center font-medium">
         {listing.buyMax != null ? formatCurrency(listing.buyMax) : "—"}
       </div>
       
       {/* Status */}
-      <div className={`col-span-${getColumnConfig('decision_status')?.colSpan} flex items-center`}>
+      <div style={getColSpanStyle('decision_status')} className="flex items-center">
         {listing.status ? (
           <Badge variant={listing.status === 'approved' ? 'success' : listing.status === 'rejected' ? 'destructive' : 'default'}>
             {listing.status}
@@ -193,7 +208,7 @@ export const TableRow: React.FC<TableRowProps> = ({
       </div>
       
       {/* Decision Reasons - Wider column, hidden on smaller screens */}
-      <div className={`col-span-${getColumnConfig('decision_reasons')?.colSpan} hidden lg:flex min-w-0`}>
+      <div style={getColSpanStyle('decision_reasons')} className="invisible lg:visible flex min-w-0">
         {listing.decision?.reasons && listing.decision.reasons.length > 0 ? (
           <div className="flex flex-wrap gap-1 min-w-0 w-full">
             {listing.decision.reasons.slice(0, 2).map((reason, index) => (
@@ -213,7 +228,7 @@ export const TableRow: React.FC<TableRowProps> = ({
       </div>
       
       {/* Notify Action */}
-      <div className={`col-span-${getColumnConfig('notify')?.colSpan} flex items-center justify-center`}>
+      <div style={getColSpanStyle('notify')} className="flex items-center justify-center">
         <button
           className="p-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={() => listing.vin && onNotify?.(listing.vin)}
@@ -226,7 +241,7 @@ export const TableRow: React.FC<TableRowProps> = ({
       </div>
       
       {/* Slack Action */}
-      <div className={`col-span-${getColumnConfig('slack')?.colSpan} flex items-center justify-center`}>
+      <div style={getColSpanStyle('slack')} className="flex items-center justify-center">
         {onNotifySlack ? (
           <button
             className="p-1.5 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -243,7 +258,7 @@ export const TableRow: React.FC<TableRowProps> = ({
       </div>
       
       {/* Workflow Action */}
-      <div className={`col-span-${getColumnConfig('workflow')?.colSpan} flex items-center justify-center`}>
+      <div style={getColSpanStyle('workflow')} className="flex items-center justify-center">
         {onTriggerWorkflow ? (
           <button
             className="p-1.5 text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -260,7 +275,7 @@ export const TableRow: React.FC<TableRowProps> = ({
       </div>
       
       {/* Edit Action */}
-      <div className={`col-span-${getColumnConfig('edit')?.colSpan} flex items-center justify-center`}>
+      <div style={getColSpanStyle('edit')} className="flex items-center justify-center">
         {onEdit ? (
           <button
             className="p-1.5 text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded-full transition-colors border border-orange-200"
@@ -272,34 +287,6 @@ export const TableRow: React.FC<TableRowProps> = ({
           </button>
         ) : (
           <span className="text-slate-400 text-xs">—</span>
-        )}
-      </div>
-      
-      {/* Contact Information */}
-      <div className={`col-span-${getColumnConfig('contacts')?.colSpan} hidden lg:flex flex-col gap-1 min-w-0`}>
-        {listing.primary_contact_first_name ? (
-          <div className="flex items-center gap-1 min-w-0">
-            <User className="h-3 w-3 flex-shrink-0 text-slate-500" />
-            <span className="truncate text-xs text-slate-700" title={`${listing.primary_contact_first_name} ${listing.primary_contact_last_name}`}>
-              {listing.primary_contact_first_name} {listing.primary_contact_last_name}
-            </span>
-          </div>
-        ) : listing.contacts_count && listing.contacts_count > 0 ? (
-          <div className="flex items-center gap-1">
-            <User className="h-3 w-3 text-slate-500" />
-            <span className="text-xs text-slate-600">{listing.contacts_count} contact{listing.contacts_count !== 1 ? 's' : ''}</span>
-          </div>
-        ) : (
-          <span className="text-slate-400 text-xs">—</span>
-        )}
-        
-        {listing.primary_contact_company && (
-          <div className="flex items-center gap-1 min-w-0">
-            <Building className="h-3 w-3 flex-shrink-0 text-slate-500" />
-            <span className="truncate text-xs text-slate-600" title={listing.primary_contact_company}>
-              {listing.primary_contact_company}
-            </span>
-          </div>
         )}
       </div>
     </div>

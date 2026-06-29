@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+'use client';
+
+import React from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Listing } from '../../lib/types/listing';
-import { TableHeader } from '../molecules/TableHeader';
-import { TableRow } from '../molecules/TableRow';
+import { ListingsTableContent } from '../molecules/ListingsTableContent';
 import { Pagination } from '../molecules/Pagination';
 import { Badge } from '../atoms/Badge';
-import { ListingEditModal } from './ListingEditModal';
 import { formatCurrency, formatNumber } from '../../lib/utils/formatters';
 import { Gauge, Clock, Bell, Send, Workflow, Edit } from 'lucide-react';
 
@@ -26,6 +27,7 @@ interface ListingsTableProps {
   onSelectAll?: (selected: boolean) => void;
   isAllSelected?: boolean;
   isIndeterminate?: boolean;
+  onListingUpdated?: (updatedListing: Listing) => void;
 }
 
 export const ListingsTable: React.FC<ListingsTableProps> = ({
@@ -45,59 +47,59 @@ export const ListingsTable: React.FC<ListingsTableProps> = ({
   onSelectListing,
   onSelectAll,
   isAllSelected = false,
-  isIndeterminate = false
+  isIndeterminate = false,
+  onListingUpdated
 }) => {
-  const [editingListing, setEditingListing] = useState<Listing | null>(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  
   const handleSort = (key: keyof Listing | 'decision_status' | 'decision_reasons') => {
     onSort(key);
   };
-
+  
   const handleEditListing = (listing: Listing) => {
-    setEditingListing(listing);
+    // Preserve page parameter when navigating to detail page
+    const page = searchParams.get('page');
+    const perPage = searchParams.get('perPage');
+    const params = new URLSearchParams();
+    if (page) params.set('page', page);
+    if (perPage) params.set('perPage', perPage);
+    const queryString = params.toString();
+    router.push(`/listings/${listing.id}${queryString ? `?${queryString}` : ''}`);
   };
-
-  const handleSaveListing = (updatedListing: Listing) => {
-    // You might want to emit an event or call a callback here to update the parent component
-    // For now, we'll just close the modal
-    setEditingListing(null);
-  };
-
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      {/* Desktop/Tablet Table View */}
-      <div className="hidden md:block">
-        <TableHeader 
-          sort={sort} 
-          onSort={handleSort}
-          onSelectAll={onSelectAll}
-          isAllSelected={isAllSelected}
-          isIndeterminate={isIndeterminate}
-        />
-        {listings.map(listing => (
-          <TableRow
-            key={listing.id}
-            listing={listing}
+    <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-coal-700 bg-claude-surface dark:bg-coal-850 shadow-sm">
+      {/* Desktop/Tablet Table View with Horizontal Scroll */}
+      <div className="hidden md:block overflow-x-auto">
+        <div className="min-w-max">
+          <ListingsTableContent
+            listings={listings}
+            sort={sort}
+            onSort={handleSort}
             onNotify={onNotify}
             onNotifySlack={onNotifySlack}
             onTriggerWorkflow={onTriggerWorkflow}
             onEdit={handleEditListing}
-            isSelected={selectedListings.has(listing.id)}
-            onSelect={onSelectListing}
+            selectedListings={selectedListings}
+            onSelectListing={onSelectListing}
+            onSelectAll={onSelectAll}
+            isAllSelected={isAllSelected}
+            isIndeterminate={isIndeterminate}
           />
-        ))}
+        </div>
       </div>
       
       {/* Mobile Card View */}
       <div className="md:hidden">
         {listings.map(listing => (
-          <div key={listing.id} className="border-b border-slate-200 p-4 last:border-b-0">
+          <div key={listing.id} className="border-b border-slate-200 dark:border-coal-700 p-4 last:border-b-0">
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
                   checked={selectedListings.has(listing.id)}
                   onChange={(e) => onSelectListing?.(listing.id, e.target.checked)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-claude-divider rounded"
                 />
                 <Badge variant="default">{listing.score}</Badge>
                 {listing.status && (
@@ -158,7 +160,10 @@ export const ListingsTable: React.FC<ListingsTableProps> = ({
                 <span className="text-lg font-bold text-green-600">{formatCurrency(listing.price)}</span>
               </div>
               
-              <div className="text-sm text-slate-600 font-mono">{listing.vin}</div>
+              <div className="text-sm text-slate-600 font-mono">
+                {listing.vin && <div>VIN: {listing.vin}</div>}
+                {listing.lpn && <div>LPN: {listing.lpn}</div>}
+              </div>
               
               <div className="flex items-center gap-4 text-sm text-slate-600">
                 <span className="flex items-center gap-1">
@@ -182,6 +187,7 @@ export const ListingsTable: React.FC<ListingsTableProps> = ({
         ))}
       </div>
       
+      {/* Pagination - Outside scrollable area */}
       <Pagination
         currentPage={currentPage}
         totalPages={totalPages}
@@ -190,16 +196,6 @@ export const ListingsTable: React.FC<ListingsTableProps> = ({
         onPageChange={onPageChange}
         onRowsPerPageChange={onRowsPerPageChange}
       />
-      
-      {/* Edit Modal */}
-      {editingListing && (
-        <ListingEditModal
-          listing={editingListing}
-          isOpen={!!editingListing}
-          onClose={() => setEditingListing(null)}
-          onSave={handleSaveListing}
-        />
-      )}
     </div>
   );
 };

@@ -97,6 +97,7 @@ def get_user_by_email(email: str) -> Optional[UserInDB]:
                 row = cur.fetchone()
                 if row:
                     is_confirmed = bool(row[5])
+                    role_name = row[6] if row[6] else "unknown"  # Fallback if role is NULL
                     logger.info(
                         "Fetched user %s: is_confirmed raw=%s converted=%s",
                         row[1], row[5], is_confirmed
@@ -107,7 +108,7 @@ def get_user_by_email(email: str) -> Optional[UserInDB]:
                         username=row[2],
                         hashed_password=row[3],
                         role_id=row[4],
-                        role=row[6],
+                        role=role_name,
                         is_confirmed=is_confirmed,
                         last_login=row[7],
                     )
@@ -353,6 +354,10 @@ def update_user(user_id: UUID, update_data: dict) -> Optional[UserOut]:
             return None
 
 def update_user_password(user_id: UUID, current_password: str, new_password: str) -> bool:
+    """
+    Update user password with current password verification.
+    Used when users update their own password.
+    """
     if not DB_ENABLED:
         return False
 
@@ -365,17 +370,49 @@ def update_user_password(user_id: UUID, current_password: str, new_password: str
                 cur.execute("SELECT hashed_password FROM users WHERE id = %s", (str(user_id),))
                 row = cur.fetchone()
                 if not row:
+                    logger.warning(f"User not found for password update: {user_id}")
                     return False
 
                 if not verify_password(current_password, row[0]):
+                    logger.warning(f"Password verification failed for user: {user_id}")
                     return False
 
                 # Update password
                 new_hashed = hash_password(new_password)
                 cur.execute("UPDATE users SET hashed_password = %s WHERE id = %s", (new_hashed, str(user_id)))
+                logger.info(f"Password updated successfully for user: {user_id}")
                 return True
         except Exception as e:
-            logger.error("Database error: %s", e, exc_info=True)
+            logger.error("Database error during password update: %s", e, exc_info=True)
+            return False
+
+def reset_user_password(user_id: UUID, new_password: str) -> bool:
+    """
+    Reset user password without current password verification.
+    Used by admins to reset any user's password.
+    """
+    if not DB_ENABLED:
+        return False
+
+    with get_db_connection() as conn:
+        if not conn:
+            return False
+        try:
+            with conn.cursor() as cur:
+                # Check if user exists
+                cur.execute("SELECT id FROM users WHERE id = %s", (str(user_id),))
+                row = cur.fetchone()
+                if not row:
+                    logger.warning(f"User not found for password reset: {user_id}")
+                    return False
+
+                # Update password without current password verification
+                new_hashed = hash_password(new_password)
+                cur.execute("UPDATE users SET hashed_password = %s WHERE id = %s", (new_hashed, str(user_id)))
+                logger.info(f"Password reset successfully for user: {user_id} (admin action)")
+                return True
+        except Exception as e:
+            logger.error("Database error during password reset: %s", e, exc_info=True)
             return False
 
 def get_user_by_id(user_id: UUID) -> Optional[UserOut]:

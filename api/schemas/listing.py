@@ -10,67 +10,140 @@ class Decision(BaseModel):
 
 class ListingIn(BaseModel):
     vin: Optional[str] = None
+    lpn: Optional[str] = None
     price: float
     miles: int
-    dom: int
-    source: Optional[str] = None
-    year: int
-    make: str
-    model: str
+    title: Optional[str] = None
+    # Direct year/make/model/trim from the source (e.g. FB's
+    # vehicle_make_display_name). Win over the AI-extracted values when present.
+    year: Optional[int] = None
+    make: Optional[str] = None
+    model: Optional[str] = None
     trim: Optional[str] = None
-    id: Optional[str] = None               # optional on ingest
+    dom: int
+    location: Optional[str] = None
     radius: Optional[int] = 25
+    images: List[str] = []
+    transmission: Optional[str] = None
+    exteriorColor: Optional[str] = None
+    interiorColor: Optional[str] = None
+    fuelType: Optional[str] = None
+    overallRating: Optional[str] = None
+    detailedRatings: Optional[List[str]] = None
+    condition: Optional[str] = None
+    mpg: Optional[str] = None
+    cleanTitle: Optional[bool] = None
+    paidStatus: Optional[str] = None
+    sellerDescription: Optional[str] = None
+    sellerName: Optional[str] = None
+    sellerJoinedDate: Optional[str] = None
+    fbUserId: Optional[str] = None
+    phoneNumber: Optional[str] = None
+    engine: Optional[str] = None
+    engine_size: Optional[str] = None
+    driveType: Optional[str] = None
+    bodyStyle: Optional[str] = None
+    source: Optional[str] = None
+    status: Optional[str] = None
     reasonCodes: List[str] = []
     buyMax: Optional[float] = None
-    status: Optional[str] = None
-    location: Optional[str] = None
+    id: Optional[str] = None               # optional on ingest
     buyer_id: Optional[str] = None
     decision: Optional[Decision] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    images: List[str] = []
+    # FB Marketplace fields (added migration 023)
+    fbListingId: Optional[str] = None
+    marketplaceCategoryId: Optional[str] = None
+    currency: Optional[str] = None
+    fbCreationTime: Optional[int] = None   # FB epoch seconds; converted to TIMESTAMPTZ on insert
+    city: Optional[str] = None
+    state: Optional[str] = None
+    postalCode: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    isLive: Optional[bool] = None
+    isSold: Optional[bool] = None
+    isPending: Optional[bool] = None
+    sellerType: Optional[str] = None
+    fbSellerRating: Optional[float] = None
+    fbSellerRatingCount: Optional[int] = None
+    fbVerified: Optional[bool] = None
+    # Additional FB Marketplace fields (migration 024)
+    customTitle: Optional[str] = None
+    dealershipName: Optional[str] = None
+    deliveryTypes: Optional[List[str]] = None
+    listingInventoryType: Optional[str] = None
+    country: Optional[str] = None
+    cityDisplayName: Optional[str] = None
+    fbCityId: Optional[str] = None
+    isOnMarketplace: Optional[bool] = None
+    isDraft: Optional[bool] = None
+    fbIsHidden: Optional[bool] = None
+    vehicleCondition: Optional[str] = None
+    vehicleTitleStatus: Optional[str] = None
+    vehicleFeatures: Optional[List[str]] = None
+    vehicleNumberOfOwners: Optional[int] = None
+    vehicleIsPaidOff: Optional[bool] = None
+    odometerUnit: Optional[str] = None
+    horsePower: Optional[float] = None
+    gasMileageCity: Optional[float] = None
+    gasMileageHighway: Optional[float] = None
+    gasMileageCombined: Optional[float] = None
+    co2Emissions: Optional[float] = None
+    safetyRatingOverall: Optional[float] = None
+    safetyRatingFront: Optional[float] = None
+    safetyRatingSide: Optional[float] = None
+    safetyRatingRollover: Optional[float] = None
+    safetyRatingSideBarrier: Optional[float] = None
 
 class ListingOut(BaseModel):
     id: str
     vehicle_key: str
     vin: Optional[str] = None
-    year: int
-    make: str
-    model: str
-    trim: Optional[str] = None
-    miles: int
+    lpn: Optional[str] = None
+    lpnState: Optional[str] = None
     price: float
-    score: Optional[int] = None
+    miles: int
     dom: int
-    source: Optional[str] = None
+    year: Optional[int] = 0
+    make: Optional[str] = ""
+    model: Optional[str] = ""
+    location: Optional[str] = None
     radius: Optional[int] = 25
+    images: Optional[List[str]] = None
+    transmission: Optional[str] = None
+    exteriorColor: Optional[str] = None
+    interiorColor: Optional[str] = None
+    fuelType: Optional[str] = None
+    overallRating: Optional[str] = None
+    detailedRatings: Optional[List[str]] = None
+    condition: Optional[str] = None
+    mpg: Optional[str] = None
+    cleanTitle: Optional[bool] = None
+    paidStatus: Optional[str] = None
+    sellerDescription: Optional[str] = None
+    sellerName: Optional[str] = None
+    sellerJoinedDate: Optional[str] = None
+    fbUserId: Optional[str] = None
+    phoneNumber: Optional[str] = None
+    engine: Optional[str] = None
+    engine_size: Optional[str] = None
+    driveType: Optional[str] = None
+    bodyStyle: Optional[str] = None
+    source: Optional[str] = None
+    status: Optional[str] = None
     reasonCodes: List[str] = []
     buyMax: Optional[float] = None
-    status: Optional[str] = None
-    location: Optional[str] = None
+    trim: Optional[str] = None
     buyer_id: Optional[str] = None
     buyer_username: Optional[str] = None
     decision: Optional[Decision] = None
-    # New editable fields
+    created_at: Optional[datetime] = None
     notes: Optional[str] = None
-    condition_rating: Optional[int] = None
-    interior_color: Optional[str] = None
-    exterior_color: Optional[str] = None
-    transmission: Optional[str] = None
-    fuel_type: Optional[str] = None
-    drivetrain: Optional[str] = None
-    engine_size: Optional[str] = None
-    body_style: Optional[str] = None
     updated_at: Optional[datetime] = None
     updated_by: Optional[str] = None
-    images: Optional[List[str]] = None
-    # Contact information
-    primary_contact_id: Optional[UUID] = None
-    primary_contact_first_name: Optional[str] = None
-    primary_contact_last_name: Optional[str] = None
-    primary_contact_email: Optional[str] = None
-    primary_contact_phone: Optional[str] = None
-    primary_contact_company: Optional[str] = None
-    contacts_count: Optional[int] = 0
+    score: Optional[int] = None
+    mmr: Optional[float] = None
 
 class ListingScoreIn(BaseModel):
     vehicle_key: str
@@ -83,6 +156,8 @@ class ListingScoreIn(BaseModel):
 class ListingUpdate(BaseModel):
     """Schema for updating listing information"""
     vin: Optional[str] = None
+    lpn: Optional[str] = None
+    lpn_state: Optional[str] = None
     notes: Optional[str] = None
     condition_rating: Optional[int] = Field(None, ge=1, le=5)
     interior_color: Optional[str] = None
@@ -94,19 +169,24 @@ class ListingUpdate(BaseModel):
     body_style: Optional[str] = None
     price: Optional[float] = None
     miles: Optional[int] = None
+    dom: Optional[int] = None
     location: Optional[str] = None
     images: Optional[List[str]] = None
-
-class ListingContactLink(BaseModel):
-    """Schema for linking a contact to a listing"""
-    contact_id: UUID
-    relationship_type: str = "seller"  # 'seller', 'dealer', 'contact', 'other'
-    is_primary: bool = False
-    notes: Optional[str] = None
-
-class ListingContactUnlink(BaseModel):
-    """Schema for unlinking a contact from a listing"""
-    contact_id: UUID
+    mmr: Optional[float] = None
+    overall_rating: Optional[str] = None
+    condition: Optional[str] = None
+    mpg: Optional[str] = None
+    clean_title: Optional[bool] = None
+    paid_status: Optional[str] = None
+    seller_name: Optional[str] = None
+    phone_number: Optional[str] = None
+    seller_description: Optional[str] = None
+    seller_joined_date: Optional[str] = None
+    detailed_ratings: Optional[List[str]] = None
+    status: Optional[str] = None
+    score: Optional[int] = None
+    buy_max: Optional[float] = None
+    radius: Optional[int] = None
 
 class ListingActivityOut(BaseModel):
     """Schema for listing activity history"""

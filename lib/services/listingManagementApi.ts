@@ -1,4 +1,4 @@
-import { Listing, ListingUpdate, ListingContactLink, ListingActivity, Contact } from '../types/listing';
+import { Listing, ListingUpdate, ListingActivity, Contact } from '../types/listing';
 
 const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL ?? '/api';
 
@@ -43,38 +43,9 @@ export const getListingDetails = async (listingId: number): Promise<Listing> => 
   return handleResponse(response);
 };
 
-// ==============================================
-// CONTACT LINKING FUNCTIONS
-// ==============================================
-
-export const linkContactToListing = async (
-  listingId: number, 
-  contactLink: ListingContactLink
-): Promise<{ message: string; listing_id: number; contact_id: string }> => {
-  const response = await fetch(`${API_BASE}/listings/${listingId}/contacts`, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify(contactLink),
-  });
-  
-  return handleResponse(response);
-};
-
-export const unlinkContactFromListing = async (
-  listingId: number, 
-  contactId: string
-): Promise<{ message: string; listing_id: number; contact_id: string }> => {
-  const response = await fetch(`${API_BASE}/listings/${listingId}/contacts/${contactId}`, {
+export const deleteListing = async (listingId: number): Promise<{ message: string; listing_id: number }> => {
+  const response = await fetch(`${API_BASE}/listings/${listingId}`, {
     method: 'DELETE',
-    headers: getAuthHeaders(),
-  });
-  
-  return handleResponse(response);
-};
-
-export const getListingContacts = async (listingId: number): Promise<Contact[]> => {
-  const response = await fetch(`${API_BASE}/listings/${listingId}/contacts`, {
-    method: 'GET',
     headers: getAuthHeaders(),
   });
   
@@ -84,6 +55,19 @@ export const getListingContacts = async (listingId: number): Promise<Contact[]> 
 // ==============================================
 // ACTIVITY HISTORY FUNCTIONS
 // ==============================================
+
+export const calculateListingScore = async (listingId: number): Promise<{
+  score: number;
+  buyMax: number;
+  reasonCodes: string[];
+}> => {
+  const response = await fetch(`${API_BASE}/listings/${listingId}/score`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  
+  return handleResponse(response);
+};
 
 export const getListingActivities = async (
   listingId: number, 
@@ -176,6 +160,167 @@ export const deleteContact = async (contactId: string): Promise<{ message: strin
 
 export const getContactTypes = async (): Promise<Array<{ id: number; name: string; description?: string }>> => {
   const response = await fetch(`${API_BASE}/crm/contacts/types`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+  
+  return handleResponse(response);
+};
+
+// ==============================================
+// COMMUNICATION FUNCTIONS (CALLS & SMS)
+// ==============================================
+
+export interface CallResponse {
+  success: boolean;
+  call_sid?: string;
+  status?: string;
+  message?: string;
+  error?: string;
+}
+
+export interface SMSResponse {
+  success: boolean;
+  message_sid?: string;
+  status?: string;
+  message?: string;
+  error?: string;
+}
+
+export const initiateCall = async (contactId: string, options?: {
+  phone_number?: string;
+  twiml?: string;
+  url?: string;
+}): Promise<CallResponse> => {
+  const response = await fetch(`${API_BASE}/crm/communications/calls`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({
+      contact_id: contactId,
+      ...options
+    }),
+  });
+  
+  return handleResponse(response);
+};
+
+export const getCallStatus = async (callSid: string): Promise<{
+  success: boolean;
+  call_sid?: string;
+  status?: string;
+  duration?: number;
+  to?: string;
+  from?: string;
+  start_time?: string;
+  end_time?: string;
+  error?: string;
+}> => {
+  const response = await fetch(`${API_BASE}/crm/communications/calls/${callSid}/status`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+  
+  return handleResponse(response);
+};
+
+export const stopCall = async (callSid: string): Promise<CallResponse> => {
+  const response = await fetch(`${API_BASE}/crm/communications/calls/${callSid}/stop`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  
+  return handleResponse(response);
+};
+
+export const sendSMS = async (contactId: string, message: string, phoneNumber?: string): Promise<SMSResponse> => {
+  const response = await fetch(`${API_BASE}/crm/communications/sms`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({
+      contact_id: contactId,
+      message: message,
+      phone_number: phoneNumber
+    }),
+  });
+  
+  return handleResponse(response);
+};
+
+export interface SMSMessage {
+  id: string;
+  type: string;
+  subject: string;
+  content: string;
+  direction: 'inbound' | 'outbound';
+  status: string;
+  created_at: string;
+  from_phone?: string;
+  to_phone?: string;
+}
+
+export interface SMSHistoryResponse {
+  messages: SMSMessage[];
+  total: number;
+}
+
+export const getSMSHistory = async (contactId: string, limit: number = 50): Promise<SMSHistoryResponse> => {
+  const response = await fetch(`${API_BASE}/crm/communications/sms/history/${contactId}?limit=${limit}`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+  
+  return handleResponse(response);
+};
+
+// Communication (SMS + Calls) combined
+export interface Communication {
+  id: string;
+  type: 'sms' | 'call' | 'email' | 'meeting';
+  subject: string;
+  content: string;
+  direction: 'inbound' | 'outbound';
+  status: string;
+  created_at: string;
+  from_phone?: string;
+  to_phone?: string;
+}
+
+export interface CommunicationHistoryResponse {
+  communications: Communication[];
+  total: number;
+}
+
+export const getCommunicationHistory = async (
+  contactId: string, 
+  limit: number = 50,
+  communicationType?: 'sms' | 'call'
+): Promise<CommunicationHistoryResponse> => {
+  let url = `${API_BASE}/crm/communications/history/${contactId}?limit=${limit}`;
+  if (communicationType) {
+    url += `&communication_type=${communicationType}`;
+  }
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+  
+  return handleResponse(response);
+};
+
+// ==============================================
+// BROWSER VOICE (WebRTC) FUNCTIONS
+// ==============================================
+
+export interface VoiceTokenResponse {
+  success: boolean;
+  token?: string;
+  identity?: string;
+  error?: string;
+}
+
+export const getVoiceToken = async (): Promise<VoiceTokenResponse> => {
+  const response = await fetch(`${API_BASE}/crm/communications/voice/token`, {
     method: 'GET',
     headers: getAuthHeaders(),
   });

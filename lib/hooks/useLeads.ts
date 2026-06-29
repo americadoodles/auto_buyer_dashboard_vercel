@@ -1,11 +1,13 @@
 // Custom hook for Leads data
 import { useState, useEffect } from 'react';
-import { leadsApi, Lead, LeadStatus, LeadSource, LeadSummary, LeadConversionMetrics } from '../services/leadsApi';
+import { leadsApi } from '../services/leadsApi';
+import type { Lead, LeadStatus, LeadSource, LeadSummary, LeadConversionMetrics } from '../types/lead';
 
 interface UseLeadsParams {
   skip?: number;
   limit?: number;
   status_id?: number;
+  source_id?: number;
   assigned_to?: string;
   search?: string;
 }
@@ -16,6 +18,12 @@ export const useLeads = (params?: UseLeadsParams) => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchLeads = async () => {
+    // Don't fetch if params is undefined or limit is 0 (indicates we're waiting for user info)
+    if (!params || params.limit === 0) {
+      setLoading(false);
+      return;
+    }
+    
     try {
       setLoading(true);
       setError(null);
@@ -31,7 +39,7 @@ export const useLeads = (params?: UseLeadsParams) => {
 
   useEffect(() => {
     fetchLeads();
-  }, [params?.skip, params?.limit, params?.status_id, params?.assigned_to, params?.search]);
+  }, [params?.skip, params?.limit, params?.status_id, params?.source_id, params?.assigned_to, params?.search]);
 
   const refreshLeads = () => {
     fetchLeads();

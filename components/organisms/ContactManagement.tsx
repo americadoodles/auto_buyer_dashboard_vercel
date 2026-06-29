@@ -9,6 +9,16 @@ import { Button } from '../atoms/Button';
 import { Input } from '../atoms/Input';
 import { Icon } from '../atoms/Icon';
 import { Pagination } from '../molecules/Pagination';
+import { ContactEditModal } from './ContactEditModal';
+import { ConfirmationModal } from './ConfirmationModal';
+import { CallModal } from './CallModal';
+import { SMSModal } from './SMSModal';
+import { Listing } from '../../lib/types/listing';
+import { deleteContact } from 'lib/services/listingManagementApi';
+import { leadsApi } from '../../lib/services/leadsApi';
+import { dealsApi } from '../../lib/services/dealsApi';
+import { useToast } from '../../hooks/useToast';
+import { useAuth } from '../../app/auth/useAuth';
 
 interface Contact {
   id: string;
@@ -19,6 +29,7 @@ interface Contact {
   mobile: string;
   company: string;
   job_title: string;
+  notes?: string;
   contact_type: {
     id: number;
     name: string;
@@ -32,6 +43,12 @@ interface Contact {
   created_at: string;
   updated_at: string;
   last_contact: string;
+  status?: {
+    id: number;
+    name: string;
+    color: string;
+  };
+  listing?: Listing;
 }
 
 interface ContactManagementProps {
@@ -41,8 +58,8 @@ interface ContactManagementProps {
   totalPages: number;
   onPageChange: (page: number) => void;
   onContactClick: (contactId: string) => void;
-  onCreateContact: () => void;
   onExportContacts: () => void;
+  onContactUpdated?: () => void;
 }
 
 export const ContactManagement: React.FC<ContactManagementProps> = ({
@@ -52,13 +69,24 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
   totalPages,
   onPageChange,
   onContactClick,
-  onCreateContact,
-  onExportContacts
+  onExportContacts,
+  onContactUpdated
 }) => {
+  const { showSuccess, showError } = useToast();
+  const { user } = useAuth();
+  const isBuyer = user?.role?.toLowerCase() === 'buyer';
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [assignedFilter, setAssignedFilter] = useState('all');
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedContact, setSelectedContact] = useState<Contact | undefined>(undefined);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [contactToDelete, setContactToDelete] = useState<Contact | undefined>(undefined);
+  const [deleting, setDeleting] = useState(false);
+  const [showCallModal, setShowCallModal] = useState(false);
+  const [showSMSModal, setShowSMSModal] = useState(false);
+  const [selectedContactForCommunication, setSelectedContactForCommunication] = useState<Contact | undefined>(undefined);
 
   const getTypeColor = (type: string) => {
     switch (type.toLowerCase()) {
@@ -82,248 +110,415 @@ export const ContactManagement: React.FC<ContactManagementProps> = ({
     return date.toLocaleDateString();
   };
 
+  const formatCalendarDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const handleRowClick = (contact: Contact) => {
+    // Buyers cannot edit contacts
+    if (isBuyer) return;
+    setSelectedContact(contact);
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setSelectedContact(undefined);
+  };
+
+  const handleContactSaved = (updatedContact: any) => {
+    handleCloseEditModal();
+    // Notify parent to refresh the contacts list
+    if (onContactUpdated) {
+      onContactUpdated();
+    }
+  };
+
+  const handleRemoveContact = (e: React.MouseEvent, contact: Contact) => {
+    e.stopPropagation(); // Prevent row click
+    setContactToDelete(contact);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!contactToDelete) return;
+    
+    setDeleting(true);
+    try {
+      // Now delete the contact
+      await deleteContact(contactToDelete.id);
+      
+      // Show success toast
+      const contactName = `${contactToDelete.first_name} ${contactToDelete.last_name}`;
+      showSuccess('Contact Deleted', `${contactName} has been successfully deleted`);
+      
+      // Notify parent to refresh the contacts list
+      if (onContactUpdated) {
+        onContactUpdated();
+      }
+      setShowDeleteConfirm(false);
+      setContactToDelete(undefined);
+    } catch (error) {
+      console.error('Error deleting contact:', error);
+      const contactName = contactToDelete ? `${contactToDelete.first_name} ${contactToDelete.last_name}` : 'Contact';
+      showError('Failed to Delete Contact', `Failed to delete ${contactName}. ${error instanceof Error ? error.message : 'Please try again.'}`);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Contact Management</h1>
-          <p className="text-gray-600 mt-1">
-            Manage your contacts and customer relationships ({totalContacts} total)
-          </p>
-        </div>
-        <div className="flex space-x-2">
-          <Button variant="outline" onClick={onExportContacts}>
-            <Icon name="download" className="w-4 h-4 mr-2" />
-            Export
-          </Button>
-          <Button onClick={onCreateContact}>
-            <Icon name="plus" className="w-4 h-4 mr-2" />
-            New Contact
-          </Button>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <Card className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="">
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex justify-between items-center">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Search
-            </label>
-            <Input
-              type="text"
-              placeholder="Search contacts..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full"
-            />
+            <h1 className="text-3xl font-bold text-claude-ink dark:text-coal-100">Contact Management</h1>
+            <p className="text-claude-muted dark:text-coal-300 mt-1">
+              Manage your contacts and customer relationships ({totalContacts} total)
+            </p>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Type
-            </label>
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">All Types</option>
-              <option value="customer">Customer</option>
-              <option value="prospect">Prospect</option>
-              <option value="vendor">Vendor</option>
-              <option value="partner">Partner</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Status
-            </label>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Assigned To
-            </label>
-            <select
-              value={assignedFilter}
-              onChange={(e) => setAssignedFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">All Users</option>
-              <option value="me">Me</option>
-              <option value="john">John Doe</option>
-              <option value="jane">Jane Smith</option>
-            </select>
+          <div className="flex space-x-2">
+            <Button variant="outline" onClick={onExportContacts}>
+              <Icon name="download" className="w-4 h-4 mr-2" />
+              Export
+            </Button>
+              <Button onClick={() => {
+                setSelectedContact(undefined);
+                setIsEditModalOpen(true);
+              }}>
+                <Icon name="plus" className="w-4 h-4 mr-2" />
+                New Contact
+              </Button>
           </div>
         </div>
-      </Card>
 
-      {/* Contact Analytics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="p-4">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <Icon name="users" className="w-4 h-4 text-blue-600" />
-              </div>
+        {/* Filters */}
+        <Card className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-2">
+                Search
+              </label>
+              <Input
+                type="text"
+                placeholder="Search contacts..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full"
+              />
             </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-500">Total Contacts</p>
-              <p className="text-2xl font-semibold text-gray-900">{totalContacts}</p>
+            <div>
+              <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-2">
+                Type
+              </label>
+              <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-claude-divider dark:border-coal-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100"
+              >
+                <option value="all">All Types</option>
+                <option value="customer">Customer</option>
+                <option value="prospect">Prospect</option>
+                <option value="vendor">Vendor</option>
+                <option value="partner">Partner</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-2">
+                Status
+              </label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-claude-divider dark:border-coal-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100"
+              >
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-claude-text dark:text-coal-300 mb-2">
+                Assigned To
+              </label>
+              <select
+                value={assignedFilter}
+                onChange={(e) => setAssignedFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-claude-divider dark:border-coal-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100"
+              >
+                <option value="all">All Users</option>
+                <option value="me">Me</option>
+                <option value="john">John Doe</option>
+                <option value="jane">Jane Smith</option>
+              </select>
             </div>
           </div>
         </Card>
-        <Card className="p-4">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                <Icon name="user-check" className="w-4 h-4 text-green-600" />
-              </div>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-500">Customers</p>
-              <p className="text-2xl font-semibold text-gray-900">
-                {contacts.filter(contact => contact.contact_type.name === 'Customer').length}
-              </p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                <Icon name="user-plus" className="w-4 h-4 text-yellow-600" />
-              </div>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-500">Prospects</p>
-              <p className="text-2xl font-semibold text-gray-900">
-                {contacts.filter(contact => contact.contact_type.name === 'Prospect').length}
-              </p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                <Icon name="activity" className="w-4 h-4 text-purple-600" />
-              </div>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-500">Active</p>
-              <p className="text-2xl font-semibold text-gray-900">
-                {contacts.filter(contact => contact.is_active).length}
-              </p>
-            </div>
-          </div>
-        </Card>
-      </div>
 
-      {/* Contact List */}
-      <Card className="p-6">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <TableHeader
-              columns={[
-                { key: 'name', label: 'Name', sortable: true },
-                { key: 'company', label: 'Company', sortable: true },
-                { key: 'email', label: 'Email', sortable: true },
-                { key: 'phone', label: 'Phone', sortable: true },
-                { key: 'type', label: 'Type', sortable: true },
-                { key: 'assigned', label: 'Assigned To', sortable: true },
-                { key: 'last_contact', label: 'Last Contact', sortable: true },
-                { key: 'status', label: 'Status', sortable: true },
-                { key: 'actions', label: 'Actions', sortable: false }
-              ]}
-            />
-            <tbody className="bg-white divide-y divide-gray-200">
-              {contacts.map((contact) => (
-                <TableRow key={contact.id} onClick={() => onContactClick(contact.id)} className="cursor-pointer hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
-                        <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                          <span className="text-sm font-medium text-gray-700">
-                            {contact.first_name[0]}{contact.last_name[0]}
-                          </span>
+        {/* Contact Analytics */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card className="p-4">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+                  <Icon name="users" className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                </div>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-claude-subtle dark:text-coal-400">Total Contacts</p>
+                <p className="text-2xl font-semibold text-claude-ink dark:text-coal-100">{totalContacts}</p>
+              </div>
+            </div>
+          </Card>
+          <Card className="p-4">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                  <Icon name="user-check" className="w-4 h-4 text-green-600 dark:text-green-400" />
+                </div>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-claude-subtle dark:text-coal-400">Customers</p>
+                <p className="text-2xl font-semibold text-claude-ink dark:text-coal-100">
+                  {contacts.filter(contact => contact.contact_type.name === 'Customer').length}
+                </p>
+              </div>
+            </div>
+          </Card>
+          <Card className="p-4">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
+                  <Icon name="user-plus" className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+                </div>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-claude-subtle dark:text-coal-400">Prospects</p>
+                <p className="text-2xl font-semibold text-claude-ink dark:text-coal-100">
+                  {contacts.filter(contact => contact.contact_type.name === 'Prospect').length}
+                </p>
+              </div>
+            </div>
+          </Card>
+          <Card className="p-4">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
+                  <Icon name="activity" className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                </div>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-claude-subtle dark:text-coal-400">Active</p>
+                <p className="text-2xl font-semibold text-claude-ink dark:text-coal-100">
+                  {contacts.filter(contact => contact.is_active).length}
+                </p>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Contact List */}
+        <Card className="p-6">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <TableHeader
+                columns={[
+                  { key: 'name', label: 'Name', sortable: true },
+                  { key: 'company', label: 'Company', sortable: true },
+                  { key: 'email', label: 'Email', sortable: true },
+                  { key: 'phone', label: 'Phone', sortable: true },
+                  { key: 'mobile', label: 'Mobile', sortable: true },
+                  { key: 'assigned', label: 'Assigned To', sortable: true },
+                  { key: 'status', label: 'Status', sortable: true },
+                  { key: 'updated_at', label: 'Updated At', sortable: true },
+                  { key: 'actions', label: 'Actions', sortable: false }
+                ]}
+              />
+              <tbody className="bg-claude-surface dark:bg-coal-850 divide-y divide-gray-200 dark:divide-gray-700">
+                {contacts.map((contact) => (
+                  <TableRow key={contact.id} onClick={() => handleRowClick(contact)} className={isBuyer ? "group hover:bg-claude-cream dark:hover:bg-coal-700/50" : "cursor-pointer group hover:bg-claude-cream dark:hover:bg-coal-700/50"}>
+                    <td className="px-2 py-2 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10">
+                          <div className="h-10 w-10 rounded-full bg-claude-divider dark:bg-coal-600 group-hover:bg-blue-500 dark:group-hover:bg-blue-600 transition-colors duration-150 flex items-center justify-center">
+                            <span className="text-sm font-medium text-claude-text dark:text-coal-300 group-hover:text-coal-100 transition-colors duration-150">
+                              {contact.first_name?.[0] || ''}{contact.last_name?.[0] || ''}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-claude-ink dark:text-coal-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">
+                            {contact.first_name} {contact.last_name}
+                          </div>
+                          {contact.job_title && (
+                            <div className="text-sm text-claude-subtle dark:text-coal-400">{contact.job_title}</div>
+                          )}
                         </div>
                       </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">
-                          {contact.first_name} {contact.last_name}
-                        </div>
-                        {contact.job_title && (
-                          <div className="text-sm text-gray-500">{contact.job_title}</div>
+                    </td>
+                    <td className="px-2 py-2 whitespace-nowrap text-sm text-claude-ink dark:text-coal-100">
+                      {contact.company || '-'}
+                    </td>
+                    <td className="px-2 py-2 whitespace-nowrap text-sm text-claude-ink dark:text-coal-100">
+                      {contact.email || '-'}
+                    </td>
+                    <td className="px-2 py-2 whitespace-nowrap text-sm text-claude-ink dark:text-coal-100">
+                      {contact.phone || '-'}
+                    </td>
+                    <td className="px-2 py-2 whitespace-nowrap text-sm text-claude-ink dark:text-coal-100">
+                      {contact.mobile || '-'}
+                    </td>
+                    <td className="px-2 py-2 whitespace-nowrap text-sm text-claude-ink dark:text-coal-100">
+                      {contact.assigned_to?.username || 'Unassigned'}
+                    </td>
+                    <td className="px-2 py-2 whitespace-nowrap text-center">
+                      {contact.status ? (
+                        <Badge color={contact.status.color || 'blue'}>
+                          {contact.status.name}
+                        </Badge>
+                      ) : (
+                        <Badge color={contact.is_active ? 'green' : 'gray'}>
+                          {contact.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
+                      )}
+                    </td>
+                    <td className="px-2 py-2 whitespace-nowrap text-sm text-claude-subtle dark:text-coal-400">
+                      {formatCalendarDate(contact.updated_at)}
+                    </td>
+                    <td className="px-2 py-2 whitespace-nowrap text-sm font-medium">
+                      <div className="flex space-x-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedContactForCommunication(contact);
+                            setShowCallModal(true);
+                          }}
+                          title="Call"
+                        >
+                          <Icon name="phone" className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedContactForCommunication(contact);
+                            setShowSMSModal(true);
+                          }}
+                          title="Send SMS"
+                        >
+                          <Icon name="message-square" className="w-4 h-4" />
+                        </Button>
+                        {!isBuyer && (
+                          <Button 
+                            variant="outline" 
+                            onClick={(e) => handleRemoveContact(e, contact)}
+                            className="text-red-600 dark:text-red-400 border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center"
+                            size="sm"
+                          >
+                            <Icon name="trash-2" className="w-4 h-4" />
+                          </Button>
                         )}
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {contact.company}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {contact.email}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {contact.phone || contact.mobile}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge color={getTypeColor(contact.contact_type.name)}>
-                      {contact.contact_type.name}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {contact.assigned_to.username}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(contact.last_contact)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge color={contact.is_active ? 'green' : 'gray'}>
-                      {contact.is_active ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
-                      <Button variant="ghost" size="sm">
-                        <Icon name="eye" className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Icon name="edit" className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Icon name="phone" className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Icon name="mail" className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </td>
-                </TableRow>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    </td>
+                  </TableRow>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-        {/* Pagination */}
-        <div className="mt-6">
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={onPageChange}
-          />
-        </div>
-      </Card>
+          {/* Pagination */}
+          <div className="mt-6">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={onPageChange}
+            />
+          </div>
+        </Card>
+
+      </div>
+
+      {/* Contact Edit Modal */}
+      <ContactEditModal
+        contact={selectedContact ? {
+          id: selectedContact.id,
+          first_name: selectedContact.first_name,
+          last_name: selectedContact.last_name,
+          email: selectedContact.email,
+          phone: selectedContact.phone,
+          mobile: selectedContact.mobile,
+          company: selectedContact.company,
+          job_title: selectedContact.job_title,
+          notes: selectedContact.notes || '',
+          is_active: selectedContact.is_active,
+          created_at: selectedContact.created_at,
+          updated_at: selectedContact.updated_at
+        } : null}
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        onSave={handleContactSaved}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteConfirm}
+        onClose={() => {
+          setShowDeleteConfirm(false);
+          setContactToDelete(undefined);
+        }}
+        onConfirm={handleDeleteConfirm}
+        title="Confirm Deletion"
+        message={contactToDelete ? `Are you sure you want to delete ${contactToDelete.first_name} ${contactToDelete.last_name}? This action cannot be undone.` : ''}
+        confirmText="Yes"
+        cancelText="No"
+        variant="danger"
+        loading={deleting}
+        loadingText="Deleting..."
+      />
+
+      {/* Call Modal */}
+      <CallModal
+        isOpen={showCallModal}
+        onClose={() => {
+          setShowCallModal(false);
+          setSelectedContactForCommunication(undefined);
+        }}
+        contactId={selectedContactForCommunication?.id || ''}
+        contactName={selectedContactForCommunication ? `${selectedContactForCommunication.first_name} ${selectedContactForCommunication.last_name}` : ''}
+        phone={selectedContactForCommunication?.phone}
+        mobile={selectedContactForCommunication?.mobile}
+        onCallInitiated={() => {
+          if (onContactUpdated) {
+            onContactUpdated();
+          }
+        }}
+      />
+
+      {/* SMS Modal */}
+      <SMSModal
+        isOpen={showSMSModal}
+        onClose={() => {
+          setShowSMSModal(false);
+          setSelectedContactForCommunication(undefined);
+        }}
+        contactId={selectedContactForCommunication?.id || ''}
+        contactName={selectedContactForCommunication ? `${selectedContactForCommunication.first_name} ${selectedContactForCommunication.last_name}` : ''}
+        phoneNumber={selectedContactForCommunication?.mobile || selectedContactForCommunication?.phone}
+        onSent={() => {
+          if (onContactUpdated) {
+            onContactUpdated();
+          }
+        }}
+      />
     </div>
   );
 };

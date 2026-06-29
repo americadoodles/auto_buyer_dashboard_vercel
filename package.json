@@ -3,28 +3,36 @@
   "private": true,
   "scripts": {
     "fastapi-dev": "pip install -r requirements.txt && python -m uvicorn api.index:app --reload --port 8001",
-    "next-dev": "next dev",
+    "next-dev": "next dev --webpack",
     "dev": "concurrently \"npm run next-dev\" \"npm run fastapi-dev\"",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@syncfusion/ej2-react-kanban": "^24.1.47",
+    "@twilio/voice-sdk": "^2.18.0",
+    "apexcharts": "^5.3.6",
     "autoprefixer": "10.4.19",
     "concurrently": "^8.2.2",
-    "framer-motion": "11.0.0",
+    "framer-motion": "^12.23.25",
     "lucide-react": "0.439.0",
-    "next": "^15.5.2",
+    "next": "^16.1.0",
+    "next-themes": "^0.4.6",
     "postcss": "8.4.39",
-    "react": "18.2.0",
+    "react": "^19.2.3",
     "react-activity-calendar": "^2.7.15",
-    "react-dom": "18.2.0",
+    "react-apexcharts": "^1.9.0",
+    "react-dom": "^19.2.3",
     "tailwindcss": "3.4.7"
   },
   "devDependencies": {
     "@types/node": "20.12.12",
-    "@types/react": "18.2.73",
-    "@types/react-dom": "18.2.23",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "eslint": "9.39.1",
+    "eslint-config-next": "^16.1.0",
     "postcss-cli": "10.1.0",
     "typescript": "5.5.2"
   }

@@ -70,6 +70,23 @@ export const fbMessengerApi = {
         body: JSON.stringify({ body }),
       },
     ),
+  // Listing-initiated: open (or create) the conversation for a vehicle listing
+  // and trigger a chat-history scrape; returns the thread.
+  openListing: (listingId: string | number) =>
+    ApiService.request<MessengerThread>(
+      `/agents/fb-messenger/listings/${encodeURIComponent(String(listingId))}/open`,
+      { method: 'POST' },
+    ),
+  // Send a message to a listing's seller (keyed by FB listing id).
+  sendListingMessage: (listingId: string | number, body: string) =>
+    ApiService.request<MessengerMessage>(
+      `/agents/fb-messenger/listings/${encodeURIComponent(String(listingId))}/messages`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ body }),
+      },
+    ),
   setAiMode: (threadId: string, aiMode: MessengerAiMode) =>
     ApiService.request<MessengerThread>(
       `/agents/fb-messenger/threads/${encodeURIComponent(threadId)}/ai_mode`,

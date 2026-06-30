@@ -44,7 +44,9 @@
       "PowerShell(& c:\\\\workstation\\\\OI\\\\auto_buyer_dashboard_vercel\\\\.venv\\\\Scripts\\\\python.exe -m py_compile api/services/damage_detection_service.py api/services/extraction_writeback.py api/services/damage_agent_runner.py api/repositories/repositories.py api/repositories/listing_management.py api/schemas/listing.py api/core/db.py; if \\($?\\) { \"OK - all modules compiled\" })",
       "PowerShell(& c:\\\\workstation\\\\OI\\\\auto_buyer_dashboard_vercel\\\\.venv\\\\Scripts\\\\python.exe -m py_compile api/schemas/listing.py api/repositories/listing_management.py; if \\($?\\) { \"OK - compiled\" })",
       "PowerShell(& c:\\\\workstation\\\\OI\\\\auto_buyer_dashboard_vercel\\\\.venv\\\\Scripts\\\\python.exe -m py_compile api/repositories/repositories.py api/repositories/listing_management.py api/core/db.py api/schemas/listing.py; if \\($?\\) { \"OK - compiled\" })",
-      "PowerShell(& c:\\\\workstation\\\\OI\\\\auto_buyer_dashboard_vercel\\\\.venv\\\\Scripts\\\\python.exe -m py_compile api/repositories/repositories.py api/repositories/listing_management.py api/repositories/crm_leads.py api/services/crm_agents.py api/services/export_service.py api/core/db.py; if \\($?\\) { \"OK - all compiled\" })"
+      "PowerShell(& c:\\\\workstation\\\\OI\\\\auto_buyer_dashboard_vercel\\\\.venv\\\\Scripts\\\\python.exe -m py_compile api/repositories/repositories.py api/repositories/listing_management.py api/repositories/crm_leads.py api/services/crm_agents.py api/services/export_service.py api/core/db.py; if \\($?\\) { \"OK - all compiled\" })",
+      "PowerShell(& \"C:\\\\Dev\\\\Works\\\\auto_buyer_dashboard_vercel\\\\api\\\\.venv\\\\Scripts\\\\python.exe\" \"C:\\\\Users\\\\ADMIN\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Dev-Works-auto-buyer-dashboard-vercel\\\\e5206c6e-f22e-45f9-b1a3-6377207ea9c8\\\\scratchpad\\\\add_cols.py\")",
+      "PowerShell(& \"C:\\\\Dev\\\\Works\\\\auto_buyer_dashboard_vercel\\\\api\\\\.venv\\\\Scripts\\\\python.exe\" \"C:\\\\Users\\\\ADMIN\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Dev-Works-auto-buyer-dashboard-vercel\\\\e5206c6e-f22e-45f9-b1a3-6377207ea9c8\\\\scratchpad\\\\verify.py\")"
     ]
   }
 }

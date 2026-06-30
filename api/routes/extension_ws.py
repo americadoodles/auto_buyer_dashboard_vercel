@@ -183,6 +183,18 @@ async def fb_scraper_extension_ws(
                         sent_at=payload.get("sent_at"),
                         seller_name=payload.get("seller_name"),
                     )
+            elif mtype == "messenger.history":
+                # Chat history scraped from a listing's item page (auto-opened
+                # background tab). Persisted, deduped, into the listing's thread.
+                fb_listing_id = payload.get("fb_listing_id")
+                msgs = payload.get("messages")
+                if isinstance(fb_listing_id, str) and isinstance(msgs, list):
+                    fb_messenger_agent.on_history(
+                        user.id,
+                        fb_listing_id=fb_listing_id,
+                        messages=[m for m in msgs if isinstance(m, dict)],
+                        seller_name=payload.get("seller_name"),
+                    )
             elif mtype == "messenger.send.result":
                 request_id = payload.get("request_id")
                 if isinstance(request_id, str):

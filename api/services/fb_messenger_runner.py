@@ -88,7 +88,7 @@ class FbMessengerRunner:
             raise AgentControlError("Message body cannot be empty.")
 
         thread = execute_with_connection(
-            "SELECT id, fb_thread_id FROM messenger_threads WHERE id = %s AND user_id = %s",
+            "SELECT id, fb_thread_id, listing_id FROM messenger_threads WHERE id = %s AND user_id = %s",
             (thread_id, str(user_id)),
             fetch="one",
             row_factory=dict_row,
@@ -97,6 +97,20 @@ class FbMessengerRunner:
             raise AgentControlError("Unknown thread.")
 
         conn = _require_connection(user_id)
+
+        # The extension's "Message seller" mutation is keyed by FB listing id.
+        # When this thread is linked to a dashboard listing, resolve it so the
+        # extension can send even if it has no live FB thread handle.
+        fb_listing_id: Optional[str] = None
+        if thread.get("listing_id") is not None:
+            listing_row = execute_with_connection(
+                "SELECT fb_listing_id FROM listings WHERE id = %s",
+                (thread["listing_id"],),
+                fetch="one",
+                row_factory=dict_row,
+            )
+            if listing_row and listing_row.get("fb_listing_id"):
+                fb_listing_id = str(listing_row["fb_listing_id"])
 
         row = execute_with_connection(
             "INSERT INTO messenger_messages (thread_id, direction, sender, body, status) "
@@ -115,6 +129,108 @@ class FbMessengerRunner:
             "payload": {
                 "request_id": request_id,
                 "fb_thread_id": thread["fb_thread_id"],
+                "fb_listing_id": fb_listing_id,
+                "body": body,
+            },
+        })
+        return self._serialize_message(self._get_message(message_id))
+
+    # ------------------------------------------------------------------ #
+    # Listing-initiated conversations
+    #
+    # The extension addresses Facebook by Marketplace listing id (both the
+    # "Message seller" GraphQL mutation and the item-page URL it scrapes for
+    # history are listing-keyed). A dashboard listing therefore maps to a
+    # conversation via listings.fb_listing_id; threads started this way use a
+    # synthetic fb_thread_id (`listing:<fb_listing_id>`) so they fit the same
+    # messenger_threads/messages tables and unique constraint as inbound
+    # seller threads.
+    # ------------------------------------------------------------------ #
+
+    def _resolve_fb_listing(self, listing_id: int) -> str:
+        """Return the FB Marketplace listing id for a dashboard listing, or raise."""
+        row = execute_with_connection(
+            "SELECT fb_listing_id FROM listings WHERE id = %s",
+            (listing_id,),
+            fetch="one",
+            row_factory=dict_row,
+        )
+        if row is None:
+            raise AgentControlError("Unknown listing.")
+        fb_listing_id = row.get("fb_listing_id")
+        if not fb_listing_id:
+            raise AgentControlError(
+                "This listing has no Facebook Marketplace id — only FB-sourced "
+                "listings can be messaged."
+            )
+        return str(fb_listing_id)
+
+    def _ensure_listing_thread(self, user_id: UUID, listing_id: int, fb_listing_id: str) -> Dict[str, Any]:
+        """Upsert (and return) the conversation row for a dashboard listing."""
+        synthetic_thread_id = f"listing:{fb_listing_id}"
+        execute_with_connection(
+            "INSERT INTO messenger_threads "
+            "  (user_id, listing_id, fb_thread_id, seller_name) "
+            "VALUES (%s, %s, %s, %s) "
+            "ON CONFLICT (user_id, fb_thread_id) DO UPDATE SET "
+            "  listing_id = coalesce(EXCLUDED.listing_id, messenger_threads.listing_id), "
+            "  updated_at = now()",
+            (str(user_id), listing_id, synthetic_thread_id, "Seller"),
+        )
+        row = execute_with_connection(
+            "SELECT id, contact_id, listing_id, fb_thread_id, seller_name, "
+            "       seller_profile_url, ai_mode, unread_count, last_message_at, "
+            "       last_message_preview, created_at, updated_at "
+            "FROM messenger_threads WHERE user_id = %s AND fb_thread_id = %s",
+            (str(user_id), synthetic_thread_id),
+            fetch="one",
+            row_factory=dict_row,
+        )
+        return dict(row)
+
+    async def open_listing_thread(self, user_id: UUID, listing_id: int) -> Dict[str, Any]:
+        """Ensure a conversation for the listing and ask the extension to scrape
+        its chat history (auto-opens a background FB tab). Returns the thread;
+        scraped messages stream back via the `messenger.history` event."""
+        fb_listing_id = self._resolve_fb_listing(listing_id)
+        conn = _require_connection(user_id)
+        thread = self._ensure_listing_thread(user_id, listing_id, fb_listing_id)
+        request_id = uuid.uuid4().hex
+        await conn.send({
+            "type": "messenger.open",
+            "payload": {"request_id": request_id, "fb_listing_id": fb_listing_id},
+        })
+        logger.info("[%s] messenger.open dispatched for user %s listing %s (fb=%s)",
+                    AGENT_ID, user_id, listing_id, fb_listing_id)
+        return self._serialize_thread(thread)
+
+    async def send_listing_message(self, user_id: UUID, listing_id: int, body: str) -> Dict[str, Any]:
+        """Queue + dispatch an outbound message to a listing's seller, keyed by
+        the FB listing id (no pre-existing FB thread required)."""
+        body = (body or "").strip()
+        if not body:
+            raise AgentControlError("Message body cannot be empty.")
+
+        fb_listing_id = self._resolve_fb_listing(listing_id)
+        conn = _require_connection(user_id)
+        thread = self._ensure_listing_thread(user_id, listing_id, fb_listing_id)
+
+        row = execute_with_connection(
+            "INSERT INTO messenger_messages (thread_id, direction, sender, body, status) "
+            "VALUES (%s, 'outbound', 'human', %s, 'queued') RETURNING id",
+            (thread["id"], body),
+            fetch="one",
+            row_factory=dict_row,
+        )
+        message_id = row["id"]
+
+        request_id = uuid.uuid4().hex
+        self._pending_sends[request_id] = {"user_id": user_id, "message_id": message_id}
+        await conn.send({
+            "type": "messenger.send",
+            "payload": {
+                "request_id": request_id,
+                "fb_listing_id": fb_listing_id,
                 "body": body,
             },
         })
@@ -304,6 +420,120 @@ class FbMessengerRunner:
             "WHERE id = %s",
             (preview, thread_id),
         )
+
+    def on_history(
+        self, user_id: UUID, fb_listing_id: str,
+        messages: List[Dict[str, Any]], seller_name: Optional[str] = None,
+    ) -> None:
+        """Persist chat history scraped by the extension for a listing-keyed
+        conversation. Idempotent: messages already stored (matched on
+        fb_message_id, or on body+direction when no id) are skipped, so
+        re-opening a listing never duplicates history."""
+        synthetic_thread_id = f"listing:{fb_listing_id}"
+        thread = execute_with_connection(
+            "SELECT id, seller_name FROM messenger_threads WHERE user_id = %s AND fb_thread_id = %s",
+            (str(user_id), synthetic_thread_id),
+            fetch="one",
+            row_factory=dict_row,
+        )
+        if thread is None:
+            # Defensive: the open flow normally creates the thread first.
+            listing_row = execute_with_connection(
+                "SELECT id FROM listings WHERE fb_listing_id = %s",
+                (fb_listing_id,),
+                fetch="one",
+                row_factory=dict_row,
+            )
+            listing_id = listing_row["id"] if listing_row else None
+            execute_with_connection(
+                "INSERT INTO messenger_threads (user_id, listing_id, fb_thread_id, seller_name) "
+                "VALUES (%s, %s, %s, %s) ON CONFLICT (user_id, fb_thread_id) DO NOTHING",
+                (str(user_id), listing_id, synthetic_thread_id, seller_name or "Seller"),
+            )
+            thread = execute_with_connection(
+                "SELECT id, seller_name FROM messenger_threads WHERE user_id = %s AND fb_thread_id = %s",
+                (str(user_id), synthetic_thread_id),
+                fetch="one",
+                row_factory=dict_row,
+            )
+            if thread is None:
+                logger.warning("[%s] on_history: could not resolve thread for fb_listing %s",
+                               AGENT_ID, fb_listing_id)
+                return
+
+        thread_id = thread["id"]
+
+        # Authoritative sync: the scrape returns the full active conversation,
+        # so any previously-stored *scraped* message (one carrying an
+        # fb_message_id) that is absent from this scrape belonged to a different
+        # conversation captured before scraping was scoped to the active thread
+        # — drop it so the listing shows only its own messages. Locally-composed
+        # messages (no fb_message_id, e.g. dashboard-sent replies awaiting their
+        # FB id) are preserved.
+        incoming_ids = [
+            str(m.get("fb_message_id") or m.get("id"))
+            for m in messages
+            if (m.get("fb_message_id") or m.get("id"))
+        ]
+        if incoming_ids:
+            execute_with_connection(
+                "DELETE FROM messenger_messages "
+                "WHERE thread_id = %s AND fb_message_id IS NOT NULL "
+                "  AND NOT (fb_message_id = ANY(%s))",
+                (thread_id, incoming_ids),
+            )
+
+        inserted = 0
+        last_preview: Optional[str] = None
+        for m in messages:
+            body = (m.get("body") or m.get("text") or "").strip()
+            if not body:
+                continue
+            direction = "outbound" if str(m.get("direction")) == "out" else "inbound"
+            sender = "human" if direction == "outbound" else "seller"
+            fb_message_id = m.get("fb_message_id") or m.get("id")
+
+            if fb_message_id:
+                exists = execute_with_connection(
+                    "SELECT 1 FROM messenger_messages WHERE thread_id = %s AND fb_message_id = %s LIMIT 1",
+                    (thread_id, str(fb_message_id)),
+                    fetch="one",
+                )
+            else:
+                exists = execute_with_connection(
+                    "SELECT 1 FROM messenger_messages "
+                    "WHERE thread_id = %s AND direction = %s AND body = %s LIMIT 1",
+                    (thread_id, direction, body),
+                    fetch="one",
+                )
+            if exists:
+                continue
+
+            execute_with_connection(
+                "INSERT INTO messenger_messages "
+                "  (thread_id, direction, sender, body, fb_message_id, status) "
+                "VALUES (%s, %s, %s, %s, %s, %s)",
+                (thread_id, direction, sender, body,
+                 str(fb_message_id) if fb_message_id else None,
+                 "delivered" if direction == "inbound" else "sent"),
+            )
+            inserted += 1
+            last_preview = body[:200]
+
+        # Refresh seller name (when still a placeholder) and the thread preview.
+        if seller_name and (thread.get("seller_name") in (None, "", "Seller")):
+            execute_with_connection(
+                "UPDATE messenger_threads SET seller_name = %s, updated_at = now() WHERE id = %s",
+                (seller_name, thread_id),
+            )
+        if last_preview is not None:
+            execute_with_connection(
+                "UPDATE messenger_threads SET last_message_at = now(), "
+                "  last_message_preview = %s, updated_at = now() WHERE id = %s",
+                (last_preview, thread_id),
+            )
+        logger.info("[%s] on_history: stored %s new message(s) for fb_listing %s (user %s)",
+                    AGENT_ID, inserted, fb_listing_id, user_id)
 
     def on_send_result(self, request_id: str, ok: bool, fb_message_id: Optional[str] = None,
                         error: Optional[str] = None) -> None:

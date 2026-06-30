@@ -9,26 +9,21 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Play, Square, Send, AlertTriangle, MessageCircle,
-  ChevronDown, ChevronRight, Plug, PlugZap, Bot, User,
+  Play, Square, AlertTriangle, MessageCircle,
+  ChevronDown, ChevronRight, Plug, PlugZap, Car, Search,
 } from 'lucide-react';
 import {
   fbMessengerApi, type FbMessengerStatus, type MessengerThread, type MessengerMessage,
 } from '../../../lib/agents/fbMessengerApi';
+import { ApiService } from '../../../lib/services/api';
+import { useAuth } from '../../../app/auth/useAuth';
+import type { Listing } from '../../../lib/types/listing';
+import { MessengerConversation } from './MessengerConversation';
 import type { AgentDef } from './agentDefs';
 
 const POLL_ACTIVE_MS = 4_000;
 const POLL_IDLE_MS = 15_000;
 const MESSAGES_POLL_MS = 10_000;
-
-function formatTime(iso: string | null): string {
-  if (!iso) return '';
-  const date = new Date(iso);
-  const now = new Date();
-  const isToday = date.toDateString() === now.toDateString();
-  if (isToday) return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -47,7 +42,15 @@ export function FbMessengerPanel({ def, defaultOpen = false }: { def: AgentDef; 
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(defaultOpen);
   const mountedRef = useRef(true);
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  // Listing picker (start a conversation from a vehicle listing).
+  const { user } = useAuth();
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [listingOptions, setListingOptions] = useState<Listing[]>([]);
+  const [listingQuery, setListingQuery] = useState('');
+  const [listingsLoading, setListingsLoading] = useState(false);
+  const [openingListingId, setOpeningListingId] = useState<string | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   const refreshStatus = useCallback(async () => {
     try {
@@ -111,9 +114,68 @@ export function FbMessengerPanel({ def, defaultOpen = false }: { def: AgentDef; 
     return () => clearInterval(interval);
   }, [selectedId, refreshMessages]);
 
+  // Clear the "loading history" affordance once scraped messages land, with a
+  // safety timeout in case the scrape yields nothing (e.g. brand-new thread).
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (historyLoading && messages.length > 0) setHistoryLoading(false);
+  }, [messages, historyLoading]);
+  useEffect(() => {
+    if (!historyLoading) return;
+    const t = setTimeout(() => setHistoryLoading(false), 45_000);
+    return () => clearTimeout(t);
+  }, [historyLoading]);
+
+  // Lazily load listing options the first time the picker opens.
+  const loadListings = useCallback(async () => {
+    setListingsLoading(true);
+    try {
+      const listings = user?.role === 'admin'
+        ? await ApiService.getListings({})
+        : user?.id
+          ? await ApiService.getBuyerListings(user.id, {})
+          : [];
+      if (!mountedRef.current) return;
+      setListingOptions(Array.isArray(listings) ? listings : []);
+    } catch (e) {
+      if (!mountedRef.current) return;
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      if (mountedRef.current) setListingsLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (pickerOpen && listingOptions.length === 0) void loadListings();
+  }, [pickerOpen, listingOptions.length, loadListings]);
+
+  const onSelectListing = async (listing: Listing) => {
+    setOpeningListingId(String(listing.id));
+    setError(null);
+    try {
+      const thread = await fbMessengerApi.openListing(listing.id);
+      if (!mountedRef.current) return;
+      setThreads((prev) => (
+        prev.some((t) => t.id === thread.id)
+          ? prev.map((t) => (t.id === thread.id ? thread : t))
+          : [thread, ...prev]
+      ));
+      setSelectedId(thread.id);
+      setHistoryLoading(true);
+      setPickerOpen(false);
+      setListingQuery('');
+    } catch (e) {
+      if (!mountedRef.current) return;
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      if (mountedRef.current) setOpeningListingId(null);
+    }
+  };
+
+  const filteredListings = listingOptions.filter((l) => {
+    const q = listingQuery.trim().toLowerCase();
+    if (!q) return true;
+    return [l.year, l.make, l.model, l.trim, l.vin].filter(Boolean).join(' ').toLowerCase().includes(q);
+  }).slice(0, 50);
 
   const handleAction = useCallback(
     async (label: string, fn: () => Promise<FbMessengerStatus>) => {
@@ -242,6 +304,56 @@ export function FbMessengerPanel({ def, defaultOpen = false }: { def: AgentDef; 
             </Fact>
           </dl>
 
+          {/* Listing picker — start a conversation from a vehicle listing */}
+          <div className="mt-3 relative">
+            <button
+              onClick={() => setPickerOpen((v) => !v)}
+              disabled={!connected}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[12px] border border-claude-border dark:border-coal-700 text-claude-muted dark:text-coal-300 hover:bg-claude-sand dark:hover:bg-coal-800 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Car className="w-3.5 h-3.5" /> Message a listing
+            </button>
+            {pickerOpen && (
+              <div className="absolute z-20 mt-1 left-0 w-[320px] rounded-md border border-claude-border dark:border-coal-700 bg-claude-surface dark:bg-coal-850 shadow-md">
+                <div className="flex items-center gap-1.5 px-2.5 py-2 border-b border-claude-border dark:border-coal-700">
+                  <Search className="w-3.5 h-3.5 text-claude-subtle" />
+                  <input
+                    autoFocus
+                    type="text"
+                    value={listingQuery}
+                    onChange={(e) => setListingQuery(e.target.value)}
+                    placeholder="Search year / make / model / VIN…"
+                    className="flex-1 bg-transparent text-[12px] text-claude-ink dark:text-coal-100 focus:outline-none"
+                  />
+                </div>
+                <div className="max-h-64 overflow-y-auto">
+                  {listingsLoading ? (
+                    <div className="px-2.5 py-2 text-[11px] text-claude-subtle dark:text-coal-400">Loading listings…</div>
+                  ) : filteredListings.length === 0 ? (
+                    <div className="px-2.5 py-2 text-[11px] text-claude-subtle dark:text-coal-400">No listings found.</div>
+                  ) : (
+                    filteredListings.map((l) => (
+                      <button
+                        key={l.id}
+                        onClick={() => onSelectListing(l)}
+                        disabled={openingListingId === String(l.id)}
+                        className="w-full text-left px-2.5 py-1.5 text-[12px] hover:bg-claude-sand dark:hover:bg-coal-800 border-b border-claude-border/60 dark:border-coal-700/60 last:border-b-0 disabled:opacity-50"
+                      >
+                        <div className="text-claude-ink dark:text-coal-100 truncate">
+                          {[l.year, l.make, l.model, l.trim].filter(Boolean).join(' ') || `Listing #${l.id}`}
+                        </div>
+                        <div className="text-[11px] text-claude-subtle dark:text-coal-400 truncate">
+                          {l.vin ? `VIN ${l.vin}` : 'no VIN'}{l.source ? ` · ${l.source}` : ''}
+                          {openingListingId === String(l.id) ? ' · opening…' : ''}
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Seller list + conversation */}
           <div className="mt-3 flex border border-claude-border dark:border-coal-700 rounded-md overflow-hidden h-[360px]">
             {/* Seller list */}
@@ -286,90 +398,17 @@ export function FbMessengerPanel({ def, defaultOpen = false }: { def: AgentDef; 
             </div>
 
             {/* Thread view */}
-            <div className="flex-1 flex flex-col min-w-0">
-              {selected ? (
-                <>
-                  <div className="flex items-center justify-between gap-2 px-3 py-1.5 border-b border-claude-border dark:border-coal-700 bg-claude-cream dark:bg-coal-800">
-                    <span className="text-[12px] font-semibold text-claude-ink dark:text-coal-100 truncate">
-                      {selected.seller_name}
-                    </span>
-                    <button
-                      onClick={() => onToggleAiMode(selected)}
-                      title="Toggle AI auto-reply for this thread"
-                      className={[
-                        'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border shrink-0',
-                        selected.ai_mode === 'auto'
-                          ? 'border-emerald-300/50 text-emerald-600 dark:text-emerald-400 bg-emerald-500/5'
-                          : 'border-claude-border dark:border-coal-700 text-claude-subtle dark:text-coal-400',
-                      ].join(' ')}
-                    >
-                      <Bot className="w-3 h-3" />
-                      {selected.ai_mode === 'auto' ? 'AI auto-reply on' : 'Paused (human only)'}
-                    </button>
-                  </div>
-
-                  <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-claude-cream dark:bg-coal-900">
-                    {messages.length === 0 ? (
-                      <div className="h-full flex items-center justify-center text-[11px] text-claude-subtle dark:text-coal-400">
-                        No messages in this thread yet.
-                      </div>
-                    ) : (
-                      messages.map((m) => (
-                        <div key={m.id} className={`flex ${m.direction === 'outbound' ? 'justify-end' : 'justify-start'}`}>
-                          <div
-                            className={[
-                              'max-w-[75%] rounded-2xl px-3 py-1.5',
-                              m.direction === 'outbound'
-                                ? 'bg-claude-accent text-white rounded-br-md'
-                                : 'bg-claude-surface dark:bg-coal-700 text-claude-ink dark:text-coal-100 shadow-sm rounded-bl-md',
-                            ].join(' ')}
-                          >
-                            <p className="text-[12px] whitespace-pre-wrap break-words">{m.body}</p>
-                            <p className={[
-                              'mt-0.5 text-[10px] flex items-center gap-1',
-                              m.direction === 'outbound' ? 'text-white/70' : 'text-claude-subtle dark:text-coal-400',
-                            ].join(' ')}>
-                              {m.sender === 'ai' && <Bot className="w-2.5 h-2.5" />}
-                              {m.sender === 'human' && <User className="w-2.5 h-2.5" />}
-                              {formatTime(m.created_at)}
-                              {m.direction === 'outbound' && (
-                                <span>
-                                  {m.status === 'sent' || m.status === 'delivered' ? '✓' : m.status === 'failed' ? '⚠' : '…'}
-                                </span>
-                              )}
-                            </p>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                    <div ref={messagesEndRef} />
-                  </div>
-
-                  <div className="flex items-center gap-1.5 p-2 border-t border-claude-border dark:border-coal-700">
-                    <input
-                      type="text"
-                      value={draft}
-                      onChange={(e) => setDraft(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } }}
-                      placeholder="Type a reply…"
-                      disabled={sending}
-                      className="flex-1 px-2.5 py-1.5 rounded-md text-[12px] border bg-transparent border-claude-border dark:border-coal-700 text-claude-ink dark:text-coal-100 focus:outline-none focus:ring-1 focus:ring-claude-accent disabled:opacity-40"
-                    />
-                    <CtrlBtn
-                      label="Send"
-                      icon={<Send className="w-3.5 h-3.5" />}
-                      disabled={!draft.trim() || sending}
-                      onClick={onSend}
-                      accent
-                    />
-                  </div>
-                </>
-              ) : (
-                <div className="flex-1 flex items-center justify-center text-[11px] text-claude-subtle dark:text-coal-400">
-                  Select a seller to view the conversation.
-                </div>
-              )}
-            </div>
+            <MessengerConversation
+              thread={selected}
+              messages={messages}
+              draft={draft}
+              onDraftChange={setDraft}
+              onSend={onSend}
+              sending={sending}
+              onToggleAiMode={onToggleAiMode}
+              loadingHistory={historyLoading}
+              emptyHint="Select a seller, or use “Message a listing” to start a new conversation."
+            />
           </div>
         </>
       )}

@@ -103,6 +103,39 @@ async def fb_messenger_send_message(
         raise HTTPException(status_code=500, detail="fb-messenger send failed")
 
 
+@fb_messenger_router.post("/listings/{listing_id}/open")
+async def fb_messenger_open_listing(
+    listing_id: int,
+    current_user: UserOut = Depends(get_current_user),
+):
+    """Open (or create) the conversation for a vehicle listing and ask the
+    extension to scrape its chat history. Returns the thread; scraped messages
+    arrive asynchronously via the messenger.history WS event."""
+    try:
+        return await fb_messenger_agent.open_listing_thread(current_user.id, listing_id)
+    except AgentControlError as e:
+        _map_control_error(e)
+    except Exception:
+        logger.exception("fb-messenger open failed for user %s listing %s", current_user.id, listing_id)
+        raise HTTPException(status_code=500, detail="fb-messenger open failed")
+
+
+@fb_messenger_router.post("/listings/{listing_id}/messages")
+async def fb_messenger_send_listing_message(
+    listing_id: int,
+    req: SendMessageRequest,
+    current_user: UserOut = Depends(get_current_user),
+):
+    """Send a message to a listing's seller (keyed by FB listing id)."""
+    try:
+        return await fb_messenger_agent.send_listing_message(current_user.id, listing_id, req.body)
+    except AgentControlError as e:
+        _map_control_error(e)
+    except Exception:
+        logger.exception("fb-messenger send-to-listing failed for user %s listing %s", current_user.id, listing_id)
+        raise HTTPException(status_code=500, detail="fb-messenger send failed")
+
+
 @fb_messenger_router.post("/threads/{thread_id}/ai_mode")
 async def fb_messenger_set_ai_mode(
     thread_id: str,

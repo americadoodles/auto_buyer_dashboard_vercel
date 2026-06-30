@@ -19,12 +19,13 @@ import {
 } from '../../../lib/services/listingManagementApi';
 import { ContactEditModal } from '../../../components/organisms/ContactEditModal';
 import { LeadCreateModal } from '../../../components/organisms/LeadCreateModal';
+import { ListingMessengerModal } from '../../../components/organisms/ListingMessengerModal';
 import { ImageCarousel } from '../../../components/organisms/ImageCarousel';
 import { DamageReportPanel } from '../../../components/molecules/DamageReportPanel';
 import { leadsApi } from '../../../lib/services/leadsApi';
 import { Lead } from '../../../lib/types/lead';
 import { ListingActivity, Contact } from '../../../lib/types/listing';
-import { ArrowLeft, Plus, Upload, X, Save, Edit2, Check, ExternalLink, Bell, Send, Workflow, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Upload, X, Save, Edit2, Check, ExternalLink, Bell, Send, Workflow, Trash2, MessageCircle } from 'lucide-react';
 import { useToast } from '../../../hooks/useToast';
 import { formatDateTime } from 'lib/utils/formatters';
 import { invalidateListingsCache } from '../../../lib/hooks/useListings';
@@ -57,6 +58,7 @@ export default function ListingDetailPage() {
   const [savingField, setSavingField] = useState<string | null>(null);
   const [isCreateLeadFromContactOpen, setIsCreateLeadFromContactOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isMessengerOpen, setIsMessengerOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   // Load listing details
@@ -609,6 +611,15 @@ export default function ListingDetailPage() {
               >
                 <Plus className="h-4 w-4" />
                 {lead && lead.contact ? 'Update Lead' : 'Create Lead'}
+              </Button>
+              <Button
+                onClick={() => setIsMessengerOpen(true)}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2 bg-claude-accent hover:bg-claude-accent/90 text-black border-0 shadow-md font-semibold cursor-pointer"
+              >
+                <MessageCircle className="h-4 w-4" />
+                Message Seller
               </Button>
               <Button
                 onClick={() => setIsDeleteConfirmOpen(true)}
@@ -2259,6 +2270,14 @@ export default function ListingDetailPage() {
         isOpen={isCreateContactOpen}
         onClose={() => setIsCreateContactOpen(false)}
         onSave={handleContactSave}
+      />
+
+      {/* Message Seller (FB Messenger) Modal */}
+      <ListingMessengerModal
+        isOpen={isMessengerOpen}
+        onClose={() => setIsMessengerOpen(false)}
+        listingId={parseInt(listingId)}
+        listingLabel={[listing?.year, listing?.make, listing?.model].filter(Boolean).join(' ')}
       />
     </div>
   );

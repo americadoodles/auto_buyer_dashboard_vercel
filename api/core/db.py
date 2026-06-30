@@ -216,6 +216,17 @@ def apply_schema_if_needed() -> None:
                     cur.execute("ALTER TABLE public.listings ADD COLUMN IF NOT EXISTS location text")
                     cur.execute("ALTER TABLE public.listings ADD COLUMN IF NOT EXISTS buyer_id text")
                     cur.execute("ALTER TABLE public.listings ADD COLUMN IF NOT EXISTS images text[]")
+                    # year/make/model/trim are introduced by migration 019, but that
+                    # migration runs as a single implicit transaction and also touches
+                    # lead_vehicles/deal_vehicles/scores — on DBs where those relations
+                    # are absent, the whole file (including these ADD COLUMNs) rolls
+                    # back, leaving listings without the columns the read/ingest queries
+                    # depend on. Ensuring them here — each in its own autocommitted
+                    # statement — guarantees they exist regardless of 019's outcome.
+                    cur.execute("ALTER TABLE public.listings ADD COLUMN IF NOT EXISTS year int")
+                    cur.execute("ALTER TABLE public.listings ADD COLUMN IF NOT EXISTS make text")
+                    cur.execute("ALTER TABLE public.listings ADD COLUMN IF NOT EXISTS model text")
+                    cur.execute("ALTER TABLE public.listings ADD COLUMN IF NOT EXISTS trim text")
                     # Backfill buyer_id from legacy 'buyer' if present
                     cur.execute("""
                         DO $$

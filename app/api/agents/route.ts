@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { AGENTS } from '../../../lib/agents/data';
 
-// Mark as dynamic so it isn't statically cached during builds.
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 

@@ -1,5 +1,6 @@
 
 # Auto Buyer Demo - Scoring Stub
+AI related project
 A full-stack application demonstrating vehicle listing scoring and user management with role-based access control with openAI.
 
 ## 🚀 Features
